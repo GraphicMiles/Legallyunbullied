@@ -941,6 +941,10 @@
     border: 1px solid var(--color-accent-border);
     background: var(--color-accent-soft);
   }
+  .verdict--error {
+    border: 1px solid rgba(229, 72, 77, 0.4);
+    background: rgba(229, 72, 77, 0.08);
+  }
   .verdict__head { display: flex; align-items: flex-start; gap: var(--space-2); }
   .verdict__icon {
     width: 20px; height: 20px; border-radius: 50%;
@@ -950,6 +954,8 @@
   }
   .verdict--self .verdict__icon { background: rgba(76,174,107,0.18); color: var(--color-success); }
   .verdict--escalate .verdict__icon { background: rgba(242,183,5,0.2); color: var(--color-accent); }
+  .verdict--error .verdict__icon { background: rgba(229,72,77,0.18); color: var(--color-danger); }
+  .verdict--error .verdict__title { color: var(--color-danger); }
   .verdict__icon i { font-size: 11px; }
   .verdict__title {
     font-size: var(--fs-sm);

@@ -16,14 +16,23 @@ const { findProvisions } = require("./legalCorpus");
 
 const PRACTICE_AREAS = ["tenancy", "employment", "criminal_rights", "contract", "general"];
 
+/**
+ * Some models occasionally wrap JSON-mode output in markdown code fences
+ * even when told not to. Strip those before parsing rather than failing outright.
+ */
+function parseModelJson(content) {
+  const trimmed = content.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "");
+  return JSON.parse(trimmed);
+}
+
 const CLASSIFY_SYSTEM_PROMPT = `You classify Nigerian legal questions for an information retrieval system.
-Respond with ONLY a JSON object, no prose, matching exactly:
-{
-  "practice_area": one of ${JSON.stringify(PRACTICE_AREAS)},
-  "jurisdiction": string, e.g. "Lagos State" or "Federal",
-  "urgency": one of ["Low", "Medium", "High", "Critical"],
-  "summary": a one-sentence neutral restatement of the issue
-}`;
+Respond with ONLY a JSON object, no prose, no markdown code fences.
+
+Valid values for "practice_area": ${JSON.stringify(PRACTICE_AREAS)}
+Valid values for "urgency": ["Low", "Medium", "High", "Critical"]
+
+Example of the exact shape to return (use realistic values for the actual question, don't copy this example's content):
+{"practice_area": "tenancy", "jurisdiction": "Lagos State", "urgency": "High", "summary": "A tenant is disputing an eviction attempt made without proper notice."}`;
 
 const DRAFT_SYSTEM_PROMPT = `You are Legally Unbullied, a Nigerian legal-information assistant. You are not a lawyer and must not give legal advice — only plain-language information about what the law says and what someone can practically do next.
 
@@ -31,15 +40,12 @@ Hard rules:
 - Only use the statute excerpts you are given below. Never cite an Act, section number, or fact that isn't present in them.
 - If the excerpts don't fully answer the question, say so plainly in "lawMd" rather than filling the gap with assumptions.
 - Cite the Act and section for every legal claim in "lawMd".
+- "lawMd" and "actionsMd" may use markdown (**bold**, "- " bullet lines). Every other field is plain text, no markdown.
+- Keep "sources" to at most 4 entries, each excerpt under 400 characters.
+- Respond with ONLY a JSON object, no prose, no markdown code fences around it.
 
-Respond with ONLY a JSON object, no prose, matching exactly:
-{
-  "lawMd": markdown string (use **bold** for defined terms/Act names, paragraphs separated by a blank line) explaining what the law says, with inline citations like "(Act name, s.N)",
-  "actionsMd": markdown string of practical next steps, each line starting with "- ",
-  "sources": [{ "label": "Act name, s.N", "excerpt": "the exact excerpt text you relied on" }],
-  "escalate": boolean — true if this realistically needs a lawyer, not just self-help,
-  "escalateReason": one or two sentences explaining the escalate decision
-}`;
+Example of the exact shape to return (use realistic values for the actual question, don't copy this example's content):
+{"lawMd": "Under the Example Act 2020 (s.4), ...", "actionsMd": "- Do this first.\\n- Then do this.", "sources": [{"label": "Example Act 2020, s.4", "excerpt": "the exact excerpt text relied on"}], "escalate": true, "escalateReason": "Why a lawyer is or isn't needed, in one or two sentences.", "followUps": ["A natural follow-up question.", "Another natural follow-up question."]}`;
 
 router.post("/api/chat", async (req, res) => {
   const question = (req.body && req.body.question || "").toString().trim();
@@ -60,13 +66,14 @@ router.post("/api/chat", async (req, res) => {
     const classifyCompletion = await client.chat.completions.create({
       model: CLASSIFY_MODEL,
       temperature: 0,
+      max_tokens: 300,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: CLASSIFY_SYSTEM_PROMPT },
         { role: "user", content: question },
       ],
     });
-    classification = JSON.parse(classifyCompletion.choices[0].message.content);
+    classification = parseModelJson(classifyCompletion.choices[0].message.content);
   } catch (err) {
     console.error("[/api/chat] classification failed:", err.status || "", err.message);
     return res.status(502).json({
@@ -106,13 +113,14 @@ router.post("/api/chat", async (req, res) => {
     const draftCompletion = await client.chat.completions.create({
       model: DRAFT_MODEL,
       temperature: 0.2,
+      max_tokens: 2000,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: DRAFT_SYSTEM_PROMPT },
         { role: "user", content: `Question: ${question}\n\nAvailable statute excerpts:\n\n${contextBlock}` },
       ],
     });
-    result = JSON.parse(draftCompletion.choices[0].message.content);
+    result = parseModelJson(draftCompletion.choices[0].message.content);
   } catch (err) {
     console.error("[/api/chat] drafting failed:", err.status || "", err.message);
     return res.status(502).json({
