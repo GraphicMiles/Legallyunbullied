@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Agent Pipeline UI - Visual Demo</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+<link rel="stylesheet" href="styles/beui-inspired.css" />
+<style>
+  /* Import all design tokens from main app */
+  :root {
+    --color-bg: #0a0a0a;
+    --color-bg-raised: #121212;
+    --color-surface: #161616;
+    --color-surface-alt: #1c1c1c;
+    --color-border: #2a2a2a;
+    --color-border-soft: #1f1f1f;
+    --color-text: #f5f5f2;
+    --color-text-muted: #9a9a94;
+    --color-text-faint: #6b6b66;
+    --color-accent: #f2b705;
+    --color-accent-hover: #ffc61a;
+    --color-accent-text: #14120a;
+    --color-accent-soft: rgba(242, 183, 5, 0.12);
+    --color-accent-border: rgba(242, 183, 5, 0.35);
+    --color-danger: #e5484d;
+    --color-success: #4cae6b;
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-7: 32px;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+    --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    --fs-xs: 12px;
+    --fs-sm: 13px;
+    --fs-base: 14.5px;
+    --fs-md: 16px;
+    --fs-lg: 19px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    font-size: var(--fs-base);
+    line-height: 1.5;
+    padding: 40px;
+  }
+
+  .demo-container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--color-accent);
+  }
+
+  .subtitle {
+    color: var(--color-text-muted);
+    margin-bottom: 40px;
+  }
+
+  .stage {
+    background: var(--color-bg-raised);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 32px;
+  }
+
+  .stage-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .stage-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    color: var(--color-accent-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  .stage-title {
+    font-size: 18px;
+    font-weight: 600;
+    flex: 1;
+  }
+
+  .stage-description {
+    font-size: 13px;
+    color: var(--color-text-muted);
+  }
+
+  .demo-area {
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    min-height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* User message bubble */
+  .user-message {
+    background: var(--color-accent-soft);
+    border: 1px solid var(--color-accent-border);
+    border-radius: var(--radius-lg) var(--radius-lg) var(--space-1) var(--radius-lg);
+    padding: 12px 16px;
+    max-width: 80%;
+    margin-left: auto;
+    color: var(--color-text);
+  }
+
+  /* Agent message wrapper */
+  .agent-message {
+    display: flex;
+    gap: 12px;
+    max-width: 90%;
+  }
+
+  .agent-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .agent-avatar svg {
+    width: 18px;
+    height: 18px;
+    color: var(--color-accent);
+  }
+
+  .agent-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Answer sections */
+  .answer-section {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    padding: 16px;
+  }
+
+  .answer-section__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .answer-section__icon {
+    width: 20px;
+    height: 20px;
+    border-radius: var(--radius-sm);
+    background: var(--color-accent-soft);
+    color: var(--color-accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+  }
+
+  .answer-section__title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .answer-section__text {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--color-text);
+  }
+
+  .answer-section__text p {
+    margin-bottom: 12px;
+  }
+
+  .answer-section__text p:last-child {
+    margin-bottom: 0;
+  }
+
+  .answer-section__text ul {
+    margin: 12px 0;
+    padding-left: 20px;
+  }
+
+  .answer-section__text li {
+    margin-bottom: 8px;
+  }
+
+  /* Streaming cursor */
+  .stream-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background: var(--color-accent);
+    vertical-align: -0.15em;
+    margin-left: 2px;
+    animation: cursorBlink 0.9s steps(1) infinite;
+  }
+
+  @keyframes cursorBlink {
+    50% { opacity: 0; }
+  }
+
+  /* Context cards */
+  .context-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .context-card {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-raised);
+    overflow: hidden;
+  }
+
+  .context-card__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    width: 100%;
+    text-align: left;
+    color: var(--color-text);
+  }
+
+  .context-card__badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--color-accent);
+    border: 1px solid var(--color-accent-border);
+    background: var(--color-accent-soft);
+    border-radius: var(--radius-sm);
+    padding: 2px 6px;
+  }
+
+  .context-card__label {
+    font-size: 13px;
+    font-weight: 600;
+    flex: 1;
+    font-family: var(--font-mono);
+  }
+
+  .context-card__meta {
+    font-size: 11px;
+    color: var(--color-text-faint);
+  }
+
+  .context-card__chevron {
+    font-size: 12px;
+    color: var(--color-text-faint);
+    transition: transform 0.2s;
+  }
+
+  .context-card.is-open .context-card__chevron {
+    transform: rotate(90deg);
+  }
+
+  .context-card__body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s;
+  }
+
+  .context-card.is-open .context-card__body {
+    max-height: 200px;
+  }
+
+  .context-card__body p {
+    padding: 12px;
+    font-size: 13px;
+    color: var(--color-text-muted);
+    line-height: 1.5;
+    border-top: 1px solid var(--color-border-soft);
+  }
+
+  /* Verdict */
+  .verdict {
+    border-radius: var(--radius-md);
+    padding: 16px;
+  }
+
+  .verdict--escalate {
+    border: 1px solid var(--color-accent-border);
+    background: var(--color-accent-soft);
+  }
+
+  .verdict--self {
+    border: 1px solid rgba(76, 174, 107, 0.35);
+    background: rgba(76, 174, 107, 0.08);
+  }
+
+  .verdict__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .verdict__icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+  }
+
+  .verdict--escalate .verdict__icon {
+    background: rgba(242, 183, 5, 0.2);
+    color: var(--color-accent);
+  }
+
+  .verdict--self .verdict__icon {
+    background: rgba(76, 174, 107, 0.18);
+    color: var(--color-success);
+  }
+
+  .verdict__title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .verdict--escalate .verdict__title {
+    color: var(--color-accent);
+  }
+
+  .verdict--self .verdict__title {
+    color: var(--color-success);
+  }
+
+  .verdict__text {
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 12px;
+  }
+
+  .verdict__actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-accent-text);
+    background: var(--color-accent);
+    border-radius: var(--radius-sm);
+    padding: 8px 16px;
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+
+  .link-btn:hover {
+    background: var(--color-accent-hover);
+  }
+
+  .link-btn i {
+    font-size: 12px;
+  }
+
+  /* Follow-ups */
+  .followups {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .followup-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 8px 12px;
+    background: var(--color-surface);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .followup-chip:hover {
+    border-color: var(--color-accent-border);
+    color: var(--color-text);
+    background: var(--color-accent-soft);
+  }
+
+  .followup-chip i {
+    font-size: 10px;
+    color: var(--color-text-faint);
+  }
+
+  /* Meta row */
+  .msg__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--color-text-faint);
+    padding-top: 12px;
+    border-top: 1px solid var(--color-border-soft);
+  }
+
+  .msg-actions {
+    display: flex;
+    gap: 4px;
+  }
+
+  .msg-action-btn {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-faint);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .msg-action-btn:hover {
+    background: var(--color-surface);
+    color: var(--color-text);
+  }
+
+  .msg-action-btn i {
+    font-size: 13px;
+  }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .btn {
+    padding: 10px 20px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background: var(--color-accent);
+    color: var(--color-accent-text);
+  }
+
+  .btn-primary:hover {
+    background: var(--color-accent-hover);
+  }
+
+  .btn-secondary {
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+  }
+
+  .btn-secondary:hover {
+    background: var(--color-surface-alt);
+    border-color: var(--color-accent-border);
+  }
+
+  .note {
+    background: var(--color-accent-soft);
+    border: 1px solid var(--color-accent-border);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--color-text);
+  }
+
+  .note strong {
+    color: var(--color-accent);
+  }
+</style>
+</head>
+<body>
+<div class="demo-container">
+  <h1>Agent Pipeline UI - Visual Demo</h1>
+  <p class="subtitle">Complete visualization of the agent response pipeline with Beautiful UI components</p>
+
+  <!-- Stage 1: User Input -->
+  <div class="stage">
+    <div class="stage-header">
+      <div class="stage-number">1</div>
+      <div class="stage-title">User Input</div>
+    </div>
+    <p class="stage-description">User submits a legal question</p>
+    <div class="demo-area" style="justify-content: flex-end;">
+      <div class="user-message">
+        What are my rights if my landlord evicts me without notice in Lagos?
+      </div>
+    </div>
+  </div>
+
+  <!-- Stage 2: Loading State (Analyzing) -->
+  <div class="stage">
+    <div class="stage-header">
+      <div class="stage-number">2</div>
+      <div class="stage-title">Loading State - "Analyzing"</div>
+    </div>
+    <p class="stage-description">BeUILoadingState shows during API call (classification + retrieval + planning + drafting)</p>
+    <div class="demo-area">
+      <div class="agent-message">
+        <div class="agent-avatar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div class="agent-body">
+          <div class="beui-loading-state">
+            <div class="beui-pixel-grid">
+              <div class="beui-pixel active" style="animation-delay: 0ms;"></div>
+              <div class="beui-pixel active" style="animation-delay: 90ms;"></div>
+              <div class="beui-pixel active" style="animation-delay: 180ms;"></div>
+              <div class="beui-pixel active" style="animation-delay: 90ms;"></div>
+              <div class="beui-pixel active" style="animation-delay: 180ms;"></div>
+              <div class="beui-pixel active" style="animation-delay: 270ms;"></div>
+              <div class="beui-pixel active" style="animation-delay: 180ms;"></div>
+              <div class="beui-pixel active" style="animation-delay: 270ms;"></div>
+              <div class="beui-pixel active" style="animation-delay: 360ms;"></div>
+            </div>
+            <div class="beui-loading-label">Analyzing</div>
+            <div class="beui-loading-timer">0.5s</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <strong>Note:</strong> This loading state shows while the backend processes the entire pipeline (classify → retrieve → plan → draft). The timer counts up in real-time.
+    </div>
+  </div>
+
+  <!-- Stage 3: Thinking State (Pipeline Execution) -->
+  <div class="stage">
+    <div class="stage-header">
+      <div class="stage-number">3</div>
+      <div class="stage-title">Thinking State - "Thinking"</div>
+    </div>
+    <p class="stage-description">LoadingState shows during pipeline execution (if response is a legal question)</p>
+    <div class="demo-area">
+      <div class="agent-message">
+        <div class="agent-avatar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div class="agent-body">
+          <div class="beui-loading-state">
+            <div class="beui-pixel-grid">
+              <div class="beui-pixel active" style="animation-delay: 0ms;"></div>
+              <div class="beui-pixel active" style="animation-delay: 90ms;"></div>
+              <div class="beui-pixel active" style="animation-delay: 180ms;"></div>
+              <div class="beui-pixel active" style="animation-delay: 90ms;"></div>
+              <div class="beui-pixel active" style="animation-delay: 180ms;"></div>
+              <div class="beui-pixel active" style="animation-delay: 270ms;"></div>
+              <div class="beui-pixel active" style="animation-delay: 180ms;"></div>
+              <div class="beui-pixel active" style="animation-delay: 270ms;"></div>
+              <div class="beui-pixel active" style="animation-delay: 360ms;"></div>
+            </div>
+            <div class="beui-loading-label">Thinking</div>
+            <div class="beui-loading-timer">2.3s</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <strong>Note:</strong> After the API call completes, if it's a legal question, the loading state changes to "Thinking" while the frontend processes the response. This is where the Beautiful UI LoadingState component replaces the old BeUIThinking tabbed interface.
+    </div>
+  </div>
+
+  <!-- Stage 4: Streaming Response -->
+  <div class="stage">
+    <div class="stage-header">
+      <div class="stage-number">4</div>
+      <div class="stage-title">Streaming Response - "What the law says"</div>
+    </div>
+    <p class="stage-description">Answer streams in with cursor, citations appear inline</p>
+    <div class="demo-area">
+      <div class="agent-message">
+        <div class="agent-avatar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div class="agent-body">
+          <div class="answer-section">
+            <div class="answer-section__head">
+              <div class="answer-section__icon">
+                <i class="fa-solid fa-bolt"></i>
+              </div>
+              <div class="answer-section__title">What the law says</div>
+            </div>
+            <div class="answer-section__text">
+              <p>
+                Under the <strong>Lagos State Tenancy Law 2011</strong>, your landlord <strong>cannot evict you without proper notice</strong>. 
+                Section 13 requires a minimum of <strong>7 days notice</strong> for monthly tenants and <strong>6 months notice</strong> for yearly tenants.
+                <span class="stream-cursor"></span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <strong>Note:</strong> The streaming cursor (blinking line) shows where text is still being added. The text streams in character-by-character at ~240 chars/second.
+    </div>
+  </div>
+
+  <!-- Stage 5: Context Cards -->
+  <div class="stage">
+    <div class="stage-header">
+      <div class="stage-number">5</div>
+      <div class="stage-title">Context Cards - Legal Sources</div>
+    </div>
+    <p class="stage-description">Expandable cards showing the legal provisions cited in the answer</p>
+    <div class="demo-area">
+      <div class="agent-message" style="max-width: 100%;">
+        <div class="agent-avatar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div class="agent-body">
+          <div class="answer-section">
+            <div class="answer-section__head">
+              <div class="answer-section__icon">
+                <i class="fa-solid fa-bolt"></i>
+              </div>
+              <div class="answer-section__title">What the law says</div>
+            </div>
+            <div class="answer-section__text">
+              <p>
+                Under the <strong>Lagos State Tenancy Law 2011</strong>, your landlord <strong>cannot evict you without proper notice</strong>. 
+                Section 13 requires a minimum of <strong>7 days notice</strong> for monthly tenants and <strong>6 months notice</strong> for yearly tenants.
+              </p>
+              <p>
+                Furthermore, Section 20 prohibits <strong>self-help eviction</strong> (such as changing locks or removing your belongings). 
+                Only a court order can authorize eviction.
+              </p>
+            </div>
+            <div class="context-list">
+              <div class="context-card is-open">
+                <button class="context-card__head" onclick="this.parentElement.classList.toggle('is-open')">
+                  <span class="context-card__badge">STATUTE</span>
+                  <span class="context-card__label">Lagos State Tenancy Law 2011, s.13</span>
+                  <span class="context-card__meta">245 chars</span>
+                  <i class="fa-solid fa-chevron-right context-card__chevron"></i>
+                </button>
+                <div class="context-card__body">
+                  <p>
+                    A landlord shall not evict a tenant without giving proper notice to quit. For monthly tenancies, the notice period shall be seven days. For yearly tenancies, the notice period shall be six months.
+                  </p>
+                </div>
+              </div>
+              <div class="context-card">
+                <button class="context-card__head" onclick="this.parentElement.classList.toggle('is-open')">
+                  <span class="context-card__badge">STATUTE</span>
+                  <span class="context-card__label">Lagos State Tenancy Law 2011, s.20</span>
+                  <span class="context-card__meta">189 chars</span>
+                  <i class="fa-solid fa-chevron-right context-card__chevron"></i>
+                </button>
+                <div class="context-card__body">
+                  <p>
+                    No landlord shall take the law into his own hands by ejecting a tenant without a court order. Self-help eviction is prohibited and punishable by law.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="btn btn-secondary" onclick="document.querySelectorAll('.context-card').forEach(c => c.classList.toggle('is-open'))">
+        Toggle All Cards
+      </button>
+    </div>
+    <div class="note">
+      <strong>Note:</strong> Click any card header to expand/collapse. The first card is expanded by default. Cards show the exact legal text cited in the answer.
+    </div>
+  </div>
+
+  <!-- Stage 6: What You Can Do -->
+  <div class="stage">
+    <div class="stage-header">
+      <div class="stage-number">6</div>
+      <div class="stage-title">Action Steps - "What you can do"</div>
+    </div>
+    <p class="stage-description">Practical, actionable steps the user can take</p>
+    <div class="demo-area">
+      <div class="agent-message" style="max-width: 100%;">
+        <div class="agent-avatar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div class="agent-body">
+          <div class="answer-section">
+            <div class="answer-section__head">
+              <div class="answer-section__icon">
+                <i class="fa-solid fa-list"></i>
+              </div>
+              <div class="answer-section__title">What you can do</div>
+            </div>
+            <div class="answer-section__text">
+              <ul>
+                <li><strong>Document everything</strong> - Take photos of the lock change, save any messages from your landlord</li>
+                <li><strong>File a complaint</strong> - Visit the nearest Magistrate Court with your tenancy agreement and evidence</li>
+                <li><strong>Request a court order</strong> - Ask for an order of repossession and damages for illegal eviction</li>
+                <li><strong>Contact the police</strong> - If your belongings were removed or you were locked out by force, report it as trespass</li>
+                <li><strong>Seek mediation</strong> - The Lagos State Citizens Mediation Centre offers free dispute resolution</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stage 7: Verdict / Recommendation -->
+  <div class="stage">
+    <div class="stage-header">
+      <div class="stage-number">7</div>
+      <div class="stage-title">Verdict - Recommendation with Confidence</div>
+    </div>
+    <p class="stage-description">BeUIRecommendation shows escalation decision with confidence meter</p>
+    <div class="demo-area">
+      <div class="agent-message" style="max-width: 100%;">
+        <div class="agent-avatar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div class="agent-body">
+          <div class="verdict verdict--escalate">
+            <div class="verdict__head">
+              <div class="verdict__icon">
+                <i class="fa-solid fa-gavel"></i>
+              </div>
+              <div class="verdict__title">This likely needs a lawyer</div>
+            </div>
+            <div class="verdict__text">
+              Illegal eviction requires court intervention. A lawyer can help you file for repossession and claim damages. 
+              The process involves court filings and hearings that are difficult to navigate without legal representation.
+            </div>
+            <div class="verdict__actions">
+              <a href="https://www.nigerianbar.org.ng/find-a-lawyer" target="_blank" class="link-btn">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                Find a verified lawyer — NBA directory
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <strong>Note:</strong> If the verdict was "You can likely handle this yourself", it would show in green with a checkmark icon instead.
+    </div>
+  </div>
+
+  <!-- Stage 8: Follow-up Questions -->
+  <div class="stage">
+    <div class="stage-header">
+      <div class="stage-number">8</div>
+      <div class="stage-title">Follow-up Questions</div>
+    </div>
+    <p class="stage-description">Clickable chips for related questions the user might ask</p>
+    <div class="demo-area">
+      <div class="agent-message" style="max-width: 100%;">
+        <div class="agent-avatar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div class="agent-body">
+          <div class="followups">
+            <button class="followup-chip" onclick="alert('This would submit: What evidence do I need?')">
+              <i class="fa-solid fa-plus"></i>
+              <span>What evidence do I need?</span>
+            </button>
+            <button class="followup-chip" onclick="alert('This would submit: How long does the court process take?')">
+              <i class="fa-solid fa-plus"></i>
+              <span>How long does the court process take?</span>
+            </button>
+            <button class="followup-chip" onclick="alert('This would submit: Can I claim damages for my belongings?')">
+              <i class="fa-solid fa-plus"></i>
+              <span>Can I claim damages for my belongings?</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <strong>Note:</strong> Click any chip to see what would happen. In the real app, this would submit the question and start a new pipeline cycle.
+    </div>
+  </div>
+
+  <!-- Stage 9: Meta Row -->
+  <div class="stage">
+    <div class="stage-header">
+      <div class="stage-number">9</div>
+      <div class="stage-title">Meta Row - Actions & Timestamp</div>
+    </div>
+    <p class="stage-description">Copy, feedback, and timestamp</p>
+    <div class="demo-area">
+      <div class="agent-message" style="max-width: 100%;">
+        <div class="agent-avatar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div class="agent-body">
+          <div class="msg__meta">
+            <span>Legal information, not legal advice · 2:34 PM</span>
+            <div class="msg-actions">
+              <button class="msg-action-btn" title="Copy" onclick="alert('Copied to clipboard!')">
+                <i class="fa-regular fa-copy"></i>
+              </button>
+              <button class="msg-action-btn" title="Helpful" onclick="this.style.color='var(--color-accent)'">
+                <i class="fa-regular fa-thumbs-up"></i>
+              </button>
+              <button class="msg-action-btn" title="Not helpful" onclick="this.style.color='var(--color-danger)'">
+                <i class="fa-regular fa-thumbs-down"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Complete Pipeline -->
+  <div class="stage" style="border: 2px solid var(--color-accent-border);">
+    <div class="stage-header">
+      <div class="stage-number" style="background: var(--color-accent);">✓</div>
+      <div class="stage-title">Complete Pipeline - All Stages Together</div>
+    </div>
+    <p class="stage-description">This is what the full response looks like when all stages complete</p>
+    <div class="demo-area" style="flex-direction: column; align-items: stretch; gap: 16px;">
+      
+      <!-- User message -->
+      <div style="display: flex; justify-content: flex-end;">
+        <div class="user-message">
+          What are my rights if my landlord evicts me without notice in Lagos?
+        </div>
+      </div>
+
+      <!-- Agent response -->
+      <div class="agent-message" style="max-width: 100%;">
+        <div class="agent-avatar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div class="agent-body">
+          <!-- What the law says -->
+          <div class="answer-section">
+            <div class="answer-section__head">
+              <div class="answer-section__icon">
+                <i class="fa-solid fa-bolt"></i>
+              </div>
+              <div class="answer-section__title">What the law says</div>
+            </div>
+            <div class="answer-section__text">
+              <p>
+                Under the <strong>Lagos State Tenancy Law 2011</strong>, your landlord <strong>cannot evict you without proper notice</strong>. 
+                Section 13 requires a minimum of <strong>7 days notice</strong> for monthly tenants and <strong>6 months notice</strong> for yearly tenants.
+              </p>
+              <p>
+                Furthermore, Section 20 prohibits <strong>self-help eviction</strong> (such as changing locks or removing your belongings). 
+                Only a court order can authorize eviction.
+              </p>
+            </div>
+            <div class="context-list">
+              <div class="context-card">
+                <button class="context-card__head" onclick="this.parentElement.classList.toggle('is-open')">
+                  <span class="context-card__badge">STATUTE</span>
+                  <span class="context-card__label">Lagos State Tenancy Law 2011, s.13</span>
+                  <span class="context-card__meta">245 chars</span>
+                  <i class="fa-solid fa-chevron-right context-card__chevron"></i>
+                </button>
+                <div class="context-card__body">
+                  <p>
+                    A landlord shall not evict a tenant without giving proper notice to quit. For monthly tenancies, the notice period shall be seven days. For yearly tenancies, the notice period shall be six months.
+                  </p>
+                </div>
+              </div>
+              <div class="context-card">
+                <button class="context-card__head" onclick="this.parentElement.classList.toggle('is-open')">
+                  <span class="context-card__badge">STATUTE</span>
+                  <span class="context-card__label">Lagos State Tenancy Law 2011, s.20</span>
+                  <span class="context-card__meta">189 chars</span>
+                  <i class="fa-solid fa-chevron-right context-card__chevron"></i>
+                </button>
+                <div class="context-card__body">
+                  <p>
+                    No landlord shall take the law into his own hands by ejecting a tenant without a court order. Self-help eviction is prohibited and punishable by law.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- What you can do -->
+          <div class="answer-section">
+            <div class="answer-section__head">
+              <div class="answer-section__icon">
+                <i class="fa-solid fa-list"></i>
+              </div>
+              <div class="answer-section__title">What you can do</div>
+            </div>
+            <div class="answer-section__text">
+              <ul>
+                <li><strong>Document everything</strong> - Take photos of the lock change, save any messages from your landlord</li>
+                <li><strong>File a complaint</strong> - Visit the nearest Magistrate Court with your tenancy agreement and evidence</li>
+                <li><strong>Request a court order</strong> - Ask for an order of repossession and damages for illegal eviction</li>
+                <li><strong>Contact the police</strong> - If your belongings were removed or you were locked out by force, report it as trespass</li>
+                <li><strong>Seek mediation</strong> - The Lagos State Citizens Mediation Centre offers free dispute resolution</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Verdict -->
+          <div class="verdict verdict--escalate">
+            <div class="verdict__head">
+              <div class="verdict__icon">
+                <i class="fa-solid fa-gavel"></i>
+              </div>
+              <div class="verdict__title">This likely needs a lawyer</div>
+            </div>
+            <div class="verdict__text">
+              Illegal eviction requires court intervention. A lawyer can help you file for repossession and claim damages. 
+              The process involves court filings and hearings that are difficult to navigate without legal representation.
+            </div>
+            <div class="verdict__actions">
+              <a href="https://www.nigerianbar.org.ng/find-a-lawyer" target="_blank" class="link-btn">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                Find a verified lawyer — NBA directory
+              </a>
+            </div>
+          </div>
+
+          <!-- Follow-ups -->
+          <div class="followups">
+            <button class="followup-chip">
+              <i class="fa-solid fa-plus"></i>
+              <span>What evidence do I need?</span>
+            </button>
+            <button class="followup-chip">
+              <i class="fa-solid fa-plus"></i>
+              <span>How long does the court process take?</span>
+            </button>
+            <button class="followup-chip">
+              <i class="fa-solid fa-plus"></i>
+              <span>Can I claim damages for my belongings?</span>
+            </button>
+          </div>
+
+          <!-- Meta -->
+          <div class="msg__meta">
+            <span>Legal information, not legal advice · 2:34 PM</span>
+            <div class="msg-actions">
+              <button class="msg-action-btn" title="Copy">
+                <i class="fa-regular fa-copy"></i>
+              </button>
+              <button class="msg-action-btn" title="Helpful">
+                <i class="fa-regular fa-thumbs-up"></i>
+              </button>
+              <button class="msg-action-btn" title="Not helpful">
+                <i class="fa-regular fa-thumbs-down"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="stage" style="background: var(--color-accent-soft); border-color: var(--color-accent-border);">
+    <div class="stage-header" style="border-bottom-color: var(--color-accent-border);">
+      <div class="stage-number">i</div>
+      <div class="stage-title">Pipeline Summary</div>
+    </div>
+    <div style="font-size: 14px; line-height: 1.8;">
+      <p><strong>1. User Input</strong> - User submits question</p>
+      <p><strong>2. Analyzing</strong> - BeUILoadingState shows during API call (backend processes: classify → retrieve → plan → draft)</p>
+      <p><strong>3. Thinking</strong> - LoadingState shows "Thinking" while frontend processes response (only for legal questions)</p>
+      <p><strong>4. Streaming</strong> - Answer streams in with cursor animation (~240 chars/sec)</p>
+      <p><strong>5. Context Cards</strong> - Expandable cards show cited legal provisions</p>
+      <p><strong>6. Action Steps</strong> - Practical steps the user can take</p>
+      <p><strong>7. Verdict</strong> - Recommendation with escalation decision</p>
+      <p><strong>8. Follow-ups</strong> - Clickable chips for related questions</p>
+      <p><strong>9. Meta Row</strong> - Copy, feedback, timestamp</p>
+    </div>
+    <div class="note" style="margin-top: 16px;">
+      <strong>Total pipeline time:</strong> ~3-8 seconds depending on question complexity<br>
+      <strong>Loading state visible:</strong> ~2-5 seconds (stages 2-3)<br>
+      <strong>Streaming time:</strong> ~1-3 seconds (stage 4)<br>
+      <strong>Remaining stages:</strong> Instant (stages 5-9)
+    </div>
+  </div>
+</div>
+
+<script>
+  // Add some interactivity
+  console.log('[Pipeline Demo] All stages loaded');
+  
+  // Animate the loading states
+  document.querySelectorAll('.beui-loading-timer').forEach((timer, index) => {
+    let seconds = index === 0 ? 0.5 : 2.3;
+    setInterval(() => {
+      seconds += 0.1;
+      timer.textContent = seconds.toFixed(1) + 's';
+    }, 100);
+  });
+</script>
+</body>
+</html>
