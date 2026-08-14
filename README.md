@@ -24,7 +24,7 @@ AI-powered legal-information platform for Nigeria. This repo currently contains 
 
 ## The AI pipeline (`POST /api/chat`)
 
-No vector database. The corpus is small and cleanly categorized (practice area + jurisdiction), and a modern LLM's context window comfortably holds every ingested provision for a category, so retrieval is a plain Firestore filter, not semantic search. Revisit if the corpus grows into hundreds of acts across many states.
+No vector database. Retrieval is a Firestore filter by practice area + jurisdiction, narrowed further by a keyword pre-filter (extracted during classification) once a category has too many sections to hand an LLM in one go — see `server/legalCorpus.js`. Revisit with real vector search if a single practice area's corpus grows past what keyword filtering can reasonably narrow down.
 
 1. **Classify** — Groq (`GROQ_MODEL_CLASSIFY`, default `llama-3.1-8b-instant`) returns `{ practice_area, jurisdiction, urgency, summary }` as structured JSON.
 2. **Retrieve** — `server/legalCorpus.js` queries Firestore's `legal_provisions` collection for that practice area, keeping provisions that match the jurisdiction or are Federal/unscoped.
@@ -102,5 +102,5 @@ Or set it up manually as a **Web Service**:
 
 - Front-end: Phase 1 UI complete per the product PRD, currently running on client-side mock data.
 - Backend: `POST /api/chat` pipeline (classify -> retrieve -> draft) is built, and the Groq API call itself is confirmed working end-to-end with a real generated answer (tested against temporary sample data, since cleaned up). The real corpus is still empty (no legal sources ingested into Firestore yet) — see the Legal sources note below.
-- Legal sources: six primary documents downloaded and text-extracted into `legal_sources/` (Constitution x2, Labour Act, ACJA 2015, National Industrial Court Act, Lagos Tenancy Law, Lagos Small Claims Practice Direction) — see `legal_sources/SOURCES.md` for provenance. **Not yet ingested into Firestore** — the Constitution and ACJA both have trailing Schedules whose numbering collides with real section numbers (see SOURCES.md), which needs a `--stop-at` trim before ingesting.
+- Legal sources: **four practice areas fully ingested into Firestore** — 658 real statute sections across Lagos Tenancy Law 2011 (tenancy, 47), Labour Act + National Industrial Court Act (employment, 103), ACJA 2015 (criminal_rights, 491), and the Lagos Small Claims Practice Direction 2023 (contract, 17). The Constitution is downloaded and extraction-checked but not yet ingested (see `legal_sources/SOURCES.md`). ACJA's size (491 sections) required adding a keyword pre-filter in `server/legalCorpus.js` so retrieval finds the sections that actually answer a question instead of an arbitrary early slice — verified directly against a real detention-time-limit question.
 - Not yet done: switching `public/app.js` from its mock classifier to calling `POST /api/chat`; ingesting the actual source documents; Phase 2 (lawyer suggestion) and Phase 3 (marketplace) per the PRD.

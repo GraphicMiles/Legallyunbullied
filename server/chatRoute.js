@@ -31,8 +31,10 @@ Respond with ONLY a JSON object, no prose, no markdown code fences.
 Valid values for "practice_area": ${JSON.stringify(PRACTICE_AREAS)}
 Valid values for "urgency": ["Low", "Medium", "High", "Critical"]
 
+"keywords": 3-6 specific legal/factual terms likely to appear verbatim in the relevant statute text (e.g. procedural terms, timeframes, named concepts) — used to narrow down a large Act to the sections that actually matter for this question. Not generic words.
+
 Example of the exact shape to return (use realistic values for the actual question, don't copy this example's content):
-{"practice_area": "tenancy", "jurisdiction": "Lagos State", "urgency": "High", "summary": "A tenant is disputing an eviction attempt made without proper notice."}`;
+{"practice_area": "tenancy", "jurisdiction": "Lagos State", "urgency": "High", "summary": "A tenant is disputing an eviction attempt made without proper notice.", "keywords": ["notice", "quit", "possession", "monthly tenant"]}`;
 
 const DRAFT_SYSTEM_PROMPT = `You are Legally Unbullied, a Nigerian legal-information assistant. You are not a lawyer and must not give legal advice — only plain-language information about what the law says and what someone can practically do next.
 
@@ -66,7 +68,7 @@ router.post("/api/chat", async (req, res) => {
     const classifyCompletion = await client.chat.completions.create({
       model: CLASSIFY_MODEL,
       temperature: 0,
-      max_tokens: 300,
+      max_tokens: 400,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: CLASSIFY_SYSTEM_PROMPT },
@@ -87,6 +89,7 @@ router.post("/api/chat", async (req, res) => {
     provisions = await findProvisions({
       practiceArea: classification.practice_area,
       jurisdiction: classification.jurisdiction,
+      keywords: classification.keywords,
     });
   } catch (err) {
     console.error("[/api/chat] Firestore lookup failed:", err.message);
