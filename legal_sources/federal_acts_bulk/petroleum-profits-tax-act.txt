@@ -1,0 +1,148 @@
+1. Short title
+This Act may be cited as the Petroleum Profits Tax Act.
+2. Interpretation
+In this Act, unless the context otherwise requires-
+"accounting period" in relation to a company engaged 111 petroleum operations,
+means-
+(a) a period of one year commencing on I January and ending on 31 December of
+the same year; or
+(b) any shorter period commencing on the day the company first makes a sale or
+bulk disposal of chargeable oil under a programme of continuous production
+and sales, domestic, export or both, and ending on 31 December of the same
+year; or
+(c) any period of less than a year being a period commencing on 1 January of any
+year and ending on the date in the same year when the company ceases to be
+engaged in petroleum operations,
+and in the event of any dispute with respect to the date of the first sale of chargeable oil
+above or with respect to the date on which the company ceases to be engaged in petro-
+leum operations, the Minister of Petroleum Resources shall determine the same and no
+appeal shall lie therefrorn:
+"adjusted profit" means adjusted profit for the purpose of section 9 of this Act;
+"assessable profits" means assessable profits for the purpose of section 9 of this Act;
+"assessable tax" means assessable tax ascertained under section 21 of this Act;
+"Board" means the Federal Board of Inland Revenue established and constituted in
+accordance with section 1 of the Companies Income Tax Act;
+[Cap. C21.]
+"casinghead petroleum spirit" means any liquid hydrocarbons obtained in Nigeria
+from natural gas by separation or by any chemical or physical process but before the
+same has been refined or otherwise treated;
+"chargeable natural gas" in relation to a company engaged in petroleum operations
+means natural gas actually delivered by such company to the Nigerian National Petro-
+leum Corporation under a Gas Sales Contract but does not include natural gas taken by or
+on behalf of the Government of the Federation in pursuance of this Act;
+"chargeable profits" means chargeable profits for the purpose of section 9 of this
+Act;
+"chargeable tax" means chargeable tax ascertained under section 22 of this Act and
+imposed under this Act;
+"company" means any body corporate incorporated under any law in force in Nigeria
+or elsewhere;
+"crude oil" means any oil (other than oil extracted by destructive distillation from
+coal, bituminous shales or other stratified deposits) won in Nigeria either in its natural
+
+-- 3 of 42 --
+
+state or after the extraction of water, sand or other foreign substance therefrom but before
+any such oil has been refined or otherwise treated;
+"disposal" and "disposed or', in relation to chargeable oil owned by a company en-
+gaged in petroleum operations, mean or connote respectively-
+(a) delivery, without sale, of chargeable oil to; and
+(b) chargeable oil delivered, without sale, to a refinery or to an adjacent storage
+tank for refining by the company;
+"G-Factor" means gas production cost adjustment factor;
+"High Court" means a High Court in Nigeria within whose jurisdiction-
+(a) in relation to any offence under this Act, the place is situated where such of-
+fence is, for the purposes of this Act, deemed to have occurred;
+(b) in relation to any suit for tax or appeal against an assessment of tax, the place
+is situated where the return under section 33 of this Act was submitted or
+where the assessment of the tax was made as the case may be;
+(c) in relation to any direction under section 32 (2) of this Act, the place is situated
+from which the direction was issued; and
+(d) in relation to any claim or other matter which is subject to appeal in like man-
+ner as an assessment, or to which the provisions of section 38 of this Act apply
+with any modifications, the place is situated from which the claim or other
+matter was refused by the Board;
+"intangible drilling costs" means all expenditure for labour, fuel, repairs, mainte-
+nance, hauling, and supplies and materials (not being supplies and materials for well ce-
+ment, casing or other well fixtures) which are for or incidental to drilling, cleaning, deep-
+ening or completing wells or the preparation thereof incurred in respect of-
+(a) determination of well locations, geological studies and topographical and geo-
+graphical surveys preparatory to drilling;
+(b) drilling, shooting, testing and cleaning wells;
+(c) cleaning, draining and levelling land, road-building and the laying of founda-
+tions;
+(d) erection of rigs and tankage assembly and installation of pipelines and other
+plant and equipment required in the preparation or drilling of wells producing
+petroleum;
+"liquified natural gas" means natural gas in its liquid state at approximately atmos-
+pheric pressure;
+"loss" means a loss ascertained in like manner as an adjusted profit;
+"Minister" means the Minister charged with responsibility for matters relating to
+taxes on incomes and profits;
+"MMcP' means one million cubic feet;
+"natural gas" means gas obtained in Nigeria from boreholes and wells and consisting
+primarily of hydrocarbons;
+"Nigeria" includes the submarine areas beneath the territorial waters of Nigeria and
+submarine areas beneath any other waters which are or at any time shall in respect of
+mines and minerals become subject to the legislative competence of the National Assem-
+bly;
+"non-productive rents" means and includes the amount of any rent as to which there
+is provision for its deduction from the amount of any royalty under a petroleum pros-
+pecting license or oil mining lease to the extent that such rent is not so deducted;
+"oil mining lease" means a lease granted to a company, under the Minerals and
+Mining Act, for the purpose of winning petroleum or any assignment of such lease;
+[Cap. MI2.]
+"oil prospecting licence" means a licence granted to a company, under the Minerals
+and Mining Act, for the purpose of winning petroleum, or any assignment of such li-
+cence;
+
+-- 4 of 42 --
+
+"person" includes a company and any unincorporated body of persons;
+"petroleum" means any mineral oil or relative hydrocarbon and natural gas existing
+in its natural condition in Nigeria but does not include liquified natural gas, coal, bitumi-
+nous shales or other stratified deposits from which oil can be extracted by destructive
+distillation;
+"petroleum operations" means the winning or obtaining and transportation of pe-
+troleum or chargeable oil in Nigeria by or on behalf of a company for its own account by
+any drilling, mining, extracting or other like operations or process, not including refining
+at a refinery, in the course of a business carried on by the company engaged in such op-
+erations, and all operations incidental thereto and any sale of or any disposal of charge-
+able oil by or on behalf of the company;
+"profits" means profits for the purpose of section 9 of this Act;
+"resident in Nigeria" in relation to a company, means a company the control and
+management of the business of which are exercised in Nigeria;
+"royalties" means and includes-
+(a) 	the amount of any rent as to which there is provision for its deduction from the
+amount of any royalties under an oil prospecting licence or oil mining lease to
+the extent that such rent is so deducted; and
+
+-- 5 of 42 --
+
+(b) the amount of any royalties payable under any such licence or lease less any
+such rent deducted from those royalties;
+"tax" means chargeable tax.
+PARTII
+Administration
+3. Powers and duties of the Board
+(1) Subject to the provisions of this Act-
+(a) the due administration of this Act and the tax shall be under the care and man-
+agement of the Board which may do all such acts as may be deemed necessary
+and expedient for the assessment and collection of the tax and shall account for
+all amounts so collected in a manner to be prescribed by the Minister;
+(b) whenever the Board shall consider it necessary with respect to any tax due, the
+Board may acquire, hold and dispose of any property taken as security for or in
+satisfaction of any tax or any judgment debt due in respect of any tax and shall
+account for any such property and the proceeds of sale thereof in a manner to
+be prescribed as aforesaid;
+(c) the Board may sue and be sued in its official name and, subject to any express
+provisions under any subsidiary legislation or otherwise, the Board may
+authorise any person to accept service of any document to be sent, served upon
+or delivered to the Board and to represent the Board in any proceedings;
+(d) subject to such conditions as the Board may specify the Board may by notice
+in the Federal Gazette direct that any information, return or documents re-
+quired to be supplied to such other person whether within or outside Nigeria as
+the Board may direct;
+(e) the Board may by notice in the Federal Gazette or in writing authorise any
+person within or without Nigeria to-
+(i) perform or exercise, on behalf of the Board, any power or duty con-
+ferred upon the Board other than the powers or duties specified in the

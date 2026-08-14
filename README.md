@@ -10,7 +10,9 @@ AI-powered legal-information platform for Nigeria. This repo currently contains 
 - `server/firebaseAdmin.js` — Firebase Admin SDK init (server-side only, from `FIREBASE_SERVICE_ACCOUNT_JSON`).
 - `server/groq.js` — Groq client (OpenAI-SDK compatible, open-weight models on fast inference hardware), configurable model IDs.
 - `server/chatRoute.js` — the pipeline itself: Groq classifies the question -> Firestore returns matching provisions -> Groq drafts the answer, instructed to cite only what it was given.
-- `scripts/pdf-to-text.js` / `scripts/ingest.js` — the ingestion pipeline (see below).
+- `scripts/pdf-to-text.js` / `scripts/ingest.js` — one-Act-at-a-time ingestion pipeline (see below).
+- `scripts/bulk-fetch-clean.js` / `scripts/lib/textClean.js` / `scripts/classify-acts.js` / `scripts/bulk-ingest-firestore.js` — the bulk pipeline used to index the ~550-Act PLAC "2004 Laws of Nigeria" federal compendium (see "Bulk-indexing the federal statute book" below).
+- `server/practiceAreas.js` — the shared practice-area taxonomy (19 categories) used by both the live classifier prompt and the ingestion scripts, so they can never drift out of sync.
 - `public/index.html` — app shell: sidebar (conversation history, plan status, account) + main chat area, mobile-responsive (sidebar collapses to an off-canvas drawer under 900px).
 - `public/app.js` — loaded as an ES module. Conversation store (persisted to `localStorage`), calls the real `POST /api/chat` endpoint, and renders the structured 3-part answer format from the PRD:
   1. **What the law says** (streamed in live, with expandable sourced context cards)
@@ -35,8 +37,9 @@ No vector database. Retrieval is a Firestore filter by practice area + jurisdict
 
 ## Ingesting legal sources
 
-`legal_sources/` holds downloaded source documents (PDFs + extracted text), organized by category, with full provenance in `legal_sources/SOURCES.md` (title, official source URL, retrieval date, extraction notes). Six documents are in there now — Constitution (original + updated through the 5th Alteration), Labour Act, ACJA 2015, National Industrial Court Act, Lagos Tenancy Law, and the Lagos Small Claims Practice Direction — covering the sources behind the four practice areas already wired into the classifier. None of it is in Firestore yet.
+`legal_sources/` holds downloaded source documents, organized by category, with full provenance in `legal_sources/SOURCES.md`. There are two ingestion paths:
 
+**One Act at a time** (for a hand-picked, hand-reviewed source):
 1. Extract text from a source PDF:
    ```bash
    npm run pdf-to-text -- --file sources/tenancy-law-2011.pdf
@@ -52,9 +55,22 @@ No vector database. Retrieval is a Firestore filter by practice area + jurisdict
      --source-url "https://..." \
      --dry-run   # drop this flag once the parsed section preview looks right
    ```
-   `practice-area` must currently be one of `tenancy`, `employment`, `criminal_rights`, `contract`, `general` — kept in sync with the classifier's categories in `server/chatRoute.js`. Adding a new practice area means updating that list too.
+   `practice-area` must be one of the 19 keys in `server/practiceAreas.js` — kept in sync with the classifier's categories in `server/chatRoute.js` automatically (both import the same module).
 
 Section splitting is a regex tuned to common Nigerian statute numbering (`13.—(1) ...`) — tune `SECTION_HEADER` in `scripts/ingest.js` per document if a source uses different formatting.
+
+## Bulk-indexing the federal statute book
+
+To go beyond a handful of hand-picked Acts, `scripts/bulk-fetch-clean.js` + `scripts/bulk-ingest-firestore.js` automate the whole PLAC "2004 Laws of Nigeria" compendium (~550 federal Acts, both PDF and HTML sources):
+
+1. `node scripts/classify-acts.js` — one-time bulk LLM classification of every Act *title* (not full text) into a `server/practiceAreas.js` category. Cheap relative to per-question classification since it's just titles, batched. Output: `legal_sources/manifest/placng_classified.json`.
+2. `node scripts/bulk-fetch-clean.js [--start N] [--limit N]` — downloads every Act (PDF or `print.php` HTML), converts to text, and runs it through `scripts/lib/textClean.js`'s generic auto-cleaner, which:
+   - Splits detected section-number headers into "runs" (a restart back down to 1/2 after climbing much higher marks a new run) to distinguish a repeated Arrangement-of-Sections ToC from the real body, using content density (ToC entries are short titles; real sections have substantive prose) to decide which run is which — this works across both PDF- and HTML-sourced text without depending on a specific markup convention.
+   - Additionally cuts at a bracketed `[Commencement]` clause when present (the conventional marker between a ToC and the real numbered sections in Nigerian statutes) and at explicit trailing markers (`SCHEDULE`, `ORDER <roman numeral>`, `APPENDIX`, `SUBSIDIARY LEGISLATION`, etc.) so Rules/Schedules that re-number from 1 don't collide with real section numbers.
+   - Writes one cleaned `.txt` per Act to `legal_sources/federal_acts_bulk/` plus per-doc stats (section count, whether numbering came out monotonic, first/last section number) into `legal_sources/manifest/staged.json`, so results can be spot-checked before anything touches Firestore. Raw downloads are cached under `legal_sources/federal_acts_bulk/_raw/` (git-ignored — regeneratable, not committed) so re-runs and `--reclean` (re-run the cleaner against cached raw files with zero network calls) are fast.
+3. `node scripts/bulk-ingest-firestore.js [--start N] [--limit N] [--dry-run]` — chunks each staged Act by section (same chunker as `scripts/ingest.js`) and batch-writes to Firestore, tagged `jurisdiction: "Federal"` and `bulk_source: "placng_2004_compendium"`. Resumable via `legal_sources/manifest/ingest_progress.json`.
+
+This is a fully automated, best-effort pipeline across ~550 structurally-inconsistent government documents from different eras/scanners — not the same level of individual hand-review given to the first 5 flagship Acts (Lagos Tenancy Law, Labour Act, ACJA 2015, National Industrial Court Act, Lagos Small Claims Practice Direction). Spot-checked quality: of 542 unique Acts successfully fetched (3 PDFs had no extractable text layer, likely scanned images needing OCR — logged, not ingested), roughly 84% produced a perfectly clean, monotonically-numbered section sequence starting at section 1; the rest still captured real section content but occasionally missed the Act's first section or two, or had a minor numbering hiccup, due to one-off formatting quirks in specific source documents. See `legal_sources/SOURCES.md` for exact current counts.
 
 ## Design system
 
@@ -101,7 +117,8 @@ Or set it up manually as a **Web Service**:
 ## Status
 
 - Front-end: Phase 1 UI complete per the product PRD, wired to the real `/api/chat` pipeline (no more mock data). Streaming pacing tuned for real answer lengths, with continuous auto-scroll during generation. Per-chat clear/delete and Firebase Auth (email/password + Google) are both live.
-- Backend: `POST /api/chat` pipeline (classify -> retrieve -> draft) verified working end-to-end against real Firestore data and Groq — real questions get real, correctly-cited answers.
-- Legal sources: **four practice areas fully ingested into Firestore** — 658 real statute sections across Lagos Tenancy Law 2011 (tenancy, 47), Labour Act + National Industrial Court Act (employment, 103), ACJA 2015 (criminal_rights, 491), and the Lagos Small Claims Practice Direction 2023 (contract, 17). The Constitution is downloaded and extraction-checked but not yet ingested (see `legal_sources/SOURCES.md`). ACJA's size (491 sections) required adding a keyword pre-filter in `server/legalCorpus.js` so retrieval finds the sections that actually answer a question instead of an arbitrary early slice — verified directly against a real detention-time-limit question.
+- Backend: `POST /api/chat` pipeline (classify -> retrieve -> draft) verified working end-to-end against real Firestore data and Groq — real questions get real, correctly-cited answers, now across a much broader practice-area taxonomy (19 categories, see `server/practiceAreas.js`) than the original 5.
+- Legal sources: **8,150 real statute sections live in Firestore right now** (verified via a Firestore `count()` aggregation query), spanning the original 5 hand-reviewed flagship Acts (Lagos Tenancy Law, Labour Act + National Industrial Court Act, ACJA 2015, Lagos Small Claims Practice Direction — 658 sections), the Constitution (5th-Alteration-updated text, 315 sections, hand-verified section boundaries), and a first tranche of ~273 Acts (~7,177 sections) from the bulk PLAC "2004 Laws of Nigeria" federal compendium (~550 Acts total — see "Bulk-indexing the federal statute book" above). **The remaining ~270 bulk Acts are fully fetched, cleaned, and staged (`legal_sources/manifest/staged.json`) but not yet written to Firestore** — ingestion is currently blocked by the Firestore project's daily Spark (free-tier) write/read quota, which this session's heavy indexing work (delete + re-ingest of ~12,000 documents, plus verification queries) exhausted; confirmed via a raw REST call returning `429 RESOURCE_EXHAUSTED` (the Admin SDK was silently hanging instead of surfacing this, now fixed with an explicit timeout in `scripts/bulk-ingest-firestore.js` and `scripts/ingest.js`). Resuming just requires re-running `node scripts/bulk-ingest-firestore.js` once the daily quota resets, or upgrading the Firebase project to the Blaze (pay-as-you-go) plan to remove the cap entirely (usage at this scale should still cost close to nothing under Blaze's own free monthly allowance).
+- Known content gaps: the Cybercrimes Act 2015 is downloaded, cleaned, and ready (`legal_sources/federal_acts/cybercrimes-act-2015-cleaned.txt`) but not yet ingested (blocked by the same quota issue above) — tagged for the `criminal_offences` practice area once it goes in.
 - Auth: sign-in/sign-up/Google/logout all work against the real Firebase project. Not yet done: syncing conversation history to Firestore per-user (it's still `localStorage`-only, so it doesn't follow a signed-in user across devices).
-- Not yet done: ingesting the Constitution (`general` practice area); Phase 2 (lawyer suggestion) and Phase 3 (marketplace) per the PRD.
+- Not yet done: finishing the bulk ingestion above; syncing conversation history to Firestore; Phase 2 (lawyer suggestion) and Phase 3 (marketplace) per the PRD.

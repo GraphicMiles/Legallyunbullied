@@ -28,6 +28,11 @@ function getFirestore() {
       credential: admin.credential.cert(serviceAccount),
     });
     db = admin.firestore();
+    // Some sandboxed/restricted network environments silently hang on the
+    // long-lived gRPC (HTTP/2) streams the Admin SDK uses by default for
+    // writes specifically (reads worked fine, writes hung indefinitely) —
+    // forcing plain REST transport avoids that class of hang entirely.
+    db.settings({ preferRest: true });
     return db;
   } catch (err) {
     console.error("[firebaseAdmin] Failed to initialize:", err.message);

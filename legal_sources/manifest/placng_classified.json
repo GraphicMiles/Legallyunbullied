@@ -1,0 +1,2732 @@
+[
+  {
+    "i": 0,
+    "name": "ABUBAKAR TAFAWA BALEWA UNIVERSITY, BAUCHI ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 1,
+    "name": "ACTS AUTHENTICATION ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 2,
+    "name": "ADMINISTRATION OF JUSTICE COMMISSION ACT",
+    "practice_area": "government_administration"
+  },
+  {
+    "i": 3,
+    "name": "ADMINISTRATIVE STAFF COLLEGE OF NIGERIA ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 4,
+    "name": "ADMIRALTY JURISDICTION ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 5,
+    "name": "ADVANCE FEE FRAUD AND OTHER FRAUD RELATED OFFENCES ACT",
+    "practice_area": "criminal_offences"
+  },
+  {
+    "i": 6,
+    "name": "ADVERTISING PRACTITIONER’S (REGISTRATION, ETC.) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 7,
+    "name": "ADVISORY COUNCIL ON RELIGIOUS AFFAIRS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 8,
+    "name": "AFRICAN CHARTER ON HUMAN AND PEOPLES' RIGHTS (RATIFICATION AND ENFORCEMENT) ACT",
+    "practice_area": "constitutional_rights"
+  },
+  {
+    "i": 9,
+    "name": "AGRICULTURAL AND RURAL MANAGEMENT TRAINING INSTITUTE ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 10,
+    "name": "AGRICULTURAL CREDIT GUARANTEE SCHEME FUND ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 11,
+    "name": "AGRICULTURAL RESEARCH COUNCIL OF NIGERIA ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 12,
+    "name": "AGRICULTURE (CONTROL OF IMPORTATION) ACT",
+    "practice_area": "land_property"
+  },
+  {
+    "i": 13,
+    "name": "AHMADU BELLO UNIVERSITY (TRANSITIONAL PROVISIONS) ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 14,
+    "name": "ALLOCATION OF REVENUE (ABOLITION OF DICHOTOMY IN THE APPLICATION OF THE PRINCIPLE OF DERIVATION)",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 15,
+    "name": "ALLOCATION OF REVENUE (FEDERATION ACCOUNT, ETC.) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 16,
+    "name": "ANATOMY ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 17,
+    "name": "ANIMAL DISEASES (CONTROL) ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 18,
+    "name": "ARBITRATION AND CONCILIATION ACT",
+    "practice_area": "contract"
+  },
+  {
+    "i": 19,
+    "name": "ARCHITECTS (REGISTRATION, ETC.) ACT",
+    "practice_area": "contract"
+  },
+  {
+    "i": 20,
+    "name": "ARMED FORCES (DISCIPLINARY PROCEEDINGS) (SPECIAL PROVISIONS) ACT",
+    "practice_area": "criminal_rights"
+  },
+  {
+    "i": 21,
+    "name": "ARMED FORCES ACT",
+    "practice_area": "criminal_rights"
+  },
+  {
+    "i": 22,
+    "name": "ARMED FORCES COMFORT FUND ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 23,
+    "name": "ARMED FORCES PENSION ACT",
+    "practice_area": "employment_labour_safety"
+  },
+  {
+    "i": 24,
+    "name": "ARMY COLOUR (PROHIBITION OF USE) ACT",
+    "practice_area": "criminal_offences"
+  },
+  {
+    "i": 25,
+    "name": "ASSOCIATED GAS RE-INJECTION ACT",
+    "practice_area": "land_property"
+  },
+  {
+    "i": 26,
+    "name": "ASSOCIATION OF NATIONAL ACCOUNTANTS OF NIGERIA ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 27,
+    "name": "BANK EMPLOYEES, ETC. (DECLARATION OF ASSETS) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 28,
+    "name": "BANKS (MOTOR VEHICLE LOANS) (MISCELLANEOUS PROVISIONS) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 29,
+    "name": "BANKS AND OTHER FINANCIAL INSTITUTIONS ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 30,
+    "name": "BAYERO UNIVERSITY ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 31,
+    "name": "BEES (IMPORT CONTROL AND MANAGEMENT) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 32,
+    "name": "BIGHT OF BONNY ACT",
+    "practice_area": "land_property"
+  },
+  {
+    "i": 33,
+    "name": "BILLS OF EXCHANGE ACT",
+    "practice_area": "contract"
+  },
+  {
+    "i": 34,
+    "name": "BIRTHS, DEATHS, ETC. (COMPULSORY REGISTRATION) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 35,
+    "name": "BORDER COMMUNITIES DEVELOPMENT AGENCY (ESTABLISHMENT, ETC.) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 36,
+    "name": "BORSTAL INSTITUTIONS AND REMAND CENTRES ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 37,
+    "name": "BOY SCOUTS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 38,
+    "name": "BUILDERS (REGISTRATION, ETC.) ACT",
+    "practice_area": "contract"
+  },
+  {
+    "i": 39,
+    "name": "BUILDING LINES (FEDERAL TRUNK ROADS) ACT",
+    "practice_area": "land_property"
+  },
+  {
+    "i": 40,
+    "name": "CAPITAL GAINS TAX ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 41,
+    "name": "CARRIAGE OF GOODS BY SEA ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 42,
+    "name": "CASINO TAXATION ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 43,
+    "name": "CENTRAL BANK OF NIGERIA (ESTABLISHMENT) ACT",
+    "practice_area": "government_administration"
+  },
+  {
+    "i": 44,
+    "name": "CENTRE FOR AUTOMOTIVE DESIGN AND DEVELOPMENT ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 45,
+    "name": "CENTRE FOR BLACK AND AFRICAN ARTS AND CIVILISATION ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 46,
+    "name": "CERTAIN POLITICAL, PUBLIC AND JUDICIAL OFFICE HOLDERS _SALARIES AND ALLOWANCES, ETC",
+    "practice_area": "general"
+  },
+  {
+    "i": 47,
+    "name": "CHARTERED INSTITUTE OF ADMINISTRATION ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 48,
+    "name": "CHARTERED INSTITUTE OF BANKERS OF NIGERIA ACT",
+    "practice_area": "company_business"
+  },
+  {
+    "i": 49,
+    "name": "CHARTERED INSTITUTE OF PROFESSIONAL PRINTERS OF NIGERIA ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 50,
+    "name": "CHARTERED INSTITUTE OF STOCKBROKERS ACT",
+    "practice_area": "company_business"
+  },
+  {
+    "i": 51,
+    "name": "CHARTERED INSTITUTE OF TAXATION OF NIGERIA ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 52,
+    "name": "CHARTERED INSURANCE INSTITUTE OF NIGERIA ACT",
+    "practice_area": "company_business"
+  },
+  {
+    "i": 53,
+    "name": "CHILD'S RIGHT ACT",
+    "practice_area": "family_law"
+  },
+  {
+    "i": 54,
+    "name": "CITIZENSHIP AND LEADERSHIP TRAINING CENTRE ACT",
+    "practice_area": "immigration_citizenship"
+  },
+  {
+    "i": 55,
+    "name": "CIVIL AVIATION (FIRE AND SECURITY MEASURES) ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 56,
+    "name": "CIVIL AVIATION ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 57,
+    "name": "CO-OPERATIVE DEVELOPMENT ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 58,
+    "name": "COASTAL AND INLAND SHIPPING (CABOTAGE) ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 59,
+    "name": "CODE OF CONDUCT BUREAU AND TRIBUNAL ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 60,
+    "name": "COINS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 61,
+    "name": "COMMODITY BOARDS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 62,
+    "name": "COMMUNITY BANKS ACT",
+    "practice_area": "company_business"
+  },
+  {
+    "i": 63,
+    "name": "COMMUNITY HEALTH PRACTITIONERS (REGISTRATION, ETC.) ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 64,
+    "name": "COMPANIES AND ALLIED MATTERS ACT",
+    "practice_area": "company_business"
+  },
+  {
+    "i": 65,
+    "name": "COMPANIES INCOME TAX ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 66,
+    "name": "COMPULSORY, FREE UNIVERSAL BASIC EDUCATION ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 67,
+    "name": "COMPUTER PROFESSIONALS (REGISTRATION COUNCIL OF NIGERIA) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 68,
+    "name": "CONSTITUTION OF THE FEDERAL REPUBLIC OF NIGERIA (PROMULGATION) ACT",
+    "practice_area": "constitutional_rights"
+  },
+  {
+    "i": 69,
+    "name": "CONSULAR CONVENTIONS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 70,
+    "name": "CONSUMER PROTECTION COUNCIL ACT",
+    "practice_area": "consumer_rights"
+  },
+  {
+    "i": 71,
+    "name": "CONTROL OF ADVERTISEMENT (FEDERAL HIGHWAYS) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 72,
+    "name": "COPYRIGHT ACT",
+    "practice_area": "intellectual_property"
+  },
+  {
+    "i": 73,
+    "name": "CORNEAL GRAFTING ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 74,
+    "name": "CORPORATE BODIES (MEMBERS' EMOLUMENTS) ACT",
+    "practice_area": "company_business"
+  },
+  {
+    "i": 75,
+    "name": "CORRUPT PRACTICES AND OTHER RELATED OFFENCES ACT",
+    "practice_area": "criminal_offences"
+  },
+  {
+    "i": 76,
+    "name": "COUNCIL FOR THE REGULATION OF FREIGHT FORWARDING IN NIGERIA ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 77,
+    "name": "COUNCIL OF MINISTERS (EVIDENCE) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 78,
+    "name": "COUNCIL OF NIGERIAN MINING ENGINEERS AND GEOSCIENTISTS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 79,
+    "name": "COUNTERFEIT AND FAKE DRUGS AND UNWHOLESOME PROCESSED FOODS (MISCELLANEOUS PROVISIONS) ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 80,
+    "name": "COUNTERFEIT CURRENCY (SPECIAL PROVISIONS) ACT",
+    "practice_area": "criminal_offences"
+  },
+  {
+    "i": 81,
+    "name": "COURT OF APPEAL ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 82,
+    "name": "CREATION OF STATES AND BOUNDARY ADJUSTMENTS (PROCEDURE) ACT",
+    "practice_area": "government_administration"
+  },
+  {
+    "i": 83,
+    "name": "CRIMINAL CODE ACT",
+    "practice_area": "criminal_offences"
+  },
+  {
+    "i": 84,
+    "name": "CRIMINAL JUSTICE (MISCELLANEOUS PROVISIONS) ACT",
+    "practice_area": "criminal_rights"
+  },
+  {
+    "i": 85,
+    "name": "CRIMINAL JUSTICE (RELEASE FROM CUSTODY) (SPECIAL PROVISIONS) ACT",
+    "practice_area": "criminal_rights"
+  },
+  {
+    "i": 86,
+    "name": "CRIMINAL PROCEDURE (NORTHERN STATES) ACT",
+    "practice_area": "criminal_rights"
+  },
+  {
+    "i": 87,
+    "name": "CRIMINAL PROCEDURE ACT",
+    "practice_area": "criminal_rights"
+  },
+  {
+    "i": 88,
+    "name": "CURRENCY CONVERSION (FREEZING ORDERS) ACT LAWS",
+    "practice_area": "general"
+  },
+  {
+    "i": 89,
+    "name": "CURRENCY OFFENCES ACT",
+    "practice_area": "criminal_offences"
+  },
+  {
+    "i": 90,
+    "name": "CUSTOMS AND EXCISE (SPECIAL PENAL AND OTHER PROVISIONS) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 91,
+    "name": "CUSTOMS AND EXCISE MANAGEMENT (DISPOSAL OF GOODS) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 92,
+    "name": "CUSTOMS AND EXCISE MANAGEMENT ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 93,
+    "name": "CUSTOMS DUTIES (DUMPED AND SUBSIDIZED GOODS) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 94,
+    "name": "CUSTOMS, EXCISE TARIFF, ETC. (CONSOLIDATION) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 95,
+    "name": "DANGEROUS DRUGS ACT",
+    "practice_area": "criminal_offences"
+  },
+  {
+    "i": 96,
+    "name": "DEBT MANAGEMENT OFFICE (ESTABLISHMENT, ETC.) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 97,
+    "name": "DECIMAL CURRENCY ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 98,
+    "name": "DEEP OFFSHORE AND INLAND BASIN PRODUCTION SHARING CONTRACTS ACT",
+    "practice_area": "land_property"
+  },
+  {
+    "i": 99,
+    "name": "DEFENCE INDUSTRIES CORPORATION OF NIGERIA (EXCLUSION OF ARMED FORCES ARMAMENT DEPOT) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 100,
+    "name": "DEFENCE INDUSTRIES CORPORATION OF NIGERIA ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 101,
+    "name": "DENTAL TECHNOLOGISTS (REGISTRATION, ETC.) ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 102,
+    "name": "DENTAL THERAPISTS (REGISTRATION, ETC.) ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 103,
+    "name": "DESIGNATION OF ENACTMENTS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 104,
+    "name": "DIPLOMATIC IMMUNITIES AND PRIVILEGES ACT",
+    "practice_area": "immigration_citizenship"
+  },
+  {
+    "i": 105,
+    "name": "DIRECTORATE OF FOOD, ROADS AND RURAL INFRASTRUCTURES ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 106,
+    "name": "DISHONOURED CHEQUES (OFFENCES) ACT",
+    "practice_area": "consumer_rights"
+  },
+  {
+    "i": 107,
+    "name": "ECONOMIC AND FINANCIAL CRIMES COMMISSION (ESTABLISHMENT,ETC.) ACT",
+    "practice_area": "criminal_offences"
+  },
+  {
+    "i": 108,
+    "name": "EDUCATION (NATIONAL MINIMUM STANDARDS AND ESTABLISHMENT OF INSTITUTIONS) ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 109,
+    "name": "EDUCATION TAX ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 110,
+    "name": "EDUCATIONAL CORRESPONDENCE COLLEGES ACCREDITATION ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 111,
+    "name": "ELECTIONS (REGISTRATION, ETC. OF VOTERS) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 112,
+    "name": "ELECTORAL ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 113,
+    "name": "ELECTRIC POWER SECTOR REFORM ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 114,
+    "name": "ELECTRIC POWER SECTOR REFORM ACT, 2004",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 115,
+    "name": "EMPLOYEES HOUSING SCHEMES (SPECIAL PROVISIONS) ACT",
+    "practice_area": "employment_labour_safety"
+  },
+  {
+    "i": 116,
+    "name": "ENDANGERED SPECIES (CONTROL OF INTERNATIONAL TRADE AND TRAFFIC) ACT",
+    "practice_area": "environment"
+  },
+  {
+    "i": 117,
+    "name": "ENERGY COMMISSION OF NIGERIA ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 118,
+    "name": "ENGINEERS (REGISTRATION, ETC.) ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 119,
+    "name": "ENVIRONMENTAL IMPACT ASSESSMENT ACT",
+    "practice_area": "environment"
+  },
+  {
+    "i": 120,
+    "name": "ESTATE SURVEYORS AND VALUERS (REGISTRATION, ETC.) ACT",
+    "practice_area": "land_property"
+  },
+  {
+    "i": 121,
+    "name": "EVIDENCE ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 122,
+    "name": "EXAMINATION MALPRACTICES ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 123,
+    "name": "EXCISE (CONTROL OF DISTILLATION) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 124,
+    "name": "EXCLUSIVE ECONOMIC ZONE ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 125,
+    "name": "EXPLOSIVES ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 126,
+    "name": "EXPORT (INCENTIVES AND MISCELLANEOUS PROVISIONS) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 127,
+    "name": "EXPORT (PROHIBITION) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 128,
+    "name": "EXPORT OF NIGERIAN PRODUCE ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 129,
+    "name": "EXPORT PRODUCE (FEDERAL POWERS) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 130,
+    "name": "EXTERNAL LOANS (REHABILITATION, RECONSTRUCTION AND DEVELOPMENT) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 131,
+    "name": "EXTERNAL TRADE LETTERS OF CREDIT (CONTROL) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 132,
+    "name": "EXTRADITION ACT",
+    "practice_area": "criminal_rights"
+  },
+  {
+    "i": 133,
+    "name": "EXTRADITION TREATY BETWEEN NIGERIA AND SOUTH AFRICA _RATIFICATION AND ENFORCEMENT ACT",
+    "practice_area": "criminal_rights"
+  },
+  {
+    "i": 134,
+    "name": "EXTRADITION TREATY BETWEEN THE GOVERNMENT OF THE FEDERAL REBUBLIC OF NIGERIA AND THE GOVERNMENT OF THE REBUPLIC OF SOUTH AFRICA (RATIFICATION AND ENFORCEMENT) ACT",
+    "practice_area": "criminal_rights"
+  },
+  {
+    "i": 135,
+    "name": "FACTORIES ACT",
+    "practice_area": "employment_labour_safety"
+  },
+  {
+    "i": 136,
+    "name": "FAILED BANKS (RECOVERY OF DEBTS) AND FINANCIAL MALPRACTICES IN BANKS ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 137,
+    "name": "FAMILY ECONOMIC ADVANCEMENT PROGRAMME (ESTABLISHMENT, ETC.) ACT",
+    "practice_area": "family_law"
+  },
+  {
+    "i": 138,
+    "name": "FAMILY ECONOMIC ADVANCEMENT PROGRAMME (ESTABLISHMENT, ETC.) ACT",
+    "practice_area": "family_law"
+  },
+  {
+    "i": 139,
+    "name": "FAMILY SUPPORT TRUST FUND ACT LAWS",
+    "practice_area": "family_law"
+  },
+  {
+    "i": 140,
+    "name": "FEDERAL AIRPORTS AUTHORITY OF NIGERIA ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 141,
+    "name": "FEDERAL CAPITAL TERRITORY ACT",
+    "practice_area": "government_administration"
+  },
+  {
+    "i": 142,
+    "name": "FEDERAL CAPITAL TERRITORY CUSTOMARY COURT",
+    "practice_area": "family_law"
+  },
+  {
+    "i": 143,
+    "name": "FEDERAL CHARACTER COMMISSION (ESTABLISHMENT,ETC.) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 144,
+    "name": "FEDERAL COLLEGES OF EDUCATION ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 145,
+    "name": "FEDERAL COMMISSIONS (PRIVILEGES AND IMMUNITIES) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 146,
+    "name": "FEDERAL ENVIRONMENTAL PROTECTION AGENCY ACT",
+    "practice_area": "environment"
+  },
+  {
+    "i": 147,
+    "name": "FEDERAL GOVERNMENT STAFF HOUSING BOARD ACT",
+    "practice_area": "land_property"
+  },
+  {
+    "i": 148,
+    "name": "FEDERAL HIGHWAYS ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 149,
+    "name": "FEDERAL HOUSING AUTHORITY ACT",
+    "practice_area": "land_property"
+  },
+  {
+    "i": 150,
+    "name": "FEDERAL INLAND REVENUE SERVICE (ESTABLISHMENT) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 151,
+    "name": "FEDERAL JUDICIAL OFFICERS (ADMINISTRATION OF PENSIONS) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 152,
+    "name": "FEDERAL LANDS REGISTRY (MISCELLANEOUS PROVISIONS) ACT",
+    "practice_area": "land_property"
+  },
+  {
+    "i": 153,
+    "name": "FEDERAL MORTGAGE BANK OF NIGERIA ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 154,
+    "name": "FEDERAL POLYTECHNICS ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 155,
+    "name": "FEDERAL RADIO CORPORATION OF NIGERIA ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 156,
+    "name": "FEDERAL ROADS MAINTENANCE AGENCY (ESTABLISHMENT, ETC) ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 157,
+    "name": "FEDERAL SCHOOL OF SURVEYING ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 158,
+    "name": "FEDERAL UNIVERSITIES OF AGRICULTURE ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 159,
+    "name": "FEDERAL UNIVERSITIES OF TECHNOLOGY ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 160,
+    "name": "FEDERAL URBAN MASS TRANSIT AGENCY ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 161,
+    "name": "FERTILIZER (CONTROL) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 162,
+    "name": "FINANCE (CONTROL AND MANAGEMENT) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 163,
+    "name": "FINANCIAL YEAR ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 164,
+    "name": "FIRE SERVICE ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 165,
+    "name": "FIREARMS ACT",
+    "practice_area": "criminal_offences"
+  },
+  {
+    "i": 166,
+    "name": "FLAGS AND COATS OF ARMS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 167,
+    "name": "FLAGS OF NIGERIAN SHIPS ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 168,
+    "name": "FOOD AND DRUGS ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 169,
+    "name": "FOOD, DRUGS AND RELATED PRODUCTS (REGISTRATION, ETC.) ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 170,
+    "name": "FOREIGN EXCHANGE (MONITORING AND MISCELLANEOUS PROVISIONS) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 171,
+    "name": "FOREIGN JUDGMENTS (RECIPROCAL ENFORCEMENT) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 172,
+    "name": "GAMING MACHINES (PROHIBITION) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 173,
+    "name": "GENERAL LOAN AND STOCK ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 174,
+    "name": "GENEVA CONVENTIONS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 175,
+    "name": "GOVERNMENT PROMISSORY NOTES ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 176,
+    "name": "HARMFUL WASTE (SPECIAL CRIMINAL PROVISIONS, ETC) ACT",
+    "practice_area": "criminal_offences"
+  },
+  {
+    "i": 177,
+    "name": "HEALTH RECORDS OFFICERS (REGISTRATION, ETC.) ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 178,
+    "name": "HIDES AND SKINS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 179,
+    "name": "HIGH COURT OF THE FEDERAL CAPITAL TERRITORY, ABUJA (NUMBER OF JUDGES) ACT",
+    "practice_area": "government_administration"
+  },
+  {
+    "i": 180,
+    "name": "HIRE-PURCHASE ACT",
+    "practice_area": "contract"
+  },
+  {
+    "i": 181,
+    "name": "HYDROCARBON OIL REFINERIES ACT",
+    "practice_area": "company_business"
+  },
+  {
+    "i": 182,
+    "name": "IMMIGRATION ACT",
+    "practice_area": "immigration_citizenship"
+  },
+  {
+    "i": 183,
+    "name": "IMMIGRATION AND PRISONS SERVICES BOARD ACT",
+    "practice_area": "immigration_citizenship"
+  },
+  {
+    "i": 184,
+    "name": "IMPORT (PROHIBITION) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 185,
+    "name": "INCOME TAX (AUTHORISED COMMUNICATIONS) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 186,
+    "name": "INDIAN HEMP ACT",
+    "practice_area": "criminal_offences"
+  },
+  {
+    "i": 187,
+    "name": "INDUSTRIAL DEVELOPMENT (INCOME TAX RELIEF) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 188,
+    "name": "INDUSTRIAL INSPECTORATE ACT",
+    "practice_area": "company_business"
+  },
+  {
+    "i": 189,
+    "name": "INDUSTRIAL TRAINING FUND ACT",
+    "practice_area": "company_business"
+  },
+  {
+    "i": 190,
+    "name": "INFRASTRUCTURE CONCESSION REGULATORY COMMISSION ESTABLISHMENT, ETC",
+    "practice_area": "general"
+  },
+  {
+    "i": 191,
+    "name": "INLAND FISHERIES ACT",
+    "practice_area": "environment"
+  },
+  {
+    "i": 192,
+    "name": "INSTITUTE FOR PEACE AND CONFLICT RESOLUTION (ESTABLISHMENT) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 193,
+    "name": "INSTITUTE OF CHARTERED ACCOUNTANTS OF NIGERIA ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 194,
+    "name": "INSTITUTE OF CHARTERED CHEMISTS OF NIGERIA ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 195,
+    "name": "INSTITUTE OF CHARTERED SECRETARIES AND ADMINISTRATORS OF NIGERIA ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 196,
+    "name": "INSTITUTE OF PERSONNEL MANAGEMENT OF NIGERIA ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 197,
+    "name": "INSTITUTE OF PUBLIC ANALYSTS OF NIGERIA ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 198,
+    "name": "INSURANCE ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 199,
+    "name": "INTERNAL LOANS (REHABILITATION, RECONSTRUCTION AND DEVELOPMENT) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 200,
+    "name": "INTERNAL LOANS ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 201,
+    "name": "INTERNATIONAL CENTRE FOR SETTLEMENT OF INVESTMENT DISPUTES (ENFORCEMENT OF AWARDS) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 202,
+    "name": "INTERNATIONAL CONVENTION FOR THE PREVENTION OF POLLUTION FROM SHIPS, 1973 AND 1978 PROTOCOL",
+    "practice_area": "environment"
+  },
+  {
+    "i": 203,
+    "name": "INTERNATIONAL CONVENTION FOR THE SAFETY OF LIFE AT SEA (RATIFICATION AND ENFORCEMENT) ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 204,
+    "name": "INTERNATIONAL CONVENTION ON CIVIL LIABILITY FOR OIL POLLUTION DAMAGE (RATIFICATION AND ENFORCEMENT) ACT",
+    "practice_area": "environment"
+  },
+  {
+    "i": 205,
+    "name": "INTERNATIONAL CONVENTION ON THE ESTABLISHMENT OF AN INTERNATIONAL FUND FOR COMPENSATION FOR OIL POLLUTION DAMAGE 1971 AS AMENDED (RATIFICATION AND ENFORCEMENT) ACT",
+    "practice_area": "environment"
+  },
+  {
+    "i": 206,
+    "name": "INTERNATIONAL FINANCIAL ORGANISATIONS ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 207,
+    "name": "INTERNATIONAL INSTITUTE OF TROPICAL AGRICULTURE ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 208,
+    "name": "INTERPRETATION ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 209,
+    "name": "INVESTMENTS AND SECURITIES ACT",
+    "practice_area": "company_business"
+  },
+  {
+    "i": 210,
+    "name": "IRRUA SPECIALIST TEACHING HOSPITAL ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 211,
+    "name": "JOINT ADMISSIONS AND MATRICULATION BOARD ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 212,
+    "name": "LABOUR ACT",
+    "practice_area": "employment"
+  },
+  {
+    "i": 213,
+    "name": "LAGOS INTERNATIONAL TRADE FAIR COMPLEX MANAGEMENT BOARD ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 214,
+    "name": "LAGOS PORT OPERATIONS (SPECIAL PROVISIONS) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 215,
+    "name": "LAGOS UNIVERSITY TEACHING HOSPITAL ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 216,
+    "name": "LAND USE ACT",
+    "practice_area": "land_property"
+  },
+  {
+    "i": 217,
+    "name": "LAND USE ACT (VALIDATION OF CERTAIN LAWS, ETC.) ACT",
+    "practice_area": "land_property"
+  },
+  {
+    "i": 218,
+    "name": "LANDS (TITLE VESTING, ETC.) ACT",
+    "practice_area": "land_property"
+  },
+  {
+    "i": 219,
+    "name": "LAW OFFICERS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 220,
+    "name": "LEGAL AID ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 221,
+    "name": "LEGAL EDUCATION (CONSOLIDATION, ETC.) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 222,
+    "name": "LEGAL PRACTITIONERS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 223,
+    "name": "LEGISLATIVE HOUSES (POWERS AND PRIVILEGES) ACT",
+    "practice_area": "government_administration"
+  },
+  {
+    "i": 224,
+    "name": "LIBRARIANS (REGISTRATION, ETC.) COUNCIL OF NIGERIA ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 225,
+    "name": "LIVE FISH (CONTROL OF IMPORTATION) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 226,
+    "name": "LOAN ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 227,
+    "name": "LOCAL LOANS (REGISTERED STOCK AND SECURITIES) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 228,
+    "name": "MARINE INSURANCE ACT",
+    "practice_area": "contract"
+  },
+  {
+    "i": 229,
+    "name": "MARITIME ACADEMY OF NIGERIA ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 230,
+    "name": "MARITIME OPERATIONS CO-ORDINATING BOARD ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 231,
+    "name": "MARKETING (BREAST-MILK SUBSTITUTES) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 232,
+    "name": "MARRIAGE ACT",
+    "practice_area": "family_law"
+  },
+  {
+    "i": 233,
+    "name": "MATRIMONIAL CAUSES ACT",
+    "practice_area": "family_law"
+  },
+  {
+    "i": 234,
+    "name": "MEDICAL LABORATORY SCIENCE COUNCIL OF NIGERIA ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 235,
+    "name": "MEDICAL REHABILITATION THERAPISTS (REGISTRATION, ETC.) ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 236,
+    "name": "MERCHANDISE MARKS ACT",
+    "practice_area": "intellectual_property"
+  },
+  {
+    "i": 237,
+    "name": "MERCHANT SHIPPING ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 238,
+    "name": "MINES AND QUARRIES (CONTROL OF BUILDINGS, ETC.) ACT",
+    "practice_area": "land_property"
+  },
+  {
+    "i": 239,
+    "name": "MINISTERS' STATUTORY POWERS AND DUTIES (MISCELLANEOUS PROVISIONS) ACT",
+    "practice_area": "government_administration"
+  },
+  {
+    "i": 240,
+    "name": "MINISTRY OF FINANCE INCORPORATED ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 241,
+    "name": "MINOR OFFENCES (MISCELLANEOUS PROVISIONS) ACT",
+    "practice_area": "criminal_offences"
+  },
+  {
+    "i": 242,
+    "name": "MISCELLANEOUS OFFENCES ACT",
+    "practice_area": "criminal_offences"
+  },
+  {
+    "i": 243,
+    "name": "MONEY LAUNDERING (PROHIBITION) ACT",
+    "practice_area": "criminal_offences"
+  },
+  {
+    "i": 244,
+    "name": "MONITORING OF REVENUE ALLOCA TION TO LOCAL GOVERNMENTS ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 245,
+    "name": "MORTGAGE INSTITUTIONS ACT",
+    "practice_area": "company_business"
+  },
+  {
+    "i": 246,
+    "name": "MOTOR SPIRIT (RETURNS) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 247,
+    "name": "MOTOR VEHICLES (PROHIBITION OF TINTED GLASS) ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 248,
+    "name": "MOTOR VEHICLES (THIRD PARTY INSURANCE) ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 249,
+    "name": "MOTOR VEHICLES (THIRD PARTY LIABILITY INSURANCE) (ECOWAS BROWN CARD SCHEME) ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 250,
+    "name": "MUTUAL ASSISTANCE IN CRIMINAL MATTERS WITHIN THE COMMONWEALTH (ENACTMENT AND ENFORCEMENT) ACT",
+    "practice_area": "criminal_rights"
+  },
+  {
+    "i": 251,
+    "name": "NATIONAL AGENCY FOR FOOD AND DRUG ADMINISTRATION AND CONTROL ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 252,
+    "name": "NATIONAL AGENCY FOR POPULATION PROGRAMMES AND DEVELOPMENT ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 253,
+    "name": "NATIONAL AGENCY FOR SCIENCE AND ENGINEERING INFRASTRUCTURE ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 254,
+    "name": "NATIONAL AGRICULTURAL LAND DEVELOPMENT AUTHORITY ACT",
+    "practice_area": "land_property"
+  },
+  {
+    "i": 255,
+    "name": "NATIONAL AGRICULTURAL SEEDS ACT",
+    "practice_area": "land_property"
+  },
+  {
+    "i": 256,
+    "name": "NATIONAL ARCHIVES ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 257,
+    "name": "NATIONAL ASSEMBLY SERVICE COMMISSION ACT",
+    "practice_area": "government_administration"
+  },
+  {
+    "i": 258,
+    "name": "NATIONAL AUTOMOTIVE COUNCIL ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 259,
+    "name": "NATIONAL BOARD FOR TECHNICAL EDUCATION ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 260,
+    "name": "NATIONAL BOUNDARY COMMISSION (ESTABLISHMENT) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 261,
+    "name": "NATIONAL BOUNDARY COMMISSION ESTABLISHMENT ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 262,
+    "name": "NATIONAL BROADCASTING COMMISSION ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 263,
+    "name": "NATIONAL BUSINESS AND TECHNICAL EXAMINATIONS BOARD ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 264,
+    "name": "NATIONAL CENTRE FOR AGRICULTURAL MECHANISATION ACT",
+    "practice_area": "land_property"
+  },
+  {
+    "i": 265,
+    "name": "NATIONAL CENTRE FOR ECONOMIC MANAGEMENT AND ADMINISTRATION ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 266,
+    "name": "NATIONAL CENTRE FOR WOMEN DEVELOPMENT ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 267,
+    "name": "NATIONAL COMMISSION FOR COLLEGES OF EDUCATION ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 268,
+    "name": "NATIONAL COMMISSION FOR MASS LITERACY, ADULT AND NON-FORMAL EDUCATION ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 269,
+    "name": "NATIONAL COMMISSION FOR MUSEUMS AND MONUMENTS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 270,
+    "name": "NATIONAL COMMISSION FOR NOMADIC EDUCATION ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 271,
+    "name": "NATIONAL COMMISSION FOR REFUGEES, ETC. ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 272,
+    "name": "NATIONAL COMMISSION FOR WOMEN ACT",
+    "practice_area": "family_law"
+  },
+  {
+    "i": 273,
+    "name": "NATIONAL COMMITTEE ON GEOGRAPHICAL NAMES ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 274,
+    "name": "NATIONAL COUNCIL FOR ARTS AND CULTURE ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 275,
+    "name": "NATIONAL COUNCIL OF NIGERIAN VISION (ESTABLISHMENT, ETC.) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 276,
+    "name": "NATIONAL COUNCIL OF NIGERIAN VISION (ESTABLISHMENT, ETC.) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 277,
+    "name": "NATIONAL CROP VARIETIES AND LIVESTOCK BREEDS (REGISTRATION, ETC.) ACT",
+    "practice_area": "land_property"
+  },
+  {
+    "i": 278,
+    "name": "NATIONAL DEPOSIT INSURANCE CORPORATION ACT",
+    "practice_area": "company_business"
+  },
+  {
+    "i": 279,
+    "name": "NATIONAL DIRECTORATE OF EMPLOYMENT ACT",
+    "practice_area": "employment"
+  },
+  {
+    "i": 280,
+    "name": "NATIONAL DRUG FORMULARY AND ESSENTIAL DRUGS LIST ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 281,
+    "name": "NATIONAL DRUG LAW ENFORCEMENT AGENCY ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 282,
+    "name": "NATIONAL ECONOMIC INTELLIGENCE COMMITTEE (ESTABLISHMENT, ETC.) ACT",
+    "practice_area": "government_administration"
+  },
+  {
+    "i": 283,
+    "name": "NATIONAL ECONOMIC RECONSTRUCTION FUND ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 284,
+    "name": "NATIONAL EMERGENCY MANAGEMENT AGENCY(ESTABLISHMENT, ETC.) ACT",
+    "practice_area": "government_administration"
+  },
+  {
+    "i": 285,
+    "name": "NATIONAL EMERGENCY MANAGEMENT AGENCY(ESTABLISHMENT, ETC.) ACT",
+    "practice_area": "government_administration"
+  },
+  {
+    "i": 286,
+    "name": "NATIONAL ENDOWMENT FOR THE ARTS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 287,
+    "name": "NATIONAL EXAMINATIONS COUNCIL (NECO) (ESTABLISHMENT) ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 288,
+    "name": "NATIONAL EYE CENTRE ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 289,
+    "name": "NATIONAL FERTILIZER BOARD ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 290,
+    "name": "NATIONAL FILM AND VIDEO CENSORS BOARD ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 291,
+    "name": "NATIONAL GALLERY OF ART ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 292,
+    "name": "NATIONAL HAJJ COMMISSION OF NIGERIA (NAHCON)",
+    "practice_area": "general"
+  },
+  {
+    "i": 293,
+    "name": "NATIONAL HEALTH INSURANCE SCHEME ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 294,
+    "name": "NATIONAL HONOURS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 295,
+    "name": "NATIONAL HOSPITAL FOR WOMEN AND CHILDREN, ABUJA (ESTABLISHMENT, ETC.) ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 296,
+    "name": "NATIONAL HOUSING FUND ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 297,
+    "name": "NATIONAL HUMAN RIGHTS COMMISSION ACT",
+    "practice_area": "constitutional_rights"
+  },
+  {
+    "i": 298,
+    "name": "NATIONAL IDENTITY MANAGEMENT COMMISSION ACT",
+    "practice_area": "immigration_citizenship"
+  },
+  {
+    "i": 299,
+    "name": "NATIONAL INDUSTRIAL COURT ACT",
+    "practice_area": "employment"
+  },
+  {
+    "i": 300,
+    "name": "NATIONAL INFORMATION TECHNOLOGY DEVELOPMENT AGENCY ACT",
+    "practice_area": "intellectual_property"
+  },
+  {
+    "i": 301,
+    "name": "NATIONAL INLAND WATERWAYS AUTHORITY ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 302,
+    "name": "NATIONAL INSTITUTE FOR CULTURAL ORIENTATION ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 303,
+    "name": "NATIONAL INSTITUTE FOR LABOUR STUDlES ACT",
+    "practice_area": "employment_labour_safety"
+  },
+  {
+    "i": 304,
+    "name": "NATIONAL INSTITUTE FOR NIGERIAN LANGUAGES ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 305,
+    "name": "NATIONAL INSTITUTE FOR POLICY AND STRATEGIC STUDIES ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 306,
+    "name": "NATIONAL INSTITUTE FOR SPORTS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 307,
+    "name": "NATIONAL INSTITUTE OF MARKETING OF NIGERIA ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 308,
+    "name": "NATIONAL INSURANCE COMMISSION ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 309,
+    "name": "NATIONAL INSURANCE CORPORATION OF NIGERIA ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 310,
+    "name": "NATIONAL JUDICIAL INSTITUTE ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 311,
+    "name": "NATIONAL LIBRARY ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 312,
+    "name": "NATIONAL LOTTERY ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 313,
+    "name": "NATIONAL MANPOWER BOARD ACT",
+    "practice_area": "employment"
+  },
+  {
+    "i": 314,
+    "name": "NATIONAL MATHEMATICAL CENTRE ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 315,
+    "name": "NATIONAL MEDICAL COLLEGE ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 316,
+    "name": "NATIONAL METALLURGICAL DEVELOPMENT CENTRE ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 317,
+    "name": "NATIONAL MINIMUM WAGE ACT",
+    "practice_area": "employment_labour_safety"
+  },
+  {
+    "i": 318,
+    "name": "NATIONAL OFFICE FOR TECHNOLOGY ACQUISITION AND PROMOTION ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 319,
+    "name": "NATIONAL OIL SPILL DETECTION RESPONSE AGENCY",
+    "practice_area": "environment"
+  },
+  {
+    "i": 320,
+    "name": "NATIONAL OPEN UNIVERSITY ACT",
+    "practice_area": "government_administration"
+  },
+  {
+    "i": 321,
+    "name": "NATIONAL ORIENTATION AGENCY ACT",
+    "practice_area": "government_administration"
+  },
+  {
+    "i": 322,
+    "name": "NATIONAL PARK SERVICE ACT",
+    "practice_area": "environment"
+  },
+  {
+    "i": 323,
+    "name": "NATIONAL PLANNING COMMISSION ACT",
+    "practice_area": "government_administration"
+  },
+  {
+    "i": 324,
+    "name": "NATIONAL POPULATION COMMISSION ACT",
+    "practice_area": "government_administration"
+  },
+  {
+    "i": 325,
+    "name": "NATIONAL PRIMARY EDUCATION COMMISSION, ETC., ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 326,
+    "name": "NATIONAL PRIMARY HEALTH CARE DEVELOPMENT AGENCY ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 327,
+    "name": "NATIONAL PRODUCTIVITY CENTRE ACT",
+    "practice_area": "government_administration"
+  },
+  {
+    "i": 328,
+    "name": "NATIONAL PROGRAMME ON IMMUNISATION ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 329,
+    "name": "NATIONAL SALARIES, INCOMES AND WAGES COMMISSION ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 330,
+    "name": "NATIONAL SECONDARY EDUCATION COMMISSION, ETC., ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 331,
+    "name": "NATIONAL SECURITY AGENCIES ACT",
+    "practice_area": "government_administration"
+  },
+  {
+    "i": 332,
+    "name": "NATIONAL STEEL COUNCIL ACT",
+    "practice_area": "company_business"
+  },
+  {
+    "i": 333,
+    "name": "NATIONAL STEEL RAW MATERIALS EXPLORATION AGENCY ACT",
+    "practice_area": "company_business"
+  },
+  {
+    "i": 334,
+    "name": "NATIONAL SUGAR DEVELOPMENT COUNCIL ACT",
+    "practice_area": "company_business"
+  },
+  {
+    "i": 335,
+    "name": "NATIONAL TEACHERS' INSTITUTE ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 336,
+    "name": "NATIONAL THEATRE AND THE NATIONAL TROUPE OF NIGERIA BOARD ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 337,
+    "name": "NATIONAL UNIVERSITIES COMMISSION ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 338,
+    "name": "NATIONAL WAR COLLEGE ACT",
+    "practice_area": "government_administration"
+  },
+  {
+    "i": 339,
+    "name": "NATIONAL WATER RESOURCES INSTITUTE ACT",
+    "practice_area": "environment"
+  },
+  {
+    "i": 340,
+    "name": "NATIONAL YOUTH SERVICE CORPS ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 341,
+    "name": "NEWS AGENCY OF NIGERIA ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 342,
+    "name": "NIGER-DELTA DEVELOPMENT COMMISSION (ESTABLISHMENT, ETC.) ACT",
+    "practice_area": "government_administration"
+  },
+  {
+    "i": 343,
+    "name": "NIGERIA CHRISTIAN PILGRIM COMMISSION ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 344,
+    "name": "NIGERIA EXPORT PROCESSING ZONES ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 345,
+    "name": "NIGERIA EXTRACTIVE INDUSTRIES TRANSPARENCY INITIATIVE",
+    "practice_area": "general"
+  },
+  {
+    "i": 346,
+    "name": "NIGERIA LNG (FISCAL INCENTIVES, GUARANTEES AND ASSURANCES) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 347,
+    "name": "NIGERIA SECURITY AND CIVIL DEFENCE CORPS ACT",
+    "practice_area": "government_administration"
+  },
+  {
+    "i": 348,
+    "name": "NIGERIA SOCIAL INSURANCE TRUST FUND ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 349,
+    "name": "NIGERIAN ACCOUNTING STANDARDS BOARD ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 350,
+    "name": "NIGERIAN AGRICULTURAL INSURANCE CORPORATION ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 351,
+    "name": "NIGERIAN AIRSPACE MANAGEMENT AGENCY (ESTABLISHMENT, ETC.) ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 352,
+    "name": "NIGERIAN ATOMIC ENERGY COMMISSION ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 353,
+    "name": "NIGERIAN BANK FOR COMMERCE AND INDUSTRY ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 354,
+    "name": "NIGERIAN CHILDREN'S TRUST FUND ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 355,
+    "name": "NIGERIAN CO-OPERATIVE SOCIETIES ACT",
+    "practice_area": "company_business"
+  },
+  {
+    "i": 356,
+    "name": "NIGERIAN COAL CORPORATION ACT",
+    "practice_area": "company_business"
+  },
+  {
+    "i": 357,
+    "name": "NIGERIAN COLLEGE OF AVIATION TECHNOLOGY ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 358,
+    "name": "NIGERIAN COMMUNICATIONS ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 359,
+    "name": "NIGERIAN COUNCIL FOR MANAGEMENT DEVELOPMENT ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 360,
+    "name": "NIGERIAN COUNCIL OF REGISTERED INSURANCE BROKERS ACT",
+    "practice_area": "company_business"
+  },
+  {
+    "i": 361,
+    "name": "NIGERIAN CUSTOMS SERVICE BOARD ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 362,
+    "name": "NIGERIAN DEFENCE ACADEMY ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 363,
+    "name": "NIGERIAN EDUCATION BANK ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 364,
+    "name": "NIGERIAN EXPORT PROMOTION COUNCIL ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 365,
+    "name": "NIGERIAN EXPORT-IMPORT BANK ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 366,
+    "name": "NIGERIAN FILM CORPORATION ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 367,
+    "name": "NIGERIAN FOOTBALL ASSOCIATION ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 368,
+    "name": "NIGERIAN INDUSTRIAL DEVELOPMENT BANK (GUARANTEE) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 369,
+    "name": "NIGERIAN INSTITUTE OF ADVANCED LEGAL STUDIES ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 370,
+    "name": "NIGERIAN INSTITUTE OF ANIMAL SCIENCE ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 371,
+    "name": "NIGERIAN INSTITUTE OF INTERNATIONAL AFFAIRS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 372,
+    "name": "NIGERIAN INSTITUTE OF MANAGEMENT ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 373,
+    "name": "NIGERIAN INSTITUTE OF PUBLIC RELATIONS PRACTITIONERS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 374,
+    "name": "NIGERIAN INSTITUTE OF SCIENCE LABORATORY TECHNOLOGY ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 375,
+    "name": "NIGERIAN INSTITUTE OF SOCIAL AND ECONOMIC RESEARCH ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 376,
+    "name": "NIGERIAN INSTITUTE OF TRANSPORT TECHNOLOGY ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 377,
+    "name": "NIGERIAN INVESTMENT PROMOTION COMMISSION ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 378,
+    "name": "NIGERIAN LAW REFORM COMMISSION ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 379,
+    "name": "NIGERIAN LEGION ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 380,
+    "name": "NIGERIAN MARITIME ADMINISTRATION AND SAFETY AGENCY ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 381,
+    "name": "NIGERIAN MARITIME LABOUR ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 382,
+    "name": "NIGERIAN METEOROLOGICAL AGENCY",
+    "practice_area": "general"
+  },
+  {
+    "i": 383,
+    "name": "NIGERIAN MINERALS AND MINING ACT",
+    "practice_area": "land_property"
+  },
+  {
+    "i": 384,
+    "name": "NIGERIAN MINING CORPORATION ACT",
+    "practice_area": "land_property"
+  },
+  {
+    "i": 385,
+    "name": "NIGERIAN NATIONAL HEROES REGISTER ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 386,
+    "name": "NIGERIAN NATIONAL MERIT AWARD ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 387,
+    "name": "NIGERIAN NATIONAL PETROLEUM CORPORATION (PROJECTS) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 388,
+    "name": "NIGERIAN NATIONAL PETROLEUM CORPORATION ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 389,
+    "name": "NIGERIAN PORTS AUTHORITY ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 390,
+    "name": "NIGERIAN POSTAL SERVICE ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 391,
+    "name": "NIGERIAN PRESS COUNCIL ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 392,
+    "name": "NIGERIAN RAILWAY CORPORATION ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 393,
+    "name": "NIGERIAN RED CROSS SOCIETY ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 394,
+    "name": "NIGERIAN REINSURANCE CORPORATION ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 395,
+    "name": "NIGERIAN RESEARCH INSTITUTES ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 396,
+    "name": "NIGERIAN SHIPPERS' COUNCIL ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 397,
+    "name": "NIGERIAN STEEL DEVELOPMENT AUTHORITY ACT",
+    "practice_area": "land_property"
+  },
+  {
+    "i": 398,
+    "name": "NIGERIAN TECHNICAL AND CORPS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 399,
+    "name": "NIGERIAN TELEVISION AUTHORITY ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 400,
+    "name": "NIGERIAN TOURSIM DEVELOPMENT CORPORATION ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 401,
+    "name": "NIGERIAN URBAN AND REGIONAL PLANNING ACT",
+    "practice_area": "environment"
+  },
+  {
+    "i": 402,
+    "name": "NNAMDI AZIKIWE UNIVERSITY ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 403,
+    "name": "NNAMDI AZIKIWE UNIVERSITY TEACHING HOSPITAL ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 404,
+    "name": "NOTARIES PUBLIC ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 405,
+    "name": "NUCLEAR SAFETY AND RADIATION PROTECTION ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 406,
+    "name": "NURSING AND MIDWIFERY (REGISTRATION, ETC.) ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 407,
+    "name": "OATHS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 408,
+    "name": "OBAFEMI AWOLOWO UNIVERSITY (TRANSITIONAL PROVISIONS) ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 409,
+    "name": "OFF-SHORE OIL REVENUES (REGISTRATION OF GRANTS) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 410,
+    "name": "OFFICIAL SECRETS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 411,
+    "name": "OIL AND GAS EXPORT FREE ZONE ACT",
+    "practice_area": "company_business"
+  },
+  {
+    "i": 412,
+    "name": "OIL IN NAVIGABLE WATERS ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 413,
+    "name": "OIL PIPELINES ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 414,
+    "name": "OIL TERMINAL DUES ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 415,
+    "name": "OPTOMETRISTS AND DISPENSING OPTICIANS (REGISTRATION, ETC.) ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 416,
+    "name": "ORTHOPEDIC HOSPITALS MANAGEMENT BOARD ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 417,
+    "name": "OSO CONDENSATE PROJECT ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 418,
+    "name": "PASSPORT (MISCELLANEOUS PROVISIONS) ACT",
+    "practice_area": "immigration_citizenship"
+  },
+  {
+    "i": 419,
+    "name": "PATENTS AND DESIGNS ACT",
+    "practice_area": "intellectual_property"
+  },
+  {
+    "i": 420,
+    "name": "PENAL CODE (NORTHERN STATES) FEDERAL PROVISIONS ACT",
+    "practice_area": "criminal_offences"
+  },
+  {
+    "i": 421,
+    "name": "PENSION REFORM ACT",
+    "practice_area": "employment_labour_safety"
+  },
+  {
+    "i": 422,
+    "name": "PENSION RIGHTS OF JUDGES ACT",
+    "practice_area": "employment_labour_safety"
+  },
+  {
+    "i": 423,
+    "name": "PENSIONS (TRANSFER OF RESPONSIBILITY) (UNITED KINGDOM AGREEMENT) ACT",
+    "practice_area": "employment_labour_safety"
+  },
+  {
+    "i": 424,
+    "name": "PEOPLE'S BANK OF NIGERIA ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 425,
+    "name": "PEST CONTROL OF PRODUCE (SPECIAL POWERS) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 426,
+    "name": "PETROLEUM (SPECIAL) TRUST FUND ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 427,
+    "name": "PETROLEUM ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 428,
+    "name": "PETROLEUM EQUALISATION FUND (MANAGEMENT BOARD, ETC.) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 429,
+    "name": "PETROLEUM PRODUCTION AND DISTRIBUTION (ANTI-SABOTAGE) ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 430,
+    "name": "PETROLEUM PRODUCTS PRICING REGULATORY AGENCY (ESTABLISHMENT, ETC.) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 431,
+    "name": "PETROLEUM PROFITS TAX ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 432,
+    "name": "PETROLEUM TECHNOLOGY DEVELOPMENT FUND ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 433,
+    "name": "PETROLEUM TRAINING INSTITUTE ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 434,
+    "name": "PHARMACISTS COUNCIL OF NIGERIA ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 435,
+    "name": "PIERS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 436,
+    "name": "POLICE ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 437,
+    "name": "POPULATION ACTIVITIES FUND ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 438,
+    "name": "PORTS (RELATED OFFENCES, ETC.) ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 439,
+    "name": "POSTS AND TELECOMMUNICATIONS PROCEEDINGS ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 440,
+    "name": "PRE-SHIPMENT INSPECTION OF EXPORTS ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 441,
+    "name": "PRE-SHIPMENT INSPECTION OF IMPORTS ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 442,
+    "name": "PREVENTION OF CRIMES ACT",
+    "practice_area": "criminal_offences"
+  },
+  {
+    "i": 443,
+    "name": "PRICE CONTROL ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 444,
+    "name": "PRISONS ACT",
+    "practice_area": "criminal_rights"
+  },
+  {
+    "i": 445,
+    "name": "PRIVATE GUARD COMPANIES ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 446,
+    "name": "PROBATES (RE-SEALING) ACT",
+    "practice_area": "family_law"
+  },
+  {
+    "i": 447,
+    "name": "PRODUCE (ENFORCEMENT OF EXPORT STANDARDS) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 448,
+    "name": "PROFESSIONAL BODIES (SPECIAL PROVISIONS) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 449,
+    "name": "PSYCHIATRIC HOSPITALS MANAGEMENT BOARD ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 450,
+    "name": "PUBLIC ACCOUNTS COMMITTEE ACT",
+    "practice_area": "government_administration"
+  },
+  {
+    "i": 451,
+    "name": "PUBLIC ACCOUNTS IMPLEMENTATION TRIBUNAL ACT",
+    "practice_area": "government_administration"
+  },
+  {
+    "i": 452,
+    "name": "PUBLIC COMPLAINTS COMMISSION ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 453,
+    "name": "PUBLIC ENTERPRISES (PRIVATISATION AND COMMERCIALISATION) ACT",
+    "practice_area": "company_business"
+  },
+  {
+    "i": 454,
+    "name": "PUBLIC ENTERPRISES REGULATORY COMMISSION ACT",
+    "practice_area": "company_business"
+  },
+  {
+    "i": 455,
+    "name": "PUBLIC HOLIDAYS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 456,
+    "name": "PUBLIC OFFICERS PROTECTION ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 457,
+    "name": "PUBLIC ORDER ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 458,
+    "name": "QUANTITY SURVEYORS (REGISTRATION, ETC.) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 459,
+    "name": "QUARANTINE ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 460,
+    "name": "RADIOGRAPHERS (REGISTRATION, ETC.) ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 461,
+    "name": "RAILWAY LOAN (INTERNATIONAL BANK) ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 462,
+    "name": "RAW MATERIALS RESEARCH AND DEVELOPMENT COUNCIL ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 463,
+    "name": "RECOVERY OF PUBLIC PROPERTY (SPECIAL PROVISIONS) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 464,
+    "name": "REGIONAL CENTRE FOR INTERNATIONAL COMMERCIAL ARBITRATION ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 465,
+    "name": "REMUNERATION OF FORMER PRESIDENTS AND HEADS OF STATE (AND OTHER ANCILLARY MATTERS) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 466,
+    "name": "REVENUE MOBILISATION, ALLOCATION AND FISCAL COMMISSION ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 467,
+    "name": "REVOLVING LOANS FUND FOR INDUSTRY ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 468,
+    "name": "RIVER BASINS DEVELOPMENT AUTHORITIES ACT",
+    "practice_area": "environment"
+  },
+  {
+    "i": 469,
+    "name": "RIVER NIGER TRANSIT ACT",
+    "practice_area": "environment"
+  },
+  {
+    "i": 470,
+    "name": "ROBBERY AND FIREARMS (SPECIAL PROVISIONS) ACT",
+    "practice_area": "criminal_offences"
+  },
+  {
+    "i": 471,
+    "name": "ROTTERDAM CONVENTION ON THE PRIOR INFORMED CONSENT PROCEDURE FOR CERTAIN HAZARDOUS - REVISED EDITION (LAWS OF THE FEDERATION OF NIGERIA) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 472,
+    "name": "SAVINGS BONDS AND CERTIFICATES ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 473,
+    "name": "SCHOOL YEAR (VARIATION) ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 474,
+    "name": "SCIENTIFlC AND INDUSTRIAL RESEARCH ACT",
+    "practice_area": "intellectual_property"
+  },
+  {
+    "i": 475,
+    "name": "SEA FISHERIES ACT",
+    "practice_area": "transport_traffic"
+  },
+  {
+    "i": 476,
+    "name": "SHEDA SCIENCE AND TECHNOLOGY COMPLEX ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 477,
+    "name": "SHERIFFS AND CIVIL PROCESS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 478,
+    "name": "SMALL AND MEDIUM SCALE ENTERPRISES DEVELOPMENT AGENCY OF NIGERIA ACT",
+    "practice_area": "company_business"
+  },
+  {
+    "i": 479,
+    "name": "SOCIAL DEVELOPMENT ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 480,
+    "name": "STAMP DUTIES ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 481,
+    "name": "STANDARDS ORGANISATION OF NIGERIA ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 482,
+    "name": "STATISTICS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 483,
+    "name": "STATUTORY CORPORATIONS (MODIFICATIONS, ETC.) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 484,
+    "name": "STATUTORY CORPORATIONS PENSIONABLE OFFICERS (RETIRING AGE LIMIT) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 485,
+    "name": "STATUTORY CORPORATIONS, ETC. (SPECIAL PROVISIONS) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 486,
+    "name": "STUDENTS' UNION ACTIVITIES (CONTROL AND REGULATION) ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 487,
+    "name": "SUPREME COURT (ADDITIONAL ORIGINAL JURISDICTION) ACT",
+    "practice_area": "constitutional_rights"
+  },
+  {
+    "i": 488,
+    "name": "SUPREME COURT ACT",
+    "practice_area": "constitutional_rights"
+  },
+  {
+    "i": 489,
+    "name": "SURVEY CO-ORDINATION ACT",
+    "practice_area": "land_property"
+  },
+  {
+    "i": 490,
+    "name": "SURVEYORS REGISTRATION COUNCIL OF NIGERIA ACT",
+    "practice_area": "land_property"
+  },
+  {
+    "i": 491,
+    "name": "TAFAWA BALEWA SQUARE MANAGEMENT ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 492,
+    "name": "TAXES AND LEVIES (APPROVED LIST FOR COLLECTION) ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 493,
+    "name": "TEACHERS REGISTRATION COUNCIL OF NIGERIA ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 494,
+    "name": "TERRITORIAL WATERS ACT",
+    "practice_area": "immigration_citizenship"
+  },
+  {
+    "i": 495,
+    "name": "TOBACCO SMOKING (CONTROL) ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 496,
+    "name": "TOWN PLANNERS (REGISTRATION, ETC.) ACT",
+    "practice_area": "land_property"
+  },
+  {
+    "i": 497,
+    "name": "TRADE (EEC PREFERENCES UNDER THE LOME CONVENTION) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 498,
+    "name": "TRADE (GENERALISED SYSTEM OF PREFERENCES) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 499,
+    "name": "TRADE DISPUTES (ESSENTIAL SERVICES) ACT",
+    "practice_area": "employment"
+  },
+  {
+    "i": 500,
+    "name": "TRADE DISPUTES (ESSENTIAL SERVICES) ACT",
+    "practice_area": "employment"
+  },
+  {
+    "i": 501,
+    "name": "TRADE DISPUTES ACT",
+    "practice_area": "employment"
+  },
+  {
+    "i": 502,
+    "name": "TRADE MALPRACTICES (MISCELLANEOUS OFFENCES) ACT",
+    "practice_area": "consumer_rights"
+  },
+  {
+    "i": 503,
+    "name": "TRADE MARKS ACT",
+    "practice_area": "intellectual_property"
+  },
+  {
+    "i": 504,
+    "name": "TRADE UNIONS (INTERNATIONAL AFFILIATION) ACT",
+    "practice_area": "employment"
+  },
+  {
+    "i": 505,
+    "name": "TRADE UNIONS ACT",
+    "practice_area": "employment"
+  },
+  {
+    "i": 506,
+    "name": "TRAFFICKING IN PERSONS (PROHIBITION) LAW ENFORCEMENT AND ADMINISTRATION ACT",
+    "practice_area": "criminal_offences"
+  },
+  {
+    "i": 507,
+    "name": "TRANSFERRED OFFICERS AND PENSIONS LIABILITY, ETC., ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 508,
+    "name": "TREASURY BILLS ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 509,
+    "name": "TREASURY CERTIFICATES ACT",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 510,
+    "name": "TREATIES (MAKING PROCEDURE, ETC.) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 511,
+    "name": "TREATY ON MUTUAL LEGAL ASSITANCE IN CRIMINAL MATTERS BETWEEN THE GOVERNMENT OF THE FEDERAL REPUBLIC OF NIGERIA AND THE GOVERNMENT OF THE REPUBLIC OF SOUTH AFRICA (RATIFICATION AND ENFORCEMENT) ACT",
+    "practice_area": "criminal_rights"
+  },
+  {
+    "i": 512,
+    "name": "TREATY TO ESTABLISH AFRICAN ECONOMIC COMMUNITY RELATING TO THE PAN-AFRICAN PARLIAMENT",
+    "practice_area": "general"
+  },
+  {
+    "i": 513,
+    "name": "TREATY TO ESTABLISH THE AFRICAN UNION (RATIFICATION AND ENFORCEMENT) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 514,
+    "name": "TRIBUNALS OF INQUIRY ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 515,
+    "name": "TRUSTEE INVESTMENTS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 516,
+    "name": "UNITED NATIONS CONVENTION ON CARRIAGE OF GOODS BY SEA (RATIFICATION AND ENFORCEMENT) ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 517,
+    "name": "UNIVERSITY COLLEGE HOSPITAL ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 518,
+    "name": "UNIVERSITY OF ABUJA ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 519,
+    "name": "UNIVERSITY OF BENIN (TRANSITIONAL PROVISIONS) ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 520,
+    "name": "UNIVERSITY OF BENIN TEACHING HOSPITAL MANAGEMENT BOARD ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 521,
+    "name": "UNIVERSITY OF CALABAR ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 522,
+    "name": "UNIVERSITY OF IBADAN ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 523,
+    "name": "UNIVERSITY OF ILORIN ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 524,
+    "name": "UNIVERSITY OF JOS ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 525,
+    "name": "UNIVERSITY OF LAGOS ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 526,
+    "name": "UNIVERSITY OF MAIDUGURI ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 527,
+    "name": "UNIVERSITY OF NIGERIA ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 528,
+    "name": "UNIVERSITY OF NIGERIA TEACHING HOSPITAL MANAGEMENT BOARD ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 529,
+    "name": "UNIVERSITY OF PORT HARCOURT ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 530,
+    "name": "UNIVERSITY TEACHING HOSPITALS (RECONSTITUTION OF BOARDS, ETC.) ACT",
+    "practice_area": "health"
+  },
+  {
+    "i": 531,
+    "name": "URBAN DEVELOPMENT BANK OF NIGERIA ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 532,
+    "name": "USMANU DAN FODIO UNIVERSITY, SOKOTO ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 533,
+    "name": "UTILITIES CHARGES COMMISSION ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 534,
+    "name": "VALUE ADDED TAX ACT LAWS",
+    "practice_area": "tax_finance"
+  },
+  {
+    "i": 535,
+    "name": "VENTURE CAPITAL (INCENTIVES) ACT",
+    "practice_area": "company_business"
+  },
+  {
+    "i": 536,
+    "name": "VETERINARY SURGEONS ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 537,
+    "name": "VISITING FORCES ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 538,
+    "name": "VOICE OF NIGERIA CORPORATION ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 539,
+    "name": "WAGES BOARDS AND INDUSTRIAL COUNCIL ACT",
+    "practice_area": "employment"
+  },
+  {
+    "i": 540,
+    "name": "WATER RESOURCES ACT",
+    "practice_area": "environment"
+  },
+  {
+    "i": 541,
+    "name": "WEIGHTS AND MEASURES ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 542,
+    "name": "WEST AFRICAN EXAMINATIONS COUNCIL ACT",
+    "practice_area": "education"
+  },
+  {
+    "i": 543,
+    "name": "WIRELESS TELEGRAPHY ACT",
+    "practice_area": "general"
+  },
+  {
+    "i": 544,
+    "name": "WORKMEN'S COMPENSATION ACT",
+    "practice_area": "employment_labour_safety"
+  },
+  {
+    "i": 545,
+    "name": "WORLD METEOROLOGICAL ORGANISATION (PROTECTION) ACT",
+    "practice_area": "general"
+  }
+]
