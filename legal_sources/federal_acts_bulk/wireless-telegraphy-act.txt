@@ -1,0 +1,656 @@
+1. Short title
+This Act may be cited as the Wireless Telegraphy Act.
+2. Meaning of wireless telegraphy
+In this Act, unless the context otherwise requires-
+"wireless telegraphy" means the emitting or receiving, over paths which are not pro-
+vided by any material substance constructed or arranged for that purpose, of electro-
+magnetic energy of a frequency not exceeding three million megacycles a second, being
+energy which either-
+(a) serves for the conveying of messages, sound or visual images (whether the
+messages, sound or images are actually received by any person or not), or for
+the actuation or control of machinery or apparatus; or
+(b) is used in connection with the determination of position, bearing or distance, or
+for the gaining of information as to the presence, absence, position or motion
+of any object or of any objects of any class,
+and reference to stations for wireless telegraphy and apparatus for wireless telegraphy
+shall be construed as references to stations and apparatus for the emitting or receiving as
+aforesaid of such electro-magnetic energy as aforesaid:
+Provided that where-
+(i) a station or apparatus for wireless telegraphy cannot lawfully be used
+without a licence or could not lawfully be used without a licence but for
+regulations under this Act; and
+(ii) any such electro-magnetic energy as aforesaid which is received by that
+station or apparatus serves for the conveying of messages, sound or
+visual images; and
+(iii) any apparatus is electrically coupled with that station or apparatus for
+the purpose of enabling any person to receive any of the messages,
+sound or visual images,
+the apparatus so coupled shall itself be deemed for the purpose of this Act to be apparatus
+for wireless telegraphy.
+3. General interpretation
+(1) In this Act, unless the context otherwise requires-
+"Commission" means, in the case of matters relating to-
+
+-- 2 of 121 --
+
+[1998 No. 31.]
+(a) telecommunications, the Nigerian Communications Commission established
+under the Nigerian Communications Commission Act; and
+(b) broadcasting, the National Broadcasting Commission established under the
+National Broadcasting Commission Act;
+"electric line" means a wire or wires, conductor or other means used for the
+purpose
+of conveying, transmitting or distributing electricity with any casing, coating, covering,
+tube, pipe or insulator enclosing, surrounding or supporting the same, or any part
+thereof,
+or any apparatus connected therewith for the purpose of conveying, transmitting or
+distributing electricity or electric currents;
+"foreign aircraft" means an aircraft which IS not registered in any country In the
+Commonwealth;
+"foreign ship" means a foreign ship within the meaning of the Merchant Shipping
+Act;
+"interference", in relation to wireless telegraphy, means the prejudicing by any emis-
+sion or reflection of electromagnetic energy of the fulfilment of the purposes of the teleg-
+raphy (either generally or in part, and without prejudice to the generality of the proceed-
+ing words, as prospects all, or as respect any, of the recipients or intended recipients of
+any message, sound or visual image intended to be conveyed by the telegraphy), and the
+expression "interfere" shall be construed accordingly;
+"licence" means a licence granted under subsection (1) of section 6 of this Act, and
+"licensee" shall be construed accordingly;
+"Minister" means the Minister charged with responsibility for matters relating to
+wireless telegraphy;
+"ship" includes every description of vessel used in navigation not propelled by oars;
+"station for wireless telegraphy" includes the wireless telegraphy apparatus of a
+vessel or aircraft;
+"vessel" includes any ship or boat, or any other description of vessel used in naviga-
+tion.
+(2) Any reference in this Act to the sending or the conveying of messages includes a
+reference to the making of any signal or the sending or conveying of any warning or in-
+formation, and any reference to the reception of messages shall be construed accordingly.
+(3) References in this Act to apparatus on board a ship or vessel includes reference to
+apparatus on a kite or captive balloon flown from a ship or vessel.
+PART II
+Regulation of wireless telegraphy
+4. Licence required for use of wireless telegraphy apparatus
+(1) No person shall establish or use any station for wireless telegraphy or install or
+use any apparatus for wireless telegraphy except under and in accordance with a licence
+in that behalf.
+(2) Any person who contravenes the provisions of subsection (1) shall be guilty of an
+offence.
+5. Licence required for dealing in wireless telegraph apparatus
+(1) No person shall offer for sale, sell or have in his possession with a view to sale in
+the course of his business any installation, mechanism, instrument, material or other appa-
+ratus constructed for the purpose of or intended to be used for wireless telegraphy except
+under and in accordance with a licence in that behalf.
+(2) Any person who contravenes the provision of subsection (l) of this section shall
+be guilty of an offence.
+
+-- 3 of 121 --
+
+6. Grant of licences
+(1) The Commission may grant licences for the purposes of this Act in the prescribed
+form or in such other for any particular case as he may approve and may renew licenses
+so granted.
+[1998 No. 31.]
+(2) The grant or renewal of a licence shall be in the discretion of the Commission.
+(3) A licence may be issued subject to such terms, provisions and limitations as the
+Commission may think fit, including in particular in the case of a licence to establish a
+station, limitations as to the position and nature of the station, the purposes for which,
+the circumstances in which, and the person by whom the station May be used, and the
+apparatus which may be installed or used therein, and, in the case of any other licence,
+limitation as to the apparatus which be installed or used, and the places where, the pur-
+poses for which, the circumstances in which and the persons by whom the apparatus may
+be used.
+(4) A licence shall, unless previously revoked, continue in force for such period as
+may be specified in the licence.
+(5) A licence may be revoked, or the terms, provisions or limitations thereof varied,
+by a notice in writing of the Commission served on the holder of the licence or by a gen-
+eral notice applicable to licences of the class to which the licence in question belongs
+published in the Federal Gazette.
+(6) Where a licence has expired or has been revoked, it shall be the duty of the person
+to whom the licence was issued, and of every other person in whose possession or under
+whose control the licence may be, to cause the licence to be surrendered to the Commis-
+sion if required by the Commission to do so, and any person who without reasonable ex-
+cuse fails or refuses to comply with the provisions of this subsection shall be guilty of an
+offence:
+Provided that this subsection shall not apply to a licence relating solely to apparatus
+not designed or adapted for emission (as opposed to reception).
+(7) Nothing in this section shall authorise the inclusion in any licence relating solely
+to apparatus not designed or adapted for emission (as opposed to reception), of any term
+or provision requiring any person to concede any form of right of entry into any private
+dwelling house.
+7. Fees and charges for licences
+(1) On the issue or renewal of a licence, and where the regulations under this Act so
+provide, at such times thereafter as may be prescribed by the regulations, there shall be
+paid to the Commission, or such person as it may appoint, by the person to whom the li-
+cence is issued such sums as may be prescribed by regulations to be made by the Com-
+mission, and different provision may be made in relation to different licences, according
+to the nature, terms, provisions, limitations and duration thereof.
+(2) Where sums will or may become payable under subsection (I) of this section,
+subsequently to the issue or renewal of a licence, the Commission may, on the issue or
+renewal thereof, require such security to be given, by way of deposit or otherwise, for the
+payment if the sums which will or may become payable as he thinks fit.
+8. Experimental licences
+(1) Subject to the provisions of this section, where an application for the grant or re-
+newal of a licence is made to the Commission by a citizen of Nigeria and the Commission
+is satisfied that the only purpose for which the applicant requires the licence is to enable
+him to conduct experiments in wireless telegraphy for the purpose of scientific research,
+the Commission shall not refuse to grant or renew the licence and shall not revoke the
+licence when granted, and no sum shall be payable under regulations under this Act oth-
+erwise than on the issued or renewal of the licence.
+(2) Nothing in subsection (1) of this section, shall limit the discretion of the Commis-
+sion as to the terms, provisions or limitation which it attaches to any licence or its power
+to vary the terms, provisions or limitations of any licence.
+
+-- 4 of 121 --
+
+(3) Nothing in subsection (1) of this section, shall prevent the Commission from re-
+fusing to grant or renew, or from revoking, any licence, if, whether before or after the
+grant or last renewal of the licence, the applicant has been convicted of any offence under
+this Part, whether in relation to the same or any other apparatus, or has contravened any
+of the terms, provisions or limitation of that or any other wireless telegraphy licence
+granted to him, or has been convicted under section 16 of this Act, of using any apparatus
+for the purpose of interfering with any wireless telegraphy.
+(4) Nothing in subsection (1) of this section, shall prevent the application of the pro-
+visions of section 24 of this Act to a holder of an experimental licence granted in pursu-
+ance of this section.
+9. Regulations as to wireless telegraphy
+(1) The Commission may with the approval of the Minister make regulations-
+[1998 No. 31.)
+(a) prescribing the things which are to be done or are not to be done in connection
+with the use of any station for wireless telegraphy or wireless telegraphy appa-
+ratus, and, in particular, requiring the use of any such station or apparatus to
+cease on the demand in that behalf of any such persons as may be prescribed
+by or under the regulations;
+(b) imposing on the person to whom a wireless telegraphy licence is used with
+respect to any station for wireless telegraphy or wireless telegraphy apparatus,
+or who is in possession or control of any station for wireless telegraphy or
+wireless telegraphy apparatus, obligation as to permitting and facilitating the
+inspection of the station and apparatus are as to the condition in which the sta-
+tion and apparatus are to be kept and, in the case of a station or apparatus for
+the establishment, installation or use of which a wireless telegraphy licence is
+necessary, as to the production of the licence, or of such other evidence of the
+licensing of the station or apparatus as may be prescribed by the regulations;
+(c) where sums are or may become due from the person to whom a wireless teleg-
+raphy licence is issued after the issue or renewal thereof, requiring that person
+to keep and produce such accounts and records as may be specified in the
+regulations;
+(d) requiring the person to whom a wireless telegraphy licence has been issued to
+exhibit at the station such notices as may be specified in the regulations;
+(e) for preserving the secrecy of communications by wireless telegraphy,
+and different provisions may be made by any such regulations for different classes of
+cases:
+Provided that nothing in any such regulations shall require any person to concede
+any form of right of entry into a private dwelling house for the purpose of permitting or
+facilitating the inspection of any apparatus not designed or adapted for emission (as op-
+posed to reception).
+(2) Any person who contravenes any regulation made under this section, or causes or
+permits any station for wireless telegraphy or wireless telegraphy apparatus to be used in
+contravention of any such regulations, shall be guilty of an offence.
+10. Misleading messages and interception and disclosure of messages
+(1) No person shall-
+(a) by means of wireless telegraphy, send or attempt to send, any message which,
+to his knowledge, is false or misleading and is, to his knowledge, likely to pre-
+judice the efficiency of any safety of life service or endanger the safety of any
+person or of any vessel, aircraft or vehicle, and in particular, any message
+which, to his knowledge, falsely suggests that a vessel or aircraft is in distress
+or in need of assistance or is not in distress or not in need of assistance; or
+(b) otherwise than under the authority of the Commission, or in the course of his
+duty as a servant of the State, either-
+[1998 No.31.]
+(i) use any wireless telegraphy apparatus with intent to obtain information
+as to the contents, sender or addressee of any message (whether sent by
+means of wireless telegraphy or not) which neither the person using the
+apparatus nor any person on whose behalf it is acting is authorised by
+the Commission to receive; or
+
+-- 5 of 121 --
+
+(ii) except in the course of legal proceedings or for the purpose of any re-
+port thereof, disclose any information as to the contents, sender or ad-
+dressee of any such message, being information which would not have
+come to his knowledge but for the use of wireless telegraphy apparatus
+by him or by another person.
+(2) Any person who contravenes the provisions of subsection (I) of this section, shall
+be guilty of an offence.
+11. Territorial extent of preceding provisions
+(1) Subject to the provisions of this section, this Part of this Act shall apply-
+(a) to all stations and apparatus in Nigeria;
+(b) to any station or apparatus on board a ship outside Nigeria; and
+(c) to any apparatus outside Nigeria which was released in Nigeria.
+(2) Where anything is done or omitted to be done in contravention of the provisions
+of this Part of this Act as applied by this section, the captain or other person for the time
+being in charge of the ship shall, in the absence of evidence to the contrary, and without
+prejudice to the liability of any other person, be guilty of an offence against this Act.
+(3) For the purposes of this section, the Commission with the approval of the Minister
+may in respect of any foreign ship or foreign aircraft while in Nigeria make regulations to
+restrict or control the use of any wireless telegraphy apparatus on board the foreign ship
+or foreign aircraft to such times or purpose as he may approve; and any regulation made
+under this subsection may provide for the imposition of tine not exceeding in the case of
+anyone offence, the sum of N200 and, in any proper case, for the confiscation of the
+wireless telegraphy apparatus or any part thereof.
+[1998 No.31.]
+(4) In this section and for the avoidance of doubts-
+"Nigeria" includes the territorial waters and air limits of Nigeria;
+"ship" means any ship subject to the laws of Nigeria, and includes any type of Nige-
+rian craft capable of becoming airborne.
+12. Powers of Commission as to wireless personnel
+(1) The Commission may hold examinations to determine the competence of the per-
+sons examined to fill positions in connection with the operation of stations for wireless
+telegraphy apparatus and may issue to persons successful at such examinations certificates
+of competence of such types as it may form time to time determine.
+[1998 No. 31.]
+(2) Where the Commission is satisfied that any person has qualified in another coun-
+try for a certificate of competence or authority to fill position in connection with the op-
+eration of stations for wireless telegraphy or wireless telegraphy apparatus in that country,
+it may issue to that person a certificate of competence to fill similar positions in Nigeria.
+(3) The Commission, if it appears to him that there are sufficient grounds so to do,
+may at any time revoke any certificate issued under subsection (2) of this section.
+(4) Where any certificate granted under subsection (2) of this section, has ceased to
+be in force or has been revoked, it shall be the duty of the person to whom the certificate
+was issued, and of every other person in whose possession or under whose control the
+certificate may be, to cause the certificate to be surrendered to the Commission if required
+by the Commission so to do, and any person who without reasonable excuse fails or re-
+fuses to comply with the provisions of this subsection shall be guilty of an offence.
+(5) The Commission may charge persons applying to take part in any examination
+under this section, and to applicants for, or for copies of, any certificates issued under this
+section, such fees, if any, as it may determine.
+PART III
+Provisions as to interference
+13. Regulations as to radiation of electro-magnetic energy, etc.
+(1) The Commission may with the approval of the Minister make regulations for both
+or either of the following purposes, that is to say-
+
+-- 6 of 121 --
+
+[1998 No. 31.]
+(a) for prescribing the requirements to be complied with in the case of any appa-
+ratus to which this section applies if the apparatus is to be used;
+(b) for prescribing the requirements to be complied with in the case of any appa-
+ratus to which this section applies if the apparatus is to be sold otherwise than
+for export, or offered or advertised for sale otherwise than for export, or let on
+hire or offered or advertised for letting on hire, by any person who in the
+course of business manufactures, assembles or imports such apparatus.
+(2) The said requirements shall be such requirements as the Commission thinks fit for
+the purpose of ensuring that the use of the apparatus does not cause undue interference
+with wireless telegraphy, and may in particular include-
+(a) requirements as to the maximum intensity of electro-magnetic energy of any
+specified frequencies which may be radiated in any direction from the appara-
+tus while it is being used; and
+(b) in the case of an apparatus the power for which is supplied from electric lines,
+requirements as to the maximum eletro-megnetic energy of any specified fre-
+quencies which may be injected into these lines by the apparatus,
+and, in so far as apparatus to the Commission necessary or expedient in the case of the
+regulations in question, different requirement may be prescribed for different circum-
+stance and in relation to different classes or description of apparatus, different districts or
+places and different times of use.
+(3) (a) The apparatus to which this section applies, shall be such apparatus as may be
+specified in the regulations made thereunder, being apparatus generating, or designed to
+generate, or liable to generate fortuitously, electro-magnetic energy at frequencies of not
+more than three million megacycles per second, and not being wireless telegraphy appa-
+ratus.
+(b) The references in this subsection to apparatus include references to any form
+of eletric line, and other references in this Act to apparatus shall be construed accord-
+ingly.
+(4) It shall not be unlawful for any person to use any apparatus to which this section
+applies or to sell any such apparatus or offer or advertise it for sale or let it on hire or of-
+fer or advertise it for letting on hire by reason only that it does not comply with the re-
+quirements applicable under any regulations made under this section, but the non-
+compliance shall be a ground for the giving of a notice under section 14 or section 15 of
+this Act, as the case may be.
+14. Enforcement of regulations as to use of apparatus
+(1) If the Commission is of opinion-
+(a) that any apparatus does not comply with the requirements applicable to it under
+regulations made for the purpose specified in paragraph (a) of subsection (1) of
+section 13 of this Act; and
+[1998 No.3!.]
+(b) that either-
+(i) the use of the apparatus is likely to cause undue interference with any
+wire telegraphy used for the purposes of any safety of life service or for
+any purpose of which the safety of any person or any vessel, aircraft or
+vehicle may depend; or
+(ii) the use of the apparatus is likely to cause undue interference with any
+other wireless telegraphy and in fact has caused or is causing such in-
+terference in a case where he considers that all reasonable steps to
+minimise interference have been taken in relation to the station or appa-
+ratus receiving the telegraphy,
+it may serve on the person in whose possession the apparatus is, a notice in writing re-
+quiring that, after a date fixed by the notice, not being less than 28 days from the date of
+the service thereof, the apparatus shall not be used, whether the person to whom the no-
+tice is given or otherwise, or, if the Commission thinks tit so to frame the notice, shall
+only be used in such manner, at such times and in such circumstances as may be specified
+in the notice:
+Provided that if the Commission is satisfied that the use of the apparatus in question
+is likely to cause undue interference with any wireless telegraphy used for the purpose of
+any safety of life service or for any purpose on which the safety of any person or of any
+
+-- 7 of 121 --
+
+vessel, aircraft or vehicle may depend, the date to be fixed by notice may be the date of
+service thereof.
+(2) A notice under subsection (I) of this section, may be revoked or varied by a sub-
+sequent notice in writing by the Commission served on the person in whose possession
+the apparatus then is:
+Provided that where a notice under this subsection has the effect of imposing any
+additional restriction on the use of the apparatus, the provisions of subsection (I) of this
+section, relating to the coming into force of notices shall apply in relation to notice as if it
+has been a notice served under subsection (I) of this section.
+(3) (a) Where notice has been given under subsection (1) of this section, any person
+having possession of or any interest in the apparatus to which the notice relates may
+within 28 days appeal to the High Court having jurisdiction in that part of the Federation
+where the apparatus is situated at the time when the notice was given, and the High Court
+may, upon application of such person made at the time of the filing the appeal, direct that
+the Commission's notice shall not operate until a particular date not later than the termi-
+nation of the appeal:
+Provided that where the Minister in writing under his hand certifies to the High
+Court that the continued use of the apparatus in question is likely to cause interference
+with any wireless telegraphy used for the purpose on which the safety of life service or the
+safety of any person, vessel, aircraft or vehicle may depend, the High Court may not alter
+the date upon which the directive in the Commission's notice shall operate.
+(b) This subsection shall apply in relation to a notice under subsection (I) of this
+section, which has been varied by a subsequent notice as it applies in relation to a notice
+which has not been so varied.
+(4) On any such appeal, the High Court may, if it thinks it expedient so to do, call in
+the aid of one or more assessors specially qualified, and may hear and determine the ap-
+peal wholly or in part with their assistance.
+(5) On any such appeal, the High Court shall hear the Commission and the person at
+whose instance the appeal was made and any other person appearing to them to be inter-
+ested who desires to be heard, and has, in accordance with the rules regulating the proce-
+dure of the appeal, procured himself to be made a party to the appeal, and if the High
+Court is satisfied that the apparatus in question complies with the requirements applicable
+to it under the regulations, it shall direct the Commission to revoke the notice and the
+Commission shall revoke the notice accordingly.
+(6) A direction given under subsection (5) of this section may be absolute, or may be
+conditional on such steps being taken in relation to the apparatus, or on the apparatus be-
+. ing made to comply with such requirement as may be specified in the direction, and any
+question whether or not these steps have been taken or, as the case may be, whether or not
+the apparatus has been made to comply with those requirements shall, on the application
+to the Commission or of any person having possession of or any interest in the apparatus,
+be determined by the Court.
+(7) Any person, who, knowing that a notice of the Commission under this section is in
+force with respect to any apparatus, uses that apparatus, or causes or permits it to be used,
+in contravention of the notice, shall be guilty of an offence.
+15. Enforcement of regulations as to sales, etc., by manufacturers and others
+(1) If the Commission is of opinion that any apparatus does not comply with the re-
+quirements applicable to it under regulations made for the purpose specified in para-
+graph (b) of subsection (1) of section 13 of this Act, he may serve on any person who has
+manufactured, assembled or imported the apparatus in the course of business a notice in
+writing prohibiting him from selling the apparatus, otherwise than for export, or offering
+or advertising it for sale, otherwise than for export, or letting it on hire or offering or ad-
+vertising it for letting on hire.
+[1998 No. 31.]
+(2) Where a notice has been served under subsection (I) of this section, the person on
+whom the notice has been served may appeal against the same to the High Court having
+jurisdiction in that part of the Federation where the apparatus is situated at the time when
+the notice was given.
+(3) On any such appeal, the High Court may, if it thinks it expedient so to do, call in
+the aid of one or more assessors specially qualified, and may hear and determine the ap-
+
+-- 8 of 121 --
+
+peal wholly or in part with their assistance.
+(4) On any such appeal, the High Court shall hear the Commission and the person at
+whose instance the appeal was made and any other person appearing to it to be interested
+who desires to be heard and has, in accordance with the rules regulating the procedure of
+the appeal, procured himself to be made a party to the appeal, and, if it is satisfied that the
+apparatus in question complies with the requirements applicable to it under the regula-
+tions, shall direct the Commission to revoke the notice and shall revoke it accordingly:
+Provided that the making by the High Court of a direction under this subsection
+shall not, where the apparatus is subsequently altered, prevent the Commission from
+serving a fresh notice under subsection (1) of this section with respect to the apparatus
+and the refusal by the High Court to make a direction under this subsection shall not,
+where the apparatus is subsequently altered, prevent the Commission from revoking the
+notice or the person on whom the notice was served from instituting a further appeal un-
+der subsection (2) of this section.
+(5) Where a notice has been served under subsection (1) of this section, the person on
+whom the notice has been served shall, if he contravenes the provisions of the notice
+without the notice having been previously revoked by the Commission, be guilty of an
+offence.
+16. Deliberate interference
+(1) Any person who wilfully uses any apparatus for the purpose of interfering with
+any wireless telegraphy shall be guilty of an offence.
+(2) This section shall apply whether or not the apparatus in question is wireless teleg-
+raphy apparatus or apparatus to which any of the preceding provisions of this Part apply,
+and whether or not any notice under section 14 or section 15 of this Act has been given
+with respect to the apparatus, or if, given, has been varied or revoked.
+PART IV
+General
+17. Penalties
+Subject to the provisions of Part II of this Act relating to offences committed in rela-
+tion to apparatus on board a foreign ship or foreign aircraft, any person committing any
+offence under this Act-
+(a) shall, if the offence is under Part II of this Act and consists either-
+(i) in the installation or use, otherwise than under and in accordance with a
+licence, of any apparatus not designed or adapted for emission (as op-
+posed to reception); or
+(ii) in a failure or refusal to cause any licence or authority to be surren-
+dered to the Commission, be liable, in the case of the first such offence,
+to a fine of N20, and, in the case of any subsequent such offence, to a
+fine of N 100;
+[1998 No. 31.)
+(b) shall, if the offence is under Part III of this Act and consists in the use, or in the
+causing or permitting of the use, or in the selling, offering or advertising for
+sale, or letting on hire or offering or advertising for letting on hire, of apparatus
+in contravention of notice of the Commission, not being apparatus the use of
+which is likely to cause undue interference with any wireless telegraphy used
+for the purpose of any safety of life service or any purpose on which the safety
+of any person or of any vessel, aircraft or vehicle may depend, be liable, in the
+case of the first such offence, to a fine of N20, and in the case of any subse-
+quent such offence, to a fine of N 100;
+(c) shall, in the case of any other offence, be liable to imprisonment for three
+months or to a fine of N200 or to both such imprisonment and such a fine.
+18. Offences by bodies corporate
+(1) Where any offence under this Act has been committed by a body corporate, every
+person who at the time of the commission of the offence was a director, general manager,
+secretary or other similar officer of the body corporate, or was purporting to act in any
+such capacity, shall be deemed to be guilty of that offence unless he proves that the of-
+fence was committed without his consent or connivance, and that he exercised all such
+diligence to prevent the commission of the offence as he ought to have exercised having
+
+-- 9 of 121 --
+
+regards to the nature of his functions in that capacity and in all the circumstances.
+(2) In this section, the expression "director", in relation to any body corporate estab-
+lished directly by or under any enactment for the purpose of carrying on any industry or
+part of an industry or undertaking being a body corporate whose affairs are managed by
+the members thereof, means a member of that body.
+19. Forfeiture
+Where a person is convicted of an offence under this Act consisting in any contraven-
+tion of any of the provisions of Part II of this Act in relation to any station for wireless
+telegraphy or any wireless telegraphy apparatus or in the use of any apparatus for the pur-
+pose of interfering with any wireless telegraphy, the court may, in addition to any other
+penalty order all or any of the apparatus of the stations, or as the case may be, of the ap-
+paratus in connection with which the offence was committed, to be forfeited to the Fed-
+eral Government.
+20. Offences continued after conviction
+With prejudice to the right to bring separate proceedings for contravention on this Act
+taking place on separate occasions, a person who is convicted of an offence under this Act
+consisting in the use of any station or apparatus, or in a failure or refusal to cause any
+licence or authority to be surrendered, shall, where the use or failure or refusal continues
+after the conviction, be deemed to commit a separate offence in respect of every day on
+which the use, failure or refusal so continues.
+21. Civil proceedings
+Nothing in the preceding provisions of this Part shall limit any right of any person to
+bring civil proceedings in respect of the doing or apprehended doing of anything rendered
+unlawful by any provision of this Act, and, without prejudice to the generality of the pro-
+ceeding words, compliance with the provisions of this Act contravention of which are
+declared to be an offence under this Act shall be enforceable by civil proceedings by the
+State for an injunction or for any other appropriate relief.
+22. Entry and search of premises, etc.
+(1) If a magistrate is satisfied by information on oath that there is reasonable ground
+for suspecting that an offence under this Act has been or is being committed, and that
+evidence of the commission of the offence is to be found on any premises specified in the
+information, or in any vessel, aircraft or vehicle so specified, he may grant a search war-
+rant authorising any person or persons authorised in that behalf by the Commission and
+named in the warrant, with or without any constables, to enter, at any time within one
+month from the date of the warrant, the premises specified in the information, or as the
+case may be, the vessel, aircraft or vehicle so specified and any premises upon which it
+may be, and to search the premises, or, as the case may be, the vessel, aircraft or vehicle,
+and to examine and test any apparatus found on the premises, vessel, aircraft or vehicle.
+(2) If a magistrate is satisfied upon an application supported by sworn evidence-
+(a) that there is reasonable ground for believing that, on any specified premises or
+in any specified vessel, aircraft or vehicle, apparatus to which section 13 of this
+Act applies is to be found which does not comply with the requirement appli-
+cable to it under regulations made under that section; and
+(b) that it is necessary to enter those premises or that vessel, aircraft or vehicles,
+for the purpose of obtaining such information as will enable the Commission to
+decide whether or not to serve a notice under section 14 or 15 of this Act; and
+(c) that access to the premises, vessel, aircraft or vehicle for the purpose of ob-
+taining such information as aforesaid has, within fourteen days before the date
+of the application to the magistrate, been demanded by a person authorised in
+that behalf by the Commission and producing sufficient documentary evidence
+of his identity and authority, but has been refused,
+the magistrate may issue a written authority under his hand empowering any person or
+person authorised in that behalf by the Commission and named in the authorisation, with
+or without any police officers, to enter the premises, or, as the case may be, the vessel,
+aircraft or vehicle and any premises on which it may be and to search the premises, ves-
+sel, aircraft or vehicle with a view to discovering whether any such apparatus as aforesaid
+is situate thereon or therein, and, if he finds or they find any such apparatus thereon or
+therein, to examine and test it with a view to obtaining such information as aforesaid:
+Provided that an authorisation shall not be issued under this subsection unless
+
+-- 10 of 121 --
+
+either-
+(i) it is shown to the magistrate that the Commission is satisfied the there
+is reasonable ground for believing that the use of the apparatus in ques-
+tion is likely to cause undue interference with any wireless telegraphy
+used for the purpose of any safety of life service or any purpose on
+which the safety of any person or of any vessel, aircraft or vehicle may
+depend; or
+(ii) it is shown to the magistrate that not less than seven days' notice of the
+demand for access was served on the occupier of the premises, or as the
+case may be, the person in possession or the person in charge of the
+vessel, aircraft or vehicle, and that the demand was made at a reason-
+able hour and was unreasonably refused.
+(3) Where under this section a person has a right to examine and test any apparatus on
+any premises or in any vessel, aircraft or vehicle, it shall be the duty of any person who is
+on the premises, or is in charge of, or in attendance on the vessel, aircraft or vehicle, to
+give him any such assistance as he may reasonably require in the examination or testing of
+the apparatus.
+(4) Any person who-
+(a) obstructs any person in the exercise of the powers conferred on him under this
+section; or
+(b) fails or refuses to give any such person any assistance which he is under this
+section under a duty to give to him; or
+(c) discloses, otherwise than for the purposes of this Act or of any report of pro-
+ceedings thereunder, any information obtained by means of the exercise of
+powers under this Act, being information with regard to any manufacturing
+process or trade secret,
+shall be guilty of an offence, and criminal proceedings for an offence under paragraph (c)
+of this subsection may be instituted without the consent of the Commission.
+23. Provisions applicable on an occasion of emergency
+If on the occasion of an emergency or in the public interest the President declares that
+the Government of the Federation shall have control over the transmission or reception of
+messages by wireless telegraphy, then, after publication of a notice to that effect in the
+Federal Gazette and until further notice, the following provisions shall apply-
+(d) the Commission may by order prohibit for such period and to such extent as
+may be specified in the order the use of wireless telegraphy on board such ves-
+sels, aircraft or vehicles as may be specified in the order in or over Nigeria or
+the territorial water adjacent thereto;
+[1998 No. 31.)
+(b) the Commission, or any public officer authorised In writing by the Commis-
+sion, may-
+(i) take possession of any apparatus for wireless telegraphy installed on
+any station for wireless telegraphy licence under this Act or forming
+part of the stock of a wireless dealer licensed under this Act and use
+such apparatus for official purposes; or
+(ii) place any person in control of any such apparatus; or
+(iii) direct the licensee or person in charge of such apparatus to submit to
+him all or any communications tendered for transmission or received by
+means of the apparatus; or
+(iv) stop or delay or direct the licensee or person in charge of such appara-
+tus to stop or delay the transmission or delivery of any such communi-
+cation or to deliver them to him; or
+(v) direct the licensee or person in charge of such apparatus to comply with
+all such directions as he may think tit to give with reference to the
+transmission or receipt of communication by means of the apparatus;
+(c) there shall be payable to the licensee of such apparatus for any damage to the
+apparatus arising in consequence of the exercise of the powers conferred by
+this section such compensation as in the opinion of the Commission may be
+reasonable;
+(d) the Commission may, notwithstanding anything contained in a licence issued
+
+-- 11 of 121 --
+
+under this Act, by order, prohibit for such time as may be specified in the order
+any licence from communicating with any station for wireless telegraphy li-
+censed by or belong to any country which is at war;
+(e) the captain or person in charge of any vessel, aircraft or vehicle in relation to
+which any order or direction under this section is contravened and any person
+who contravenes any order or direction under this section shall be guilty of an
+offence.
+24. Onus of proof
+Any person who IS In possession of any apparatus for wireless telegraphy shall be
+deemed, until the contrary is proved, to have used the same.
+25. Saving as regards distress signals and electrical apparatus
+Nothing in this Act shall be deemed to prevent-
+(a) the use by a vessel, or aircraft in distress, of any means at its disposal to attract
+attention, make known its position and obtain help; or
+(b) any person from making or using electrical apparatus for actuating machinery
+or for any purpose other than that of wireless telegraphy.
+26. Protection of Government and public officers
+Neither the Government of the Federation, nor the Commission, nor any public officer
+shall be liable or responsible for an infringement by a licensee, in the exercise of his li-
+cence, of copyright in any work or of any patent for an invention or for any breach of the
+law arising out of the exercise of the licence, and nothing in this Act shall affect the li-
+ability of the licensee in respect of any such act done by him.
+[1998 No. 3J.]
+27. Service of notices by post
+Any notice given under the provisions of this Act may be served by post.
+28. Miscellaneous regulations
+Without prejudice to any power in this Act, the Commission may with the approval of
+the Minister make regulations prescribing or providing for-
+[1998 No. 3J.]
+(a) the form of licence and the conditions to which licences shall be subject, and
+different forms and conditions may be prescribed for different classes of li-
+cence;
+(b) the conditions precedent to the grant of any particular class of licence;
+(c) the fees payable for the issue or renewal of any particular class of licence;
+(d) the conduct of any examinations held under this section 12 of this Act, the
+qualifications and remuneration of examiner conducting such examinations;
+(e) the prohibition of the use in connection with any station for wireless telegraphy
+or wireless telegraphy apparatus of such call signals or means of identification
+as may be specified in the regulations;
+(f) the exemption from the provisions of this Act of station for wireless telegraphy
+apparatus of such classes or descriptions as may be specified in the regulation;
+(g) carrying out and giving effect to purposes incidental to any of the foregoing.
+29. Government sound and television broadcasting services
+(1) In the discharge of the executive authority of the Federation in relation to the allo-
+cation of wavelengths for wireless broadcasting and television transmission, the Commis-
+sion may grant to the Government of a State licences to provide sound or television
+broadcasting services transmitting on such wavelengths as may be allocated.
+[1998 No. 31.]
+(2) A licence granted under subsection (1) of this section shall be subject to such
+conditions as the Commission may see fit to impose for the purpose of-
+(a) ensuring a proper and efficient allocation of wavelengths throughout Nigeria;
+or
+
+-- 12 of 121 --
+
+(b) giving effect to or ensuring compliance with the terms of any international
+convention relating to wireless telegraphy to which the Federation is a signa-
+tory; or
+(c) avoiding undue interference with wireless telegraphy whether inside or outside
+Nigeria,
+but save as aforesaid, a licence so granted shall not be subject to any conditions.
+(3) Except in so far as it may in the opinion of the Commission be necessary or expe-
+dient for any of the purposes mentioned in subsection (2) of this section so to do, the
+Commission shall not, if application for the grant of a licence under subsection (I) of this
+section is made to him by the Government of a State, refuse to grant a licence to that
+Government.
+(4) If, in the opinion of the Commission, it is necessary or expedient for any of the
+purposes mentioned in subsection (2) of this section to cancel the allocation in a licence
+granted under subsection (1) of this section of a wavelength or alter a wavelength alloca-
+tion in a licence so granted or alter or add to the conditions of a licence so granted, he
+may by notice in writing cancel or amend the licence accordingly.
+(5) A sound or television broadcasting service shall be provided by the Government
+of a State only under and in accordance with a licence granted under subsection (1) of this
+section, but except as provided in this section, the provisions of this Act shall not apply in
+relation to broadcasting or television provided by the Government of a State.
+30. Validity of previous licences
+Any licence granted under any of the provisions of the Wireless Telegraphy Ordi-
+nance hereby repealed and in force immediately before the coming into operation of this
+Act shall cease to have effect unless renewed in accordance with the provisions of this
+Act.
+[Cap. 31 1961.]

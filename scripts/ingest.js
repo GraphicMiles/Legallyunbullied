@@ -31,7 +31,8 @@ const fs = require("fs");
 const path = require("path");
 const { getFirestore } = require("../server/firebaseAdmin");
 
-const VALID_PRACTICE_AREAS = ["tenancy", "employment", "criminal_rights", "contract", "general"];
+const { PRACTICE_AREA_KEYS } = require("../server/practiceAreas");
+const VALID_PRACTICE_AREAS = PRACTICE_AREA_KEYS;
 const BATCH_SIZE = 400; // Firestore's write-batch limit is 500; stay comfortably under it.
 
 function parseArgs(argv) {
@@ -123,6 +124,23 @@ async function main() {
     process.exit(1);
   }
 
+  function withTimeout(promise, ms, label) {
+    return Promise.race([
+      promise,
+      new Promise((_, reject) =>
+        setTimeout(
+          () =>
+            reject(
+              new Error(
+                `${label} timed out after ${ms}ms (likely a Firestore quota/rate-limit issue — the Admin SDK can hang silently on 429s instead of throwing quickly; try again later or check the Blaze plan upgrade)`
+              )
+            ),
+          ms
+        )
+      ),
+    ]);
+  }
+
   const collection = db.collection("legal_provisions");
   const now = new Date().toISOString();
 
@@ -150,9 +168,10 @@ async function main() {
       });
     });
 
-    await batch.commit();
+    await withTimeout(batch.commit(), 20000, `Firestore commit (batch starting at ${i})`);
     console.log(`Committed ${Math.min(i + BATCH_SIZE, chunks.length)}/${chunks.length}...`);
   }
+
 
   console.log(`\nDone. Ingested ${chunks.length} sections from "${args.act}" into Firestore's legal_provisions collection.`);
 }

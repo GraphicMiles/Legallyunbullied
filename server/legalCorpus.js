@@ -24,7 +24,7 @@
 const { getFirestore } = require("./firebaseAdmin");
 
 const COLLECTION = "legal_provisions";
-const RAW_FETCH_CAP = 600;
+const RAW_FETCH_CAP = 4000; // "general" alone now holds 3500+ sections after the bulk PLAC ingestion
 const MAX_FOR_MODEL = 14;
 const KEYWORD_FILTER_THRESHOLD = MAX_FOR_MODEL; // only bother filtering once we're over the cap anyway
 

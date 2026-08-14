@@ -13,8 +13,9 @@ const express = require("express");
 const router = express.Router();
 const { getClient, CLASSIFY_MODEL, DRAFT_MODEL, DRAFT_MODEL_FALLBACK } = require("./groq");
 const { findProvisions } = require("./legalCorpus");
+const { PRACTICE_AREAS: PRACTICE_AREA_DEFS, PRACTICE_AREA_KEYS } = require("./practiceAreas");
 
-const PRACTICE_AREAS = ["tenancy", "employment", "criminal_rights", "contract", "general"];
+const PRACTICE_AREAS = PRACTICE_AREA_KEYS;
 
 /**
  * Some models occasionally wrap JSON-mode output in markdown code fences
@@ -25,16 +26,16 @@ function parseModelJson(content) {
   return JSON.parse(trimmed);
 }
 
+const PRACTICE_AREA_BULLETS = PRACTICE_AREA_DEFS.map((p) => `- "${p.key}": ${p.description}`).join("\n");
+
 const CLASSIFY_SYSTEM_PROMPT = `You classify Nigerian legal questions for an information retrieval system that only has a specific, limited set of statutes actually loaded — not general legal knowledge.
 
 Respond with ONLY a JSON object, no prose, no markdown code fences.
 
 Valid values for "practice_area": ${JSON.stringify(PRACTICE_AREAS)}
-- "tenancy": landlord/tenant disputes, rent, eviction, notice to quit (Lagos State tenancy law only)
-- "employment": firing, unpaid wages, workplace disputes (Labour Act / National Industrial Court)
-- "criminal_rights": arrest, detention, bail, police conduct, criminal trial procedure (ACJA 2015 — procedure only, not substantive offence definitions like specific crimes, cybercrime, etc.)
-- "contract": small-value civil debt/contract disputes suited to Small Claims Court procedure
-- "general": anything that doesn't clearly and specifically match one of the above — including topics that sound legal but aren't covered by these narrow statutes (e.g. cybercrime/cyberbullying, family law, intellectual property, immigration, tax). Prefer "general" over force-fitting a loose match — an honest "not covered yet" beats a confident answer built on irrelevant sections.
+${PRACTICE_AREA_BULLETS}
+
+Pick exactly one practice_area — the single best-fitting category. Prefer "general" over force-fitting a loose match.
 
 Valid values for "urgency": ["Low", "Medium", "High", "Critical"]
 

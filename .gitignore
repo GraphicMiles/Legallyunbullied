@@ -2,3 +2,10 @@
 *.log
 node_modules/
 .env
+
+# Raw fetch cache for the bulk PLAC ingestion (~295MB of source PDFs/HTML) —
+# regeneratable by re-running scripts/bulk-fetch-clean.js against the same
+# URLs (see legal_sources/manifest/placng_index.json). The cleaned .txt
+# output that was actually ingested IS committed; only this raw cache is
+# excluded to keep the repo a reasonable size.
+legal_sources/federal_acts_bulk/_raw/
