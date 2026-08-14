@@ -8,7 +8,7 @@
 (function () {
   "use strict";
 
-  const STORAGE_KEY = "lu.conversations.v2";
+  const STORAGE_KEY = "lu.conversations.v3";
   const NBA_DIRECTORY_URL = "https://www.nigerianbar.org.ng/find-a-lawyer";
   const CURSOR_TOKEN = "\uE000CURSOR\uE000";
 
@@ -164,92 +164,39 @@
   }
 
   /* ------------------------------------------------------------------ */
-  /* Legal classification + answer content (mock, deterministic)         */
+  /* Practice-area display labels (server returns snake_case keys)       */
   /* ------------------------------------------------------------------ */
-  const TOPICS = [
-    {
-      key: "tenancy",
-      practiceArea: "Tenancy Law",
-      match: /\b(landlord|tenant|rent|eviction|evict|lease|apartment|flat|quit notice)\b/i,
-      jurisdictionGuess: "Lagos State",
-      urgency: "High",
-      sources: [
-        { id: "s1", label: "Lagos Tenancy Law 2011, s.13", type: "SUMMARY", excerpt: "In short: s.13 sets the minimum notice a landlord must give before a monthly tenancy can be ended — generally one month — before any recovery-of-possession step can begin." },
-        { id: "s2", label: "Lagos Tenancy Law 2011, s.25", type: "SUMMARY", excerpt: "In short: s.25 makes self-help eviction (locking a tenant out, seizing belongings, or removing them by force without a court order) an offence, regardless of arrears owed." },
-      ],
-      lawMd: "In Lagos State, a landlord cannot eject a tenant without following due process under the **Lagos Tenancy Law 2011**. For a monthly tenant, the landlord must serve a valid **quit notice** — typically one month's notice — followed by a separate **7-day notice of owner's intention to recover possession** if the tenant doesn't leave.\n\nSelf-help eviction — changing locks, removing property, or forcibly ejecting a tenant without a court order — is illegal, regardless of rent arrears.",
-      actionsMd: "- Ask the landlord (in writing) for the specific notice they claim to have served, and its date.\n- Keep proof of rent payments and any communication about the tenancy.\n- If your property is interfered with or you're locked out without a court order, this becomes a police + court matter immediately — it's a criminal act, not just a civil dispute.\n- If a valid notice was served and it has expired, the landlord still needs a court order (from a Magistrate or the Landlord/Tenant division) before physically recovering the property.",
-      escalate: true,
-      escalateReason: "Evictions involve statutory notice periods and court procedure. If the notice was invalid or force was used, a lawyer can get you an urgent injunction — this isn't something to resolve by yourself once it's contested.",
-      followUps: ["What counts as a valid quit notice in Lagos?", "Can my landlord increase my rent mid-tenancy?"],
-    },
-    {
-      key: "employment",
-      practiceArea: "Labour & Employment Law",
-      match: /\b(employer|fired|dismissed|salary|wages|termination|job|resign|severance|unpaid)\b/i,
-      jurisdictionGuess: "Federal (Labour Act)",
-      urgency: "Medium",
-      sources: [
-        { id: "s1", label: "Labour Act, Cap. L1 LFN 2004, s.11", type: "SUMMARY", excerpt: "In short: s.11 ties notice periods to length of service and allows payment in lieu of notice, but doesn't excuse an employer from paying wages already earned." },
-        { id: "s2", label: "National Industrial Court Act 2006", type: "SUMMARY", excerpt: "In short: this Act gives the National Industrial Court exclusive jurisdiction over employment and labour disputes, including unpaid-wage claims." },
-      ],
-      lawMd: "Under the **Labour Act**, termination of employment (for workers it covers) generally requires notice proportional to length of service, or payment in lieu of notice. Termination itself doesn't have to be justified for most private contracts unless your contract or a collective agreement says otherwise — but **unpaid earned salary must still be paid** regardless of how the termination happened.\n\nFiring by text message isn't automatically illegal, but withholding wages already earned is a separate, actionable wrong.",
-      actionsMd: "- Request a written termination letter and a final pay statement — you're entitled to both.\n- Calculate exactly what's owed: unpaid salary, unused leave, and any notice-in-lieu your contract specifies.\n- Send a formal written demand for the outstanding salary with a short deadline before escalating.\n- If unresolved, claims for unpaid wages go to the **National Industrial Court**, which handles employment disputes exclusively.",
-      escalate: true,
-      escalateReason: "Recovering unpaid wages through the National Industrial Court involves procedure a lawyer handles far faster than a self-filed claim — especially if your employer stalls after the written demand.",
-      followUps: ["How much notice pay am I actually owed?", "Can I claim unpaid wages without a lawyer?"],
-    },
-    {
-      key: "policing",
-      practiceArea: "Constitutional & Criminal Law",
-      match: /\b(police|arrest|detain|detained|custody|bail|charge|station)\b/i,
-      jurisdictionGuess: "Federal (Constitution + ACJA)",
-      urgency: "Critical",
-      sources: [
-        { id: "s1", label: "1999 Constitution (as amended), s.35", type: "SUMMARY", excerpt: "In short: s.35 protects personal liberty and requires anyone arrested to be brought before a court within a reasonable time, or released." },
-        { id: "s2", label: "Administration of Criminal Justice Act 2015, s.6", type: "SUMMARY", excerpt: "In short: s.6 of the ACJA sets out the reasonable-time thresholds (roughly 24–48 hours depending on court proximity) for producing a detained suspect in court." },
-      ],
-      lawMd: "Section 35 of the **1999 Constitution** and the **Administration of Criminal Justice Act (ACJA) 2015** require that a person arrested and detained be brought before a court within a **reasonable time** — interpreted as 24–48 hours depending on court proximity. Detention beyond that without charge or a court appearance is unlawful, and bail for most offences is a right, not a favour, before conviction.",
-      actionsMd: "- Go to the station in person and formally request the case file number, the exact offence alleged, and the officer in charge's name.\n- Ask in writing for bail — the police are required to consider it for most offences.\n- If 48 hours pass with no charge or court appearance, this is a constitutional violation you can act on immediately — including via a fundamental rights enforcement application.\n- Document everything: dates, times, names, station location.",
-      escalate: true,
-      escalateReason: "This is time-critical and involves personal liberty. A lawyer can file a fundamental rights enforcement application today — every hour of unlawful detention matters here.",
-      followUps: ["How do I file a fundamental rights enforcement application?", "What happens if the police refuse to grant bail?"],
-    },
-    {
-      key: "contract",
-      practiceArea: "Contract Law",
-      match: /\b(contractor|contract|refund|deposit|breach|agreement|scam|paid him|paid her)\b/i,
-      jurisdictionGuess: "State (Civil/Small Claims)",
-      urgency: "Medium",
-      sources: [
-        { id: "s1", label: "Contract Act (general principles)", type: "SUMMARY", excerpt: "In short: Nigerian contract law recognises oral and written agreements alike, as long as offer, acceptance, and consideration (e.g. payment) can be shown." },
-        { id: "s2", label: "Small Claims Court Practice Direction 2018", type: "SUMMARY", excerpt: "In short: this Practice Direction created a fast-track court process for modest-value disputes, designed to be filed without a lawyer and resolved in weeks." },
-      ],
-      lawMd: "Taking payment for work and not completing it is a **breach of contract**, whether the agreement was written or verbal — Nigerian contract law recognises oral agreements as long as you can show offer, acceptance, and payment (receipts, transfer alerts, chats).\n\nYou're entitled to either completion of the work, a refund, or damages for the loss caused by the breach.",
-      actionsMd: "- Gather every piece of evidence: chats, receipts, transfer alerts, photos of unfinished work.\n- Send a written demand letter giving a clear deadline (e.g. 7 days) to complete the work or refund you.\n- If the amount is modest, Nigeria's **Small Claims Courts** are built exactly for this — no lawyer required to file, and cases move in weeks, not years.\n- If ignored, that's your trigger to escalate formally.",
-      escalate: false,
-      escalateReason: "This is the kind of dispute the Small Claims Court process was designed for — you can likely resolve it yourself without hiring a lawyer, unless the amount is large or the other side pushes back hard.",
-      followUps: ["How do I file at the Small Claims Court?", "What evidence actually holds up for a verbal agreement?"],
-    },
-  ];
-
-  const DEFAULT_TOPIC = {
-    key: "general",
-    practiceArea: "General Inquiry",
-    jurisdictionGuess: "Nigeria (Federal)",
-    urgency: "Low",
-    sources: [
-      { id: "s1", label: "1999 Constitution (as amended)", type: "SUMMARY", excerpt: "In short: the Constitution sets the baseline rights and federal/state divide that most everyday legal questions ultimately sit on top of." },
-    ],
-    lawMd: "This doesn't map cleanly to one of the common issue types yet, so treat this as a general read: most everyday disputes in Nigeria are governed by a mix of federal statutes (like the Constitution and the Labour Act) and state-specific laws (like tenancy or traffic laws), so the exact answer depends on where you are and the specifics of what happened.",
-    actionsMd: "- Add specifics: what state you're in, who the other party is, and what's happened so far.\n- Keep a written record of dates, names, and any money or documents involved — this matters no matter what the issue turns out to be.",
-    escalate: false,
-    escalateReason: "There isn't enough here yet to tell if this needs a lawyer — add more detail and the agent will re-classify.",
-    followUps: ["What state-specific laws should I mention?", "Can you give me an example of a well-described legal question?"],
+  const PRACTICE_AREA_LABELS = {
+    tenancy: "Tenancy Law",
+    employment: "Labour & Employment Law",
+    criminal_rights: "Constitutional & Criminal Law",
+    contract: "Contract Law",
+    general: "General Inquiry",
   };
 
-  function classify(text) {
-    return TOPICS.find((t) => t.match.test(text)) || DEFAULT_TOPIC;
+  function normalizeClassification(c) {
+    if (!c) return null;
+    return {
+      practiceArea: PRACTICE_AREA_LABELS[c.practice_area] || c.practice_area || "General Inquiry",
+      jurisdictionGuess: c.jurisdiction || "Nigeria (Federal)",
+      urgency: c.urgency || "Low",
+      summary: c.summary || "",
+    };
+  }
+
+  async function callChatApi(question) {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question }),
+    });
+    let data = null;
+    try { data = await res.json(); } catch (e) { /* fall through to error below */ }
+    if (!res.ok) {
+      throw new Error((data && data.message) || `Request failed with status ${res.status}.`);
+    }
+    if (!data) throw new Error("The server returned an unexpected empty response.");
+    return data;
   }
 
   /* ------------------------------------------------------------------ */
@@ -437,31 +384,34 @@
     body.className = "msg__body";
     wrap.appendChild(body);
 
-    if (!msg.result) {
-      // Defensive fallback: a message that never finished (e.g. page reload
-      // mid-pipeline). Resolve it immediately and instantly, no animation.
+    if (msg.status !== "done" && msg.status !== "corpusEmpty" && msg.status !== "error") {
+      // Never reached a terminal state (e.g. page reload mid-request).
+      // Resolve it honestly instead of fabricating an answer.
       finalizeStaleMessage(msg);
     }
 
     body.appendChild(buildTraceElStatic(msg));
-    body.appendChild(buildAnswerBlock(msg, { stream: false }));
+
+    if (msg.status === "done" && msg.result) {
+      body.appendChild(buildAnswerBlock(msg, { stream: false }));
+    } else if (msg.status === "corpusEmpty") {
+      body.appendChild(buildCorpusEmptyEl(msg.corpusEmptyMessage || "No ingested legal sources match this yet.", msg.createdAt));
+    } else if (msg.status === "error") {
+      body.appendChild(buildErrorEl(msg.errorMessage || "Something went wrong."));
+    } else {
+      body.appendChild(buildCorpusEmptyEl("This question didn't finish processing (the page may have reloaded mid-request) — try asking it again.", msg.createdAt));
+    }
 
     return wrap;
   }
 
   function finalizeStaleMessage(msg) {
-    const topic = msg.classification || DEFAULT_TOPIC;
-    msg.result = {
-      lawMd: topic.lawMd,
-      actionsMd: topic.actionsMd,
-      sources: topic.sources,
-      escalate: topic.escalate,
-      escalateReason: topic.escalateReason,
-      followUps: topic.followUps,
-    };
-    msg.steps.forEach((s) => { s.state = "done"; });
+    // This message never finished (e.g. the page was reloaded mid-request).
+    // Don't fabricate an answer — say plainly that it didn't complete.
+    msg.result = null;
+    msg.steps.forEach((s) => { if (s.state !== "done") s.state = "pending"; });
     msg.thinkingElapsedMs = msg.thinkingElapsedMs || 0;
-    msg.status = "done";
+    msg.status = "incomplete";
   }
 
   function buildTraceElStatic(msg) {
@@ -482,7 +432,7 @@
     const toggle = document.createElement("button");
     toggle.type = "button";
     toggle.className = "trace__toggle";
-    const isDone = msg.status === "done" || msg.status === "streaming";
+    const isDone = msg.status !== "thinking";
     const seconds = ((msg.thinkingElapsedMs || 0) / 1000).toFixed(1);
     const label = isDone ? `Thought for ${seconds}s` : "Thinking";
     const statusHtml = isDone
@@ -617,9 +567,9 @@
     card.style.animationDelay = (index * 80) + "ms";
     card.innerHTML = `
       <button type="button" class="context-card__head">
-        <span class="context-card__badge">${escapeHtml(src.type)}</span>
+        <span class="context-card__badge">${escapeHtml(src.type || "SOURCE")}</span>
         <span class="context-card__label">${escapeHtml(src.label)}</span>
-        <span class="context-card__meta">${src.excerpt.length} chars</span>
+        <span class="context-card__meta">${(src.excerpt || "").length} chars</span>
         <i class="fa-solid fa-chevron-right context-card__chevron"></i>
       </button>
       <div class="context-card__body"><p>${escapeHtml(src.excerpt)}</p></div>
@@ -876,42 +826,103 @@
     }, 120);
   }
 
-  function runPipeline(convo, agentMsg, token) {
-    let stepIndex = 0;
-    let stepStart = Date.now();
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
 
-    function advance() {
-      if (token !== pipelineToken) return;
-      if (stepIndex > 0) {
-        const prev = agentMsg.steps[stepIndex - 1];
+  function setStepActive(agentMsg, index) {
+    if (index > 0) {
+      const prev = agentMsg.steps[index - 1];
+      if (prev.state !== "done") {
         prev.state = "done";
-        prev.elapsedMs = Date.now() - stepStart;
-        updateStepEl(stepIndex - 1, prev);
-      }
-
-      if (stepIndex < agentMsg.steps.length) {
-        const step = agentMsg.steps[stepIndex];
-        step.state = "active";
-        stepStart = Date.now();
-
-        if (stepIndex === 1) {
-          const topic = classify(lastUserText(convo));
-          agentMsg.classification = topic;
-          step.detail = `${topic.practiceArea} · ${topic.jurisdictionGuess} · ${topic.urgency} urgency`;
-        }
-        if (stepIndex === 2 && agentMsg.classification) {
-          step.detail = `Cross-checking ${agentMsg.classification.sources.length} sources for relevance.`;
-          step.chips = agentMsg.classification.sources.map((s) => s.label);
-        }
-
-        updateStepEl(stepIndex, step);
-        stepIndex++;
-        setTimeout(advance, STEP_DURATIONS[stepIndex - 1] || 600);
-      } else {
-        finishThinking(convo, agentMsg, token);
+        updateStepEl(index - 1, prev);
       }
     }
-    advance();
+    const step = agentMsg.steps[index];
+    step.state = "active";
+    step._start = Date.now();
+    updateStepEl(index, step);
+  }
+
+  function setStepDone(agentMsg, index) {
+    const step = agentMsg.steps[index];
+    step.state = "done";
+    step.elapsedMs = Date.now() - (step._start || Date.now());
+    updateStepEl(index, step);
+  }
+
+  async function runPipeline(convo, agentMsg, token) {
+    const question = lastUserText(convo);
+
+    // Step 0: Reading the question — purely cosmetic pacing, no server call yet.
+    setStepActive(agentMsg, 0);
+    await sleep(380);
+    if (token !== pipelineToken) return;
+
+    // Step 1: Classifying — this is where the real network request happens.
+    // It stays active (with the live elapsed timer ticking) for however
+    // long the server actually takes, since classify+retrieve+draft all
+    // happen server-side in one round trip.
+    setStepActive(agentMsg, 1);
+
+    let response;
+    let requestError = null;
+    try {
+      response = await callChatApi(question);
+    } catch (err) {
+      requestError = err;
+    }
+    if (token !== pipelineToken) return;
+
+    if (requestError) {
+      finishWithError(convo, agentMsg, token, requestError.message);
+      return;
+    }
+
+    agentMsg.classification = normalizeClassification(response.classification);
+    agentMsg.steps[1].detail = `${agentMsg.classification.practiceArea} · ${agentMsg.classification.jurisdictionGuess} · ${agentMsg.classification.urgency} urgency`;
+    setStepDone(agentMsg, 1);
+
+    // Step 2: Searching legal sources — the server already did this; show
+    // what it found (or admit nothing's ingested yet) with brief pacing.
+    setStepActive(agentMsg, 2);
+    const hasResult = !response.corpusEmpty && response.result;
+    if (hasResult && response.result.sources && response.result.sources.length) {
+      agentMsg.steps[2].detail = `Cross-checking ${response.result.sources.length} source${response.result.sources.length === 1 ? "" : "s"} for relevance.`;
+      agentMsg.steps[2].chips = response.result.sources.map((s) => s.label);
+    } else {
+      agentMsg.steps[2].detail = "No ingested sources for this practice area yet.";
+    }
+    updateStepEl(2, agentMsg.steps[2]);
+    await sleep(350);
+    if (token !== pipelineToken) return;
+    setStepDone(agentMsg, 2);
+
+    // Step 3: Drafting — also already done server-side; brief pacing only.
+    setStepActive(agentMsg, 3);
+    await sleep(300);
+    if (token !== pipelineToken) return;
+    setStepDone(agentMsg, 3);
+
+    collapseTrace(agentMsg, token);
+
+    saveState();
+    renderHistory();
+    renderTopbar();
+
+    if (!hasResult) {
+      agentMsg.status = "corpusEmpty";
+      agentMsg.corpusEmptyMessage = response.message || "No ingested legal sources match this yet.";
+      renderCorpusEmptyMessage(agentMsg, agentMsg.corpusEmptyMessage);
+      finalizeAnswer(agentMsg, token);
+      return;
+    }
+
+    agentMsg.result = response.result;
+    const answerBlock = buildAnswerBlock(agentMsg, { stream: true });
+    live.refs.body.appendChild(answerBlock);
+    scrollChatToBottom();
+    streamAnswerSequence(agentMsg, answerBlock, token);
   }
 
   function lastUserText(convo) {
@@ -927,7 +938,7 @@
     live.refs.stepEls[index] = fresh;
   }
 
-  function finishThinking(convo, agentMsg, token) {
+  function collapseTrace(agentMsg, token) {
     if (token !== pipelineToken || !live.refs) return;
     clearInterval(live.timerId);
 
@@ -944,27 +955,65 @@
       <span>Thought for ${(agentMsg.thinkingElapsedMs / 1000).toFixed(1)}s</span>
       <span class="trace__status" style="color: var(--color-text-faint);">${agentMsg.steps.length} steps</span>
     `;
+  }
 
-    const topic = agentMsg.classification || classify(lastUserText(convo));
-    agentMsg.classification = topic;
-    agentMsg.result = {
-      lawMd: topic.lawMd,
-      actionsMd: topic.actionsMd,
-      sources: topic.sources,
-      escalate: topic.escalate,
-      escalateReason: topic.escalateReason,
-      followUps: topic.followUps,
-    };
+  function buildCorpusEmptyEl(message, createdAt) {
+    const wrap = document.createElement("div");
+    wrap.className = "answer";
+    wrap.innerHTML = `
+      <div class="answer-section">
+        <div class="answer-section__head">
+          <div class="answer-section__icon"><i class="fa-solid fa-circle-info"></i></div>
+          <span class="answer-section__title">Not sourced yet</span>
+        </div>
+        <div class="answer-section__text"><p>${escapeHtml(message)}</p></div>
+      </div>
+      <div class="msg__meta"><span class="msg__meta-text">Legal information, not legal advice · ${formatTime(createdAt)}</span></div>
+    `;
+    return wrap;
+  }
 
-    saveState();
-    renderHistory();
-    renderTopbar();
+  function renderCorpusEmptyMessage(agentMsg, message) {
+    if (!live.refs) return;
+    live.refs.body.appendChild(buildCorpusEmptyEl(message, agentMsg.createdAt));
+    scrollChatToBottom();
+  }
 
-    const answerBlock = buildAnswerBlock(agentMsg, { stream: true });
-    live.refs.body.appendChild(answerBlock);
+  function buildErrorEl(message) {
+    const wrap = document.createElement("div");
+    wrap.className = "verdict verdict--error";
+    wrap.innerHTML = `
+      <div class="verdict__head">
+        <div class="verdict__icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <span class="verdict__title">Something went wrong</span>
+      </div>
+      <p class="verdict__text">${escapeHtml(message)}</p>
+    `;
+    return wrap;
+  }
+
+  function finishWithError(convo, agentMsg, token, message) {
+    if (token !== pipelineToken || !live.refs) return;
+    clearInterval(live.timerId);
+
+    agentMsg.steps.forEach((s) => { if (s.state === "active") s.state = "pending"; });
+    agentMsg.thinkingElapsedMs = Date.now() - agentMsg.startedAt;
+    agentMsg.traceOpen = false;
+    agentMsg.status = "error";
+    agentMsg.errorMessage = message;
+
+    const traceEl = live.refs.traceEl;
+    traceEl.classList.remove("is-open");
+    live.refs.toggle.innerHTML = `
+      <i class="fa-solid fa-chevron-right trace__toggle-icon"></i>
+      <span>Stopped after ${(agentMsg.thinkingElapsedMs / 1000).toFixed(1)}s</span>
+    `;
+
+    live.refs.body.appendChild(buildErrorEl(message));
     scrollChatToBottom();
 
-    streamAnswerSequence(agentMsg, answerBlock, token);
+    agentMsg.result = null;
+    finalizeAnswer(agentMsg, token);
   }
 
   function streamAnswerSequence(agentMsg, answerBlock, token) {
@@ -1009,9 +1058,12 @@
 
   function finalizeAnswer(agentMsg, token) {
     if (token !== pipelineToken) return;
-    agentMsg.status = "done";
+    const wasStreaming = agentMsg.status === "streaming";
+    if (wasStreaming) agentMsg.status = "done";
     state.isAgentBusy = false;
-    state.questionsUsedToday += 1;
+    // Only a real, fully-answered question counts against the daily quota —
+    // a failed request or an honest "not sourced yet" shouldn't cost the user.
+    if (wasStreaming) state.questionsUsedToday += 1;
 
     saveState();
     renderHistory();
