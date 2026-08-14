@@ -3,7 +3,22 @@
    Conversation store (localStorage) + a simulated agent pipeline with a
    real timeline trace, markdown streaming, expandable source cards, and
    follow-up suggestions.
+
+   Loaded as an ES module (see index.html) specifically so this file's
+   auth imports and firebase-init.js's own module both execute in
+   document order, guaranteeing window.firebaseAuth already exists (or
+   is definitively absent, if config was incomplete) by the time the code
+   below runs — no event-listener race to coordinate.
    ========================================================================== */
+
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
+  signOut,
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 (function () {
   "use strict";
@@ -34,6 +49,25 @@
     sendBtn: document.getElementById("send-btn"),
     planValue: document.getElementById("plan-value"),
     upgradeBtn: document.getElementById("upgrade-btn"),
+    clearChatBtn: document.getElementById("clear-chat-btn"),
+    topbarAvatar: document.getElementById("topbar-avatar"),
+    authSection: document.getElementById("auth-section"),
+    authModalOverlay: document.getElementById("auth-modal-overlay"),
+    authModalClose: document.getElementById("auth-modal-close"),
+    authModalTitle: document.getElementById("auth-modal-title"),
+    authTabSignin: document.getElementById("auth-tab-signin"),
+    authTabSignup: document.getElementById("auth-tab-signup"),
+    authForm: document.getElementById("auth-form"),
+    authEmail: document.getElementById("auth-email"),
+    authPassword: document.getElementById("auth-password"),
+    authError: document.getElementById("auth-error"),
+    authSubmit: document.getElementById("auth-submit"),
+    authGoogleBtn: document.getElementById("auth-google-btn"),
+    confirmModalOverlay: document.getElementById("confirm-modal-overlay"),
+    confirmModalTitle: document.getElementById("confirm-modal-title"),
+    confirmModalText: document.getElementById("confirm-modal-text"),
+    confirmModalCancel: document.getElementById("confirm-modal-cancel"),
+    confirmModalConfirm: document.getElementById("confirm-modal-confirm"),
   };
 
   /* ------------------------------------------------------------------ */
@@ -44,6 +78,7 @@
     activeId: null,
     isAgentBusy: false,
     questionsUsedToday: 0,
+    user: null, // set by the Firebase auth listener, never persisted to localStorage
   };
 
   // Runtime-only (never persisted): refs + timers for whichever message is
@@ -275,6 +310,8 @@
     const list = document.createElement("ul");
     items.forEach((c) => {
       const li = document.createElement("li");
+      li.className = "history__row";
+
       const btn = document.createElement("button");
       btn.className = "history__item" + (c.id === state.activeId ? " is-active" : "");
       btn.type = "button";
@@ -296,10 +333,168 @@
 
       btn.addEventListener("click", () => selectConversation(c.id));
       li.appendChild(btn);
+
+      const kebab = document.createElement("button");
+      kebab.type = "button";
+      kebab.className = "history__kebab";
+      kebab.setAttribute("aria-label", "Chat options");
+      kebab.innerHTML = '<i class="fa-solid fa-ellipsis-vertical"></i>';
+      if (state.isAgentBusy) kebab.disabled = true;
+      kebab.addEventListener("click", (e) => {
+        e.stopPropagation();
+        kebab.classList.add("is-open");
+        showPopover(
+          kebab,
+          [
+            { label: "Clear chat", icon: "fa-broom", onClick: () => confirmClearConversation(c.id) },
+            { label: "Delete chat", icon: "fa-trash", danger: true, onClick: () => confirmDeleteConversation(c.id) },
+          ],
+          { onClose: () => kebab.classList.remove("is-open") }
+        );
+      });
+      li.appendChild(kebab);
+
       list.appendChild(li);
     });
     group.appendChild(list);
     return group;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Generic small popover menu (history kebab, topbar avatar menu)      */
+  /* ------------------------------------------------------------------ */
+  let activePopover = null;
+
+  function closePopover() {
+    if (!activePopover) return;
+    activePopover.el.remove();
+    document.removeEventListener("click", activePopover.outsideHandler, true);
+    document.removeEventListener("keydown", activePopover.escHandler, true);
+    activePopover.onClose && activePopover.onClose();
+    activePopover = null;
+  }
+
+  function showPopover(anchorEl, items, { onClose, align = "end" } = {}) {
+    closePopover();
+
+    const menu = document.createElement("div");
+    menu.className = "menu-popover";
+    items.forEach((item) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "menu-popover__item" + (item.danger ? " menu-popover__item--danger" : "");
+      btn.innerHTML = `<span class="menu-popover__item-icon"><i class="fa-solid ${item.icon}"></i></span><span>${escapeHtml(item.label)}</span>`;
+      btn.addEventListener("click", () => {
+        closePopover();
+        item.onClick();
+      });
+      menu.appendChild(btn);
+    });
+
+    document.body.appendChild(menu);
+
+    const rect = anchorEl.getBoundingClientRect();
+    const menuRect = menu.getBoundingClientRect();
+    let top = rect.bottom + 6;
+    let left = align === "start" ? rect.left : rect.right - menuRect.width;
+    left = Math.max(8, Math.min(left, window.innerWidth - menuRect.width - 8));
+    if (top + menuRect.height > window.innerHeight - 8) {
+      top = rect.top - menuRect.height - 6;
+    }
+    menu.style.top = top + "px";
+    menu.style.left = left + "px";
+
+    const outsideHandler = (e) => {
+      if (!menu.contains(e.target) && e.target !== anchorEl && !anchorEl.contains(e.target)) {
+        closePopover();
+      }
+    };
+    const escHandler = (e) => { if (e.key === "Escape") closePopover(); };
+
+    // Defer attaching so the same click that opened the menu doesn't
+    // immediately register as an "outside" click and close it again.
+    setTimeout(() => {
+      document.addEventListener("click", outsideHandler, true);
+      document.addEventListener("keydown", escHandler, true);
+    }, 0);
+
+    activePopover = { el: menu, outsideHandler, escHandler, onClose };
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Confirm dialog (Clear / Delete chat)                                 */
+  /* ------------------------------------------------------------------ */
+  function showConfirm({ text, confirmLabel = "Confirm", onConfirm }) {
+    el.confirmModalText.textContent = text;
+    el.confirmModalConfirm.textContent = confirmLabel;
+    el.confirmModalOverlay.classList.add("is-visible");
+
+    el.confirmModalConfirm.onclick = () => {
+      hideConfirm();
+      onConfirm();
+    };
+    el.confirmModalCancel.onclick = hideConfirm;
+  }
+
+  function hideConfirm() {
+    el.confirmModalOverlay.classList.remove("is-visible");
+  }
+
+  el.confirmModalOverlay.addEventListener("click", (e) => {
+    if (e.target === el.confirmModalOverlay) hideConfirm();
+  });
+
+  /* ------------------------------------------------------------------ */
+  /* Clear / delete conversations                                        */
+  /* ------------------------------------------------------------------ */
+  function confirmClearConversation(id) {
+    const convo = state.conversations.find((c) => c.id === id);
+    if (!convo) return;
+    showConfirm({
+      text: `Clear all messages in "${truncate(convo.title, 44)}"? This can't be undone.`,
+      confirmLabel: "Clear chat",
+      onConfirm: () => clearConversationMessages(id),
+    });
+  }
+
+  function clearConversationMessages(id) {
+    const convo = state.conversations.find((c) => c.id === id);
+    if (!convo) return;
+    convo.messages = [];
+    convo.title = "New question";
+    saveState();
+    renderHistory();
+    if (state.activeId === id) renderChat();
+    updateClearChatButtonState();
+  }
+
+  function confirmDeleteConversation(id) {
+    const convo = state.conversations.find((c) => c.id === id);
+    if (!convo) return;
+    showConfirm({
+      text: `Delete "${truncate(convo.title, 44)}"? This can't be undone.`,
+      confirmLabel: "Delete chat",
+      onConfirm: () => deleteConversationById(id),
+    });
+  }
+
+  function deleteConversationById(id) {
+    const idx = state.conversations.findIndex((c) => c.id === id);
+    if (idx === -1) return;
+    state.conversations.splice(idx, 1);
+    if (state.activeId === id) {
+      state.activeId = state.conversations.length ? state.conversations[0].id : null;
+    }
+    saveState();
+    renderHistory();
+    renderChat();
+    updateClearChatButtonState();
+  }
+
+  function updateClearChatButtonState() {
+    const convo = getActiveConversation();
+    const hasMessages = !!(convo && convo.messages.length);
+    el.clearChatBtn.disabled = !hasMessages || state.isAgentBusy;
   }
 
   /* ------------------------------------------------------------------ */
@@ -339,6 +534,7 @@
     el.chatMessages.innerHTML = "";
     live.refs = null;
     live.msgId = null;
+    updateClearChatButtonState();
 
     if (!convo || convo.messages.length === 0) {
       el.emptyState.style.display = "flex";
@@ -1124,6 +1320,7 @@
     el.composerInput.disabled = state.isAgentBusy;
     el.newChatBtn.disabled = state.isAgentBusy;
     el.newChatMobile.disabled = state.isAgentBusy;
+    updateClearChatButtonState();
   }
 
   function autoGrowTextarea() {
@@ -1164,6 +1361,11 @@
     alert("Upgrade flow: ₦1,999/year subscription — hook up Paystack checkout here.");
   });
 
+  el.clearChatBtn.addEventListener("click", () => {
+    if (!state.activeId || state.isAgentBusy) return;
+    confirmClearConversation(state.activeId);
+  });
+
   el.composerInput.addEventListener("input", () => {
     autoGrowTextarea();
     updateComposerState();
@@ -1201,8 +1403,179 @@
   });
 
   /* ------------------------------------------------------------------ */
-  /* Init                                                                 */
+  /* Auth (Firebase) — sidebar sign-in/profile, topbar avatar, modal      */
   /* ------------------------------------------------------------------ */
+  let authMode = "signin";
+
+  function initAuth() {
+    const auth = window.firebaseAuth;
+    if (!auth) {
+      console.warn("[auth] Firebase Auth isn't configured — sign-in disabled.");
+      renderAuthSection(null);
+      return;
+    }
+    onAuthStateChanged(auth, (user) => {
+      state.user = user;
+      renderAuthSection(user);
+    });
+  }
+
+  function renderAuthSection(user) {
+    const container = el.authSection;
+    if (!container) return;
+
+    if (!window.firebaseAuth) {
+      container.innerHTML = `
+        <button type="button" class="auth-signin-btn" disabled title="Sign-in isn't configured yet">
+          <i class="fa-solid fa-right-to-bracket"></i> Sign in
+        </button>
+      `;
+      el.topbarAvatar.style.display = "none";
+      return;
+    }
+
+    if (!user) {
+      container.innerHTML = `
+        <button type="button" class="auth-signin-btn" id="auth-open-btn">
+          <i class="fa-solid fa-right-to-bracket"></i> Sign in
+        </button>
+      `;
+      container.querySelector("#auth-open-btn").addEventListener("click", openAuthModal);
+      el.topbarAvatar.style.display = "none";
+      return;
+    }
+
+    const name = user.displayName || (user.email ? user.email.split("@")[0] : "Account");
+    const initials = (name.trim().slice(0, 1) || "?").toUpperCase();
+    const avatarInner = user.photoURL
+      ? `<img src="${escapeHtml(user.photoURL)}" alt="" />`
+      : escapeHtml(initials);
+
+    container.innerHTML = `
+      <div class="auth-profile">
+        <div class="auth-profile__avatar">${avatarInner}</div>
+        <div class="auth-profile__info">
+          <span class="auth-profile__name">${escapeHtml(name)}</span>
+          ${user.email ? `<span class="auth-profile__email">${escapeHtml(user.email)}</span>` : ""}
+        </div>
+        <button type="button" class="auth-profile__logout" id="auth-logout-btn" title="Log out" aria-label="Log out">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </button>
+      </div>
+    `;
+    container.querySelector("#auth-logout-btn").addEventListener("click", handleLogout);
+
+    el.topbarAvatar.style.display = "flex";
+    el.topbarAvatar.innerHTML = avatarInner;
+    el.topbarAvatar.title = `${name} · Log out`;
+    el.topbarAvatar.onclick = (e) => {
+      showPopover(el.topbarAvatar, [
+        { label: "Log out", icon: "fa-right-from-bracket", danger: true, onClick: handleLogout },
+      ]);
+    };
+  }
+
+  function openAuthModal() {
+    authMode = "signin";
+    updateAuthModalMode();
+    el.authForm.reset();
+    el.authError.style.display = "none";
+    el.authModalOverlay.classList.add("is-visible");
+    setTimeout(() => el.authEmail.focus(), 60);
+  }
+
+  function closeAuthModal() {
+    el.authModalOverlay.classList.remove("is-visible");
+  }
+
+  function updateAuthModalMode() {
+    const isSignup = authMode === "signup";
+    el.authTabSignin.classList.toggle("is-active", !isSignup);
+    el.authTabSignup.classList.toggle("is-active", isSignup);
+    el.authModalTitle.textContent = isSignup ? "Create your account" : "Welcome back";
+    el.authSubmit.textContent = isSignup ? "Create account" : "Sign in";
+    el.authPassword.autocomplete = isSignup ? "new-password" : "current-password";
+    el.authError.style.display = "none";
+  }
+
+  function showAuthError(message) {
+    el.authError.textContent = message;
+    el.authError.style.display = "block";
+  }
+
+  function friendlyAuthError(err) {
+    const code = (err && err.code) || "";
+    const map = {
+      "auth/invalid-email": "That email address doesn't look right.",
+      "auth/user-not-found": "No account found with that email.",
+      "auth/wrong-password": "Incorrect password.",
+      "auth/invalid-credential": "Incorrect email or password.",
+      "auth/email-already-in-use": "An account already exists with that email — try signing in instead.",
+      "auth/weak-password": "Password should be at least 6 characters.",
+      "auth/popup-closed-by-user": "Sign-in was cancelled.",
+      "auth/operation-not-allowed": "This sign-in method isn't enabled yet for this app.",
+      "auth/network-request-failed": "Network error — check your connection and try again.",
+    };
+    return map[code] || (err && err.message) || "Something went wrong. Try again.";
+  }
+
+  function handleLogout() {
+    const auth = window.firebaseAuth;
+    if (!auth) return;
+    signOut(auth).catch((err) => console.error("[auth] sign out failed:", err));
+  }
+
+  el.authModalClose.addEventListener("click", closeAuthModal);
+  el.authModalOverlay.addEventListener("click", (e) => {
+    if (e.target === el.authModalOverlay) closeAuthModal();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && el.authModalOverlay.classList.contains("is-visible")) closeAuthModal();
+  });
+
+  el.authTabSignin.addEventListener("click", () => { authMode = "signin"; updateAuthModalMode(); });
+  el.authTabSignup.addEventListener("click", () => { authMode = "signup"; updateAuthModalMode(); });
+
+  el.authForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const auth = window.firebaseAuth;
+    if (!auth) return;
+
+    const email = el.authEmail.value.trim();
+    const password = el.authPassword.value;
+    el.authError.style.display = "none";
+    el.authSubmit.disabled = true;
+    const originalLabel = el.authSubmit.textContent;
+    el.authSubmit.textContent = authMode === "signup" ? "Creating account…" : "Signing in…";
+
+    try {
+      if (authMode === "signup") {
+        await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
+      closeAuthModal();
+    } catch (err) {
+      showAuthError(friendlyAuthError(err));
+    } finally {
+      el.authSubmit.disabled = false;
+      el.authSubmit.textContent = originalLabel;
+    }
+  });
+
+  el.authGoogleBtn.addEventListener("click", async () => {
+    const auth = window.firebaseAuth;
+    if (!auth) return;
+    el.authError.style.display = "none";
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      closeAuthModal();
+    } catch (err) {
+      showAuthError(friendlyAuthError(err));
+    }
+  });
+
   function init() {
     loadState();
     if (!state.activeId && state.conversations.length) {
@@ -1212,6 +1585,7 @@
     renderChat();
     updateComposerState();
     updatePlanLabel();
+    initAuth();
   }
 
   init();

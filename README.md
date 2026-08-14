@@ -11,15 +11,15 @@ AI-powered legal-information platform for Nigeria. This repo currently contains 
 - `server/groq.js` — Groq client (OpenAI-SDK compatible, open-weight models on fast inference hardware), configurable model IDs.
 - `server/chatRoute.js` — the pipeline itself: Groq classifies the question -> Firestore returns matching provisions -> Groq drafts the answer, instructed to cite only what it was given.
 - `scripts/pdf-to-text.js` / `scripts/ingest.js` — the ingestion pipeline (see below).
-- `public/index.html` — app shell: sidebar (conversation history, plan status) + main chat area, mobile-responsive (sidebar collapses to an off-canvas drawer under 900px).
-- `public/app.js` — client logic: conversation store (persisted to `localStorage`), and the structured 3-part answer format from the PRD:
+- `public/index.html` — app shell: sidebar (conversation history, plan status, account) + main chat area, mobile-responsive (sidebar collapses to an off-canvas drawer under 900px).
+- `public/app.js` — loaded as an ES module. Conversation store (persisted to `localStorage`), calls the real `POST /api/chat` endpoint, and renders the structured 3-part answer format from the PRD:
   1. **What the law says** (streamed in live, with expandable sourced context cards)
   2. **What you can do**
   3. **Escalation verdict** — self-resolvable, or a static outbound link to the [NBA's Find a Lawyer directory](https://www.nigerianbar.org.ng/find-a-lawyer) when a question needs a professional.
 
-  The "thinking" trace is a real timeline (not a spinner): per-step icons, a live elapsed timer, tool-call chips showing which sources were checked, and a collapsed "Thought for X.Xs" summary once done. The answer streams in section-by-section with live markdown rendering, then reveals expandable source cards, the verdict, follow-up question chips, and a copy/feedback action row.
+  The "thinking" trace is a real timeline (not a spinner): per-step icons, a live elapsed timer, tool-call chips showing which sources were checked, and a collapsed "Thought for X.Xs" summary once done. The single real classify->retrieve->draft round trip is mapped onto that 4-step visual pacing, then the answer streams in section-by-section with live markdown rendering, then reveals expandable source cards, the verdict, follow-up question chips, and a copy/feedback action row.
 
-  **This still runs on client-side mock data today** — `public/app.js` hasn't been switched over to call `POST /api/chat` yet. That's a deliberate, separate step once the corpus actually has ingested content for a given practice area to answer from (see Status below).
+  Also handles: per-conversation clear/delete (kebab menu in the sidebar, plus a one-click clear icon in the topbar for the active chat) with a confirm dialog before anything destructive; and Firebase Auth (email/password + Google) via a modal, with a sidebar sign-in button that becomes a profile row once signed in, and a small avatar in the topbar.
 - `render.yaml` — Render Blueprint: deploys this repo as one Web Service (Node runtime, `npm install` / `npm start`).
 
 ## The AI pipeline (`POST /api/chat`)
@@ -74,7 +74,7 @@ Copy `.env.example` to `.env` and fill in:
 
 In Render, set all of these under the service's **Environment** tab, or via **Add from .env** if you have a local `.env` file to import. If deploying via the `render.yaml` Blueprint, Render will prompt for each one — they're declared with `sync: false` so values are never stored in the repo.
 
-Firebase's client SDK is initialized (`window.firebaseApp`, `window.firebaseAuth`, `window.firebaseDb`) but not yet used for Auth or persistence — the front-end still runs entirely on `localStorage` + mock data until it's switched over to call `POST /api/chat`.
+Firebase Auth is wired up end-to-end: `public/app.js` is loaded as an ES module (see index.html) specifically so its auth imports and `firebase-init.js`'s own module execute in guaranteed document order — no race on `window.firebaseAuth` existing. Email/password sign-in/sign-up and Google sign-in both work against the real project (verified live: created and deleted a real test user via the Admin SDK). Conversation history/messages still live in `localStorage`, not Firestore — signing in currently only changes the sidebar/topbar identity UI, it doesn't yet sync conversations to a per-user Firestore document. That's the natural next step if cross-device history matters.
 
 ## Running locally
 
@@ -100,7 +100,8 @@ Or set it up manually as a **Web Service**:
 
 ## Status
 
-- Front-end: Phase 1 UI complete per the product PRD, currently running on client-side mock data.
-- Backend: `POST /api/chat` pipeline (classify -> retrieve -> draft) is built, and the Groq API call itself is confirmed working end-to-end with a real generated answer (tested against temporary sample data, since cleaned up). The real corpus is still empty (no legal sources ingested into Firestore yet) — see the Legal sources note below.
+- Front-end: Phase 1 UI complete per the product PRD, wired to the real `/api/chat` pipeline (no more mock data). Streaming pacing tuned for real answer lengths, with continuous auto-scroll during generation. Per-chat clear/delete and Firebase Auth (email/password + Google) are both live.
+- Backend: `POST /api/chat` pipeline (classify -> retrieve -> draft) verified working end-to-end against real Firestore data and Groq — real questions get real, correctly-cited answers.
 - Legal sources: **four practice areas fully ingested into Firestore** — 658 real statute sections across Lagos Tenancy Law 2011 (tenancy, 47), Labour Act + National Industrial Court Act (employment, 103), ACJA 2015 (criminal_rights, 491), and the Lagos Small Claims Practice Direction 2023 (contract, 17). The Constitution is downloaded and extraction-checked but not yet ingested (see `legal_sources/SOURCES.md`). ACJA's size (491 sections) required adding a keyword pre-filter in `server/legalCorpus.js` so retrieval finds the sections that actually answer a question instead of an arbitrary early slice — verified directly against a real detention-time-limit question.
-- Not yet done: switching `public/app.js` from its mock classifier to calling `POST /api/chat`; ingesting the actual source documents; Phase 2 (lawyer suggestion) and Phase 3 (marketplace) per the PRD.
+- Auth: sign-in/sign-up/Google/logout all work against the real Firebase project. Not yet done: syncing conversation history to Firestore per-user (it's still `localStorage`-only, so it doesn't follow a signed-in user across devices).
+- Not yet done: ingesting the Constitution (`general` practice area); Phase 2 (lawyer suggestion) and Phase 3 (marketplace) per the PRD.
