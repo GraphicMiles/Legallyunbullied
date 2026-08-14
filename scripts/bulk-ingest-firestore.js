@@ -13,6 +13,7 @@ require("dotenv").config();
 const fs = require("fs");
 const path = require("path");
 const { getFirestore } = require("../server/firebaseAdmin");
+const { invalidateCache } = require("../server/legalCorpus");
 const { PRACTICE_AREA_KEYS } = require("../server/practiceAreas");
 
 const STAGED_PATH = path.join(__dirname, "../legal_sources/manifest/staged.json");
@@ -156,6 +157,12 @@ async function main() {
     `\nDone this run. Acts ingested: ${actsIngested}, skipped: ${actsSkipped}, sections written: ${totalSections}.` +
       (args.dryRun ? " (--dry-run, nothing written)" : "")
   );
+  
+  // Invalidate cache after successful ingestion
+  if (actsIngested > 0 && !args.dryRun) {
+    console.log("\nInvalidating cache after ingestion...");
+    invalidateCache();
+  }
 }
 
 main().catch((err) => {

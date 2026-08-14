@@ -251,13 +251,29 @@ Analyze this question and create a structured plan for answering it.`;
 }
 
 async function callCompletion(client, model, messages, options = {}) {
-  return client.chat.completions.create({
+  const LLM_TIMEOUT_MS = 30000; // 30 second timeout for LLM calls
+  
+  const completionPromise = client.chat.completions.create({
     model,
     temperature: options.temperature ?? 0.2,
     max_tokens: options.max_tokens ?? 900,
     response_format: options.response_format || undefined,
     messages,
   });
+  
+  return withTimeout(completionPromise, LLM_TIMEOUT_MS, `LLM call to ${model}`);
+}
+
+/**
+ * Wraps a promise with a timeout
+ */
+function withTimeout(promise, ms, operation = "operation") {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`${operation} timed out after ${ms}ms`)), ms)
+    ),
+  ]);
 }
 
 async function classifyWithFallback(question) {
@@ -443,7 +459,20 @@ router.post("/api/chat", async (req, res) => {
     });
   } catch (err) {
     console.error("[/api/chat] Firestore lookup failed:", err.message);
-    return res.status(502).json({ error: "corpus_lookup_failed", message: err.message });
+    
+    // Provide user-friendly error messages
+    let userMessage = err.message;
+    if (err.message.includes("Quota exceeded")) {
+      userMessage = "Our legal database is temporarily unavailable due to high demand. Please try again in a few minutes, or ask a different question.";
+    } else if (err.message.includes("timed out")) {
+      userMessage = "The request took too long to process. Please try again with a simpler question.";
+    }
+    
+    return res.status(502).json({ 
+      error: "corpus_lookup_failed", 
+      message: userMessage,
+      technicalDetails: err.message 
+    });
   }
 
   if (!provisions.length) {

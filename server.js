@@ -66,6 +66,19 @@ app.get("/healthz", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
+// Cache statistics endpoint (for monitoring)
+app.get("/api/cache-stats", (req, res) => {
+  const { getCacheStats } = require("./server/legalCorpus");
+  res.json(getCacheStats());
+});
+
+// Cache invalidation endpoint (for admin use after data ingestion)
+app.post("/api/cache-invalidate", (req, res) => {
+  const { invalidateCache } = require("./server/legalCorpus");
+  invalidateCache();
+  res.json({ success: true, message: "Cache invalidated" });
+});
+
 /**
  * Phase 1 AI orchestration: classification (Grok) -> retrieval (Firestore)
  * -> drafting (Grok). See server/chatRoute.js. The front-end currently
