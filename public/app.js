@@ -23,9 +23,15 @@ import {
 (function () {
   "use strict";
 
-  const STORAGE_KEY = "lu.conversations.v3";
+  const STORAGE_KEY_PREFIX = "lu.conversations.v3";
   const NBA_DIRECTORY_URL = "https://www.nigerianbar.org.ng/find-a-lawyer";
   const CURSOR_TOKEN = "\uE000CURSOR\uE000";
+
+  // Get storage key scoped to current user
+  function getStorageKey() {
+    const userId = state.user?.uid || "anonymous";
+    return `${STORAGE_KEY_PREFIX}.${userId}`;
+  }
 
   /* ------------------------------------------------------------------ */
   /* DOM refs                                                            */
@@ -91,7 +97,8 @@ import {
   /* ------------------------------------------------------------------ */
   function loadState() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const storageKey = getStorageKey();
+      const raw = localStorage.getItem(storageKey);
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed && Array.isArray(parsed.conversations)) {
@@ -104,7 +111,8 @@ import {
   }
 
   function saveState() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    const storageKey = getStorageKey();
+    localStorage.setItem(storageKey, JSON.stringify({
       conversations: state.conversations,
       activeId: state.activeId,
       questionsUsedToday: state.questionsUsedToday,
@@ -1887,7 +1895,35 @@ import {
       return;
     }
     onAuthStateChanged(auth, (user) => {
+      const previousUserId = state.user?.uid;
+      const newUserId = user?.uid;
+      
       state.user = user;
+      
+      // If user changed (sign-in, sign-out, or account switch), reload conversations
+      if (previousUserId !== newUserId) {
+        console.log("[auth] User changed, reloading conversations");
+        
+        // Reset state for new user
+        state.conversations = [];
+        state.activeId = null;
+        state.questionsUsedToday = 0;
+        
+        // Load conversations for the new user
+        loadState();
+        
+        // Ensure there's an active conversation
+        if (!state.activeId && state.conversations.length > 0) {
+          state.activeId = state.conversations[0].id;
+        }
+        
+        // Re-render everything
+        renderHistory();
+        renderChat();
+        updateComposerState();
+        updatePlanLabel();
+      }
+      
       renderAuthSection(user);
     });
   }
@@ -1994,7 +2030,55 @@ import {
   function handleLogout() {
     const auth = window.firebaseAuth;
     if (!auth) return;
+    
+    // Clear all user-specific data before signing out
+    clearUserData();
+    
     signOut(auth).catch((err) => console.error("[auth] sign out failed:", err));
+  }
+
+  // Clear all user-specific data from localStorage and state
+  function clearUserData() {
+    console.log("[auth] Clearing user data");
+    
+    // Clear current user's storage
+    const storageKey = getStorageKey();
+    localStorage.removeItem(storageKey);
+    
+    // Clear all conversation storage keys (cleanup old anonymous data)
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(STORAGE_KEY_PREFIX)) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    
+    // Reset state
+    state.conversations = [];
+    state.activeId = null;
+    state.questionsUsedToday = 0;
+    state.user = null;
+    
+    // Clear any active pipeline
+    if (live.loadingState) {
+      live.loadingState.destroy();
+      live.loadingState = null;
+    }
+    if (live.pipelineLoading) {
+      live.pipelineLoading.destroy();
+      live.pipelineLoading = null;
+    }
+    if (live.thinkingComponent) {
+      live.thinkingComponent.destroy();
+      live.thinkingComponent = null;
+    }
+    
+    // Re-render
+    renderChat();
+    renderHistory();
+    updateComposerState();
   }
 
   el.authModalClose.addEventListener("click", closeAuthModal);
@@ -2058,6 +2142,26 @@ import {
     updateComposerState();
     updatePlanLabel();
     initAuth();
+  }
+
+  // Unregister service workers and clear caches on load
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      registrations.forEach((registration) => {
+        console.log('[cache] Unregistering service worker');
+        registration.unregister();
+      });
+    });
+  }
+  
+  // Clear browser caches
+  if ('caches' in window) {
+    caches.keys().then((cacheNames) => {
+      cacheNames.forEach((cacheName) => {
+        console.log('[cache] Deleting cache:', cacheName);
+        caches.delete(cacheName);
+      });
+    });
   }
 
   init();
