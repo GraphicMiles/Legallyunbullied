@@ -1,17 +1,23 @@
 /**
  * POST /api/chat — the real Phase 1 pipeline.
  *
- * 1. Groq classifies the question (practice area, jurisdiction, urgency).
- * 2. Firestore returns ingested statute provisions matching that category.
- * 3. If nothing's been ingested for that category yet, say so plainly
+ * 1. Quick gate: is this a legal question, or casual chat?
+ *    - Casual greetings, small talk, meta-questions → reply naturally and exit.
+ * 2. Groq classifies the question (practice area, jurisdiction, urgency).
+ * 3. Firestore returns ingested statute provisions matching that category.
+ * 4. If nothing's been ingested for that category yet, say so plainly
  *    instead of letting the model invent an answer with no grounding.
- * 4. Groq drafts the final answer, instructed to cite only the supplied
+ * 5. Groq drafts the final answer, instructed to cite only the supplied
  *    excerpts — never to introduce acts/sections that weren't given to it.
+ *
+ * Fallback chain: Groq primary → Groq fallback model → Gemini.
+ * Each tier is tried only if the previous one fails (rate-limit, error, etc.).
  */
 
 const express = require("express");
 const router = express.Router();
-const { getClient, CLASSIFY_MODEL, DRAFT_MODEL, DRAFT_MODEL_FALLBACK } = require("./groq");
+const { getClient: getGroqClient, CLASSIFY_MODEL, DRAFT_MODEL, DRAFT_MODEL_FALLBACK } = require("./groq");
+const { getClient: getGeminiClient, GEMINI_CLASSIFY_MODEL, GEMINI_DRAFT_MODEL, GEMINI_CHAT_MODEL } = require("./gemini");
 const { findProvisions } = require("./legalCorpus");
 const { PRACTICE_AREAS: PRACTICE_AREA_DEFS, PRACTICE_AREA_KEYS } = require("./practiceAreas");
 
@@ -28,9 +34,15 @@ function parseModelJson(content) {
 
 const PRACTICE_AREA_BULLETS = PRACTICE_AREA_DEFS.map((p) => `- "${p.key}": ${p.description}`).join("\n");
 
-const CLASSIFY_SYSTEM_PROMPT = `You classify Nigerian legal questions for an information retrieval system that only has a specific, limited set of statutes actually loaded — not general legal knowledge.
 
-Respond with ONLY a JSON object, no prose, no markdown code fences.
+const CLASSIFY_SYSTEM_PROMPT = `You classify messages for a Nigerian legal-information assistant called "Legally Unbullied".
+
+First, determine if this is a legal question or casual conversation.
+
+If it's NOT a legal question (greetings like "hi", "hello", "good morning"; casual chat like "how are you", "what's up"; meta-questions about the bot like "who made you", "what can you do"; or anything unrelated to Nigerian law), respond with:
+{"is_legal_question": false, "casual_reply": "A warm, natural, brief response in 1-2 sentences. Be friendly and mention you're here to help with Nigerian legal questions if they have any."}
+
+If it IS a legal question (anything about Nigerian law, rights, legal processes, courts, police, contracts, tenancy, employment disputes, criminal matters, family law, business registration, taxes, etc.), classify it:
 
 Valid values for "practice_area": ${JSON.stringify(PRACTICE_AREAS)}
 ${PRACTICE_AREA_BULLETS}
@@ -41,8 +53,10 @@ Valid values for "urgency": ["Low", "Medium", "High", "Critical"]
 
 "keywords": 3-6 specific legal/factual terms likely to appear verbatim in the relevant statute text (e.g. procedural terms, timeframes, named concepts) — used to narrow down a large Act to the sections that actually matter for this question. Not generic words.
 
-Example of the exact shape to return (use realistic values for the actual question, don't copy this example's content):
-{"practice_area": "tenancy", "jurisdiction": "Lagos State", "urgency": "High", "summary": "A tenant is disputing an eviction attempt made without proper notice.", "keywords": ["notice", "quit", "possession", "monthly tenant"]}`;
+Example for a legal question (use realistic values for the actual question, don't copy this example's content):
+{"is_legal_question": true, "practice_area": "tenancy", "jurisdiction": "Lagos State", "urgency": "High", "summary": "A tenant is disputing an eviction attempt made without proper notice.", "keywords": ["notice", "quit", "possession", "monthly tenant"]}
+
+Respond with ONLY a JSON object, no prose, no markdown code fences.`;
 
 const DRAFT_SYSTEM_PROMPT = `You are Legally Unbullied, a Nigerian legal-information assistant. You are not a lawyer and must not give legal advice — only plain-language information about what the law says and what someone can practically do next.
 
@@ -57,18 +71,117 @@ Hard rules:
 Example of the exact shape to return (use realistic values for the actual question, don't copy this example's content):
 {"lawMd": "Under the Example Act 2020 (s.4), ...", "actionsMd": "- Do this first.\\n- Then do this.", "sources": [{"label": "Example Act 2020, s.4", "excerpt": "the exact excerpt text relied on"}], "escalate": true, "escalateReason": "Why a lawyer is or isn't needed, in one or two sentences.", "followUps": ["A natural follow-up question.", "Another natural follow-up question."]}`;
 
-async function draftWithModel(client, model, question, contextBlock) {
-  const completion = await client.chat.completions.create({
+async function callCompletion(client, model, messages, options = {}) {
+  return client.chat.completions.create({
     model,
-    temperature: 0.2,
-    max_tokens: 900,
-    response_format: { type: "json_object" },
-    messages: [
+    temperature: options.temperature ?? 0.2,
+    max_tokens: options.max_tokens ?? 900,
+    response_format: options.response_format || undefined,
+    messages,
+  });
+}
+
+async function classifyWithFallback(question) {
+  const groqClient = getGroqClient();
+  const geminiClient = getGeminiClient();
+
+  // Try Groq first
+  if (groqClient) {
+    try {
+      const completion = await callCompletion(
+        groqClient,
+        CLASSIFY_MODEL,
+        [
+          { role: "system", content: CLASSIFY_SYSTEM_PROMPT },
+          { role: "user", content: question },
+        ],
+        { temperature: 0, max_tokens: 2000, response_format: { type: "json_object" } }
+      );
+      return { classification: parseModelJson(completion.choices[0].message.content), provider: "groq" };
+    } catch (err) {
+      console.warn(`[/api/chat] Groq classification failed: ${err.status || ""} ${err.message}`);
+      // Fall through to Gemini
+    }
+  }
+
+  // Try Gemini
+  if (geminiClient) {
+    try {
+      const completion = await callCompletion(
+        geminiClient,
+        GEMINI_CLASSIFY_MODEL,
+        [
+          { role: "system", content: CLASSIFY_SYSTEM_PROMPT },
+          { role: "user", content: question },
+        ],
+        { temperature: 0, max_tokens: 2000, response_format: { type: "json_object" } }
+      );
+      return { classification: parseModelJson(completion.choices[0].message.content), provider: "gemini" };
+    } catch (err) {
+      console.error(`[/api/chat] Gemini classification also failed: ${err.status || ""} ${err.message}`);
+      throw err;
+    }
+  }
+
+  throw new Error("No LLM provider configured for classification.");
+}
+
+async function draftWithModel(client, model, question, contextBlock) {
+  const completion = await callCompletion(
+    client,
+    model,
+    [
       { role: "system", content: DRAFT_SYSTEM_PROMPT },
       { role: "user", content: `Question: ${question}\n\nAvailable statute excerpts:\n\n${contextBlock}` },
     ],
-  });
+    { response_format: { type: "json_object" }, max_tokens: 3000 }
+  );
   return parseModelJson(completion.choices[0].message.content);
+}
+
+async function draftWithFallback(question, contextBlock) {
+  const groqClient = getGroqClient();
+  const geminiClient = getGeminiClient();
+
+  // Try Groq primary model
+  if (groqClient) {
+    try {
+      const result = await draftWithModel(groqClient, DRAFT_MODEL, question, contextBlock);
+      return { result, model: DRAFT_MODEL, provider: "groq" };
+    } catch (err) {
+      const isRateLimited = err.status === 429 || err.status === 413;
+      if (isRateLimited) {
+        console.warn(`[/api/chat] Groq ${DRAFT_MODEL} rate-limited, trying fallback...`);
+
+        // Try Groq fallback model
+        if (DRAFT_MODEL_FALLBACK && DRAFT_MODEL_FALLBACK !== DRAFT_MODEL) {
+          try {
+            const result = await draftWithModel(groqClient, DRAFT_MODEL_FALLBACK, question, contextBlock);
+            return { result, model: DRAFT_MODEL_FALLBACK, provider: "groq-fallback" };
+          } catch (fallbackErr) {
+            console.warn(`[/api/chat] Groq fallback also failed: ${fallbackErr.status || ""} ${fallbackErr.message}`);
+            // Fall through to Gemini
+          }
+        }
+      } else {
+        console.error(`[/api/chat] Groq drafting failed with non-rate-limit error: ${err.status || ""} ${err.message}`);
+        // For non-rate-limit errors, still try Gemini as a safety net
+      }
+    }
+  }
+
+  // Try Gemini
+  if (geminiClient) {
+    try {
+      const result = await draftWithModel(geminiClient, GEMINI_DRAFT_MODEL, question, contextBlock);
+      return { result, model: GEMINI_DRAFT_MODEL, provider: "gemini" };
+    } catch (err) {
+      console.error(`[/api/chat] Gemini drafting also failed: ${err.status || ""} ${err.message}`);
+      throw err;
+    }
+  }
+
+  throw new Error("No LLM provider available for drafting.");
 }
 
 router.post("/api/chat", async (req, res) => {
@@ -77,27 +190,20 @@ router.post("/api/chat", async (req, res) => {
     return res.status(400).json({ error: "bad_request", message: '"question" is required.' });
   }
 
-  const client = getClient();
-  if (!client) {
+  // Check that at least one LLM provider is configured
+  const groqClient = getGroqClient();
+  const geminiClient = getGeminiClient();
+  if (!groqClient && !geminiClient) {
     return res.status(503).json({
       error: "not_configured",
-      message: "GROQ_API_KEY is not set on the server yet.",
+      message: "No LLM provider configured. Set GROQ_API_KEY and/or GEMINI_API_KEY.",
     });
   }
 
-  let classification;
+  // Step 1: Classify (and detect casual chat)
+  let classifyResult;
   try {
-    const classifyCompletion = await client.chat.completions.create({
-      model: CLASSIFY_MODEL,
-      temperature: 0,
-      max_tokens: 400,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: CLASSIFY_SYSTEM_PROMPT },
-        { role: "user", content: question },
-      ],
-    });
-    classification = parseModelJson(classifyCompletion.choices[0].message.content);
+    classifyResult = await classifyWithFallback(question);
   } catch (err) {
     console.error("[/api/chat] classification failed:", err.status || "", err.message);
     return res.status(502).json({
@@ -106,6 +212,18 @@ router.post("/api/chat", async (req, res) => {
     });
   }
 
+  const { classification, provider: classifyProvider } = classifyResult;
+
+  // Step 2: If casual chat, return early with a friendly response
+  if (classification.is_legal_question === false) {
+    return res.json({
+      isCasual: true,
+      casualReply: classification.casual_reply || "Hello! I'm here to help with Nigerian legal questions. Feel free to ask me anything about your rights, laws, or legal situations.",
+      provider: classifyProvider,
+    });
+  }
+
+  // Step 3: Legal question — proceed with full pipeline
   let provisions;
   try {
     provisions = await findProvisions({
@@ -137,34 +255,24 @@ router.post("/api/chat", async (req, res) => {
     })
     .join("\n\n---\n\n");
 
-  let result;
-  let draftModelUsed = DRAFT_MODEL;
+  // Step 4: Draft with fallback chain
+  let draftResult;
   try {
-    result = await draftWithModel(client, DRAFT_MODEL, question, contextBlock);
+    draftResult = await draftWithFallback(question, contextBlock);
   } catch (err) {
-    const isRateLimited = err.status === 429;
-    if (isRateLimited && DRAFT_MODEL_FALLBACK && DRAFT_MODEL_FALLBACK !== DRAFT_MODEL) {
-      console.warn(`[/api/chat] ${DRAFT_MODEL} rate-limited, retrying with fallback ${DRAFT_MODEL_FALLBACK}`);
-      try {
-        result = await draftWithModel(client, DRAFT_MODEL_FALLBACK, question, contextBlock);
-        draftModelUsed = DRAFT_MODEL_FALLBACK;
-      } catch (fallbackErr) {
-        console.error("[/api/chat] fallback drafting also failed:", fallbackErr.status || "", fallbackErr.message);
-        return res.status(502).json({
-          error: "drafting_failed",
-          message: "The drafting model failed to respond, and the fallback model did too. " + (fallbackErr.message || ""),
-        });
-      }
-    } else {
-      console.error("[/api/chat] drafting failed:", err.status || "", err.message);
-      return res.status(502).json({
-        error: "drafting_failed",
-        message: "The drafting model failed to respond. " + (err.message || ""),
-      });
-    }
+    console.error("[/api/chat] drafting failed:", err.status || "", err.message);
+    return res.status(502).json({
+      error: "drafting_failed",
+      message: "The drafting model failed to respond. " + (err.message || ""),
+    });
   }
 
-  res.json({ classification, result, draftModel: draftModelUsed });
+  res.json({
+    classification,
+    result: draftResult.result,
+    draftModel: draftResult.model,
+    draftProvider: draftResult.provider,
+  });
 });
 
 module.exports = router;
