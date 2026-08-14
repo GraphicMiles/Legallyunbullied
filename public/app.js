@@ -144,9 +144,10 @@
   /* Streaming engine — reveals markdown text over time, re-parsing the
      accumulated substring each frame so formatting appears live.        */
   /* ------------------------------------------------------------------ */
-  function streamText(container, fullText, { cps = 950, token, onDone } = {}) {
+  function streamText(container, fullText, { cps = 240, token, onDone } = {}) {
     const start = performance.now();
     const total = fullText.length;
+    let lastScroll = 0;
 
     function frame(now) {
       if (token !== pipelineToken) return; // cancelled — a new pipeline started
@@ -154,6 +155,15 @@
       const count = Math.min(total, Math.round(elapsed * cps));
       const partial = fullText.slice(0, count) + (count < total ? CURSOR_TOKEN : "");
       container.innerHTML = renderMarkdown(partial);
+
+      // Keep the view tracking the growing text as it streams, not just at
+      // the end of each section — throttled so it isn't fighting itself,
+      // and only while the user hasn't scrolled away to read something else.
+      if (now - lastScroll > 90) {
+        lastScroll = now;
+        scrollChatToBottom();
+      }
+
       if (count >= total) {
         onDone && onDone();
         return;
@@ -347,7 +357,7 @@
     });
 
     renderTopbar();
-    scrollChatToBottom();
+    scrollChatToBottom(true);
   }
 
   function renderUserMessage(msg) {
@@ -361,9 +371,15 @@
     return wrap;
   }
 
-  function scrollChatToBottom() {
+  function isNearBottom(threshold = 140) {
+    return el.chat.scrollHeight - el.chat.scrollTop - el.chat.clientHeight < threshold;
+  }
+
+  function scrollChatToBottom(force) {
     requestAnimationFrame(() => {
-      el.chat.scrollTop = el.chat.scrollHeight;
+      if (force || isNearBottom()) {
+        el.chat.scrollTop = el.chat.scrollHeight;
+      }
     });
   }
 
@@ -804,7 +820,7 @@
 
     el.chatMessages.appendChild(wrap);
     renderTopbar();
-    scrollChatToBottom();
+    scrollChatToBottom(true);
 
     live.msgId = agentMsg.id;
     live.refs = { wrap, body, traceEl, toggle, traceBody, stepEls };
@@ -1027,31 +1043,56 @@
       token,
       onDone: () => {
         if (token !== pipelineToken) return;
+        const stickAfterLaw = isNearBottom();
         refs.lawSection.el.classList.remove("is-live");
         refs.lawSection.liveDot.style.display = "none";
         appendContextCards(refs.lawSection.el, r.sources);
-        scrollChatToBottom();
+        scrollChatToBottom(stickAfterLaw);
 
-        refs.actionsSection.el.style.display = "";
-        refs.actionsSection.el.classList.add("is-live");
-        refs.actionsSection.liveDot.style.display = "inline-block";
+        // Small deliberate pause before the next section starts, rather
+        // than every reveal landing in the same animation frame — that's
+        // what made the container feel like it was "dumping" all at once.
+        setTimeout(() => {
+          if (token !== pipelineToken) return;
+          const stickBeforeActions = isNearBottom();
+          refs.actionsSection.el.style.display = "";
+          refs.actionsSection.el.classList.add("is-live");
+          refs.actionsSection.liveDot.style.display = "inline-block";
+          scrollChatToBottom(stickBeforeActions);
 
-        streamText(refs.actionsSection.textEl, r.actionsMd, {
-          token,
-          onDone: () => {
-            if (token !== pipelineToken) return;
-            refs.actionsSection.el.classList.remove("is-live");
-            refs.actionsSection.liveDot.style.display = "none";
-            scrollChatToBottom();
+          streamText(refs.actionsSection.textEl, r.actionsMd, {
+            token,
+            onDone: () => {
+              if (token !== pipelineToken) return;
+              const stickAfterActions = isNearBottom();
+              refs.actionsSection.el.classList.remove("is-live");
+              refs.actionsSection.liveDot.style.display = "none";
+              scrollChatToBottom(stickAfterActions);
 
-            refs.verdict.style.display = "";
-            refs.followUps.style.display = "";
-            refs.meta.style.display = "";
-            scrollChatToBottom();
+              setTimeout(() => {
+                if (token !== pipelineToken) return;
+                const stickBeforeVerdict = isNearBottom();
+                refs.verdict.style.display = "";
+                scrollChatToBottom(stickBeforeVerdict);
 
-            finalizeAnswer(agentMsg, token);
-          },
-        });
+                setTimeout(() => {
+                  if (token !== pipelineToken) return;
+                  const stickBeforeFollowUps = isNearBottom();
+                  refs.followUps.style.display = "";
+                  scrollChatToBottom(stickBeforeFollowUps);
+
+                  setTimeout(() => {
+                    if (token !== pipelineToken) return;
+                    const stickBeforeMeta = isNearBottom();
+                    refs.meta.style.display = "";
+                    scrollChatToBottom(stickBeforeMeta);
+                    finalizeAnswer(agentMsg, token);
+                  }, 200);
+                }, 200);
+              }, 250);
+            },
+          });
+        }, 300);
       },
     });
   }
