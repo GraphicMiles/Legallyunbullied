@@ -215,7 +215,22 @@ import {
     tenancy: "Tenancy Law",
     employment: "Labour & Employment Law",
     criminal_rights: "Constitutional & Criminal Law",
+    criminal_offences: "Criminal Offences",
+    family_law: "Family Law",
+    land_property: "Land & Property Law",
     contract: "Contract Law",
+    company_business: "Company & Business Law",
+    consumer_rights: "Consumer Rights",
+    constitutional_rights: "Constitutional Rights",
+    immigration_citizenship: "Immigration & Citizenship",
+    tax_finance: "Tax & Finance",
+    intellectual_property: "Intellectual Property",
+    transport_traffic: "Transport & Traffic",
+    education: "Education",
+    health: "Health",
+    employment_labour_safety: "Labour & Workplace Safety",
+    environment: "Environment",
+    government_administration: "Government & Administration",
     general: "General Inquiry",
   };
 
@@ -596,7 +611,7 @@ import {
     body.className = "msg__body";
     wrap.appendChild(body);
 
-    if (msg.status !== "done" && msg.status !== "corpusEmpty" && msg.status !== "error") {
+    if (msg.status !== "done" && msg.status !== "corpusEmpty" && msg.status !== "error" && msg.status !== "casual") {
       // Never reached a terminal state (e.g. page reload mid-request).
       // Resolve it honestly instead of fabricating an answer.
       finalizeStaleMessage(msg);
@@ -606,6 +621,8 @@ import {
 
     if (msg.status === "done" && msg.result) {
       body.appendChild(buildAnswerBlock(msg, { stream: false }));
+    } else if (msg.status === "casual") {
+      body.appendChild(buildCasualReplyEl(msg.casualReply || "Hello!"));
     } else if (msg.status === "corpusEmpty") {
       body.appendChild(buildCorpusEmptyEl(msg.corpusEmptyMessage || "No ingested legal sources match this yet.", msg.createdAt));
     } else if (msg.status === "error") {
@@ -1091,6 +1108,31 @@ import {
       return;
     }
 
+    // Casual chat — skip the full legal pipeline
+    if (response.isCasual) {
+      agentMsg.casualReply = response.casualReply;
+      agentMsg.status = "casual";
+      setStepDone(agentMsg, 1);
+      agentMsg.steps[1].detail = "Casual conversation";
+      
+      // Quick pacing for casual replies
+      setStepActive(agentMsg, 2);
+      agentMsg.steps[2].detail = "Just chatting";
+      await sleep(200);
+      if (token !== pipelineToken) return;
+      setStepDone(agentMsg, 2);
+      
+      setStepActive(agentMsg, 3);
+      await sleep(150);
+      if (token !== pipelineToken) return;
+      setStepDone(agentMsg, 3);
+      
+      collapseTrace(agentMsg, token);
+      renderCasualReply(agentMsg, response.casualReply);
+      finalizeAnswer(agentMsg, token);
+      return;
+    }
+
     agentMsg.classification = normalizeClassification(response.classification);
     agentMsg.steps[1].detail = `${agentMsg.classification.practiceArea} · ${agentMsg.classification.jurisdictionGuess} · ${agentMsg.classification.urgency} urgency`;
     setStepDone(agentMsg, 1);
@@ -1188,6 +1230,19 @@ import {
   function renderCorpusEmptyMessage(agentMsg, message) {
     if (!live.refs) return;
     live.refs.body.appendChild(buildCorpusEmptyEl(message, agentMsg.createdAt));
+    scrollChatToBottom();
+  }
+
+  function buildCasualReplyEl(replyText) {
+    const wrap = document.createElement("div");
+    wrap.className = "casual-reply";
+    wrap.innerHTML = `<p>${inlineMd(replyText)}</p>`;
+    return wrap;
+  }
+
+  function renderCasualReply(agentMsg, replyText) {
+    if (!live.refs) return;
+    live.refs.body.appendChild(buildCasualReplyEl(replyText));
     scrollChatToBottom();
   }
 
@@ -1296,10 +1351,11 @@ import {
   function finalizeAnswer(agentMsg, token) {
     if (token !== pipelineToken) return;
     const wasStreaming = agentMsg.status === "streaming";
+    const wasCasual = agentMsg.status === "casual";
     if (wasStreaming) agentMsg.status = "done";
     state.isAgentBusy = false;
-    // Only a real, fully-answered question counts against the daily quota —
-    // a failed request or an honest "not sourced yet" shouldn't cost the user.
+    // Only a real, fully-answered legal question counts against the daily quota —
+    // a failed request, casual chat, or an honest "not sourced yet" shouldn't cost the user.
     if (wasStreaming) state.questionsUsedToday += 1;
 
     saveState();
