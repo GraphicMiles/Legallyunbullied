@@ -22,3 +22,7 @@ services:
         sync: false
       - key: FIREBASE_APP_ID
         sync: false
+      - key: XAI_API_KEY
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false

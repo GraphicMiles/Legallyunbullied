@@ -12,12 +12,14 @@ require("dotenv").config(); // no-op in production if there's no .env file — R
 
 const express = require("express");
 const path = require("path");
+const chatRoute = require("./server/chatRoute");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, "public");
 
 app.disable("x-powered-by");
+app.use(express.json());
 
 /**
  * Firebase client config, injected at runtime from environment variables —
@@ -65,17 +67,13 @@ app.get("/healthz", (req, res) => {
 });
 
 /**
- * Placeholder for the Phase 1 AI orchestration endpoint.
- * The front-end (public/app.js) currently classifies + answers client-side
- * with mock data. When the real agent is ready, point it at this route
- * instead and remove the client-side mock logic.
+ * Phase 1 AI orchestration: classification (Grok) -> retrieval (Firestore)
+ * -> drafting (Grok). See server/chatRoute.js. The front-end currently
+ * still runs on client-side mock data (public/app.js) — flipping it over
+ * to call this endpoint is a separate, deliberate step once the corpus
+ * actually has ingested content to answer from.
  */
-app.post("/api/chat", (req, res) => {
-  res.status(501).json({
-    error: "not_implemented",
-    message: "The AI orchestration endpoint isn't wired up yet — the front-end currently runs on client-side mock data.",
-  });
-});
+app.use(chatRoute);
 
 // Single-page fallback: any unmatched GET route serves the app shell.
 app.get("*", (req, res) => {
