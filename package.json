@@ -8,10 +8,15 @@
     "node": ">=18"
   },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "pdf-to-text": "node scripts/pdf-to-text.js",
+    "ingest": "node scripts/ingest.js"
   },
   "dependencies": {
     "dotenv": "^17.4.2",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "firebase-admin": "^13.10.0",
+    "openai": "^6.49.0",
+    "pdf-parse": "^2.4.5"
   }
 }
