@@ -8,7 +8,7 @@
 
 const fs = require("fs");
 const path = require("path");
-const pdfParse = require("pdf-parse");
+const { PDFParse } = require("pdf-parse");
 
 function parseArgs(argv) {
   const args = {};
@@ -35,10 +35,12 @@ async function main() {
     : filePath.replace(/\.pdf$/i, ".txt");
 
   const buffer = fs.readFileSync(filePath);
-  const data = await pdfParse(buffer);
+  const parser = new PDFParse({ data: buffer });
+  const result = await parser.getText();
+  await parser.destroy();
 
-  fs.writeFileSync(outPath, data.text, "utf8");
-  console.log(`Extracted ${data.numpages} pages, ${data.text.length} characters -> ${outPath}`);
+  fs.writeFileSync(outPath, result.text, "utf8");
+  console.log(`Extracted ${result.total_pages || result.pages?.length || "?"} pages, ${result.text.length} characters -> ${outPath}`);
   console.log("Review/clean the text file before running scripts/ingest.js against it.");
 }
 

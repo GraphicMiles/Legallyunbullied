@@ -8,9 +8,8 @@ AI-powered legal-information platform for Nigeria. This repo currently contains 
 
 - `server.js` — Express server. Serves the static front-end from `public/`, exposes `/healthz`, and mounts the real AI pipeline at `POST /api/chat` (see below).
 - `server/firebaseAdmin.js` — Firebase Admin SDK init (server-side only, from `FIREBASE_SERVICE_ACCOUNT_JSON`).
-- `server/grok.js` — xAI Grok client (OpenAI-SDK compatible, just a different `baseURL`).
-- `server/legalCorpus.js` — Firestore retrieval of ingested statute provisions, filtered by practice area + jurisdiction.
-- `server/chatRoute.js` — the pipeline itself: Grok classifies the question -> Firestore returns matching provisions -> Grok drafts the answer, instructed to cite only what it was given.
+- `server/groq.js` — Groq client (OpenAI-SDK compatible, open-weight models on fast inference hardware), configurable model IDs.
+- `server/chatRoute.js` — the pipeline itself: Groq classifies the question -> Firestore returns matching provisions -> Groq drafts the answer, instructed to cite only what it was given.
 - `scripts/pdf-to-text.js` / `scripts/ingest.js` — the ingestion pipeline (see below).
 - `public/index.html` — app shell: sidebar (conversation history, plan status) + main chat area, mobile-responsive (sidebar collapses to an off-canvas drawer under 900px).
 - `public/app.js` — client logic: conversation store (persisted to `localStorage`), and the structured 3-part answer format from the PRD:
@@ -25,16 +24,18 @@ AI-powered legal-information platform for Nigeria. This repo currently contains 
 
 ## The AI pipeline (`POST /api/chat`)
 
-No vector database. The corpus is small and cleanly categorized (practice area + jurisdiction), and Grok's context window comfortably holds every ingested provision for a category, so retrieval is a plain Firestore filter, not semantic search. Revisit if the corpus grows into hundreds of acts across many states.
+No vector database. The corpus is small and cleanly categorized (practice area + jurisdiction), and a modern LLM's context window comfortably holds every ingested provision for a category, so retrieval is a plain Firestore filter, not semantic search. Revisit if the corpus grows into hundreds of acts across many states.
 
-1. **Classify** — Grok (`GROK_MODEL_CLASSIFY`, default `grok-4-fast`) returns `{ practice_area, jurisdiction, urgency, summary }` as structured JSON.
+1. **Classify** — Groq (`GROQ_MODEL_CLASSIFY`, default `llama-3.1-8b-instant`) returns `{ practice_area, jurisdiction, urgency, summary }` as structured JSON.
 2. **Retrieve** — `server/legalCorpus.js` queries Firestore's `legal_provisions` collection for that practice area, keeping provisions that match the jurisdiction or are Federal/unscoped.
 3. **Empty-corpus guard** — if nothing's been ingested for that practice area yet, the endpoint says so explicitly (`corpusEmpty: true`) instead of letting the model invent an answer with no grounding.
-4. **Draft** — Grok (`GROK_MODEL_DRAFT`, default `grok-4`) drafts `{ lawMd, actionsMd, sources[], escalate, escalateReason }`, instructed to cite only the Acts/sections it was actually given.
+4. **Draft** — Groq (`GROQ_MODEL_DRAFT`, default `llama-3.3-70b-versatile`) drafts `{ lawMd, actionsMd, sources[], escalate, escalateReason }`, instructed to cite only the Acts/sections it was actually given.
 
-xAI's API has no embeddings endpoint (confirmed against current docs) — this coarse-filter approach sidesteps needing a second AI vendor just for retrieval. If real vector search becomes necessary later, the PRD's pgvector-on-Render recommendation still applies.
+(We evaluated xAI/Grok first, then briefly OpenAI, before landing on Groq — cheap, fast, and its JSON Object Mode is exactly what `chatRoute.js` already used, so no prompt/logic changes were needed, just the client config in `server/groq.js`. That file and `server/chatRoute.js`'s two model constants are the only things that would need to change to swap providers again.)
 
 ## Ingesting legal sources
+
+`legal_sources/` holds downloaded source documents (PDFs + extracted text), organized by category, with full provenance in `legal_sources/SOURCES.md` (title, official source URL, retrieval date, extraction notes). Six documents are in there now — Constitution (original + updated through the 5th Alteration), Labour Act, ACJA 2015, National Industrial Court Act, Lagos Tenancy Law, and the Lagos Small Claims Practice Direction — covering the sources behind the four practice areas already wired into the classifier. None of it is in Firestore yet.
 
 1. Extract text from a source PDF:
    ```bash
@@ -67,7 +68,7 @@ Copy `.env.example` to `.env` and fill in:
 
 **Firebase web config** (`FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_PROJECT_ID`, `FIREBASE_STORAGE_BUCKET`, `FIREBASE_MESSAGING_SENDER_ID`, `FIREBASE_APP_ID`) — from Firebase Console → Project settings → General → Your apps. `server.js` exposes these to the browser at runtime through `GET /firebase-config.js`, which sets `window.__FIREBASE_CONFIG__` before `public/firebase-init.js` initializes the client SDK. Not secret by design (scoped by Firebase Security Rules + authorized domains), but still env-driven so the same code can point at different Firebase projects without a code change.
 
-**`XAI_API_KEY`** — from [console.x.ai](https://console.x.ai). Used by `server/grok.js` for both classification and drafting calls.
+**`GROQ_API_KEY`** — from [console.groq.com/keys](https://console.groq.com/keys). Used by `server/groq.js` for both classification and drafting calls.
 
 **`FIREBASE_SERVICE_ACCOUNT_JSON`** — genuinely secret. Generate at Firebase Console → Project Settings → Service Accounts → Generate new private key, then paste the entire downloaded JSON file as a single-line string. This grants full server-side Firestore/Auth/Storage access, bypassing security rules — never expose it to the client, never log it, never commit it. If it's ever pasted somewhere insecure (chat, a public repo, etc.), rotate it immediately from that same Service Accounts page.
 
@@ -100,5 +101,6 @@ Or set it up manually as a **Web Service**:
 ## Status
 
 - Front-end: Phase 1 UI complete per the product PRD, currently running on client-side mock data.
-- Backend: `POST /api/chat` pipeline (classify -> retrieve -> draft) is built and tested against Firestore, but the corpus is currently empty (no legal sources ingested yet) and the xAI account behind `XAI_API_KEY` has no billing/credits set up, so live calls will fail until both are in place.
+- Backend: `POST /api/chat` pipeline (classify -> retrieve -> draft) is built, and the Groq API call itself is confirmed working end-to-end with a real generated answer (tested against temporary sample data, since cleaned up). The real corpus is still empty (no legal sources ingested into Firestore yet) — see the Legal sources note below.
+- Legal sources: six primary documents downloaded and text-extracted into `legal_sources/` (Constitution x2, Labour Act, ACJA 2015, National Industrial Court Act, Lagos Tenancy Law, Lagos Small Claims Practice Direction) — see `legal_sources/SOURCES.md` for provenance. **Not yet ingested into Firestore** — the Constitution and ACJA both have trailing Schedules whose numbering collides with real section numbers (see SOURCES.md), which needs a `--stop-at` trim before ingesting.
 - Not yet done: switching `public/app.js` from its mock classifier to calling `POST /api/chat`; ingesting the actual source documents; Phase 2 (lawyer suggestion) and Phase 3 (marketplace) per the PRD.
