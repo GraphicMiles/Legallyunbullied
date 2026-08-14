@@ -59,7 +59,17 @@ app.get("/firebase-config.js", (req, res) => {
 });
 
 // Static assets (index.html, app.js, future css/img/etc.)
-app.use(express.static(PUBLIC_DIR, { extensions: ["html"] }));
+app.use(express.static(PUBLIC_DIR, { 
+  extensions: ["html"],
+  setHeaders: (res, path) => {
+    // Prevent caching of JavaScript files
+    if (path.endsWith('.js')) {
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+    }
+  }
+}));
 
 // Health check for Render / uptime monitors.
 app.get("/healthz", (req, res) => {
