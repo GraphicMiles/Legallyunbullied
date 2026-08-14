@@ -256,13 +256,20 @@
   /* Trace step definitions + icons                                      */
   /* ------------------------------------------------------------------ */
   const ICONS = {
-    read: '<svg viewBox="0 0 24 24" fill="none"><path d="M4 5h11l5 5v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 12h8M8 16h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-    classify: '<svg viewBox="0 0 24 24" fill="none"><path d="M20.5 12.5 12 21l-9-9V4h8l9.5 8.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/></svg>',
-    search: '<svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.8"/><path d="M20 20 15.8 15.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-    draft: '<svg viewBox="0 0 24 24" fill="none"><path d="M4 20h4L19.5 8.5a2 2 0 0 0 0-2.8l-1.2-1.2a2 2 0 0 0-2.8 0L4 16v4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
-    check: '<svg viewBox="0 0 24 24" fill="none"><path d="M5 12L10 17L19 8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    chevron: '<svg viewBox="0 0 24 24" fill="none"><path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    bolt: '<svg viewBox="0 0 24 24" fill="none"><path d="M13 3 5 13h5l-1 8 8-10h-5l1-8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
+    read: '<i class="fa-solid fa-file-lines"></i>',
+    classify: '<i class="fa-solid fa-tag"></i>',
+    search: '<i class="fa-solid fa-magnifying-glass"></i>',
+    draft: '<i class="fa-solid fa-pen-nib"></i>',
+    check: '<i class="fa-solid fa-check"></i>',
+    chevron: '<i class="fa-solid fa-chevron-right"></i>',
+    bolt: '<i class="fa-solid fa-scale-balanced"></i>',
+    list: '<i class="fa-solid fa-list-check"></i>',
+    lawyer: '<i class="fa-solid fa-triangle-exclamation"></i>',
+    thumbsUp: '<i class="fa-solid fa-thumbs-up"></i>',
+    thumbsDown: '<i class="fa-solid fa-thumbs-down"></i>',
+    copy: '<i class="fa-regular fa-copy"></i>',
+    external: '<i class="fa-solid fa-arrow-up-right-from-square"></i>',
+    plus: '<i class="fa-solid fa-plus"></i>',
   };
 
   const STEP_DEFS = [
@@ -482,7 +489,7 @@
       ? `<span class="trace__status" style="color: var(--color-text-faint);">${msg.steps.length} steps</span>`
       : `<span class="trace__status"></span>`;
     toggle.innerHTML = `
-      <svg class="trace__toggle-icon" viewBox="0 0 24 24" fill="none"><path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <i class="fa-solid fa-chevron-right trace__toggle-icon"></i>
       <span>${label}</span>
       ${statusHtml}
     `;
@@ -551,7 +558,7 @@
     }
 
     // "What you can do"
-    const actionsSection = buildSectionShell("What you can do", ICONS.chevron);
+    const actionsSection = buildSectionShell("What you can do", ICONS.list);
     wrap.appendChild(actionsSection.el);
     if (stream) {
       actionsSection.el.style.display = "none";
@@ -613,7 +620,7 @@
         <span class="context-card__badge">${escapeHtml(src.type)}</span>
         <span class="context-card__label">${escapeHtml(src.label)}</span>
         <span class="context-card__meta">${src.excerpt.length} chars</span>
-        <svg class="context-card__chevron" viewBox="0 0 24 24" fill="none"><path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <i class="fa-solid fa-chevron-right context-card__chevron"></i>
       </button>
       <div class="context-card__body"><p>${escapeHtml(src.excerpt)}</p></div>
     `;
@@ -629,10 +636,7 @@
     verdict.innerHTML = `
       <div class="verdict__head">
         <div class="verdict__icon">
-          ${r.escalate
-            ? '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 8V13" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="16.2" r="1.1" fill="currentColor"/></svg>'
-            : '<svg viewBox="0 0 24 24" fill="none"><path d="M5 12L10 17L19 8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-          }
+          ${r.escalate ? ICONS.lawyer : '<i class="fa-solid fa-check"></i>'}
         </div>
         <span class="verdict__title">${r.escalate ? "This likely needs a lawyer" : "You can likely handle this yourself"}</span>
       </div>
@@ -640,7 +644,7 @@
       ${r.escalate ? `
         <div class="verdict__actions">
           <a class="link-btn" href="${NBA_DIRECTORY_URL}" target="_blank" rel="noopener noreferrer">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M14 5H19V10M19 5L11 13M12 5H7C5.9 5 5 5.9 5 7V17C5 18.1 5.9 19 7 19H17C18.1 19 19 18.1 19 17V12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            ${ICONS.external}
             Find a verified lawyer — NBA directory
           </a>
         </div>
@@ -656,7 +660,7 @@
       const chip = document.createElement("button");
       chip.type = "button";
       chip.className = "followup-chip";
-      chip.innerHTML = `<svg viewBox="0 0 24 24" fill="none"><path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>${escapeHtml(text)}`;
+      chip.innerHTML = `${ICONS.plus}${escapeHtml(text)}`;
       chip.addEventListener("click", () => {
         if (state.isAgentBusy) return;
         submitQuestion(text);
@@ -673,13 +677,13 @@
       <span class="msg__meta-text">Legal information, not legal advice · ${formatTime(msg.createdAt)}</span>
       <div class="msg-actions">
         <button type="button" class="msg-action-btn" data-action="copy" title="Copy answer">
-          <svg viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.8"/></svg>
+          ${ICONS.copy}
         </button>
         <button type="button" class="msg-action-btn${msg.feedback === "up" ? " is-active" : ""}" data-action="up" title="Helpful">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M7 11v9H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h3Zm0 0 4.5-7.5a1.5 1.5 0 0 1 2.7.4L15 8h4a2 2 0 0 1 2 2.3l-1.2 7A2 2 0 0 1 17.8 19H10a3 3 0 0 1-3-3v-5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          ${msg.feedback === "up" ? ICONS.thumbsUp : '<i class="fa-regular fa-thumbs-up"></i>'}
         </button>
         <button type="button" class="msg-action-btn${msg.feedback === "down" ? " is-active" : ""}" data-action="down" title="Not helpful">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M17 13V4h3a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-3Zm0 0-4.5 7.5a1.5 1.5 0 0 1-2.7-.4L9 16H5a2 2 0 0 1-2-2.3l1.2-7A2 2 0 0 1 6.2 5H14a3 3 0 0 1 3 3v5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          ${msg.feedback === "down" ? ICONS.thumbsDown : '<i class="fa-regular fa-thumbs-down"></i>'}
         </button>
       </div>
     `;
@@ -719,7 +723,7 @@
     const flashCopied = () => {
       btn.classList.add("is-copied");
       const original = btn.innerHTML;
-      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none"><path d="M5 12L10 17L19 8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      btn.innerHTML = ICONS.check;
       setTimeout(() => { btn.classList.remove("is-copied"); btn.innerHTML = original; }, 1400);
     };
 
@@ -936,7 +940,7 @@
 
     traceEl.classList.remove("is-open");
     toggleEl.innerHTML = `
-      <svg class="trace__toggle-icon" viewBox="0 0 24 24" fill="none"><path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <i class="fa-solid fa-chevron-right trace__toggle-icon"></i>
       <span>Thought for ${(agentMsg.thinkingElapsedMs / 1000).toFixed(1)}s</span>
       <span class="trace__status" style="color: var(--color-text-faint);">${agentMsg.steps.length} steps</span>
     `;
