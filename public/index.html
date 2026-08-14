@@ -460,18 +460,24 @@
     background: var(--color-surface);
   }
   .auth-profile__avatar {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     flex-shrink: 0;
-    object-fit: cover;
-    background: var(--color-accent-soft);
-    color: var(--color-accent);
+    overflow: hidden;
+    background: var(--color-accent);
+    color: var(--color-accent-text);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
+    text-transform: uppercase;
+  }
+  .auth-profile__avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
   .auth-profile__info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
   .auth-profile__name {
@@ -505,22 +511,23 @@
 
   /* topbar avatar */
   .topbar__avatar {
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     flex-shrink: 0;
     overflow: hidden;
-    border: 1px solid var(--color-border);
-    background: var(--color-accent-soft);
-    color: var(--color-accent);
+    border: 1.5px solid var(--color-accent-border);
+    background: var(--color-accent);
+    color: var(--color-accent-text);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
-    transition: border-color var(--dur-fast) var(--ease);
+    text-transform: uppercase;
+    transition: border-color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
   }
-  .topbar__avatar:hover { border-color: var(--color-accent-border); }
+  .topbar__avatar:hover { border-color: var(--color-accent); transform: scale(1.05); }
   .topbar__avatar img { width: 100%; height: 100%; object-fit: cover; }
 
   .sidebar__disclaimer {
@@ -1042,6 +1049,37 @@
     animation: spin 0.7s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Breathing pulse — for the trace container while thinking */
+  @keyframes breathe {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 1; }
+  }
+  .trace.is-thinking {
+    animation: breathe 2.4s ease-in-out infinite;
+  }
+
+  /* Pulsating placeholder — for composer input while agent is busy */
+  @keyframes placeholderPulse {
+    0%, 100% { opacity: 0.2; }
+    50% { opacity: 0.5; }
+  }
+  .composer__input.is-busy::placeholder {
+    animation: placeholderPulse 2s ease-in-out infinite;
+  }
+
+  /* Stop button — replaces send icon while generating */
+  .composer__send--stop {
+    background: var(--color-danger) !important;
+  }
+  .composer__send--stop:hover {
+    background: #ff5d61 !important;
+  }
+  .composer__send--stop:disabled {
+    opacity: 0.6 !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+  }
 
   .typing-dots { display: inline-flex; gap: 4px; align-items: center; }
   .typing-dots span {
@@ -1584,24 +1622,7 @@
           <h1 class="empty-state__title">What's the legal situation?</h1>
           <p class="empty-state__subtitle">Describe it in plain language. The agent will classify the issue, check it against Nigerian law, and tell you exactly what to do next — including when you actually need a lawyer.</p>
 
-          <div class="prompt-grid">
-            <button class="prompt-card" data-prompt="My landlord in Lagos is trying to evict me without notice. Is that legal?">
-              <div class="prompt-card__label">Tenancy</div>
-              <div class="prompt-card__text">My landlord is trying to evict me without notice. Is that legal?</div>
-            </button>
-            <button class="prompt-card" data-prompt="My employer fired me by text message and hasn't paid my last salary. What are my rights?">
-              <div class="prompt-card__label">Employment</div>
-              <div class="prompt-card__text">I was fired by text and haven't been paid my last salary.</div>
-            </button>
-            <button class="prompt-card" data-prompt="The police detained my brother for two days without charging him. Is this legal?">
-              <div class="prompt-card__label">Rights &amp; Policing</div>
-              <div class="prompt-card__text">My brother was detained for two days without being charged.</div>
-            </button>
-            <button class="prompt-card" data-prompt="I paid a contractor for work he never finished and now he won't refund me. What can I do?">
-              <div class="prompt-card__label">Contracts</div>
-              <div class="prompt-card__text">A contractor took payment but never finished the job.</div>
-            </button>
-          </div>
+
         </div>
 
         <div class="chat__messages" id="chat-messages"></div>

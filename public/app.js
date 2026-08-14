@@ -611,7 +611,7 @@ import {
     body.className = "msg__body";
     wrap.appendChild(body);
 
-    if (msg.status !== "done" && msg.status !== "corpusEmpty" && msg.status !== "error" && msg.status !== "casual") {
+    if (msg.status !== "done" && msg.status !== "corpusEmpty" && msg.status !== "error" && msg.status !== "casual" && msg.status !== "stopped") {
       // Never reached a terminal state (e.g. page reload mid-request).
       // Resolve it honestly instead of fabricating an answer.
       finalizeStaleMessage(msg);
@@ -623,6 +623,8 @@ import {
       body.appendChild(buildAnswerBlock(msg, { stream: false }));
     } else if (msg.status === "casual") {
       body.appendChild(buildCasualReplyEl(msg.casualReply || "Hello!"));
+    } else if (msg.status === "stopped") {
+      body.appendChild(buildStoppedEl());
     } else if (msg.status === "corpusEmpty") {
       body.appendChild(buildCorpusEmptyEl(msg.corpusEmptyMessage || "No ingested legal sources match this yet.", msg.createdAt));
     } else if (msg.status === "error") {
@@ -961,6 +963,56 @@ import {
   }
 
   /* ------------------------------------------------------------------ */
+  /* Contextual title generation                                         */
+  /* ------------------------------------------------------------------ */
+  function deriveTopicFromText(text) {
+    // Simple fallback: extract key legal terms from the message
+    const lower = text.toLowerCase();
+    const topics = {
+      "tenancy": ["landlord", "tenant", "rent", "eviction", "lease"],
+      "employment": ["employer", "employee", "fired", "salary", "work"],
+      "criminal": ["police", "arrest", "detained", "crime", "charged"],
+      "contract": ["contract", "agreement", "breach", "payment"],
+      "family": ["divorce", "marriage", "custody", "child"],
+      "property": ["property", "land", "ownership", "dispute"]
+    };
+    
+    for (const [topic, keywords] of Object.entries(topics)) {
+      if (keywords.some(k => lower.includes(k))) {
+        return topic.charAt(0).toUpperCase() + topic.slice(1) + " question";
+      }
+    }
+    
+    return "Legal question";
+  }
+
+  async function generateContextualTitle(convo, userText) {
+    try {
+      const response = await fetch("/api/generate-title", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: userText })
+      });
+      
+      if (!response.ok) {
+        console.warn("[title] API call failed, keeping derived title");
+        return;
+      }
+      
+      const data = await response.json();
+      if (data.title && data.title.length > 0 && data.title.length <= 50) {
+        convo.title = data.title;
+        saveState();
+        renderHistory();
+        renderTopbar();
+      }
+    } catch (err) {
+      console.warn("[title] Failed to generate contextual title:", err);
+      // Keep the derived title as fallback
+    }
+  }
+
+  /* ------------------------------------------------------------------ */
   /* Agent pipeline — live, incremental DOM updates via `live.refs`      */
   /* ------------------------------------------------------------------ */
   function submitQuestion(text) {
@@ -972,7 +1024,9 @@ import {
     convo.messages.push(userMsg);
 
     if (convo.messages.filter((m) => m.role === "user").length === 1) {
-      convo.title = truncate(text, 48);
+      // Set an initial title from context, then try to generate a smarter one
+      convo.title = deriveTopicFromText(text);
+      generateContextualTitle(convo, text);
     }
 
     const agentMsg = {
@@ -1021,7 +1075,7 @@ import {
     wrap.appendChild(body);
 
     const traceEl = document.createElement("div");
-    traceEl.className = "trace is-open";
+    traceEl.className = "trace is-open is-thinking";
     const toggle = buildTraceToggle(agentMsg, traceEl);
     const traceBody = document.createElement("div");
     traceBody.className = "trace__body";
@@ -1203,6 +1257,7 @@ import {
     const traceEl = live.refs.traceEl;
     const toggleEl = live.refs.toggle;
 
+    traceEl.classList.remove("is-thinking");
     traceEl.classList.remove("is-open");
     toggleEl.innerHTML = `
       <i class="fa-solid fa-chevron-right trace__toggle-icon"></i>
@@ -1240,6 +1295,21 @@ import {
     return wrap;
   }
 
+  function buildStoppedEl() {
+    const wrap = document.createElement("div");
+    wrap.className = "answer";
+    wrap.innerHTML = `
+      <div class="answer-section">
+        <div class="answer-section__head">
+          <div class="answer-section__icon"><i class="fa-solid fa-hand"></i></div>
+          <span class="answer-section__title">Response stopped</span>
+        </div>
+        <div class="answer-section__text"><p>You stopped the response. You can ask a follow-up question or rephrase to continue.</p></div>
+      </div>
+    `;
+    return wrap;
+  }
+
   function renderCasualReply(agentMsg, replyText) {
     if (!live.refs) return;
     live.refs.body.appendChild(buildCasualReplyEl(replyText));
@@ -1270,6 +1340,7 @@ import {
     agentMsg.errorMessage = message;
 
     const traceEl = live.refs.traceEl;
+    traceEl.classList.remove("is-thinking");
     traceEl.classList.remove("is-open");
     live.refs.toggle.innerHTML = `
       <i class="fa-solid fa-chevron-right trace__toggle-icon"></i>
@@ -1372,11 +1443,103 @@ import {
   /* ------------------------------------------------------------------ */
   function updateComposerState() {
     const hasText = el.composerInput.value.trim().length > 0;
-    el.sendBtn.disabled = !hasText || state.isAgentBusy;
-    el.composerInput.disabled = state.isAgentBusy;
+    
+    if (state.isAgentBusy) {
+      // Show stop button while generating
+      el.sendBtn.disabled = false;
+      el.sendBtn.type = "button"; // prevent form submission
+      el.sendBtn.classList.add("composer__send--stop");
+      el.sendBtn.innerHTML = '<i class="fa-solid fa-stop"></i>';
+      el.sendBtn.setAttribute("aria-label", "Stop generating");
+      el.sendBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); stopGeneration(); };
+      
+      // Pulsating placeholder
+      el.composerInput.classList.add("is-busy");
+      el.composerInput.placeholder = "Responding…";
+      el.composerInput.disabled = false;
+    } else {
+      // Restore normal send button
+      el.sendBtn.type = "submit"; // restore form submission
+      el.sendBtn.classList.remove("composer__send--stop");
+      el.sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
+      el.sendBtn.setAttribute("aria-label", "Send");
+      el.sendBtn.onclick = null;
+      el.sendBtn.disabled = !hasText;
+      
+      // Restore normal placeholder
+      el.composerInput.classList.remove("is-busy");
+      el.composerInput.placeholder = "Describe your legal situation…";
+      el.composerInput.disabled = false;
+    }
+    
     el.newChatBtn.disabled = state.isAgentBusy;
     el.newChatMobile.disabled = state.isAgentBusy;
     updateClearChatButtonState();
+  }
+
+  function stopGeneration() {
+    // Increment token to invalidate the current pipeline's async callbacks
+    pipelineToken += 1;
+    clearInterval(live.timerId);
+    
+    // Mark current agent message as stopped
+    const convo = getActiveConversation();
+    if (convo && live.msgId) {
+      const agentMsg = convo.messages.find((m) => m.id === live.msgId);
+      if (agentMsg && (agentMsg.status === "thinking" || agentMsg.status === "streaming")) {
+        agentMsg.status = "stopped";
+        agentMsg.thinkingElapsedMs = Date.now() - agentMsg.startedAt;
+        agentMsg.traceOpen = false;
+        
+        // Show what we got so far
+        if (live.refs) {
+          const traceEl = live.refs.traceEl;
+          if (traceEl) {
+            traceEl.classList.remove("is-thinking");
+            traceEl.classList.remove("is-open");
+          }
+          if (live.refs.toggle) {
+            live.refs.toggle.innerHTML = `
+              <i class="fa-solid fa-chevron-right trace__toggle-icon"></i>
+              <span>Stopped after ${(agentMsg.thinkingElapsedMs / 1000).toFixed(1)}s</span>
+              <span class="trace__status" style="color: var(--color-text-faint);">partial</span>
+            `;
+          }
+          
+          // If we have a partial result, show it
+          if (agentMsg.result) {
+            // Already streaming, just finalize what we have
+          } else if (agentMsg.casualReply) {
+            // Already got casual reply
+          } else {
+            // Show a stopped message
+            const stoppedEl = document.createElement("div");
+            stoppedEl.className = "answer";
+            stoppedEl.innerHTML = `
+              <div class="answer-section">
+                <div class="answer-section__head">
+                  <div class="answer-section__icon"><i class="fa-solid fa-hand"></i></div>
+                  <span class="answer-section__title">Response stopped</span>
+                </div>
+                <div class="answer-section__text"><p>You stopped the response. You can ask a follow-up question or rephrase to continue.</p></div>
+              </div>
+              <div class="msg__meta"><span class="msg__meta-text">Stopped · ${formatTime(Date.now())}</span></div>
+            `;
+            live.refs.body.appendChild(stoppedEl);
+          }
+        }
+        
+        saveState();
+      }
+    }
+    
+    state.isAgentBusy = false;
+    live.refs = null;
+    live.msgId = null;
+    
+    updateComposerState();
+    renderHistory();
+    scrollChatToBottom();
   }
 
   function autoGrowTextarea() {
@@ -1442,16 +1605,6 @@ import {
     autoGrowTextarea();
     updateComposerState();
     submitQuestion(text);
-  });
-
-  document.querySelectorAll(".prompt-card").forEach((card) => {
-    card.addEventListener("click", () => {
-      const prompt = card.dataset.prompt;
-      el.composerInput.value = prompt;
-      autoGrowTextarea();
-      updateComposerState();
-      submitQuestion(prompt);
-    });
   });
 
   document.addEventListener("keydown", (e) => {
