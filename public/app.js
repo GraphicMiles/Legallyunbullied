@@ -787,10 +787,30 @@ import {
 
   function appendContextCards(sectionEl, sources) {
     if (!sources || !sources.length) return;
-    const list = document.createElement("div");
-    list.className = "context-list";
-    sources.forEach((src, i) => list.appendChild(buildContextCard(src, i)));
-    sectionEl.appendChild(list);
+    
+    // Use BeUIContextCards if available
+    if (window.BeUIContextCards) {
+      const container = document.createElement("div");
+      sectionEl.appendChild(container);
+      
+      const contextCards = new window.BeUIContextCards(container, {
+        maxVisible: 3
+      });
+      
+      sources.forEach((src) => {
+        contextCards.addCard({
+          type: src.type || "SOURCE",
+          title: src.label,
+          excerpt: src.excerpt
+        });
+      });
+    } else {
+      // Fallback to old context cards
+      const list = document.createElement("div");
+      list.className = "context-list";
+      sources.forEach((src, i) => list.appendChild(buildContextCard(src, i)));
+      sectionEl.appendChild(list);
+    }
   }
 
   function buildContextCard(src, index) {
@@ -813,6 +833,31 @@ import {
   }
 
   function buildVerdictEl(r) {
+    // Use BeUIRecommendation if available
+    if (window.BeUIRecommendation) {
+      const container = document.createElement("div");
+      
+      const recommendation = new window.BeUIRecommendation(container, {
+        action: r.escalate 
+          ? "This likely needs a lawyer" 
+          : "You can likely handle this yourself",
+        confidence: r.escalate ? 75 : 85,
+        reasoning: r.escalateReason,
+        alternatives: r.followUps || [],
+        onAccept: () => {
+          if (r.escalate) {
+            window.open(NBA_DIRECTORY_URL, "_blank");
+          }
+        },
+        onAlternative: (alt) => {
+          submitQuestion(alt);
+        }
+      });
+      
+      return container;
+    }
+    
+    // Fallback to old verdict UI
     const verdict = document.createElement("div");
     verdict.className = "verdict " + (r.escalate ? "verdict--escalate" : "verdict--self");
     verdict.innerHTML = `
@@ -1078,7 +1123,18 @@ import {
     body.className = "msg__body";
     wrap.appendChild(body);
 
-    // Don't create trace UI yet — we'll add it only if it's a legal question
+    // Add BeUI Loading State (initial "agent is working" indicator)
+    const loadingContainer = document.createElement("div");
+    body.appendChild(loadingContainer);
+    
+    if (window.BeUILoadingState) {
+      live.loadingState = new window.BeUILoadingState(loadingContainer, {
+        label: "Analyzing",
+        variant: "drive"
+      });
+      live.loadingState.start();
+    }
+
     el.chatMessages.appendChild(wrap);
     renderTopbar();
     scrollChatToBottom(true);
@@ -1153,6 +1209,15 @@ import {
     step.state = "active";
     step._start = Date.now();
     updateStepEl(index, step);
+    
+    // Update BeUIThinking component if available
+    if (live.thinkingComponent) {
+      live.thinkingComponent.addStep({
+        title: step.title,
+        detail: step.detail,
+        status: "is-active"
+      });
+    }
   }
 
   function setStepDone(agentMsg, index) {
@@ -1160,6 +1225,16 @@ import {
     step.state = "done";
     step.elapsedMs = Date.now() - (step._start || Date.now());
     updateStepEl(index, step);
+    
+    // Update BeUIThinking component if available
+    if (live.thinkingComponent) {
+      // Mark the last added step as complete
+      const steps = live.thinkingComponent.data.steps;
+      if (steps.length > 0) {
+        steps[steps.length - 1].status = "is-complete";
+        live.thinkingComponent.renderSteps();
+      }
+    }
   }
 
   async function runPipeline(convo, agentMsg, token) {
@@ -1195,28 +1270,51 @@ import {
       agentMsg.casualReply = response.casualReply;
       agentMsg.status = "casual";
       
+      // Stop loading state
+      if (live.loadingState) {
+        live.loadingState.destroy();
+        live.loadingState = null;
+      }
+      
       // Just render the casual reply directly — no trace/thinking UI
       renderCasualReply(agentMsg, response.casualReply);
       finalizeAnswer(agentMsg, token);
       return;
     }
 
-    // Legal question — create trace UI now that we know it's needed
-    const traceEl = document.createElement("div");
-    traceEl.className = "trace is-open is-thinking";
-    const toggle = buildTraceToggle(agentMsg, traceEl);
-    const traceBody = document.createElement("div");
-    traceBody.className = "trace__body";
-    const stepEls = agentMsg.steps.map((step) => buildStepEl(step));
-    stepEls.forEach((se) => traceBody.appendChild(se));
-    traceEl.appendChild(toggle);
-    traceEl.appendChild(traceBody);
-    live.refs.body.insertBefore(traceEl, live.refs.body.firstChild);
-    
-    live.refs.traceEl = traceEl;
-    live.refs.toggle = toggle;
-    live.refs.traceBody = traceBody;
-    live.refs.stepEls = stepEls;
+    // Stop loading state now that we have a response
+    if (live.loadingState) {
+      live.loadingState.destroy();
+      live.loadingState = null;
+    }
+
+    // Legal question — create BeUI Thinking component
+    if (window.BeUIThinking) {
+      const thinkingContainer = document.createElement("div");
+      live.refs.body.insertBefore(thinkingContainer, live.refs.body.firstChild);
+      
+      live.thinkingComponent = new window.BeUIThinking(thinkingContainer, {
+        defaultOpen: true,
+        defaultTab: "steps"
+      });
+    } else {
+      // Fallback to old trace UI if BeUIThinking not available
+      const traceEl = document.createElement("div");
+      traceEl.className = "trace is-open is-thinking";
+      const toggle = buildTraceToggle(agentMsg, traceEl);
+      const traceBody = document.createElement("div");
+      traceBody.className = "trace__body";
+      const stepEls = agentMsg.steps.map((step) => buildStepEl(step));
+      stepEls.forEach((se) => traceBody.appendChild(se));
+      traceEl.appendChild(toggle);
+      traceEl.appendChild(traceBody);
+      live.refs.body.insertBefore(traceEl, live.refs.body.firstChild);
+      
+      live.refs.traceEl = traceEl;
+      live.refs.toggle = toggle;
+      live.refs.traceBody = traceBody;
+      live.refs.stepEls = stepEls;
+    }
     
     startTimer(agentMsg, token);
 
@@ -1312,21 +1410,28 @@ import {
       live.agentProgress.stop();
       live.agentProgress = null;
     }
+    if (live.thinkingComponent) {
+      live.thinkingComponent.complete();
+      live.thinkingComponent = null;
+    }
 
     agentMsg.thinkingElapsedMs = Date.now() - agentMsg.startedAt;
     agentMsg.traceOpen = false;
     agentMsg.status = "streaming";
 
-    const traceEl = live.refs.traceEl;
-    const toggleEl = live.refs.toggle;
+    // Only update old trace UI if it exists
+    if (live.refs.traceEl && live.refs.toggle) {
+      const traceEl = live.refs.traceEl;
+      const toggleEl = live.refs.toggle;
 
-    traceEl.classList.remove("is-thinking");
-    traceEl.classList.remove("is-open");
-    toggleEl.innerHTML = `
-      <i class="fa-solid fa-chevron-right trace__toggle-icon"></i>
-      <span>Thought for ${(agentMsg.thinkingElapsedMs / 1000).toFixed(1)}s</span>
-      <span class="trace__status" style="color: var(--color-text-faint);">${agentMsg.steps.length} steps</span>
-    `;
+      traceEl.classList.remove("is-thinking");
+      traceEl.classList.remove("is-open");
+      toggleEl.innerHTML = `
+        <i class="fa-solid fa-chevron-right trace__toggle-icon"></i>
+        <span>Thought for ${(agentMsg.thinkingElapsedMs / 1000).toFixed(1)}s</span>
+        <span class="trace__status" style="color: var(--color-text-faint);">${agentMsg.steps.length} steps</span>
+      `;
+    }
   }
 
   function buildCorpusEmptyEl(message, createdAt) {
@@ -1396,19 +1501,34 @@ import {
     if (token !== pipelineToken || !live.refs) return;
     clearInterval(live.timerId);
 
+    // Stop loading state if still active
+    if (live.loadingState) {
+      live.loadingState.destroy();
+      live.loadingState = null;
+    }
+
     agentMsg.steps.forEach((s) => { if (s.state === "active") s.state = "pending"; });
     agentMsg.thinkingElapsedMs = Date.now() - agentMsg.startedAt;
     agentMsg.traceOpen = false;
     agentMsg.status = "error";
     agentMsg.errorMessage = message;
 
-    const traceEl = live.refs.traceEl;
-    traceEl.classList.remove("is-thinking");
-    traceEl.classList.remove("is-open");
-    live.refs.toggle.innerHTML = `
-      <i class="fa-solid fa-chevron-right trace__toggle-icon"></i>
-      <span>Stopped after ${(agentMsg.thinkingElapsedMs / 1000).toFixed(1)}s</span>
-    `;
+    // Handle BeUIThinking component
+    if (live.thinkingComponent) {
+      live.thinkingComponent.setStatus("Error");
+      live.thinkingComponent = null;
+    }
+    
+    // Handle old trace UI
+    if (live.refs.traceEl && live.refs.toggle) {
+      const traceEl = live.refs.traceEl;
+      traceEl.classList.remove("is-thinking");
+      traceEl.classList.remove("is-open");
+      live.refs.toggle.innerHTML = `
+        <i class="fa-solid fa-chevron-right trace__toggle-icon"></i>
+        <span>Stopped after ${(agentMsg.thinkingElapsedMs / 1000).toFixed(1)}s</span>
+      `;
+    }
 
     live.refs.body.appendChild(buildErrorEl(message));
     scrollChatToBottom();
@@ -1545,6 +1665,18 @@ import {
     pipelineToken += 1;
     clearInterval(live.timerId);
     
+    // Stop loading state if still active
+    if (live.loadingState) {
+      live.loadingState.destroy();
+      live.loadingState = null;
+    }
+    
+    // Stop thinking component if active
+    if (live.thinkingComponent) {
+      live.thinkingComponent.setStatus("Stopped");
+      live.thinkingComponent = null;
+    }
+    
     // Mark current agent message as stopped
     const convo = getActiveConversation();
     if (convo && live.msgId) {
@@ -1556,12 +1688,11 @@ import {
         
         // Show what we got so far
         if (live.refs) {
-          const traceEl = live.refs.traceEl;
-          if (traceEl) {
+          // Handle old trace UI
+          if (live.refs.traceEl && live.refs.toggle) {
+            const traceEl = live.refs.traceEl;
             traceEl.classList.remove("is-thinking");
             traceEl.classList.remove("is-open");
-          }
-          if (live.refs.toggle) {
             live.refs.toggle.innerHTML = `
               <i class="fa-solid fa-chevron-right trace__toggle-icon"></i>
               <span>Stopped after ${(agentMsg.thinkingElapsedMs / 1000).toFixed(1)}s</span>
