@@ -1475,6 +1475,94 @@
     .link-btn { justify-content: center; }
   }
 
+  /* ============================================================
+     BEAUTIFUL UI LOADING STATE - Pixel Grid Loader
+     ============================================================ */
+  
+  .beui-loading-state {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: fit-content;
+  }
+  
+  .beui-pixel-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 4px);
+    gap: 1.5px;
+  }
+  
+  .beui-pixel {
+    width: 4px;
+    height: 4px;
+    background: var(--color-accent);
+    border-radius: 1px;
+    opacity: 0.15;
+  }
+  
+  .beui-pixel.round {
+    border-radius: 50%;
+  }
+  
+  .beui-pixel.active {
+    animation: pixel-on 650ms ease-in-out infinite;
+  }
+  
+  @keyframes pixel-on {
+    0%, 100% {
+      opacity: 0.15;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.2);
+    }
+  }
+  
+  .beui-loading-label {
+    font-size: 13px;
+    font-weight: 500;
+    background: linear-gradient(
+      90deg,
+      var(--color-text-faint) 35%,
+      var(--color-text) 50%,
+      var(--color-text-faint) 65%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer-text 1.4s linear infinite;
+  }
+  
+  @keyframes shimmer-text {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+  
+  .beui-loading-timer {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-text-faint);
+    font-variant-numeric: tabular-nums;
+  }
+  
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .beui-pixel.active {
+      animation: none;
+      opacity: 0.15;
+    }
+    
+    .beui-loading-label {
+      animation: none;
+    }
+  }
+
   /* scrollbars */
   .history::-webkit-scrollbar, .chat::-webkit-scrollbar { width: 8px; }
   .history::-webkit-scrollbar-thumb, .chat::-webkit-scrollbar-thumb {
@@ -1664,6 +1752,7 @@
 <script src="components/BeUIContextCards.js"></script>
 <script src="components/BeUIPromptBar.js"></script>
 <script src="components/BeUIRecommendation.js"></script>
-<script type="module" src="app.js?v=2.0.1"></script>
+<script src="components/LoadingState.js"></script>
+<script type="module" src="app.js?v=2.0.2"></script>
 </body>
 </html>

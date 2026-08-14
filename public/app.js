@@ -1335,8 +1335,18 @@ import {
       live.loadingState = null;
     }
 
-    // Legal question — create BeUI Thinking component
-    if (window.BeUIThinking) {
+    // Legal question — create Beautiful UI Loading State for pipeline execution
+    if (window.LoadingState) {
+      const loadingContainer = document.createElement("div");
+      live.refs.body.insertBefore(loadingContainer, live.refs.body.firstChild);
+      
+      live.pipelineLoading = new window.LoadingState({
+        container: loadingContainer,
+        label: "Thinking",
+        variant: "Drive"
+      });
+    } else if (window.BeUIThinking) {
+      // Fallback to BeUIThinking if LoadingState not available
       const thinkingContainer = document.createElement("div");
       live.refs.body.insertBefore(thinkingContainer, live.refs.body.firstChild);
       
@@ -1345,7 +1355,7 @@ import {
         defaultTab: "steps"
       });
     } else {
-      // Fallback to old trace UI if BeUIThinking not available
+      // Fallback to old trace UI if neither available
       const traceEl = document.createElement("div");
       traceEl.className = "trace is-open is-thinking";
       const toggle = buildTraceToggle(agentMsg, traceEl);
@@ -1457,6 +1467,10 @@ import {
       live.agentProgress.stop();
       live.agentProgress = null;
     }
+    if (live.pipelineLoading) {
+      live.pipelineLoading.destroy();
+      live.pipelineLoading = null;
+    }
     if (live.thinkingComponent) {
       live.thinkingComponent.complete();
       live.thinkingComponent = null;
@@ -1552,6 +1566,10 @@ import {
     if (live.loadingState) {
       live.loadingState.destroy();
       live.loadingState = null;
+    }
+    if (live.pipelineLoading) {
+      live.pipelineLoading.destroy();
+      live.pipelineLoading = null;
     }
 
     agentMsg.steps.forEach((s) => { if (s.state === "active") s.state = "pending"; });
@@ -1716,6 +1734,10 @@ import {
     if (live.loadingState) {
       live.loadingState.destroy();
       live.loadingState = null;
+    }
+    if (live.pipelineLoading) {
+      live.pipelineLoading.destroy();
+      live.pipelineLoading = null;
     }
     
     // Stop thinking component if active
