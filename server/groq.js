@@ -26,5 +26,11 @@ function getClient() {
 
 const CLASSIFY_MODEL = process.env.GROQ_MODEL_CLASSIFY || "llama-3.1-8b-instant";
 const DRAFT_MODEL = process.env.GROQ_MODEL_DRAFT || "llama-3.3-70b-versatile";
+// Groq's rate limits are per-model. If the primary drafting model is
+// exhausted for the day, falling back to a different (smaller, separately
+// metered) model still gets the user a real answer instead of an error —
+// worse quality is better than no answer. Same idea could extend to a
+// second fallback if this one also gets exhausted.
+const DRAFT_MODEL_FALLBACK = process.env.GROQ_MODEL_DRAFT_FALLBACK || "llama-3.1-8b-instant";
 
-module.exports = { getClient, CLASSIFY_MODEL, DRAFT_MODEL };
+module.exports = { getClient, CLASSIFY_MODEL, DRAFT_MODEL, DRAFT_MODEL_FALLBACK };
