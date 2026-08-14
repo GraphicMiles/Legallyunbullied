@@ -275,4 +275,60 @@ router.post("/api/chat", async (req, res) => {
   });
 });
 
+/**
+ * POST /api/generate-title — Generate a short contextual title for a conversation
+ * based on the user's first message. Returns { title: "Short Title" }
+ * If the message is not a legal question, returns { title: null }.
+ */
+router.post("/api/generate-title", async (req, res) => {
+  const question = (req.body && req.body.question || "").toString().trim();
+  if (!question) {
+    return res.status(400).json({ error: "bad_request" });
+  }
+
+  const groqClient = getGroqClient();
+  const geminiClient = getGeminiClient();
+
+  const TITLE_PROMPT = `Generate a very short title (3-6 words max) for a conversation about a Nigerian legal question. The title should capture the core topic in a natural, concise way.
+
+IMPORTANT: If the message is NOT a legal question (e.g., greetings like "hi", "hello", casual chat, or non-legal topics), respond with exactly: NOT_LEGAL
+
+Otherwise, return ONLY the title text, no quotes, no punctuation at the end.
+
+Examples:
+- "My landlord locked me out" → Landlord lockout dispute
+- "Police arrested my brother" → Police detention rights
+- "My employer hasn't paid me" → Unpaid salary claim
+- "How do I register a company?" → Company registration process
+- "hi there" → NOT_LEGAL
+- "what's up" → NOT_LEGAL`;
+
+  // Try Groq first, then Gemini
+  const clients = [];
+  if (groqClient) clients.push({ client: groqClient, model: CLASSIFY_MODEL });
+  if (geminiClient) clients.push({ client: geminiClient, model: GEMINI_CLASSIFY_MODEL });
+
+  for (const { client, model } of clients) {
+    try {
+      const completion = await callCompletion(
+        client,
+        model,
+        [
+          { role: "system", content: TITLE_PROMPT },
+          { role: "user", content: question },
+        ],
+        { temperature: 0.3, max_tokens: 30 }
+      );
+      const raw = (completion.choices[0].message.content || "").trim().replace(/^["']|["']$/g, "");
+      if (raw === "NOT_LEGAL" || raw.length === 0) return res.json({ title: null });
+      const title = raw.slice(0, 50);
+      if (title) return res.json({ title });
+    } catch (err) {
+      console.warn("[/api/generate-title] failed with", model, ":", err.message);
+    }
+  }
+
+  res.json({ title: null });
+});
+
 module.exports = router;
