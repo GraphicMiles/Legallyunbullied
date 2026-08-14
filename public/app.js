@@ -245,18 +245,52 @@ import {
   }
 
   async function callChatApi(question) {
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question }),
-    });
-    let data = null;
-    try { data = await res.json(); } catch (e) { /* fall through to error below */ }
-    if (!res.ok) {
-      throw new Error((data && data.message) || `Request failed with status ${res.status}.`);
+    console.log('[callChatApi] Starting API call to /api/chat');
+    
+    // Add timeout to fetch call
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+    
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question }),
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      console.log('[callChatApi] Response received, status:', res.status);
+      
+      let data = null;
+      try { 
+        data = await res.json(); 
+        console.log('[callChatApi] Response parsed successfully');
+      } catch (e) { 
+        console.error('[callChatApi] Failed to parse response:', e);
+        /* fall through to error below */ 
+      }
+      
+      if (!res.ok) {
+        console.error('[callChatApi] Request failed:', res.status, data);
+        throw new Error((data && data.message) || `Request failed with status ${res.status}.`);
+      }
+      if (!data) {
+        console.error('[callChatApi] Empty response');
+        throw new Error("The server returned an unexpected empty response.");
+      }
+      
+      console.log('[callChatApi] Returning data:', { isCasual: data.isCasual, hasResult: !!data.result });
+      return data;
+    } catch (err) {
+      clearTimeout(timeoutId);
+      if (err.name === 'AbortError') {
+        console.error('[callChatApi] Request timed out after 60 seconds');
+        throw new Error('Request timed out after 60 seconds. Please try again.');
+      }
+      console.error('[callChatApi] Error:', err);
+      throw err;
     }
-    if (!data) throw new Error("The server returned an unexpected empty response.");
-    return data;
   }
 
   /* ------------------------------------------------------------------ */
@@ -1238,35 +1272,48 @@ import {
   }
 
   async function runPipeline(convo, agentMsg, token) {
+    console.log('[runPipeline] Starting pipeline');
     const question = lastUserText(convo);
 
     // Step 0: Reading the question — purely cosmetic pacing, no server call yet.
+    console.log('[runPipeline] Step 0: Reading question');
     setStepActive(agentMsg, 0);
     await sleep(380);
-    if (token !== pipelineToken) return;
+    if (token !== pipelineToken) {
+      console.log('[runPipeline] Cancelled after step 0');
+      return;
+    }
 
     // Step 1: Classifying — this is where the real network request happens.
     // It stays active (with the live elapsed timer ticking) for however
     // long the server actually takes, since classify+retrieve+draft all
     // happen server-side in one round trip.
+    console.log('[runPipeline] Step 1: Classifying (calling API)');
     setStepActive(agentMsg, 1);
 
     let response;
     let requestError = null;
     try {
       response = await callChatApi(question);
+      console.log('[runPipeline] API call completed successfully');
     } catch (err) {
+      console.error('[runPipeline] API call failed:', err);
       requestError = err;
     }
-    if (token !== pipelineToken) return;
+    if (token !== pipelineToken) {
+      console.log('[runPipeline] Cancelled after API call');
+      return;
+    }
 
     if (requestError) {
+      console.log('[runPipeline] Finishing with error');
       finishWithError(convo, agentMsg, token, requestError.message);
       return;
     }
 
     // Casual chat — skip the full legal pipeline and trace UI
     if (response.isCasual) {
+      console.log('[runPipeline] Casual chat detected, skipping pipeline');
       agentMsg.casualReply = response.casualReply;
       agentMsg.status = "casual";
       
