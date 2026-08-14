@@ -1059,12 +1059,15 @@ import {
   function mountLivePipeline(convo, agentMsg, token) {
     el.emptyState.style.display = "none";
 
-    // Append the user message (already rendered by nothing yet — full list is empty on first msg)
-    el.chatMessages.innerHTML = "";
-    convo.messages.forEach((m) => {
-      if (m.id === agentMsg.id) return; // handled below
-      el.chatMessages.appendChild(m.role === "user" ? renderUserMessage(m) : renderAgentMessageStatic(m));
-    });
+    // Only append the NEW user message (don't re-render everything)
+    const lastUserMsg = convo.messages[convo.messages.length - 2]; // second to last is the user message
+    if (lastUserMsg && lastUserMsg.role === "user") {
+      // Check if this message is already rendered
+      const existingMsg = el.chatMessages.querySelector(`[data-msg-id="${lastUserMsg.id}"]`);
+      if (!existingMsg) {
+        el.chatMessages.appendChild(renderUserMessage(lastUserMsg));
+      }
+    }
 
     // Build the live agent message shell.
     const wrap = document.createElement("div");
@@ -1075,25 +1078,14 @@ import {
     body.className = "msg__body";
     wrap.appendChild(body);
 
-    const traceEl = document.createElement("div");
-    traceEl.className = "trace is-open is-thinking";
-    const toggle = buildTraceToggle(agentMsg, traceEl);
-    const traceBody = document.createElement("div");
-    traceBody.className = "trace__body";
-    const stepEls = agentMsg.steps.map((step) => buildStepEl(step));
-    stepEls.forEach((se) => traceBody.appendChild(se));
-    traceEl.appendChild(toggle);
-    traceEl.appendChild(traceBody);
-    body.appendChild(traceEl);
-
+    // Don't create trace UI yet — we'll add it only if it's a legal question
     el.chatMessages.appendChild(wrap);
     renderTopbar();
     scrollChatToBottom(true);
 
     live.msgId = agentMsg.id;
-    live.refs = { wrap, body, traceEl, toggle, traceBody, stepEls };
+    live.refs = { wrap, body, traceEl: null, toggle: null, traceBody: null, stepEls: null };
 
-    startTimer(agentMsg, token);
     runPipeline(convo, agentMsg, token);
   }
 
@@ -1163,27 +1155,35 @@ import {
       return;
     }
 
-    // Casual chat — skip the full legal pipeline
+    // Casual chat — skip the full legal pipeline and trace UI
     if (response.isCasual) {
       agentMsg.casualReply = response.casualReply;
       agentMsg.status = "casual";
-      setStepDone(agentMsg, 1);
-      agentMsg.steps[1].detail = "Casual conversation";
       
-      // Quick pacing for casual replies — mark remaining steps as done
-      for (let i = 2; i < agentMsg.steps.length; i++) {
-        setStepActive(agentMsg, i);
-        agentMsg.steps[i].detail = "Just chatting";
-        await sleep(120);
-        if (token !== pipelineToken) return;
-        setStepDone(agentMsg, i);
-      }
-      
-      collapseTrace(agentMsg, token);
+      // Just render the casual reply directly — no trace/thinking UI
       renderCasualReply(agentMsg, response.casualReply);
       finalizeAnswer(agentMsg, token);
       return;
     }
+
+    // Legal question — create trace UI now that we know it's needed
+    const traceEl = document.createElement("div");
+    traceEl.className = "trace is-open is-thinking";
+    const toggle = buildTraceToggle(agentMsg, traceEl);
+    const traceBody = document.createElement("div");
+    traceBody.className = "trace__body";
+    const stepEls = agentMsg.steps.map((step) => buildStepEl(step));
+    stepEls.forEach((se) => traceBody.appendChild(se));
+    traceEl.appendChild(toggle);
+    traceEl.appendChild(traceBody);
+    live.refs.body.insertBefore(traceEl, live.refs.body.firstChild);
+    
+    live.refs.traceEl = traceEl;
+    live.refs.toggle = toggle;
+    live.refs.traceBody = traceBody;
+    live.refs.stepEls = stepEls;
+    
+    startTimer(agentMsg, token);
 
     agentMsg.classification = normalizeClassification(response.classification);
     agentMsg.steps[1].detail = `${agentMsg.classification.practiceArea} · ${agentMsg.classification.jurisdictionGuess} · ${agentMsg.classification.urgency} urgency`;

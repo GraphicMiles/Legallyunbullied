@@ -35,69 +35,150 @@ function parseModelJson(content) {
 const PRACTICE_AREA_BULLETS = PRACTICE_AREA_DEFS.map((p) => `- "${p.key}": ${p.description}`).join("\n");
 
 
-const CLASSIFY_SYSTEM_PROMPT = `You classify messages for a Nigerian legal-information assistant called "Legally Unbullied".
+const CLASSIFY_SYSTEM_PROMPT = `You are an expert Nigerian legal classifier. Analyze the user's message with precision.
 
 First, determine if this is a legal question or casual conversation.
 
-If it's NOT a legal question (greetings like "hi", "hello", "good morning"; casual chat like "how are you", "what's up"; meta-questions about the bot like "who made you", "what can you do"; or anything unrelated to Nigerian law), respond with:
-{"is_legal_question": false, "casual_reply": "A warm, natural, brief response in 1-2 sentences. Be friendly and mention you're here to help with Nigerian legal questions if they have any."}
+If it's NOT a legal question (greetings, casual chat, meta-questions, or non-legal topics), respond with:
+{"is_legal_question": false, "casual_reply": "A warm, natural response mentioning you help with Nigerian legal questions."}
 
-If it IS a legal question (anything about Nigerian law, rights, legal processes, courts, police, contracts, tenancy, employment disputes, criminal matters, family law, business registration, taxes, etc.), classify it with deep analysis:
+If it IS a legal question, perform DEEP ANALYSIS:
 
-Valid values for "practice_area": ${JSON.stringify(PRACTICE_AREAS)}
+Valid practice areas: ${JSON.stringify(PRACTICE_AREAS)}
 ${PRACTICE_AREA_BULLETS}
 
-Pick exactly one practice_area — the single best-fitting category. Prefer "general" over force-fitting a loose match.
+Provide:
+- "practice_area": Single best-fitting category from the list above
+- "jurisdiction": Specific jurisdiction (e.g., "Lagos State", "Federal", "Rivers State")
+- "urgency": ["Low", "Medium", "High", "Critical"] — based on time sensitivity and potential harm
+- "summary": 1-2 sentence summary of the legal situation
+- "keywords": 4-8 specific legal/factual terms likely in relevant statutes (procedural terms, timeframes, named concepts)
+- "key_issues": Array of 3-5 specific legal issues or questions that need to be addressed
+- "complexity": ["Low", "Medium", "High"] — Low: straightforward single issue, Medium: multiple issues or interpretation needed, High: complex multi-party/constitutional/novel questions
+- "reasoning_approach": Detailed 2-3 sentence description of how to systematically answer this question, including what legal framework to establish, how to apply it to the facts, and what remedies/guidance to provide
+- "stakeholders": Array of parties involved (e.g., ["tenant", "landlord", "court"])
+- "potential_remedies": Array of 2-4 possible legal remedies or outcomes to explore
 
-Valid values for "urgency": ["Low", "Medium", "High", "Critical"]
+Example (use realistic values, don't copy):
+{
+  "is_legal_question": true,
+  "practice_area": "tenancy",
+  "jurisdiction": "Lagos State",
+  "urgency": "High",
+  "summary": "Tenant facing potential illegal eviction after landlord changed locks without court order or proper notice.",
+  "keywords": ["notice to quit", "seven days notice", "court order", "forcible entry", "possession", "magistrate court"],
+  "key_issues": [
+    "Whether landlord followed statutory notice requirements",
+    "Legality of self-help eviction (changing locks)",
+    "Tenant's right to peaceful possession",
+    "Available remedies for illegal eviction"
+  ],
+  "complexity": "Medium",
+  "reasoning_approach": "First establish the statutory framework under Lagos State Tenancy Law 2011, particularly sections on notice requirements and prohibition of self-help. Then analyze whether the landlord's actions constitute illegal eviction. Finally outline the tenant's remedies including potential court orders for repossession and damages.",
+  "stakeholders": ["tenant", "landlord"],
+  "potential_remedies": ["Court order for repossession", "Damages for illegal eviction", "Injunction against further harassment"]
+}
 
-"keywords": 3-6 specific legal/factual terms likely to appear verbatim in the relevant statute text (e.g. procedural terms, timeframes, named concepts) — used to narrow down a large Act to the sections that actually matter for this question. Not generic words.
+Respond with ONLY a JSON object, no prose, no markdown.`;
 
-"key_issues": Array of 2-4 specific legal issues or questions raised (e.g., ["legality of lockout without court order", "tenant's right to peaceful possession", "remedies for illegal eviction"])
+const DRAFT_SYSTEM_PROMPT = `You are Legally Unbullied, an expert Nigerian legal-information assistant. You provide clear, comprehensive, and actionable legal information based ONLY on the statute excerpts provided.
 
-"complexity": "Low" | "Medium" | "High" — how complex is this legal question?
-- Low: straightforward single-issue question
-- Medium: multiple issues or requires interpretation
-- High: complex multi-party dispute, constitutional issues, or novel legal questions
+CORE PRINCIPLES:
+- Use ONLY the provided statute excerpts — never cite provisions not in the context
+- Cite the Act and section number for every legal claim
+- Be comprehensive but clear — explain legal concepts in plain language
+- Provide actionable next steps the user can take
+- Be honest about limitations in the available information
 
-"reasoning_approach": Brief description (1 sentence) of how to approach answering this question (e.g., "First establish the legal framework for tenancy, then analyze whether the landlord's actions violated specific provisions, finally outline available remedies")
+RESPONSE STRUCTURE:
 
-Example for a legal question (use realistic values for the actual question, don't copy this example's content):
-{"is_legal_question": true, "practice_area": "tenancy", "jurisdiction": "Lagos State", "urgency": "High", "summary": "A tenant is disputing an eviction attempt made without proper notice.", "keywords": ["notice", "quit", "possession", "monthly tenant"], "key_issues": ["validity of eviction notice", "statutory notice period requirements", "tenant's right to remain in possession"], "complexity": "Medium", "reasoning_approach": "Analyze the statutory notice requirements for different tenancy types, determine if proper notice was given, and outline remedies available to the tenant."}
+**lawMd** (What the law says):
+- Start with the legal framework (which Act governs this issue)
+- Explain the relevant sections and what they establish
+- Apply the law to the user's specific situation
+- Use **bold** for Act names and section numbers
+- Use bullet points for multiple requirements or elements
+- Be thorough: 3-5 paragraphs covering all relevant aspects
 
-Respond with ONLY a JSON object, no prose, no markdown code fences.`;
+**actionsMd** (What you can do):
+- Provide 4-6 specific, actionable steps
+- Order them logically (immediate actions first, then follow-up steps)
+- Include practical details (where to go, what to file, timeframes)
+- Use bullet points with clear, direct language
 
-const DRAFT_SYSTEM_PROMPT = `You are Legally Unbullied, a Nigerian legal-information assistant. You are not a lawyer and must not give legal advice — only plain-language information about what the law says and what someone can practically do next.
+**sources**: Array of 3-4 most important statutory provisions cited, with:
+- "label": "Act Name, s.X"
+- "excerpt": The key text from that section (max 400 chars)
 
-Hard rules:
-- Only use the statute excerpts you are given below. Never cite an Act, section number, or fact that isn't present in them.
-- If the excerpts don't fully answer the question, say so plainly in "lawMd" rather than filling the gap with assumptions.
-- Cite the Act and section for every legal claim in "lawMd".
-- "lawMd" and "actionsMd" may use markdown (**bold**, "- " bullet lines). Every other field is plain text, no markdown.
-- Keep "sources" to at most 4 entries, each excerpt under 400 characters.
-- Respond with ONLY a JSON object, no prose, no markdown code fences around it.
+**escalate**: Boolean — true if this likely needs a lawyer
 
-Example of the exact shape to return (use realistic values for the actual question, don't copy this example's content):
-{"lawMd": "Under the Example Act 2020 (s.4), ...", "actionsMd": "- Do this first.\\n- Then do this.", "sources": [{"label": "Example Act 2020, s.4", "excerpt": "the exact excerpt text relied on"}], "escalate": true, "escalateReason": "Why a lawyer is or isn't needed, in one or two sentences.", "followUps": ["A natural follow-up question.", "Another natural follow-up question."]}`;
+**escalateReason**: 1-2 sentences explaining why a lawyer is/isn't needed
 
-const PLAN_SYSTEM_PROMPT = `You are a legal reasoning assistant specializing in Nigerian law. Your task is to analyze the user's question and the available legal provisions, then create a structured plan for how to answer the question.
+**followUps**: Array of 2-3 natural follow-up questions the user might ask
+
+QUALITY STANDARDS:
+- Every legal claim must have a citation
+- Explain legal jargon in plain language
+- Be specific about procedures, timeframes, and requirements
+- If the provisions don't fully answer the question, say so explicitly
+- Distinguish between what the law says and what the user should do
+
+Respond with ONLY a JSON object (no prose, no markdown fences):
+{
+  "lawMd": "Comprehensive explanation with citations...",
+  "actionsMd": "- Step 1: ...\n- Step 2: ...\n- Step 3: ...",
+  "sources": [{"label": "Act, s.X", "excerpt": "..."}],
+  "escalate": true/false,
+  "escalateReason": "...",
+  "followUps": ["Question 1?", "Question 2?"]
+}`;
+
+const PLAN_SYSTEM_PROMPT = `You are a senior Nigerian legal analyst. Your task is to deeply analyze a legal question and the available statutory provisions to create a comprehensive response strategy.
 
 Given:
-- The user's question
-- The classification (practice area, key issues, complexity)
-- Available statute excerpts
+- User's question and classification
+- Available statute excerpts from Nigerian law
 
-Create a brief, structured analysis plan that shows your reasoning process. This plan will help structure the final response.
+Perform the following analysis:
 
-Respond with a JSON object containing:
-- "analysis": A 2-3 sentence analysis of the core legal question and what needs to be determined
-- "key_provisions": Array of 2-4 most relevant provisions and why they matter (e.g., ["Section 13 of Tenancy Law - establishes notice requirements", "Section 20 - provides remedies for illegal eviction"])
-- "response_structure": Brief outline of how to structure the answer (e.g., "1. Establish legal framework, 2. Apply to facts, 3. Outline remedies")
-- "gaps": Any aspects of the question that the available provisions don't fully address (can be empty array if fully covered)
+1. **Legal Framework Analysis**: Identify the primary legal framework(s) that govern this question. What Acts, sections, and legal principles are most relevant?
 
-Keep the analysis concise but thoughtful. This demonstrates careful reasoning before drafting the response.
+2. **Issue Decomposition**: Break down the user's question into specific legal sub-questions that need to be answered.
 
-Respond with ONLY a JSON object, no prose, no markdown code fences.`;
+3. **Provision Mapping**: For each sub-question, identify which specific statutory provisions address it. Note any gaps where the available provisions don't fully answer the question.
+
+4. **Application Strategy**: Determine how to apply the law to the user's specific facts. What elements need to be established? What tests or criteria must be met?
+
+5. **Remedies & Guidance**: Based on the law, what are the user's rights, obligations, and available remedies? What practical steps should they take?
+
+6. **Risk Assessment**: What are the potential risks, limitations, or complications? When should they seek professional legal help?
+
+Respond with a structured JSON object:
+
+{
+  "analysis": "2-3 sentence analysis of the core legal question and what needs to be determined",
+  "legal_framework": "Name the primary Act(s) and key sections that govern this issue",
+  "key_provisions": [
+    "Section X of [Act Name] - [brief description of what it establishes]",
+    "Section Y of [Act Name] - [brief description]"
+  ],
+  "sub_questions": [
+    "What are the statutory requirements for X?",
+    "Did the party comply with Y?",
+    "What remedies are available?"
+  ],
+  "application_to_facts": "1-2 sentences on how to apply the law to the user's specific situation",
+  "response_structure": "Outline of how to structure the answer (e.g., '1. Explain legal requirements, 2. Analyze compliance, 3. Outline remedies, 4. Provide practical next steps')",
+  "practical_steps": [
+    "Step 1: Do X",
+    "Step 2: File Y",
+    "Step 3: Contact Z"
+  ],
+  "gaps": ["Any aspects the available provisions don't fully address"],
+  "escalation_triggers": ["When should the user definitely consult a lawyer?"]
+}
+
+Be thorough but concise. This plan will guide the final response to ensure it's comprehensive, accurate, and actionable.`;
 
 async function planResponse(question, classification, provisions) {
   const groqClient = getGroqClient();
@@ -224,38 +305,58 @@ async function classifyWithFallback(question) {
   throw new Error("No LLM provider configured for classification.");
 }
 
-async function draftWithModel(client, model, question, contextBlock, plan) {
-  // Include the plan in the drafting context to guide the response
-  const planContext = plan ? `
-
-Reasoning Plan:
+async function draftWithModel(client, model, question, contextBlock, plan, classification) {
+  // Build comprehensive context from classification and plan
+  let enhancedContext = "";
+  
+  if (classification) {
+    enhancedContext += `\n\nLEGAL ANALYSIS CONTEXT:
+- Practice Area: ${classification.practice_area}
+- Jurisdiction: ${classification.jurisdiction}
+- Urgency: ${classification.urgency}
+- Key Issues: ${classification.key_issues ? classification.key_issues.join(", ") : "N/A"}
+- Complexity: ${classification.complexity}
+- Stakeholders: ${classification.stakeholders ? classification.stakeholders.join(", ") : "N/A"}
+- Potential Remedies: ${classification.potential_remedies ? classification.potential_remedies.join(", ") : "N/A"}
+`;
+  }
+  
+  if (plan) {
+    enhancedContext += `
+RESPONSE PLAN:
 - Analysis: ${plan.analysis}
-- Key Provisions: ${plan.key_provisions.join(", ")}
+- Legal Framework: ${plan.legal_framework || "N/A"}
+- Key Provisions: ${plan.key_provisions ? plan.key_provisions.join("; ") : "N/A"}
+- Sub-questions to address: ${plan.sub_questions ? plan.sub_questions.join("; ") : "N/A"}
+- Application to facts: ${plan.application_to_facts || "N/A"}
 - Response Structure: ${plan.response_structure}
-${plan.gaps && plan.gaps.length > 0 ? `- Gaps to Address: ${plan.gaps.join(", ")}` : ""}
+- Practical Steps: ${plan.practical_steps ? plan.practical_steps.join("; ") : "N/A"}
+${plan.gaps && plan.gaps.length > 0 ? `- Gaps to acknowledge: ${plan.gaps.join(", ")}` : ""}
+${plan.escalation_triggers ? `- Escalation triggers: ${plan.escalation_triggers.join(", ")}` : ""}
 
-Use this plan to structure your response. Follow the response structure and ensure you address the key provisions identified.` : "";
+Follow this plan to structure your response. Be comprehensive and address all sub-questions.`;
+  }
 
   const completion = await callCompletion(
     client,
     model,
     [
       { role: "system", content: DRAFT_SYSTEM_PROMPT },
-      { role: "user", content: `Question: ${question}\n\nAvailable statute excerpts:\n\n${contextBlock}${planContext}` },
+      { role: "user", content: `Question: ${question}\n\nAvailable statute excerpts:\n\n${contextBlock}${enhancedContext}` },
     ],
     { response_format: { type: "json_object" }, max_tokens: 3000 }
   );
   return parseModelJson(completion.choices[0].message.content);
 }
 
-async function draftWithFallback(question, contextBlock, plan) {
+async function draftWithFallback(question, contextBlock, plan, classification) {
   const groqClient = getGroqClient();
   const geminiClient = getGeminiClient();
 
   // Try Groq primary model
   if (groqClient) {
     try {
-      const result = await draftWithModel(groqClient, DRAFT_MODEL, question, contextBlock, plan);
+      const result = await draftWithModel(groqClient, DRAFT_MODEL, question, contextBlock, plan, classification);
       return { result, model: DRAFT_MODEL, provider: "groq" };
     } catch (err) {
       const isRateLimited = err.status === 429 || err.status === 413;
@@ -265,7 +366,7 @@ async function draftWithFallback(question, contextBlock, plan) {
         // Try Groq fallback model
         if (DRAFT_MODEL_FALLBACK && DRAFT_MODEL_FALLBACK !== DRAFT_MODEL) {
           try {
-            const result = await draftWithModel(groqClient, DRAFT_MODEL_FALLBACK, question, contextBlock, plan);
+            const result = await draftWithModel(groqClient, DRAFT_MODEL_FALLBACK, question, contextBlock, plan, classification);
             return { result, model: DRAFT_MODEL_FALLBACK, provider: "groq-fallback" };
           } catch (fallbackErr) {
             console.warn(`[/api/chat] Groq fallback also failed: ${fallbackErr.status || ""} ${fallbackErr.message}`);
@@ -282,7 +383,7 @@ async function draftWithFallback(question, contextBlock, plan) {
   // Try Gemini
   if (geminiClient) {
     try {
-      const result = await draftWithModel(geminiClient, GEMINI_DRAFT_MODEL, question, contextBlock, plan);
+      const result = await draftWithModel(geminiClient, GEMINI_DRAFT_MODEL, question, contextBlock, plan, classification);
       return { result, model: GEMINI_DRAFT_MODEL, provider: "gemini" };
     } catch (err) {
       console.error(`[/api/chat] Gemini drafting also failed: ${err.status || ""} ${err.message}`);
@@ -377,7 +478,7 @@ router.post("/api/chat", async (req, res) => {
   // Step 5: Draft with fallback chain (using the plan to guide the response)
   let draftResult;
   try {
-    draftResult = await draftWithFallback(question, contextBlock, planResult.plan);
+    draftResult = await draftWithFallback(question, contextBlock, planResult.plan, classification);
   } catch (err) {
     console.error("[/api/chat] drafting failed:", err.status || "", err.message);
     return res.status(502).json({
