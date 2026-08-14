@@ -1091,15 +1091,50 @@ import {
 
   function startTimer(agentMsg, token) {
     clearInterval(live.timerId);
-    live.timerId = setInterval(() => {
-      if (token !== pipelineToken || !live.refs) { clearInterval(live.timerId); return; }
-      const elapsed = ((Date.now() - agentMsg.startedAt) / 1000).toFixed(1);
+    
+    // Create BeUI components for reasoning text and progress
+    if (live.refs && live.refs.toggle) {
       const statusSpan = live.refs.toggle.querySelector(".trace__status");
       if (statusSpan) {
-        const activeStep = agentMsg.steps.find((s) => s.state === "active");
-        statusSpan.innerHTML = `<span class="spinner"></span> ${activeStep ? activeStep.title : "Thinking…"} · ${elapsed}s`;
+        statusSpan.innerHTML = "";
+        
+        // Create reasoning text component
+        const reasoningContainer = document.createElement("span");
+        reasoningContainer.className = "reasoning-text";
+        statusSpan.appendChild(reasoningContainer);
+        
+        live.reasoningText = new window.BeUI.ReasoningText(reasoningContainer, {
+          phrases: [
+            "Reading the question",
+            "Classifying the issue",
+            "Searching legal sources",
+            "Analyzing provisions",
+            "Planning the response",
+            "Drafting the answer"
+          ],
+          interval: 2000
+        });
+        
+        // Create progress timer
+        const progressContainer = document.createElement("span");
+        progressContainer.style.marginLeft = "0.5em";
+        statusSpan.appendChild(progressContainer);
+        
+        live.agentProgress = new window.BeUI.AgentProgress(progressContainer, {
+          label: "",
+          initialSeconds: 0
+        });
       }
-    }, 120);
+    }
+    
+    // Keep the interval for updating elapsed time display
+    live.timerId = setInterval(() => {
+      if (token !== pipelineToken || !live.refs) {
+        clearInterval(live.timerId);
+        return;
+      }
+      // The AgentProgress component handles its own updates
+    }, 1000);
   }
 
   function sleep(ms) {
@@ -1267,6 +1302,16 @@ import {
   function collapseTrace(agentMsg, token) {
     if (token !== pipelineToken || !live.refs) return;
     clearInterval(live.timerId);
+    
+    // Stop BeUI components
+    if (live.reasoningText) {
+      live.reasoningText.stop();
+      live.reasoningText = null;
+    }
+    if (live.agentProgress) {
+      live.agentProgress.stop();
+      live.agentProgress = null;
+    }
 
     agentMsg.thinkingElapsedMs = Date.now() - agentMsg.startedAt;
     agentMsg.traceOpen = false;
