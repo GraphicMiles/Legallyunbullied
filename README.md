@@ -8,10 +8,12 @@ AI-powered legal-information platform for Nigeria. This repo currently contains 
 
 - `server.js` — Express server. Serves the static front-end from `public/`, exposes `/healthz`, and has a stub `POST /api/chat` route reserved for the real AI orchestration logic (see PRD, section 3).
 - `public/index.html` — app shell: sidebar (conversation history, plan status) + main chat area, mobile-responsive (sidebar collapses to an off-canvas drawer under 900px).
-- `public/app.js` — client logic: conversation store (persisted to `localStorage`), a simulated agent pipeline (reading → classifying → searching sources → drafting), and the structured 3-part answer format from the PRD:
-  1. **What the law says** (sourced)
+- `public/app.js` — client logic: conversation store (persisted to `localStorage`), a simulated agent pipeline, and the structured 3-part answer format from the PRD:
+  1. **What the law says** (streamed in live, with expandable sourced context cards)
   2. **What you can do**
   3. **Escalation verdict** — self-resolvable, or a static outbound link to the [NBA's Find a Lawyer directory](https://www.nigerianbar.org.ng/find-a-lawyer) when a question needs a professional.
+
+  The "thinking" trace is a real timeline (not a spinner): per-step icons, a live elapsed timer, tool-call chips showing which sources were checked, and a collapsed "Thought for X.Xs" summary once done — modeled after modern agentic UI patterns (expandable reasoning traces, streamed markdown answers, context cards, follow-up suggestions). The answer streams in section-by-section with live markdown rendering, then reveals expandable source cards, the verdict, follow-up question chips, and a copy/feedback action row.
 - `render.yaml` — Render Blueprint: deploys this repo as one Web Service (Node runtime, `npm install` / `npm start`).
 
 Everything currently runs client-side against mock data — there's no real AI call yet. `POST /api/chat` is a placeholder so the front-end and backend can live in the same deploy from day one; wire the real orchestration logic into that route when it's ready and switch `public/app.js` to call it instead of its local mock classifier.
