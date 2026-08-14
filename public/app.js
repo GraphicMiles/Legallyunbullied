@@ -660,7 +660,7 @@
       const chip = document.createElement("button");
       chip.type = "button";
       chip.className = "followup-chip";
-      chip.innerHTML = `${ICONS.plus}${escapeHtml(text)}`;
+      chip.innerHTML = `${ICONS.plus}<span>${escapeHtml(text)}</span>`;
       chip.addEventListener("click", () => {
         if (state.isAgentBusy) return;
         submitQuestion(text);
