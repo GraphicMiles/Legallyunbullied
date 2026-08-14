@@ -209,6 +209,11 @@
     border-color: var(--color-accent-border);
     background: var(--color-accent-soft);
   }
+  .btn--danger {
+    background: var(--color-danger);
+    color: #fff;
+  }
+  .btn--danger:hover { background: #ff5d61; }
   .btn[disabled], .icon-btn[disabled] {
     opacity: 0.4;
     cursor: not-allowed;
@@ -261,7 +266,8 @@
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     text-align: left;
     padding: var(--space-2) var(--space-3);
     border-radius: var(--radius-sm);
@@ -310,6 +316,74 @@
     border-radius: var(--radius-sm);
     padding: 1px 5px;
   }
+
+  /* history row: item + kebab menu trigger */
+  .history__row {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .history__kebab {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-faint);
+    transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+  }
+  .history__kebab:hover, .history__kebab.is-open {
+    background: var(--color-surface);
+    color: var(--color-text);
+  }
+  .history__kebab i { font-size: 13px; }
+
+  /* small popover menu (history kebab) */
+  .menu-popover {
+    position: fixed;
+    min-width: 172px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    z-index: 80;
+    animation: menuIn 0.12s var(--ease) both;
+  }
+  @keyframes menuIn {
+    from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .menu-popover__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    text-align: left;
+    padding: 7px 10px;
+    border-radius: 0.5rem;
+    font-size: var(--fs-sm);
+    font-weight: 500;
+    color: var(--color-text);
+    transition: background var(--dur-fast) var(--ease);
+  }
+  .menu-popover__item:hover { background: var(--color-surface-alt); }
+  .menu-popover__item-icon {
+    flex-shrink: 0;
+    width: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-faint);
+  }
+  .menu-popover__item-icon i { font-size: 12px; }
+  .menu-popover__item--danger { color: #ff8b8e; }
+  .menu-popover__item--danger:hover { background: rgba(229, 72, 77, 0.12); }
+  .menu-popover__item--danger .menu-popover__item-icon { color: currentColor; }
   .history__empty {
     color: var(--color-text-faint);
     font-size: var(--fs-sm);
@@ -357,6 +431,98 @@
   }
   .plan-card__cta:hover { background: var(--color-accent-soft); }
 
+  /* auth section (sidebar) */
+  .auth-signin-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-text);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+  }
+  .auth-signin-btn:hover { border-color: var(--color-accent-border); background: var(--color-accent-soft); }
+  .auth-signin-btn i { font-size: 13px; }
+
+  .auth-profile {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+    background: var(--color-surface);
+  }
+  .auth-profile__avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    object-fit: cover;
+    background: var(--color-accent-soft);
+    color: var(--color-accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .auth-profile__info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .auth-profile__name {
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .auth-profile__email {
+    font-size: 11px;
+    color: var(--color-text-faint);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .auth-profile__logout {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-faint);
+    transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+  }
+  .auth-profile__logout:hover { background: var(--color-surface-alt); color: var(--color-danger); }
+  .auth-profile__logout i { font-size: 13px; }
+
+  /* topbar avatar */
+  .topbar__avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    background: var(--color-accent-soft);
+    color: var(--color-accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    transition: border-color var(--dur-fast) var(--ease);
+  }
+  .topbar__avatar:hover { border-color: var(--color-accent-border); }
+  .topbar__avatar img { width: 100%; height: 100%; object-fit: cover; }
+
   .sidebar__disclaimer {
     font-size: 11px;
     line-height: 1.5;
@@ -374,6 +540,127 @@
     z-index: 30;
   }
   .scrim.is-visible { display: block; }
+
+  /* ------------------------------------------------------------
+     MODALS (auth + confirm dialogs)
+     ------------------------------------------------------------ */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-5);
+  }
+  .modal-overlay.is-visible { display: flex; }
+
+  .modal-card {
+    width: 100%;
+    max-width: 360px;
+    background: var(--color-bg-raised);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    position: relative;
+    animation: menuIn 0.15s var(--ease) both;
+  }
+  .modal-card--small { max-width: 320px; text-align: center; }
+
+  .modal-card__close {
+    position: absolute;
+    top: var(--space-3);
+    right: var(--space-3);
+  }
+
+  .modal-card__brand { display: flex; justify-content: center; margin-bottom: var(--space-4); }
+  .modal-card__brand svg { width: 34px; height: 34px; }
+
+  .modal-card__tabs {
+    display: flex;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 3px;
+    margin-bottom: var(--space-4);
+  }
+  .modal-card__tab {
+    flex: 1;
+    text-align: center;
+    padding: 7px 0;
+    border-radius: 8px;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: var(--color-text-faint);
+    transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+  }
+  .modal-card__tab.is-active { background: var(--color-accent); color: var(--color-accent-text); }
+
+  .modal-card__title {
+    font-size: var(--fs-lg);
+    font-weight: 700;
+    text-align: center;
+    margin: 0 0 var(--space-5);
+    letter-spacing: -0.01em;
+  }
+  .modal-card__text {
+    font-size: var(--fs-base);
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    margin: 0 0 var(--space-5);
+  }
+
+  .modal-card__form { display: flex; flex-direction: column; gap: var(--space-3); }
+  .modal-field { display: flex; flex-direction: column; gap: 6px; }
+  .modal-field__label {
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    color: var(--color-text-muted);
+  }
+  .modal-field input {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-3);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-size: var(--fs-sm);
+    transition: border-color var(--dur-fast) var(--ease);
+  }
+  .modal-field input::placeholder { color: var(--color-text-faint); }
+  .modal-field input:focus { border-color: var(--color-accent-border); }
+
+  .modal-card__error {
+    font-size: var(--fs-xs);
+    color: var(--color-danger);
+    background: rgba(229, 72, 77, 0.1);
+    border: 1px solid rgba(229, 72, 77, 0.3);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2) var(--space-3);
+    margin: 0;
+  }
+
+  .modal-card__divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: var(--color-text-faint);
+    font-size: var(--fs-xs);
+    margin: var(--space-4) 0;
+  }
+  .modal-card__divider::before, .modal-card__divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--color-border);
+  }
+  .modal-card__divider span { padding: 0 var(--space-3); }
+
+  .modal-card__actions {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: center;
+  }
+  .modal-card__actions .btn { flex: 1; }
 
   /* ------------------------------------------------------------
      MAIN AREA
@@ -1117,8 +1404,9 @@
     .menu-toggle { display: inline-flex; }
     .new-chat-mobile { display: inline-flex; }
 
-    .topbar__title { max-width: 55vw; }
+    .topbar__title { max-width: 46vw; }
     .badges .badge:nth-child(n+3) { display: none; }
+    .topbar { gap: var(--space-2); padding: 0 var(--space-4); }
 
     .prompt-grid { grid-template-columns: 1fr; }
     .msg__body, .msg--agent .msg__body { max-width: 100%; }
@@ -1185,11 +1473,70 @@
         </div>
         <button class="plan-card__cta" id="upgrade-btn">Upgrade</button>
       </div>
+      <div id="auth-section"></div>
       <p class="sidebar__disclaimer">Legally Unbullied provides legal information, not legal representation. For issues that need a lawyer, we point you to the NBA's public directory.</p>
     </div>
   </aside>
 
   <div class="scrim" id="scrim"></div>
+
+  <!-- ============================================================
+       AUTH MODAL
+       ============================================================ -->
+  <div class="modal-overlay" id="auth-modal-overlay">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+      <button class="icon-btn modal-card__close" id="auth-modal-close" aria-label="Close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="modal-card__brand">
+        <svg viewBox="0 0 32 32" fill="none"><path d="M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z" stroke="#f2b705" stroke-width="2" stroke-linejoin="round"/><path d="M11 15.5L14.2 18.7L21 11.5" stroke="#f2b705" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+      <div class="modal-card__tabs" role="tablist">
+        <button type="button" class="modal-card__tab is-active" id="auth-tab-signin" data-mode="signin">Sign in</button>
+        <button type="button" class="modal-card__tab" id="auth-tab-signup" data-mode="signup">Create account</button>
+      </div>
+
+      <h2 class="modal-card__title" id="auth-modal-title">Welcome back</h2>
+
+      <form id="auth-form" class="modal-card__form">
+        <label class="modal-field">
+          <span class="modal-field__label">Email</span>
+          <input type="email" id="auth-email" autocomplete="email" required placeholder="you@example.com" />
+        </label>
+        <label class="modal-field">
+          <span class="modal-field__label">Password</span>
+          <input type="password" id="auth-password" autocomplete="current-password" required placeholder="••••••••" minlength="6" />
+        </label>
+
+        <p class="modal-card__error" id="auth-error" style="display:none;"></p>
+
+        <button type="submit" class="btn btn--primary btn--block" id="auth-submit">Sign in</button>
+      </form>
+
+      <div class="modal-card__divider"><span>or</span></div>
+
+      <button type="button" class="btn btn--outline btn--block btn--icon-leading" id="auth-google-btn">
+        <i class="fa-brands fa-google"></i>
+        Continue with Google
+      </button>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       CONFIRM DIALOG (Clear / Delete chat)
+       ============================================================ -->
+  <div class="modal-overlay" id="confirm-modal-overlay">
+    <div class="modal-card modal-card--small" role="alertdialog" aria-modal="true" aria-labelledby="confirm-modal-title">
+      <h2 class="modal-card__title" id="confirm-modal-title">Are you sure?</h2>
+      <p class="modal-card__text" id="confirm-modal-text"></p>
+      <div class="modal-card__actions">
+        <button type="button" class="btn btn--outline" id="confirm-modal-cancel">Cancel</button>
+        <button type="button" class="btn btn--danger" id="confirm-modal-confirm">Confirm</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ============================================================
        MAIN
@@ -1203,9 +1550,13 @@
         <span class="topbar__title" id="conversation-title">New question</span>
         <div class="badges" id="classification-badges"></div>
       </div>
+      <button class="icon-btn" id="clear-chat-btn" aria-label="Clear this chat" title="Clear this chat" disabled>
+        <i class="fa-solid fa-broom"></i>
+      </button>
       <button class="icon-btn new-chat-mobile" id="new-chat-mobile" aria-label="New question">
         <i class="fa-solid fa-plus"></i>
       </button>
+      <button class="topbar__avatar" id="topbar-avatar" aria-label="Account" style="display:none;"></button>
     </header>
 
     <section class="chat" id="chat">
@@ -1266,6 +1617,6 @@
 
 <script src="/firebase-config.js"></script>
 <script type="module" src="firebase-init.js"></script>
-<script src="app.js"></script>
+<script type="module" src="app.js"></script>
 </body>
 </html>
