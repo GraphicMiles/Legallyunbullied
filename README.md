@@ -22,6 +22,20 @@ Everything currently runs client-side against mock data — there's no real AI c
 
 Three-color theme (black / white / golden-yellow accent), defined entirely through CSS custom properties in `public/index.html` (`:root`) — colors, spacing, radius, and type scale are tokens, not hardcoded values, so the theme can be re-skinned centrally.
 
+## Environment variables
+
+The app reads Firebase's web client config from environment variables — never hardcoded, never committed.
+
+1. Copy `.env.example` to `.env` and fill in the values from your Firebase project's web app config (Firebase Console → Project settings → General → Your apps).
+2. `server.js` loads `.env` locally (via `dotenv`) and exposes the values to the browser at runtime through `GET /firebase-config.js`, which sets `window.__FIREBASE_CONFIG__` before `public/firebase-init.js` initializes the SDK.
+3. In Render, set the same variables under the service's **Environment** tab (or, if deploying via the `render.yaml` Blueprint, Render will prompt for each one — they're declared with `sync: false` so their values are never stored in the repo).
+
+Required keys (see `.env.example`): `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_PROJECT_ID`, `FIREBASE_STORAGE_BUCKET`, `FIREBASE_MESSAGING_SENDER_ID`, `FIREBASE_APP_ID`.
+
+Note: Firebase web API keys aren't secret by design (they're scoped by Firebase Security Rules and authorized domains, not by being hidden) — they're still kept out of the repo here so the same code can point at different Firebase projects (dev/staging/prod) without a code change.
+
+Firebase is initialized (`window.firebaseApp`, `window.firebaseAuth`, `window.firebaseDb`) but **not yet used** — the app still runs entirely on `localStorage` + client-side mock data. This is groundwork for the real Auth/Firestore persistence described in the PRD; nothing about the current chat experience depends on it yet.
+
 ## Running locally
 
 ```bash
