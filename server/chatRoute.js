@@ -11,7 +11,7 @@
 
 const express = require("express");
 const router = express.Router();
-const { getClient, CLASSIFY_MODEL, DRAFT_MODEL } = require("./groq");
+const { getClient, CLASSIFY_MODEL, DRAFT_MODEL, DRAFT_MODEL_FALLBACK } = require("./groq");
 const { findProvisions } = require("./legalCorpus");
 
 const PRACTICE_AREAS = ["tenancy", "employment", "criminal_rights", "contract", "general"];
@@ -25,10 +25,17 @@ function parseModelJson(content) {
   return JSON.parse(trimmed);
 }
 
-const CLASSIFY_SYSTEM_PROMPT = `You classify Nigerian legal questions for an information retrieval system.
+const CLASSIFY_SYSTEM_PROMPT = `You classify Nigerian legal questions for an information retrieval system that only has a specific, limited set of statutes actually loaded — not general legal knowledge.
+
 Respond with ONLY a JSON object, no prose, no markdown code fences.
 
 Valid values for "practice_area": ${JSON.stringify(PRACTICE_AREAS)}
+- "tenancy": landlord/tenant disputes, rent, eviction, notice to quit (Lagos State tenancy law only)
+- "employment": firing, unpaid wages, workplace disputes (Labour Act / National Industrial Court)
+- "criminal_rights": arrest, detention, bail, police conduct, criminal trial procedure (ACJA 2015 — procedure only, not substantive offence definitions like specific crimes, cybercrime, etc.)
+- "contract": small-value civil debt/contract disputes suited to Small Claims Court procedure
+- "general": anything that doesn't clearly and specifically match one of the above — including topics that sound legal but aren't covered by these narrow statutes (e.g. cybercrime/cyberbullying, family law, intellectual property, immigration, tax). Prefer "general" over force-fitting a loose match — an honest "not covered yet" beats a confident answer built on irrelevant sections.
+
 Valid values for "urgency": ["Low", "Medium", "High", "Critical"]
 
 "keywords": 3-6 specific legal/factual terms likely to appear verbatim in the relevant statute text (e.g. procedural terms, timeframes, named concepts) — used to narrow down a large Act to the sections that actually matter for this question. Not generic words.
@@ -48,6 +55,20 @@ Hard rules:
 
 Example of the exact shape to return (use realistic values for the actual question, don't copy this example's content):
 {"lawMd": "Under the Example Act 2020 (s.4), ...", "actionsMd": "- Do this first.\\n- Then do this.", "sources": [{"label": "Example Act 2020, s.4", "excerpt": "the exact excerpt text relied on"}], "escalate": true, "escalateReason": "Why a lawyer is or isn't needed, in one or two sentences.", "followUps": ["A natural follow-up question.", "Another natural follow-up question."]}`;
+
+async function draftWithModel(client, model, question, contextBlock) {
+  const completion = await client.chat.completions.create({
+    model,
+    temperature: 0.2,
+    max_tokens: 900,
+    response_format: { type: "json_object" },
+    messages: [
+      { role: "system", content: DRAFT_SYSTEM_PROMPT },
+      { role: "user", content: `Question: ${question}\n\nAvailable statute excerpts:\n\n${contextBlock}` },
+    ],
+  });
+  return parseModelJson(completion.choices[0].message.content);
+}
 
 router.post("/api/chat", async (req, res) => {
   const question = (req.body && req.body.question || "").toString().trim();
@@ -107,32 +128,42 @@ router.post("/api/chat", async (req, res) => {
     });
   }
 
+  const EXCERPT_CHAR_CAP = 700; // keep total context small enough to fit even the tighter fallback model's per-minute limit
   const contextBlock = provisions
-    .map((p) => `[${p.act}${p.section ? ", s." + p.section : ""}]\n${p.text}`)
+    .map((p) => {
+      const text = p.text.length > EXCERPT_CHAR_CAP ? p.text.slice(0, EXCERPT_CHAR_CAP) + "…" : p.text;
+      return `[${p.act}${p.section ? ", s." + p.section : ""}]\n${text}`;
+    })
     .join("\n\n---\n\n");
 
   let result;
+  let draftModelUsed = DRAFT_MODEL;
   try {
-    const draftCompletion = await client.chat.completions.create({
-      model: DRAFT_MODEL,
-      temperature: 0.2,
-      max_tokens: 2000,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: DRAFT_SYSTEM_PROMPT },
-        { role: "user", content: `Question: ${question}\n\nAvailable statute excerpts:\n\n${contextBlock}` },
-      ],
-    });
-    result = parseModelJson(draftCompletion.choices[0].message.content);
+    result = await draftWithModel(client, DRAFT_MODEL, question, contextBlock);
   } catch (err) {
-    console.error("[/api/chat] drafting failed:", err.status || "", err.message);
-    return res.status(502).json({
-      error: "drafting_failed",
-      message: "The drafting model failed to respond. " + (err.message || ""),
-    });
+    const isRateLimited = err.status === 429;
+    if (isRateLimited && DRAFT_MODEL_FALLBACK && DRAFT_MODEL_FALLBACK !== DRAFT_MODEL) {
+      console.warn(`[/api/chat] ${DRAFT_MODEL} rate-limited, retrying with fallback ${DRAFT_MODEL_FALLBACK}`);
+      try {
+        result = await draftWithModel(client, DRAFT_MODEL_FALLBACK, question, contextBlock);
+        draftModelUsed = DRAFT_MODEL_FALLBACK;
+      } catch (fallbackErr) {
+        console.error("[/api/chat] fallback drafting also failed:", fallbackErr.status || "", fallbackErr.message);
+        return res.status(502).json({
+          error: "drafting_failed",
+          message: "The drafting model failed to respond, and the fallback model did too. " + (fallbackErr.message || ""),
+        });
+      }
+    } else {
+      console.error("[/api/chat] drafting failed:", err.status || "", err.message);
+      return res.status(502).json({
+        error: "drafting_failed",
+        message: "The drafting model failed to respond. " + (err.message || ""),
+      });
+    }
   }
 
-  res.json({ classification, result });
+  res.json({ classification, result, draftModel: draftModelUsed });
 });
 
 module.exports = router;
