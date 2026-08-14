@@ -10,7 +10,14 @@
  *     --practice-area tenancy \
  *     --jurisdiction "Lagos State" \
  *     [--source-url "https://..."] \
+ *     [--stop-at "SCHEDULE"] \
  *     [--dry-run]
+ *
+ * --stop-at trims the text at the first occurrence of a marker string
+ * before chunking — use it to drop trailing Schedules/Forms/appendices,
+ * which often reuse plain numbers (e.g. a numbered list item "35." inside
+ * a Schedule) that would otherwise collide in citations with an unrelated
+ * real section of the same number.
  *
  * For PDFs, run scripts/pdf-to-text.js first, review the extracted text,
  * then run this against the resulting .txt file.
@@ -71,7 +78,7 @@ async function main() {
   if (missing.length) {
     console.error(`Missing required args: ${missing.join(", ")}\n`);
     console.error(
-      'Usage: node scripts/ingest.js --file <path.txt> --act "<Act name>" --practice-area <key> --jurisdiction "<Jurisdiction>" [--source-url <url>] [--dry-run]'
+      'Usage: node scripts/ingest.js --file <path.txt> --act "<Act name>" --practice-area <key> --jurisdiction "<Jurisdiction>" [--source-url <url>] [--stop-at "<text marker>"] [--dry-run]'
     );
     process.exit(1);
   }
@@ -81,7 +88,18 @@ async function main() {
     process.exit(1);
   }
 
-  const text = fs.readFileSync(path.resolve(args.file), "utf8");
+  let text = fs.readFileSync(path.resolve(args.file), "utf8");
+
+  if (args["stop-at"]) {
+    const cutIndex = text.indexOf(args["stop-at"]);
+    if (cutIndex !== -1) {
+      const dropped = text.length - cutIndex;
+      text = text.slice(0, cutIndex);
+      console.log(`--stop-at matched "${args["stop-at"]}" — trimmed ${dropped} trailing characters (e.g. Schedules/Forms) before chunking.`);
+    } else {
+      console.warn(`--stop-at "${args["stop-at"]}" was not found in the text — nothing trimmed.`);
+    }
+  }
   const chunks = chunkBySections(text);
 
   if (!chunks.length) {
@@ -112,8 +130,14 @@ async function main() {
     const batch = db.batch();
     const slice = chunks.slice(i, i + BATCH_SIZE);
 
-    slice.forEach((chunk) => {
-      const id = `${args.act}-s${chunk.section}`.replace(/[^a-zA-Z0-9-]+/g, "_");
+    slice.forEach((chunk, sliceIndex) => {
+      // Include a running index in the doc ID, not just the section number.
+      // Schedules/appendices in real statutes often reuse plain numbers
+      // (e.g. a numbered list item "35." inside a Schedule, unrelated to
+      // substantive "section 35") — a section-number-only ID would silently
+      // overwrite an earlier, unrelated chunk with the same number.
+      const globalIndex = i + sliceIndex;
+      const id = `${args.act}-s${chunk.section}-${globalIndex}`.replace(/[^a-zA-Z0-9-]+/g, "_");
       batch.set(collection.doc(id), {
         act: args.act,
         section: chunk.section,

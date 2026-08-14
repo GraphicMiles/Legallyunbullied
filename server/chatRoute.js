@@ -1,17 +1,17 @@
 /**
  * POST /api/chat — the real Phase 1 pipeline.
  *
- * 1. Grok classifies the question (practice area, jurisdiction, urgency).
+ * 1. Groq classifies the question (practice area, jurisdiction, urgency).
  * 2. Firestore returns ingested statute provisions matching that category.
  * 3. If nothing's been ingested for that category yet, say so plainly
- *    instead of letting Grok invent an answer with no grounding.
- * 4. Grok drafts the final answer, instructed to cite only the supplied
+ *    instead of letting the model invent an answer with no grounding.
+ * 4. Groq drafts the final answer, instructed to cite only the supplied
  *    excerpts — never to introduce acts/sections that weren't given to it.
  */
 
 const express = require("express");
 const router = express.Router();
-const { getClient, CLASSIFY_MODEL, DRAFT_MODEL } = require("./grok");
+const { getClient, CLASSIFY_MODEL, DRAFT_MODEL } = require("./groq");
 const { findProvisions } = require("./legalCorpus");
 
 const PRACTICE_AREAS = ["tenancy", "employment", "criminal_rights", "contract", "general"];
@@ -51,7 +51,7 @@ router.post("/api/chat", async (req, res) => {
   if (!client) {
     return res.status(503).json({
       error: "not_configured",
-      message: "XAI_API_KEY is not set on the server yet.",
+      message: "GROQ_API_KEY is not set on the server yet.",
     });
   }
 
