@@ -283,9 +283,10 @@ import {
     { key: "read", title: "Reading your question", detail: "Parsing the situation and extracting key facts.", icon: "read" },
     { key: "classify", title: "Classifying the issue", detail: "Identifying practice area, jurisdiction, and urgency.", icon: "classify" },
     { key: "search", title: "Searching legal sources", detail: "Checking relevant statutes and case law.", icon: "search" },
+    { key: "plan", title: "Planning the response", detail: "Analyzing provisions and structuring the answer.", icon: "bolt" },
     { key: "draft", title: "Drafting the answer", detail: "Structuring the response and the escalation verdict.", icon: "draft" },
   ];
-  const STEP_DURATIONS = [480, 620, 780, 420];
+  const STEP_DURATIONS = [480, 620, 780, 550, 420];
 
   /* ------------------------------------------------------------------ */
   /* Sidebar / history                                                   */
@@ -1169,17 +1170,14 @@ import {
       setStepDone(agentMsg, 1);
       agentMsg.steps[1].detail = "Casual conversation";
       
-      // Quick pacing for casual replies
-      setStepActive(agentMsg, 2);
-      agentMsg.steps[2].detail = "Just chatting";
-      await sleep(200);
-      if (token !== pipelineToken) return;
-      setStepDone(agentMsg, 2);
-      
-      setStepActive(agentMsg, 3);
-      await sleep(150);
-      if (token !== pipelineToken) return;
-      setStepDone(agentMsg, 3);
+      // Quick pacing for casual replies — mark remaining steps as done
+      for (let i = 2; i < agentMsg.steps.length; i++) {
+        setStepActive(agentMsg, i);
+        agentMsg.steps[i].detail = "Just chatting";
+        await sleep(120);
+        if (token !== pipelineToken) return;
+        setStepDone(agentMsg, i);
+      }
       
       collapseTrace(agentMsg, token);
       renderCasualReply(agentMsg, response.casualReply);
@@ -1206,11 +1204,31 @@ import {
     if (token !== pipelineToken) return;
     setStepDone(agentMsg, 2);
 
-    // Step 3: Drafting — also already done server-side; brief pacing only.
+    // Step 3: Planning the response — show the reasoning plan
     setStepActive(agentMsg, 3);
-    await sleep(300);
+    if (response.plan) {
+      agentMsg.plan = response.plan;
+      agentMsg.steps[3].detail = response.plan.analysis || "Analyzing provisions and structuring response";
+      if (response.plan.key_provisions && response.plan.key_provisions.length) {
+        agentMsg.steps[3].chips = response.plan.key_provisions.slice(0, 3).map(p => {
+          // Extract just the act/section name from the provision description
+          const match = p.match(/^(Section \d+|[A-Z][^-\n]+)/);
+          return match ? match[1].slice(0, 40) : p.slice(0, 40);
+        });
+      }
+    } else {
+      agentMsg.steps[3].detail = "Preparing response structure";
+    }
+    updateStepEl(3, agentMsg.steps[3]);
+    await sleep(400);
     if (token !== pipelineToken) return;
     setStepDone(agentMsg, 3);
+
+    // Step 4: Drafting — also already done server-side; brief pacing only.
+    setStepActive(agentMsg, 4);
+    await sleep(300);
+    if (token !== pipelineToken) return;
+    setStepDone(agentMsg, 4);
 
     collapseTrace(agentMsg, token);
 

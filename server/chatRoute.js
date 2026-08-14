@@ -42,7 +42,7 @@ First, determine if this is a legal question or casual conversation.
 If it's NOT a legal question (greetings like "hi", "hello", "good morning"; casual chat like "how are you", "what's up"; meta-questions about the bot like "who made you", "what can you do"; or anything unrelated to Nigerian law), respond with:
 {"is_legal_question": false, "casual_reply": "A warm, natural, brief response in 1-2 sentences. Be friendly and mention you're here to help with Nigerian legal questions if they have any."}
 
-If it IS a legal question (anything about Nigerian law, rights, legal processes, courts, police, contracts, tenancy, employment disputes, criminal matters, family law, business registration, taxes, etc.), classify it:
+If it IS a legal question (anything about Nigerian law, rights, legal processes, courts, police, contracts, tenancy, employment disputes, criminal matters, family law, business registration, taxes, etc.), classify it with deep analysis:
 
 Valid values for "practice_area": ${JSON.stringify(PRACTICE_AREAS)}
 ${PRACTICE_AREA_BULLETS}
@@ -53,8 +53,17 @@ Valid values for "urgency": ["Low", "Medium", "High", "Critical"]
 
 "keywords": 3-6 specific legal/factual terms likely to appear verbatim in the relevant statute text (e.g. procedural terms, timeframes, named concepts) — used to narrow down a large Act to the sections that actually matter for this question. Not generic words.
 
+"key_issues": Array of 2-4 specific legal issues or questions raised (e.g., ["legality of lockout without court order", "tenant's right to peaceful possession", "remedies for illegal eviction"])
+
+"complexity": "Low" | "Medium" | "High" — how complex is this legal question?
+- Low: straightforward single-issue question
+- Medium: multiple issues or requires interpretation
+- High: complex multi-party dispute, constitutional issues, or novel legal questions
+
+"reasoning_approach": Brief description (1 sentence) of how to approach answering this question (e.g., "First establish the legal framework for tenancy, then analyze whether the landlord's actions violated specific provisions, finally outline available remedies")
+
 Example for a legal question (use realistic values for the actual question, don't copy this example's content):
-{"is_legal_question": true, "practice_area": "tenancy", "jurisdiction": "Lagos State", "urgency": "High", "summary": "A tenant is disputing an eviction attempt made without proper notice.", "keywords": ["notice", "quit", "possession", "monthly tenant"]}
+{"is_legal_question": true, "practice_area": "tenancy", "jurisdiction": "Lagos State", "urgency": "High", "summary": "A tenant is disputing an eviction attempt made without proper notice.", "keywords": ["notice", "quit", "possession", "monthly tenant"], "key_issues": ["validity of eviction notice", "statutory notice period requirements", "tenant's right to remain in possession"], "complexity": "Medium", "reasoning_approach": "Analyze the statutory notice requirements for different tenancy types, determine if proper notice was given, and outline remedies available to the tenant."}
 
 Respond with ONLY a JSON object, no prose, no markdown code fences.`;
 
@@ -70,6 +79,95 @@ Hard rules:
 
 Example of the exact shape to return (use realistic values for the actual question, don't copy this example's content):
 {"lawMd": "Under the Example Act 2020 (s.4), ...", "actionsMd": "- Do this first.\\n- Then do this.", "sources": [{"label": "Example Act 2020, s.4", "excerpt": "the exact excerpt text relied on"}], "escalate": true, "escalateReason": "Why a lawyer is or isn't needed, in one or two sentences.", "followUps": ["A natural follow-up question.", "Another natural follow-up question."]}`;
+
+const PLAN_SYSTEM_PROMPT = `You are a legal reasoning assistant specializing in Nigerian law. Your task is to analyze the user's question and the available legal provisions, then create a structured plan for how to answer the question.
+
+Given:
+- The user's question
+- The classification (practice area, key issues, complexity)
+- Available statute excerpts
+
+Create a brief, structured analysis plan that shows your reasoning process. This plan will help structure the final response.
+
+Respond with a JSON object containing:
+- "analysis": A 2-3 sentence analysis of the core legal question and what needs to be determined
+- "key_provisions": Array of 2-4 most relevant provisions and why they matter (e.g., ["Section 13 of Tenancy Law - establishes notice requirements", "Section 20 - provides remedies for illegal eviction"])
+- "response_structure": Brief outline of how to structure the answer (e.g., "1. Establish legal framework, 2. Apply to facts, 3. Outline remedies")
+- "gaps": Any aspects of the question that the available provisions don't fully address (can be empty array if fully covered)
+
+Keep the analysis concise but thoughtful. This demonstrates careful reasoning before drafting the response.
+
+Respond with ONLY a JSON object, no prose, no markdown code fences.`;
+
+async function planResponse(question, classification, provisions) {
+  const groqClient = getGroqClient();
+  const geminiClient = getGeminiClient();
+
+  const contextSummary = provisions.slice(0, 10).map(p => 
+    `[${p.act}${p.section ? ", s." + p.section : ""}]: ${p.text.slice(0, 200)}...`
+  ).join("\n\n");
+
+  const planningPrompt = `
+Question: ${question}
+
+Classification:
+- Practice Area: ${classification.practice_area}
+- Key Issues: ${classification.key_issues.join(", ")}
+- Complexity: ${classification.complexity}
+- Approach: ${classification.reasoning_approach}
+
+Available Legal Provisions:
+${contextSummary}
+
+Analyze this question and create a structured plan for answering it.`;
+
+  // Try Groq first
+  if (groqClient) {
+    try {
+      const completion = await callCompletion(
+        groqClient,
+        DRAFT_MODEL, // Use the more capable model for planning
+        [
+          { role: "system", content: PLAN_SYSTEM_PROMPT },
+          { role: "user", content: planningPrompt }
+        ],
+        { temperature: 0.3, max_tokens: 800, response_format: { type: "json_object" } }
+      );
+      return { plan: parseModelJson(completion.choices[0].message.content), provider: "groq" };
+    } catch (err) {
+      console.warn(`[/api/chat] Groq planning failed: ${err.status || ""} ${err.message}`);
+    }
+  }
+
+  // Try Gemini
+  if (geminiClient) {
+    try {
+      const completion = await callCompletion(
+        geminiClient,
+        GEMINI_DRAFT_MODEL,
+        [
+          { role: "system", content: PLAN_SYSTEM_PROMPT },
+          { role: "user", content: planningPrompt }
+        ],
+        { temperature: 0.3, max_tokens: 800, response_format: { type: "json_object" } }
+      );
+      return { plan: parseModelJson(completion.choices[0].message.content), provider: "gemini" };
+    } catch (err) {
+      console.warn(`[/api/chat] Gemini planning failed: ${err.status || ""} ${err.message}`);
+    }
+  }
+
+  // If planning fails, return a minimal plan and continue
+  return { 
+    plan: { 
+      analysis: "Analyzing the legal question and relevant provisions.",
+      key_provisions: [],
+      response_structure: "Review applicable law, apply to facts, provide guidance",
+      gaps: []
+    }, 
+    provider: "fallback" 
+  };
+}
 
 async function callCompletion(client, model, messages, options = {}) {
   return client.chat.completions.create({
@@ -126,27 +224,38 @@ async function classifyWithFallback(question) {
   throw new Error("No LLM provider configured for classification.");
 }
 
-async function draftWithModel(client, model, question, contextBlock) {
+async function draftWithModel(client, model, question, contextBlock, plan) {
+  // Include the plan in the drafting context to guide the response
+  const planContext = plan ? `
+
+Reasoning Plan:
+- Analysis: ${plan.analysis}
+- Key Provisions: ${plan.key_provisions.join(", ")}
+- Response Structure: ${plan.response_structure}
+${plan.gaps && plan.gaps.length > 0 ? `- Gaps to Address: ${plan.gaps.join(", ")}` : ""}
+
+Use this plan to structure your response. Follow the response structure and ensure you address the key provisions identified.` : "";
+
   const completion = await callCompletion(
     client,
     model,
     [
       { role: "system", content: DRAFT_SYSTEM_PROMPT },
-      { role: "user", content: `Question: ${question}\n\nAvailable statute excerpts:\n\n${contextBlock}` },
+      { role: "user", content: `Question: ${question}\n\nAvailable statute excerpts:\n\n${contextBlock}${planContext}` },
     ],
     { response_format: { type: "json_object" }, max_tokens: 3000 }
   );
   return parseModelJson(completion.choices[0].message.content);
 }
 
-async function draftWithFallback(question, contextBlock) {
+async function draftWithFallback(question, contextBlock, plan) {
   const groqClient = getGroqClient();
   const geminiClient = getGeminiClient();
 
   // Try Groq primary model
   if (groqClient) {
     try {
-      const result = await draftWithModel(groqClient, DRAFT_MODEL, question, contextBlock);
+      const result = await draftWithModel(groqClient, DRAFT_MODEL, question, contextBlock, plan);
       return { result, model: DRAFT_MODEL, provider: "groq" };
     } catch (err) {
       const isRateLimited = err.status === 429 || err.status === 413;
@@ -156,7 +265,7 @@ async function draftWithFallback(question, contextBlock) {
         // Try Groq fallback model
         if (DRAFT_MODEL_FALLBACK && DRAFT_MODEL_FALLBACK !== DRAFT_MODEL) {
           try {
-            const result = await draftWithModel(groqClient, DRAFT_MODEL_FALLBACK, question, contextBlock);
+            const result = await draftWithModel(groqClient, DRAFT_MODEL_FALLBACK, question, contextBlock, plan);
             return { result, model: DRAFT_MODEL_FALLBACK, provider: "groq-fallback" };
           } catch (fallbackErr) {
             console.warn(`[/api/chat] Groq fallback also failed: ${fallbackErr.status || ""} ${fallbackErr.message}`);
@@ -173,7 +282,7 @@ async function draftWithFallback(question, contextBlock) {
   // Try Gemini
   if (geminiClient) {
     try {
-      const result = await draftWithModel(geminiClient, GEMINI_DRAFT_MODEL, question, contextBlock);
+      const result = await draftWithModel(geminiClient, GEMINI_DRAFT_MODEL, question, contextBlock, plan);
       return { result, model: GEMINI_DRAFT_MODEL, provider: "gemini" };
     } catch (err) {
       console.error(`[/api/chat] Gemini drafting also failed: ${err.status || ""} ${err.message}`);
@@ -255,10 +364,20 @@ router.post("/api/chat", async (req, res) => {
     })
     .join("\n\n---\n\n");
 
-  // Step 4: Draft with fallback chain
+  // Step 4: Plan the response (thinking/reasoning phase)
+  let planResult;
+  try {
+    planResult = await planResponse(question, classification, provisions);
+    console.log(`[/api/chat] Planning completed via ${planResult.provider}`);
+  } catch (err) {
+    console.warn("[/api/chat] planning failed, continuing without plan:", err.message);
+    planResult = { plan: null, provider: "none" };
+  }
+
+  // Step 5: Draft with fallback chain (using the plan to guide the response)
   let draftResult;
   try {
-    draftResult = await draftWithFallback(question, contextBlock);
+    draftResult = await draftWithFallback(question, contextBlock, planResult.plan);
   } catch (err) {
     console.error("[/api/chat] drafting failed:", err.status || "", err.message);
     return res.status(502).json({
@@ -269,6 +388,7 @@ router.post("/api/chat", async (req, res) => {
 
   res.json({
     classification,
+    plan: planResult.plan,
     result: draftResult.result,
     draftModel: draftResult.model,
     draftProvider: draftResult.provider,
