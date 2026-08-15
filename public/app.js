@@ -1402,8 +1402,11 @@ import {
         live.loadingState = null;
       }
       
+      // Get original question to send context with answer
+      const originalQuestion = lastUserText(convo);
+      
       // Show inline prompt
-      renderNeedsInput(agentMsg, response);
+      renderNeedsInput(agentMsg, response, originalQuestion);
       finalizeAnswer(agentMsg, token);
       return;
     }
@@ -1636,12 +1639,13 @@ import {
     scrollChatToBottom();
   }
 
-  function renderNeedsInput(agentMsg, response) {
+  function renderNeedsInput(agentMsg, response, originalQuestion) {
     if (!live.refs || !live.refs.body) {
       console.warn('[renderNeedsInput] live.refs.body not available');
       return;
     }
     console.log('[renderNeedsInput] Rendering input prompt:', response.question);
+    console.log('[renderNeedsInput] Original question:', originalQuestion);
     
     const wrap = document.createElement("div");
     wrap.className = "needs-input";
@@ -1700,7 +1704,14 @@ import {
       if (!answer) return;
       
       console.log('[renderNeedsInput] User answered:', answer);
-      submitQuestion(answer);
+      
+      // Combine original question with answer for context
+      const combinedQuestion = response.field === "jurisdiction"
+        ? `${originalQuestion} [State: ${answer}]`
+        : `${originalQuestion} [${answer}]`;
+      
+      console.log('[renderNeedsInput] Combined question:', combinedQuestion);
+      submitQuestion(combinedQuestion);
     });
     
     input.addEventListener("keydown", (e) => {
