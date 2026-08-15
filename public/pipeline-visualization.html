@@ -392,9 +392,8 @@
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      gap: 0;
+      gap: 1rem;
       flex: 0 0 auto;
-      min-width: 180px;
     }
 
     .composer-bar__model-btn {
@@ -404,16 +403,13 @@
       gap: 6px;
       font-size: 13px;
       color: var(--color-text-muted);
-      padding: 8px 10px;
+      padding: 6px 10px;
       border-radius: 6px;
       background: var(--color-bg);
       border: 1px solid var(--color-border);
       cursor: pointer;
       transition: all 150ms;
-      min-width: 120px;
-      max-width: 140px;
-      overflow: hidden;
-      margin-right: 1rem;
+      white-space: nowrap;
     }
 
     .composer-bar__model-btn:hover {
@@ -426,22 +422,22 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      flex: 1;
     }
 
     .composer-bar__send {
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
       display: flex;
       align-items: center;
       justify-content: center;
       background: var(--color-accent);
       color: var(--color-accent-text);
       border: none;
-      border-radius: 8px;
+      border-radius: 6px;
       cursor: pointer;
       font-size: 14px;
       transition: background 120ms;
+      flex-shrink: 0;
     }
 
     .composer-bar__send:hover {
@@ -451,7 +447,7 @@
     /* Composer dropdown (live) */
     .composer-bar__dropdown {
       position: relative;
-      width: 180px;
+      width: 200px;
       background: var(--color-surface);
       border: 1px solid var(--color-border);
       border-radius: 8px;

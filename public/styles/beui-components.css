@@ -835,7 +835,7 @@
 }
 
 .beui-prompt-bar__input {
-  flex: 1 1 auto;
+  flex: 1;
   min-height: 40px;
   max-height: 200px;
   padding: var(--beui-spacing-sm);
@@ -846,18 +846,6 @@
   resize: none;
   font-family: inherit;
   min-width: 0;
-}
-
-@media (max-width: 900px) {
-  .beui-prompt-bar__input {
-    flex: 1 1 auto;
-  }
-}
-
-@media (max-width: 480px) {
-  .beui-prompt-bar__input {
-    flex: 1 1 auto;
-  }
 }
 
 .beui-prompt-bar__input:focus {
@@ -872,24 +860,13 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 0;
+  gap: 1rem;
   flex: 0 0 auto;
-  min-width: 200px;
-}
-
-@media (max-width: 900px) {
-  .beui-prompt-bar__actions {
-    min-width: 180px;
-  }
-}
-
-@media (max-width: 480px) {
-  .beui-prompt-bar__actions {
-    min-width: 160px;
-  }
 }
 
 .beui-prompt-bar__button {
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -899,7 +876,6 @@
   color: var(--color-text-muted);
   cursor: pointer;
   transition: all var(--beui-duration-fast);
-  height: 40px;
 }
 
 .beui-prompt-bar__button:hover {
@@ -908,23 +884,9 @@
 }
 
 .beui-prompt-bar__button--submit {
+  width: 40px;
+  height: 40px;
   flex: 0 0 auto;
-  min-width: 36px;
-  max-width: 44px;
-}
-
-@media (max-width: 900px) {
-  .beui-prompt-bar__button--submit {
-    min-width: 36px;
-    max-width: 40px;
-  }
-}
-
-@media (max-width: 480px) {
-  .beui-prompt-bar__button--submit {
-    min-width: 36px;
-    max-width: 36px;
-  }
 }
 
 .beui-prompt-bar__button--submit:hover {
@@ -1244,23 +1206,20 @@
   gap: 6px;
   font-size: 13px;
   color: var(--color-text-muted, #888);
-  padding: 8px 10px;
+  padding: 6px 10px;
   border-radius: 6px;
   background: var(--color-surface, #1a1a1a);
   border: 1px solid var(--color-border, #333);
   cursor: pointer;
   transition: all 0.15s ease;
-  flex: 1 1 0%;
-  min-width: 0;
-  overflow: hidden;
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .beui-prompt-bar__button--model span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  flex: 1;
-  min-width: 0;
 }
 
 @media (max-width: 900px) {
