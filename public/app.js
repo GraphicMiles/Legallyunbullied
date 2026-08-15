@@ -1509,7 +1509,10 @@ import {
   }
 
   function renderCasualReply(agentMsg, replyText) {
-    if (!live.refs) return;
+    if (!live.refs || !live.refs.body) {
+      console.warn('[renderCasualReply] live.refs.body not available, cannot render casual reply');
+      return;
+    }
     live.refs.body.appendChild(buildCasualReplyEl(replyText));
     scrollChatToBottom();
   }
@@ -1663,22 +1666,30 @@ import {
   }
 
   function finalizeAnswer(agentMsg, token) {
-    if (token !== pipelineToken) return;
+    // Always reset isAgentBusy — even if the token doesn't match (user cancelled).
+    // Previously this returned early on token mismatch, leaving the composer
+    // stuck in "busy" state with the stop button unresponsive.
+    const tokenMatch = token === pipelineToken;
+    
     const wasStreaming = agentMsg.status === "streaming";
     const wasCasual = agentMsg.status === "casual";
     if (wasStreaming) agentMsg.status = "done";
+    
+    // Always reset — don't gate on tokenMatch
     state.isAgentBusy = false;
-    // Only a real, fully-answered legal question counts against the daily quota —
-    // a failed request, casual chat, or an honest "not sourced yet" shouldn't cost the user.
-    if (wasStreaming) state.questionsUsedToday += 1;
+    
+    // Only count quota when the answer actually streamed (not casual / error / stopped)
+    if (tokenMatch && wasStreaming) state.questionsUsedToday += 1;
 
     saveState();
     renderHistory();
     updateComposerState();
     updatePlanLabel();
 
-    live.refs = null;
-    live.msgId = null;
+    if (tokenMatch) {
+      live.refs = null;
+      live.msgId = null;
+    }
   }
 
   /* ------------------------------------------------------------------ */
