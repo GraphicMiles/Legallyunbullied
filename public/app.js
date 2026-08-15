@@ -524,6 +524,12 @@ import {
     renderHistory();
     if (state.activeId === id) renderChat();
     updateClearChatButtonState();
+    // Clear the prompt bar when clearing a chat
+    if (window.promptBar) {
+      window.promptBar.clear();
+    } else if (el.composerInput) {
+      el.composerInput.value = "";
+    }
   }
 
   function confirmDeleteConversation(id) {
@@ -547,6 +553,12 @@ import {
     renderHistory();
     renderChat();
     updateClearChatButtonState();
+    // Clear the prompt bar when deleting a chat
+    if (window.promptBar) {
+      window.promptBar.clear();
+    } else if (el.composerInput) {
+      el.composerInput.value = "";
+    }
   }
 
   function updateClearChatButtonState() {
@@ -1033,9 +1045,12 @@ import {
     renderHistory();
     renderChat();
     closeMobileSidebar();
+    // Clear the prompt bar when creating a new chat
     if (window.promptBar) {
+      window.promptBar.clear();
       window.promptBar.inputElement.focus();
     } else if (el.composerInput) {
+      el.composerInput.value = "";
       el.composerInput.focus();
     }
   }
@@ -1047,6 +1062,12 @@ import {
     renderHistory();
     renderChat();
     closeMobileSidebar();
+    // Clear the prompt bar when switching to a different chat
+    if (window.promptBar) {
+      window.promptBar.clear();
+    } else if (el.composerInput) {
+      el.composerInput.value = "";
+    }
   }
 
   function ensureActiveConversation() {
