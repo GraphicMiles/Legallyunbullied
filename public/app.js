@@ -105,6 +105,22 @@ import {
           state.conversations = parsed.conversations;
           state.activeId = parsed.activeId || null;
           state.questionsUsedToday = parsed.questionsUsedToday || 0;
+
+          // Migrate: repair any agent messages missing the `steps` field
+          // (from sessions saved before the steps/tracing feature was added).
+          for (const convo of state.conversations) {
+            if (convo && Array.isArray(convo.messages)) {
+              for (const msg of convo.messages) {
+                if (msg && msg.role === "agent" && !msg.steps) {
+                  msg.steps = STEP_DEFS.map((s, i) => ({
+                    ...s,
+                    state: msg.status === "done" ? "done" : "pending",
+                    elapsedMs: msg.thinkingElapsedMs || 0,
+                  }));
+                }
+              }
+            }
+          }
         }
       }
     } catch (e) { /* corrupt storage — start fresh */ }
@@ -695,7 +711,9 @@ import {
     // This message never finished (e.g. the page was reloaded mid-request).
     // Don't fabricate an answer — say plainly that it didn't complete.
     msg.result = null;
-    msg.steps.forEach((s) => { if (s.state !== "done") s.state = "pending"; });
+    if (msg.steps) {
+      msg.steps.forEach((s) => { if (s.state !== "done") s.state = "pending"; });
+    }
     msg.thinkingElapsedMs = msg.thinkingElapsedMs || 0;
     msg.status = "incomplete";
   }
@@ -707,7 +725,9 @@ import {
     const toggle = buildTraceToggle(msg, trace);
     const body = document.createElement("div");
     body.className = "trace__body";
-    msg.steps.forEach((step) => body.appendChild(buildStepEl(step)));
+    if (msg.steps) {
+      msg.steps.forEach((step) => body.appendChild(buildStepEl(step)));
+    }
 
     trace.appendChild(toggle);
     trace.appendChild(body);
@@ -1207,9 +1227,10 @@ import {
   }
 
   function setStepActive(agentMsg, index) {
+    if (!agentMsg.steps || !agentMsg.steps[index]) return;
     if (index > 0) {
       const prev = agentMsg.steps[index - 1];
-      if (prev.state !== "done") {
+      if (prev && prev.state !== "done") {
         prev.state = "done";
         updateStepEl(index - 1, prev);
       }
@@ -1230,6 +1251,7 @@ import {
   }
 
   function setStepDone(agentMsg, index) {
+    if (!agentMsg.steps || !agentMsg.steps[index]) return;
     const step = agentMsg.steps[index];
     step.state = "done";
     step.elapsedMs = Date.now() - (step._start || Date.now());
