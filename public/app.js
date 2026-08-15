@@ -1362,7 +1362,15 @@ import {
     startTimer(agentMsg, token);
 
     agentMsg.classification = normalizeClassification(response.classification);
-    agentMsg.steps[1].detail = `${agentMsg.classification.practiceArea} · ${agentMsg.classification.jurisdictionGuess} · ${agentMsg.classification.urgency} urgency`;
+    
+    // Guard against null steps (migration safety)
+    if (!agentMsg.steps) {
+      agentMsg.steps = STEP_DEFS.map((s, i) => ({ ...s, state: "pending", elapsedMs: 0 }));
+    }
+    
+    if (agentMsg.steps[1]) {
+      agentMsg.steps[1].detail = `${agentMsg.classification.practiceArea} · ${agentMsg.classification.jurisdictionGuess} · ${agentMsg.classification.urgency} urgency`;
+    }
     setStepDone(agentMsg, 1);
 
     // Step 2: Searching legal sources — the server already did this; show
@@ -1370,12 +1378,16 @@ import {
     setStepActive(agentMsg, 2);
     const hasResult = !response.corpusEmpty && response.result;
     if (hasResult && response.result.sources && response.result.sources.length) {
-      agentMsg.steps[2].detail = `Cross-checking ${response.result.sources.length} source${response.result.sources.length === 1 ? "" : "s"} for relevance.`;
-      agentMsg.steps[2].chips = response.result.sources.map((s) => s.label);
+      if (agentMsg.steps[2]) {
+        agentMsg.steps[2].detail = `Cross-checking ${response.result.sources.length} source${response.result.sources.length === 1 ? "" : "s"} for relevance.`;
+        agentMsg.steps[2].chips = response.result.sources.map((s) => s.label);
+      }
     } else {
-      agentMsg.steps[2].detail = "No ingested sources for this practice area yet.";
+      if (agentMsg.steps[2]) {
+        agentMsg.steps[2].detail = "No ingested sources for this practice area yet.";
+      }
     }
-    updateStepEl(2, agentMsg.steps[2]);
+    if (agentMsg.steps[2]) updateStepEl(2, agentMsg.steps[2]);
     await sleep(350);
     if (token !== pipelineToken) return;
     setStepDone(agentMsg, 2);
@@ -1384,18 +1396,22 @@ import {
     setStepActive(agentMsg, 3);
     if (response.plan) {
       agentMsg.plan = response.plan;
-      agentMsg.steps[3].detail = response.plan.analysis || "Analyzing provisions and structuring response";
-      if (response.plan.key_provisions && response.plan.key_provisions.length) {
-        agentMsg.steps[3].chips = response.plan.key_provisions.slice(0, 3).map(p => {
-          // Extract just the act/section name from the provision description
-          const match = p.match(/^(Section \d+|[A-Z][^-\n]+)/);
-          return match ? match[1].slice(0, 40) : p.slice(0, 40);
-        });
+      if (agentMsg.steps[3]) {
+        agentMsg.steps[3].detail = response.plan.analysis || "Analyzing provisions and structuring response";
+        if (response.plan.key_provisions && response.plan.key_provisions.length) {
+          agentMsg.steps[3].chips = response.plan.key_provisions.slice(0, 3).map(p => {
+            // Extract just the act/section name from the provision description
+            const match = p.match(/^(Section \d+|[A-Z][^-\n]+)/);
+            return match ? match[1].slice(0, 40) : p.slice(0, 40);
+          });
+        }
       }
     } else {
-      agentMsg.steps[3].detail = "Preparing response structure";
+      if (agentMsg.steps[3]) {
+        agentMsg.steps[3].detail = "Preparing response structure";
+      }
     }
-    updateStepEl(3, agentMsg.steps[3]);
+    if (agentMsg.steps[3]) updateStepEl(3, agentMsg.steps[3]);
     await sleep(400);
     if (token !== pipelineToken) return;
     setStepDone(agentMsg, 3);
