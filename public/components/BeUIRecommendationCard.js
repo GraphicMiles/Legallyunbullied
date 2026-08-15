@@ -23,7 +23,6 @@ class BeUIRecommendationCard {
     this.element.className = "beui-recommendation-card";
     this.element.style.cssText = `
       width: 100%;
-      max-width: 380px;
       overflow: hidden;
       border-radius: 10px;
       background: var(--color-surface);

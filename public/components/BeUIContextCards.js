@@ -22,7 +22,7 @@ class BeUIContextCards {
   render() {
     this.element = document.createElement("div");
     this.element.className = "beui-context-cards";
-    this.element.style.cssText = "display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 380px;";
+    this.element.style.cssText = "display: flex; flex-direction: column; gap: 8px; width: 100%;";
     
     // Header
     const header = document.createElement("div");

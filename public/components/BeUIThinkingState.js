@@ -68,7 +68,7 @@ class BeUIThinkingState {
     
     this.element = document.createElement("div");
     this.element.className = "beui-thinking-state";
-    this.element.style.cssText = "display: flex; flex-direction: column; min-height: 176px; width: 100%; max-width: 380px;";
+    this.element.style.cssText = "display: flex; flex-direction: column; width: 100%;";
     
     // Header button
     const header = document.createElement("button");

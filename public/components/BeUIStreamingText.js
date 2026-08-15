@@ -50,9 +50,7 @@ class BeUIStreamingText {
     // Main wrapper
     this.element = document.createElement('div');
     this.element.style.cssText = `
-      min-height: 248px;
       width: 100%;
-      max-width: 380px;
     `;
     
     // Paragraph for streaming text
