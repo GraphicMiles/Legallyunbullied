@@ -57,6 +57,7 @@ Provide:
 - "keywords": 4-8 specific legal/factual terms likely in relevant statutes (procedural terms, timeframes, named concepts)
 - "key_issues": Array of 3-5 specific legal issues or questions that need to be addressed
 - "complexity": ["Low", "Medium", "High"] — Low: straightforward single issue, Medium: multiple issues or interpretation needed, High: complex multi-party/constitutional/novel questions
+- "route": ["simple", "complex"] — simple: direct factual lookup that can be answered from a single statute lookup (e.g. "What is the minimum wage in Nigeria?", "What is the legal drinking age?"). complex: a described situation requiring investigation, multi-step analysis, or interpretation of how law applies to facts.
 - "reasoning_approach": Detailed 2-3 sentence description of how to systematically answer this question, including what legal framework to establish, how to apply it to the facts, and what remedies/guidance to provide
 - "stakeholders": Array of parties involved (e.g., ["tenant", "landlord", "court"])
 - "potential_remedies": Array of 2-4 possible legal remedies or outcomes to explore
@@ -76,6 +77,7 @@ Example (use realistic values, don't copy):
     "Available remedies for illegal eviction"
   ],
   "complexity": "Medium",
+  "route": "complex",
   "reasoning_approach": "First establish the statutory framework under Lagos State Tenancy Law 2011, particularly sections on notice requirements and prohibition of self-help. Then analyze whether the landlord's actions constitute illegal eviction. Finally outline the tenant's remedies including potential court orders for repossession and damages.",
   "stakeholders": ["tenant", "landlord"],
   "potential_remedies": ["Court order for repossession", "Damages for illegal eviction", "Injunction against further harassment"]
@@ -249,6 +251,135 @@ Analyze this question and create a structured plan for answering it.`;
       gaps: []
     }, 
     provider: "fallback" 
+  };
+}
+
+/**
+ * CRITIQUE_PROMPT — evaluates a draft response against the question, plan, and provisions.
+ * Returns a single quality score (0-1) and specific issues.
+ * Phase 2 will split this into quality + legal_safety; Phase 1 keeps it unified.
+ */
+const CRITIQUE_PROMPT = `You are a senior Nigerian legal reviewer. Critique the draft answer below.
+
+Evaluate on these dimensions and produce a SINGLE quality score (0 to 1):
+- Accuracy: Does the draft cite only provisions actually in the context? Does it invent laws?
+- Completeness: Does it address all key_issues from the plan?
+- Clarity: Is it written in plain language a layperson can understand?
+- Actionability: Are the next steps concrete and specific?
+- Citation quality: Does every legal claim cite an Act and section from the provided excerpts?
+
+Scoring guidance:
+- 0.90+ : Excellent — accurate, complete, clear, well-cited, actionable
+- 0.75-0.89: Good — minor gaps but substantively correct
+- 0.60-0.74: Needs work — missing citations, unclear, or incomplete
+- below 0.60: Poor — significant issues that require rewriting
+
+If the draft fails, list SPECIFIC fixable issues (not vague complaints). Each issue should name what's wrong and how to fix it.
+
+Question: {{QUESTION}}
+
+Classification:
+- Practice area: {{PRACTICE_AREA}}
+- Key issues: {{KEY_ISSUES}}
+- Complexity: {{COMPLEXITY}}
+
+Plan (if available):
+{{PLAN}}
+
+Provided provisions (abbreviated):
+{{PROVISIONS}}
+
+Draft answer to critique:
+{{DRAFT}}
+
+Respond with ONLY a JSON object:
+{
+  "quality": 0.00,
+  "passed": true/false,
+  "issues": [
+    { "dimension": "accuracy|completeness|clarity|actionability|citations", "problem": "what's wrong", "fix": "how to fix it" }
+  ],
+  "strengths": ["what the draft does well"],
+  "rewrite_hint": "1-2 sentence instruction for how to improve the draft if it needs rewriting"
+}
+
+Rule: "passed" must be true ONLY if quality >= 0.70. Do not pass drafts below 0.70.`;
+
+async function critiqueDraft(question, classification, plan, provisions, draft) {
+  const groqClient = getGroqClient();
+  const geminiClient = getGeminiClient();
+
+  // Build abbreviated provision list for critique context
+  const provisionSummary = (provisions || [])
+    .slice(0, 10)
+    .map(p => `[${p.act}${p.section ? ", s." + p.section : ""}] ${p.text.slice(0, 150)}...`)
+    .join("\n");
+
+  const planText = plan
+    ? `Analysis: ${plan.analysis || "N/A"}
+Key provisions: ${(plan.key_provisions || []).join("; ")}
+Sub-questions: ${(plan.sub_questions || []).join("; ")}
+Response structure: ${plan.response_structure || "N/A"}
+Gaps: ${(plan.gaps || []).join(", ") || "none"}`
+    : "(no plan — simple question)";
+
+  const keyIssues = (classification.key_issues || []).join("; ");
+
+  const critiquePrompt = CRITIQUE_PROMPT
+    .replace("{{QUESTION}}", question)
+    .replace("{{PRACTICE_AREA}}", classification.practice_area || "unknown")
+    .replace("{{KEY_ISSUES}}", keyIssues)
+    .replace("{{COMPLEXITY}}", classification.complexity || "unknown")
+    .replace("{{PLAN}}", planText)
+    .replace("{{PROVISIONS}}", provisionSummary)
+    .replace("{{DRAFT}}", JSON.stringify(draft));
+
+  // Try Groq
+  if (groqClient) {
+    try {
+      const completion = await callCompletion(
+        groqClient,
+        DRAFT_MODEL,
+        [
+          { role: "system", content: "You are a precise legal reviewer. Respond with ONLY valid JSON, no markdown." },
+          { role: "user", content: critiquePrompt }
+        ],
+        { temperature: 0.2, max_tokens: 800, response_format: { type: "json_object" } }
+      );
+      return { critique: parseModelJson(completion.choices[0].message.content), provider: "groq" };
+    } catch (err) {
+      console.warn("[/api/chat] Groq critique failed:", err.status || "", err.message);
+    }
+  }
+
+  // Try Gemini
+  if (geminiClient) {
+    try {
+      const completion = await callCompletion(
+        geminiClient,
+        GEMINI_DRAFT_MODEL,
+        [
+          { role: "system", content: "You are a precise legal reviewer. Respond with ONLY valid JSON, no markdown." },
+          { role: "user", content: critiquePrompt }
+        ],
+        { temperature: 0.2, max_tokens: 800, response_format: { type: "json_object" } }
+      );
+      return { critique: parseModelJson(completion.choices[0].message.content), provider: "gemini" };
+    } catch (err) {
+      console.warn("[/api/chat] Gemini critique failed:", err.status || "", err.message);
+    }
+  }
+
+  // Fallback: auto-pass with low quality to avoid blocking the pipeline
+  return {
+    critique: {
+      quality: 0.70,
+      passed: true,
+      issues: [],
+      strengths: ["auto-passed due to critique service unavailability"],
+      rewrite_hint: "No critique available — returning draft as-is."
+    },
+    provider: "fallback"
   };
 }
 
@@ -550,22 +681,29 @@ router.post("/api/chat", async (req, res) => {
   const EXCERPT_CHAR_CAP = 700; // keep total context small enough to fit even the tighter fallback model's per-minute limit
   const contextBlock = provisions
     .map((p) => {
-      const text = p.text.length > EXCERPT_CHAR_CAP ? p.text.slice(0, EXCERPT_CHAR_CAP) + "…" : p.text;
-      return `[${p.act}${p.section ? ", s." + p.section : ""}]\n${text}`;
+      const text = p.text.length > EXCERPT_CHAR_CAP ? p.text.slice(0, EXCERPT_CHAR_CAP) + "\u2026" : p.text;
+      return `[${p.act}${p.section ? ", s." + p.section : ""}]\\n${text}`;
     })
     .join("\n\n---\n\n");
 
-  // Step 4: Plan the response (thinking/reasoning phase)
-  let planResult;
-  try {
-    planResult = await planResponse(question, classification, provisions);
-    console.log(`[/api/chat] Planning completed via ${planResult.provider}`);
-  } catch (err) {
-    console.warn("[/api/chat] planning failed, continuing without plan:", err.message);
-    planResult = { plan: null, provider: "none" };
+  // Step 4: Route — simple skips planning, complex plans + iterates
+  const route = classification.route || (classification.complexity === "Low" ? "simple" : "complex");
+  const isSimple = route === "simple";
+
+  let planResult = { plan: null, provider: "skipped" };
+  if (!isSimple) {
+    try {
+      planResult = await planResponse(question, classification, provisions);
+      console.log(`[/api/chat] Planning completed via ${planResult.provider} (route=${route})`);
+    } catch (err) {
+      console.warn("[/api/chat] planning failed, continuing without plan:", err.message);
+      planResult = { plan: null, provider: "none" };
+    }
+  } else {
+    console.log(`[/api/chat] Simple route — skipping planning (route=${route})`);
   }
 
-  // Step 5: Draft with fallback chain (using the plan to guide the response)
+  // Step 5: Draft with fallback chain (plan is null for simple route)
   let draftResult;
   try {
     draftResult = await draftWithFallback(question, contextBlock, planResult.plan, classification);
@@ -577,14 +715,74 @@ router.post("/api/chat", async (req, res) => {
     });
   }
 
+  // Step 6: Critique — quality gate. Complex path iterates (max 2 retries); simple path does one pass.
+  const MAX_RETRIES = 2;
+  let currentDraft = draftResult.result;
+  let currentDraftMeta = { model: draftResult.model, provider: draftResult.provider };
+  let lastCritique = null;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    let critiqueResult;
+    try {
+      critiqueResult = await critiqueDraft(question, classification, planResult.plan, provisions, currentDraft);
+      lastCritique = critiqueResult.critique;
+      console.log(`[/api/chat] Critique attempt ${attempt}/${MAX_RETRIES}: quality=${lastCritique.quality?.toFixed(2)} passed=${lastCritique.passed} via ${critiqueResult.provider}`);
+    } catch (err) {
+      console.warn("[/api/chat] critique failed, treating as pass:", err.message);
+      break; // don't block on critique errors
+    }
+
+    if (lastCritique && lastCritique.passed) {
+      break; // good enough — exit loop
+    }
+
+    // Failed critique — complex path rewrites; simple path accepts the draft anyway
+    if (isSimple) {
+      console.log("[/api/chat] Simple route: critique failed but skipping rewrite");
+      break;
+    }
+
+    if (attempt === MAX_RETRIES) {
+      console.log("[/api/chat] Max critique retries exhausted — returning best draft");
+      break;
+    }
+
+    // Rewrite draft using critique feedback
+    const rewriteHint = lastCritique?.rewrite_hint || "Improve the draft addressing the issues listed.";
+    const rewriteIssues = (lastCritique?.issues || []).map(i => `- [${i.dimension}] ${i.problem} → fix: ${i.fix}`).join("\n");
+
+    try {
+      const rewriteResult = await draftWithFallback(
+        question,
+        contextBlock,
+        {
+          ...planResult.plan,
+          rewrite_hint: rewriteHint,
+          critique_issues: rewriteIssues,
+          previous_quality: lastCritique?.quality
+        },
+        classification
+      );
+      currentDraft = rewriteResult.result;
+      currentDraftMeta = { model: rewriteResult.model, provider: rewriteResult.provider };
+      console.log(`[/api/chat] Rewrite attempt ${attempt + 1} via ${rewriteResult.provider}`);
+    } catch (err) {
+      console.warn("[/api/chat] rewrite failed, keeping previous draft:", err.message);
+      break;
+    }
+  }
+
   res.json({
     classification,
+    route,
     plan: planResult.plan,
-    result: draftResult.result,
-    draftModel: draftResult.model,
-    draftProvider: draftResult.provider,
+    result: currentDraft,
+    draftModel: currentDraftMeta.model,
+    draftProvider: currentDraftMeta.provider,
+    critique: lastCritique || null,
   });
 });
+
 
 /**
  * POST /api/generate-title — Generate a short contextual title for a conversation
