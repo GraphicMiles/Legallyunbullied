@@ -1,6 +1,6 @@
 /**
- * BeUIPromptBar - Enhanced composer with @-mentions and /-commands
- * Supports @-mentioning sources, /-commands, and model picker
+ * BeUIPromptBar - Enhanced composer with @-mentions, /-commands, and model picker
+ * Full-featured implementation with FontAwesome icons
  */
 class BeUIPromptBar {
   constructor(container, options = {}) {
@@ -8,19 +8,18 @@ class BeUIPromptBar {
     this.options = {
       placeholder: options.placeholder || 'Ask a legal question...',
       onSubmit: options.onSubmit || (() => {}),
-      mentions: options.mentions || [],
-      commands: options.commands || [
-        { name: 'help', description: 'Show help' },
-        { name: 'clear', description: 'Clear conversation' }
-      ],
+      sources: options.sources || [],
+      commands: options.commands || [],
+      models: options.models || [],
       ...options
     };
     
     this.element = null;
     this.inputElement = null;
     this.submitButton = null;
-    this.mentionsDropdown = null;
-    this.isMentionsOpen = false;
+    this.dropdown = null;
+    this.isDropdownOpen = false;
+    this.dropdownType = null; // 'sources', 'commands', or 'models'
     
     this.render();
   }
@@ -45,10 +44,27 @@ class BeUIPromptBar {
     const actions = document.createElement('div');
     actions.className = 'beui-prompt-bar__actions';
     
+    // Model picker button (if models provided)
+    if (this.options.models.length > 0) {
+      const modelBtn = document.createElement('button');
+      modelBtn.type = 'button';
+      modelBtn.className = 'beui-prompt-bar__button beui-prompt-bar__button--model';
+      const currentModel = this.options.models[0];
+      modelBtn.innerHTML = `
+        <i class="fa-solid ${currentModel.icon}"></i>
+        <span>${currentModel.name}</span>
+        <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
+      `;
+      modelBtn.addEventListener('click', () => this.showModels());
+      actions.appendChild(modelBtn);
+      this.modelButton = modelBtn;
+    }
+    
     // Submit button
     const submitBtn = document.createElement('button');
+    submitBtn.type = 'button';
     submitBtn.className = 'beui-prompt-bar__button beui-prompt-bar__button--submit';
-    submitBtn.innerHTML = '<svg class="beui-prompt-bar__button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
+    submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
     submitBtn.disabled = true;
     submitBtn.addEventListener('click', () => this.submit());
     
@@ -57,18 +73,18 @@ class BeUIPromptBar {
     inputWrapper.appendChild(textarea);
     inputWrapper.appendChild(actions);
     
-    // Mentions dropdown
-    const mentions = document.createElement('div');
-    mentions.className = 'beui-prompt-bar__mentions';
+    // Dropdown
+    const dropdown = document.createElement('div');
+    dropdown.className = 'beui-prompt-bar__dropdown';
     
     wrapper.appendChild(inputWrapper);
-    wrapper.appendChild(mentions);
+    wrapper.appendChild(dropdown);
     
     this.container.appendChild(wrapper);
     this.element = wrapper;
     this.inputElement = textarea;
     this.submitButton = submitBtn;
-    this.mentionsDropdown = mentions;
+    this.dropdown = dropdown;
     
     // Auto-resize
     textarea.addEventListener('input', () => {
@@ -89,16 +105,18 @@ class BeUIPromptBar {
     const mentionMatch = textBeforeCursor.match(/@(\w*)$/);
     
     if (mentionMatch) {
-      this.showMentions(mentionMatch[1]);
-    } else {
-      this.hideMentions();
+      this.showSources(mentionMatch[1]);
+      return;
     }
     
     // Check for / command
     const commandMatch = textBeforeCursor.match(/^\/(\w*)$/);
     if (commandMatch) {
       this.showCommands(commandMatch[1]);
+      return;
     }
+    
+    this.hideDropdown();
   }
   
   handleKeydown(e) {
@@ -106,46 +124,56 @@ class BeUIPromptBar {
       e.preventDefault();
       this.submit();
     } else if (e.key === 'Escape') {
-      this.hideMentions();
+      this.hideDropdown();
     }
   }
   
-  showMentions(query) {
-    const filtered = this.options.mentions.filter(m => 
-      m.toLowerCase().includes(query.toLowerCase())
+  showSources(query) {
+    const filtered = this.options.sources.filter(s => 
+      s.name.toLowerCase().includes(query.toLowerCase())
     );
     
     if (filtered.length === 0) {
-      this.hideMentions();
+      this.hideDropdown();
       return;
     }
     
-    this.mentionsDropdown.innerHTML = '';
+    this.dropdown.innerHTML = '';
+    this.dropdownType = 'sources';
     
-    filtered.forEach(mention => {
+    filtered.forEach(source => {
       const item = document.createElement('div');
-      item.className = 'beui-prompt-bar__mention-item';
+      item.className = 'beui-prompt-bar__dropdown-item';
       
-      const icon = document.createElement('span');
-      icon.className = 'beui-prompt-bar__mention-icon';
-      icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+      const icon = document.createElement('i');
+      icon.className = `fa-solid ${source.glyph || 'fa-file'}`;
       
-      const text = document.createElement('span');
-      text.className = 'beui-prompt-bar__mention-text';
-      text.textContent = mention;
+      const textWrapper = document.createElement('div');
+      textWrapper.className = 'beui-prompt-bar__dropdown-text';
+      
+      const name = document.createElement('span');
+      name.className = 'beui-prompt-bar__dropdown-name';
+      name.textContent = source.name;
+      
+      const desc = document.createElement('span');
+      desc.className = 'beui-prompt-bar__dropdown-desc';
+      desc.textContent = source.desc || '';
+      
+      textWrapper.appendChild(name);
+      textWrapper.appendChild(desc);
       
       item.appendChild(icon);
-      item.appendChild(text);
+      item.appendChild(textWrapper);
       
       item.addEventListener('click', () => {
-        this.insertMention(mention);
+        this.insertSource(source);
       });
       
-      this.mentionsDropdown.appendChild(item);
+      this.dropdown.appendChild(item);
     });
     
-    this.mentionsDropdown.classList.add('is-visible');
-    this.isMentionsOpen = true;
+    this.dropdown.classList.add('is-visible');
+    this.isDropdownOpen = true;
   }
   
   showCommands(query) {
@@ -154,39 +182,90 @@ class BeUIPromptBar {
     );
     
     if (filtered.length === 0) {
-      this.hideMentions();
+      this.hideDropdown();
       return;
     }
     
-    this.mentionsDropdown.innerHTML = '';
+    this.dropdown.innerHTML = '';
+    this.dropdownType = 'commands';
     
     filtered.forEach(command => {
       const item = document.createElement('div');
-      item.className = 'beui-prompt-bar__mention-item';
+      item.className = 'beui-prompt-bar__dropdown-item';
       
-      const text = document.createElement('span');
-      text.className = 'beui-prompt-bar__mention-text';
-      text.textContent = `/${command.name} - ${command.description}`;
+      const textWrapper = document.createElement('div');
+      textWrapper.className = 'beui-prompt-bar__dropdown-text';
       
-      item.appendChild(text);
+      const name = document.createElement('span');
+      name.className = 'beui-prompt-bar__dropdown-name';
+      name.textContent = command.name;
+      
+      const desc = document.createElement('span');
+      desc.className = 'beui-prompt-bar__dropdown-desc';
+      desc.textContent = command.desc || '';
+      
+      textWrapper.appendChild(name);
+      textWrapper.appendChild(desc);
+      
+      item.appendChild(textWrapper);
       
       item.addEventListener('click', () => {
         this.executeCommand(command);
       });
       
-      this.mentionsDropdown.appendChild(item);
+      this.dropdown.appendChild(item);
     });
     
-    this.mentionsDropdown.classList.add('is-visible');
-    this.isMentionsOpen = true;
+    this.dropdown.classList.add('is-visible');
+    this.isDropdownOpen = true;
   }
   
-  hideMentions() {
-    this.mentionsDropdown.classList.remove('is-visible');
-    this.isMentionsOpen = false;
+  showModels() {
+    this.dropdown.innerHTML = '';
+    this.dropdownType = 'models';
+    
+    this.options.models.forEach(model => {
+      const item = document.createElement('div');
+      item.className = 'beui-prompt-bar__dropdown-item';
+      
+      const icon = document.createElement('i');
+      icon.className = `fa-solid ${model.icon}`;
+      
+      const textWrapper = document.createElement('div');
+      textWrapper.className = 'beui-prompt-bar__dropdown-text';
+      
+      const name = document.createElement('span');
+      name.className = 'beui-prompt-bar__dropdown-name';
+      name.textContent = model.name;
+      
+      const tag = document.createElement('span');
+      tag.className = 'beui-prompt-bar__dropdown-tag';
+      tag.textContent = model.tag || '';
+      
+      textWrapper.appendChild(name);
+      textWrapper.appendChild(tag);
+      
+      item.appendChild(icon);
+      item.appendChild(textWrapper);
+      
+      item.addEventListener('click', () => {
+        this.selectModel(model);
+      });
+      
+      this.dropdown.appendChild(item);
+    });
+    
+    this.dropdown.classList.add('is-visible');
+    this.isDropdownOpen = true;
   }
   
-  insertMention(mention) {
+  hideDropdown() {
+    this.dropdown.classList.remove('is-visible');
+    this.isDropdownOpen = false;
+    this.dropdownType = null;
+  }
+  
+  insertSource(source) {
     const value = this.inputElement.value;
     const cursorPos = this.inputElement.selectionStart;
     const textBeforeCursor = value.slice(0, cursorPos);
@@ -195,23 +274,40 @@ class BeUIPromptBar {
     const mentionMatch = textBeforeCursor.match(/@(\w*)$/);
     if (mentionMatch) {
       const beforeMention = textBeforeCursor.slice(0, mentionMatch.index);
-      const newValue = `${beforeMention}@${mention} ${textAfterCursor}`;
+      const newValue = `${beforeMention}@${source.name} ${textAfterCursor}`;
       
       this.inputElement.value = newValue;
-      const newCursorPos = beforeMention.length + mention.length + 2;
+      const newCursorPos = beforeMention.length + source.name.length + 2;
       this.inputElement.setSelectionRange(newCursorPos, newCursorPos);
     }
     
-    this.hideMentions();
+    this.hideDropdown();
     this.inputElement.focus();
   }
   
   executeCommand(command) {
     this.inputElement.value = '';
-    this.hideMentions();
+    this.hideDropdown();
+    this.inputElement.focus();
     
-    if (this.options.onCommand) {
-      this.options.onCommand(command);
+    // Insert command as text
+    this.inputElement.value = `${command.name} `;
+  }
+  
+  selectModel(model) {
+    if (this.modelButton) {
+      this.modelButton.innerHTML = `
+        <i class="fa-solid ${model.icon}"></i>
+        <span>${model.name}</span>
+        <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
+      `;
+    }
+    
+    this.hideDropdown();
+    this.inputElement.focus();
+    
+    if (this.options.onModelChange) {
+      this.options.onModelChange(model);
     }
   }
   
@@ -227,7 +323,7 @@ class BeUIPromptBar {
     this.inputElement.value = '';
     this.inputElement.style.height = 'auto';
     this.submitButton.disabled = true;
-    this.hideMentions();
+    this.hideDropdown();
   }
   
   getValue() {
@@ -246,10 +342,10 @@ class BeUIPromptBar {
   
   setSubmitting(isSubmitting) {
     if (isSubmitting) {
-      this.submitButton.innerHTML = '<div class="beui-tool-chip__spinner" style="width:18px;height:18px;border-width:2px;"></div>';
+      this.submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
       this.submitButton.disabled = true;
     } else {
-      this.submitButton.innerHTML = '<svg class="beui-prompt-bar__button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
+      this.submitButton.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
       this.submitButton.disabled = this.inputElement.value.trim().length === 0;
     }
   }
