@@ -826,15 +826,24 @@ import {
       actionsTextEl.innerHTML = renderMarkdown(r.actionsMd);
     }
 
-    // Verdict
+    // Verdict (uses BeUIRecommendationCard)
     const verdict = buildVerdictEl(r);
     wrap.appendChild(verdict);
     if (stream) verdict.style.display = "none";
 
+    // Approval Card (if agent needs user input)
+    let approvalCard = null;
+    if (r.approvalQuestions && r.approvalQuestions.length > 0 && window.BeUIApprovalCard) {
+      approvalCard = buildApprovalCard(r);
+      wrap.appendChild(approvalCard);
+      if (stream) approvalCard.style.display = "none";
+    }
+
     wrap._refs = { 
       lawSection: { el: lawSection, textEl: lawTextEl, liveDot: lawLiveDot },
       actionsSection: { el: actionsSection, textEl: actionsTextEl, liveDot: actionsLiveDot },
-      verdict
+      verdict,
+      approvalCard
     };
     return wrap;
   }
@@ -931,6 +940,36 @@ import {
       ` : ""}
     `;
     return verdict;
+  }
+
+  function buildApprovalCard(r) {
+    const container = document.createElement("div");
+    container.className = "approval-card-wrapper";
+    
+    if (window.BeUIApprovalCard) {
+      new window.BeUIApprovalCard(container, {
+        question: r.approvalQuestion || "The agent needs your input:",
+        options: r.approvalQuestions.map(q => ({
+          label: q.label || q,
+          value: q.value || q
+        })),
+        onSelect: (value) => {
+          console.log("[approval] Selected:", value);
+        },
+        onApprove: (value) => {
+          console.log("[approval] Approved:", value);
+          // Submit the selected option as a follow-up question
+          if (value && !state.isAgentBusy) {
+            submitQuestion(value);
+          }
+        },
+        onReject: () => {
+          console.log("[approval] Rejected");
+        }
+      });
+    }
+    
+    return container;
   }
 
   /* ------------------------------------------------------------------ */
