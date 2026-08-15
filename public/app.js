@@ -1417,9 +1417,17 @@ import {
       live.loadingState = null;
     }
 
+    // Safety check: ensure agentMsg exists
+    if (!agentMsg) {
+      console.error('[runPipeline] agentMsg is undefined! Cannot proceed.');
+      finishWithError(convo, agentMsg || { id: 'unknown' }, token, 'Internal error: agent message missing');
+      return;
+    }
+
     // Legal question — create Beautiful UI Thinking State for pipeline execution
     // Guard against null steps (migration safety) — apply to BOTH paths
     if (!agentMsg.steps) {
+      console.log('[runPipeline] Initializing missing steps for agentMsg:', agentMsg.id);
       agentMsg.steps = STEP_DEFS.map((s, i) => ({ ...s, state: "pending", elapsedMs: 0 }));
     }
     
@@ -1451,12 +1459,22 @@ import {
     
     startTimer(agentMsg, token);
 
-    agentMsg.classification = normalizeClassification(response.classification);
-    
-    if (agentMsg.steps[1]) {
-      agentMsg.steps[1].detail = `${agentMsg.classification.practiceArea} · ${agentMsg.classification.jurisdictionGuess} · ${agentMsg.classification.urgency} urgency`;
+    try {
+      agentMsg.classification = normalizeClassification(response.classification);
+      
+      console.log('[runPipeline] agentMsg.steps:', agentMsg.steps);
+      console.log('[runPipeline] agentMsg.steps[1]:', agentMsg.steps[1]);
+      
+      if (agentMsg.steps[1]) {
+        agentMsg.steps[1].detail = `${agentMsg.classification.practiceArea} · ${agentMsg.classification.jurisdictionGuess} · ${agentMsg.classification.urgency} urgency`;
+      }
+      setStepDone(agentMsg, 1);
+    } catch (err) {
+      console.error('[runPipeline] Error updating steps:', err);
+      console.error('[runPipeline] agentMsg:', agentMsg);
+      console.error('[runPipeline] response:', response);
+      throw err;
     }
-    setStepDone(agentMsg, 1);
 
     // Step 2: Searching legal sources — the server already did this; show
     // what it found (or admit nothing's ingested yet) with brief pacing.
