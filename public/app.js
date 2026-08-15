@@ -1033,7 +1033,11 @@ import {
     renderHistory();
     renderChat();
     closeMobileSidebar();
-    el.composerInput.focus();
+    if (window.promptBar) {
+      window.promptBar.inputElement.focus();
+    } else if (el.composerInput) {
+      el.composerInput.focus();
+    }
   }
 
   function selectConversation(id) {
@@ -1686,36 +1690,46 @@ import {
   /* Composer                                                             */
   /* ------------------------------------------------------------------ */
   function updateComposerState() {
-    const hasText = el.composerInput.value.trim().length > 0;
-    
-    if (state.isAgentBusy) {
-      // Show stop button while generating
-      el.sendBtn.disabled = false;
-      el.sendBtn.type = "button"; // prevent form submission
-      el.sendBtn.classList.add("composer__send--stop");
-      el.sendBtn.innerHTML = '<i class="fa-solid fa-stop"></i>';
-      el.sendBtn.setAttribute("aria-label", "Stop generating");
-      el.sendBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); stopGeneration(); };
-      
-      // Pulsating placeholder
-      el.composerInput.classList.add("is-busy");
-      el.composerInput.placeholder = "Responding…";
-      el.composerInput.disabled = false;
-    } else {
-      // Restore normal send button
-      el.sendBtn.type = "submit"; // restore form submission
-      el.sendBtn.classList.remove("composer__send--stop");
-      el.sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
-      el.sendBtn.setAttribute("aria-label", "Send");
-      el.sendBtn.onclick = null;
-      el.sendBtn.disabled = !hasText;
-      
-      // Restore normal placeholder
-      el.composerInput.classList.remove("is-busy");
-      el.composerInput.placeholder = "Describe your legal situation…";
-      el.composerInput.disabled = false;
+    // --- New BeUIPromptBar path (composer-form was replaced by prompt-bar-container) ---
+    if (window.promptBar) {
+      if (state.isAgentBusy) {
+        window.promptBar.setDisabled(false);
+        window.promptBar.setSubmitting(true);
+      } else {
+        window.promptBar.setSubmitting(false);
+        window.promptBar.setDisabled(false);
+      }
     }
-    
+
+    // --- Legacy composer path (kept as fallback if old HTML is ever restored) ---
+    if (el.composerInput && el.sendBtn) {
+      const hasText = el.composerInput.value.trim().length > 0;
+
+      if (state.isAgentBusy) {
+        el.sendBtn.disabled = false;
+        el.sendBtn.type = "button";
+        el.sendBtn.classList.add("composer__send--stop");
+        el.sendBtn.innerHTML = '<i class="fa-solid fa-stop"></i>';
+        el.sendBtn.setAttribute("aria-label", "Stop generating");
+        el.sendBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); stopGeneration(); };
+
+        el.composerInput.classList.add("is-busy");
+        el.composerInput.placeholder = "Responding…";
+        el.composerInput.disabled = false;
+      } else {
+        el.sendBtn.type = "submit";
+        el.sendBtn.classList.remove("composer__send--stop");
+        el.sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
+        el.sendBtn.setAttribute("aria-label", "Send");
+        el.sendBtn.onclick = null;
+        el.sendBtn.disabled = !hasText;
+
+        el.composerInput.classList.remove("is-busy");
+        el.composerInput.placeholder = "Describe your legal situation…";
+        el.composerInput.disabled = false;
+      }
+    }
+
     el.newChatBtn.disabled = state.isAgentBusy;
     el.newChatMobile.disabled = state.isAgentBusy;
     updateClearChatButtonState();
@@ -1802,6 +1816,8 @@ import {
   }
 
   function autoGrowTextarea() {
+    // BeUIPromptBar handles its own auto-resize; this is only needed for the legacy composer
+    if (!el.composerInput) return;
     el.composerInput.style.height = "auto";
     el.composerInput.style.height = Math.min(el.composerInput.scrollHeight, 160) + "px";
   }
@@ -2127,10 +2143,10 @@ import {
     }
     renderHistory();
     renderChat();
+    initAuth();       // auth first — more critical than composer
+    initPromptBar();  // prompt bar before updateComposerState so it can delegate
     updateComposerState();
     updatePlanLabel();
-    initAuth();
-    initPromptBar();
   }
 
   function initPromptBar() {
