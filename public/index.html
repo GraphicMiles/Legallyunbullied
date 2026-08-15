@@ -890,6 +890,9 @@
     line-height: 1.6;
     white-space: pre-wrap;
     word-wrap: break-word;
+    word-break: break-all;
+    overflow-wrap: anywhere;
+    max-width: 100%;
   }
 
   .msg--user .msg__bubble {
@@ -1422,6 +1425,8 @@
     padding: var(--space-2) 0;
     color: var(--color-text);
     line-height: 1.5;
+    word-break: break-all;
+    overflow-wrap: anywhere;
   }
   .composer__input::placeholder { color: var(--color-text-faint); }
   .composer__send {
