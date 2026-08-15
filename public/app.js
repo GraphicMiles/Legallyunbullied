@@ -783,23 +783,47 @@ import {
     wrap.className = "answer";
     const r = msg.result;
 
-    // "What the law says"
-    const lawSection = buildSectionShell("What the law says", ICONS.bolt);
-    wrap.appendChild(lawSection.el);
+    // "What the law says" section
+    const lawSection = document.createElement("div");
+    lawSection.className = "answer-section";
+    lawSection.innerHTML = `
+      <div class="answer-section__head">
+        <div class="answer-section__icon">${ICONS.bolt}</div>
+        <span class="answer-section__title">What the law says</span>
+        <span class="answer-section__live-dot" style="display:none;"></span>
+      </div>
+      <div class="answer-section__text"></div>
+    `;
+    wrap.appendChild(lawSection);
+    const lawTextEl = lawSection.querySelector(".answer-section__text");
+    const lawLiveDot = lawSection.querySelector(".answer-section__live-dot");
+    
     if (stream) {
-      lawSection.textEl.innerHTML = "";
+      lawTextEl.innerHTML = "";
     } else {
-      lawSection.textEl.innerHTML = renderMarkdown(r.lawMd);
-      appendContextCards(lawSection.el, r.sources);
+      lawTextEl.innerHTML = renderMarkdown(r.lawMd);
+      appendContextCards(lawSection, r.sources);
     }
 
-    // "What you can do"
-    const actionsSection = buildSectionShell("What you can do", ICONS.list);
-    wrap.appendChild(actionsSection.el);
+    // "What you can do" section
+    const actionsSection = document.createElement("div");
+    actionsSection.className = "answer-section";
+    actionsSection.innerHTML = `
+      <div class="answer-section__head">
+        <div class="answer-section__icon">${ICONS.list}</div>
+        <span class="answer-section__title">What you can do</span>
+        <span class="answer-section__live-dot" style="display:none;"></span>
+      </div>
+      <div class="answer-section__text"></div>
+    `;
+    wrap.appendChild(actionsSection);
+    const actionsTextEl = actionsSection.querySelector(".answer-section__text");
+    const actionsLiveDot = actionsSection.querySelector(".answer-section__live-dot");
+    
     if (stream) {
-      actionsSection.el.style.display = "none";
+      actionsSection.style.display = "none";
     } else {
-      actionsSection.textEl.innerHTML = renderMarkdown(r.actionsMd);
+      actionsTextEl.innerHTML = renderMarkdown(r.actionsMd);
     }
 
     // Verdict
@@ -807,36 +831,12 @@ import {
     wrap.appendChild(verdict);
     if (stream) verdict.style.display = "none";
 
-    // Follow-ups
-    const followUps = buildFollowUpsEl(r.followUps);
-    wrap.appendChild(followUps);
-    if (stream) followUps.style.display = "none";
-
-    // Meta / actions row
-    const meta = buildMetaRow(msg);
-    wrap.appendChild(meta);
-    if (stream) meta.style.display = "none";
-
-    wrap._refs = { lawSection, actionsSection, verdict, followUps, meta };
-    return wrap;
-  }
-
-  function buildSectionShell(title, iconSvg) {
-    const section = document.createElement("div");
-    section.className = "answer-section";
-    section.innerHTML = `
-      <div class="answer-section__head">
-        <div class="answer-section__icon">${iconSvg}</div>
-        <span class="answer-section__title">${title}</span>
-        <span class="answer-section__live-dot" style="display:none;"></span>
-      </div>
-      <div class="answer-section__text"></div>
-    `;
-    return {
-      el: section,
-      textEl: section.querySelector(".answer-section__text"),
-      liveDot: section.querySelector(".answer-section__live-dot"),
+    wrap._refs = { 
+      lawSection: { el: lawSection, textEl: lawTextEl, liveDot: lawLiveDot },
+      actionsSection: { el: actionsSection, textEl: actionsTextEl, liveDot: actionsLiveDot },
+      verdict
     };
+    return wrap;
   }
 
   function appendContextCards(sectionEl, sources) {
@@ -931,101 +931,6 @@ import {
       ` : ""}
     `;
     return verdict;
-  }
-
-  function buildFollowUpsEl(followUps) {
-    const wrap = document.createElement("div");
-    wrap.className = "followups";
-    (followUps || []).forEach((text) => {
-      const chip = document.createElement("button");
-      chip.type = "button";
-      chip.className = "followup-chip";
-      chip.innerHTML = `${ICONS.plus}<span>${escapeHtml(text)}</span>`;
-      chip.addEventListener("click", () => {
-        if (state.isAgentBusy) return;
-        submitQuestion(text);
-      });
-      wrap.appendChild(chip);
-    });
-    return wrap;
-  }
-
-  function buildMetaRow(msg) {
-    const meta = document.createElement("div");
-    meta.className = "msg__meta";
-    meta.innerHTML = `
-      <span class="msg__meta-text">Legal information, not legal advice · ${formatTime(msg.createdAt)}</span>
-      <div class="msg-actions">
-        <button type="button" class="msg-action-btn" data-action="copy" title="Copy answer">
-          ${ICONS.copy}
-        </button>
-        <button type="button" class="msg-action-btn${msg.feedback === "up" ? " is-active" : ""}" data-action="up" title="Helpful">
-          ${msg.feedback === "up" ? ICONS.thumbsUp : '<i class="fa-regular fa-thumbs-up"></i>'}
-        </button>
-        <button type="button" class="msg-action-btn${msg.feedback === "down" ? " is-active" : ""}" data-action="down" title="Not helpful">
-          ${msg.feedback === "down" ? ICONS.thumbsDown : '<i class="fa-regular fa-thumbs-down"></i>'}
-        </button>
-      </div>
-    `;
-
-    meta.querySelector('[data-action="copy"]').addEventListener("click", (e) => {
-      copyAnswer(msg, e.currentTarget);
-    });
-    meta.querySelector('[data-action="up"]').addEventListener("click", (e) => {
-      setFeedback(msg, "up", meta);
-    });
-    meta.querySelector('[data-action="down"]').addEventListener("click", (e) => {
-      setFeedback(msg, "down", meta);
-    });
-
-    return meta;
-  }
-
-  function setFeedback(msg, value, metaEl) {
-    msg.feedback = msg.feedback === value ? null : value;
-    saveState();
-    metaEl.querySelector('[data-action="up"]').classList.toggle("is-active", msg.feedback === "up");
-    metaEl.querySelector('[data-action="down"]').classList.toggle("is-active", msg.feedback === "down");
-  }
-
-  function copyAnswer(msg, btn) {
-    const r = msg.result;
-    const text = [
-      "What the law says:",
-      markdownToPlainText(r.lawMd),
-      "",
-      "What you can do:",
-      markdownToPlainText(r.actionsMd),
-      "",
-      (r.escalate ? "This likely needs a lawyer: " : "You can likely handle this yourself: ") + r.escalateReason,
-    ].join("\n");
-
-    const flashCopied = () => {
-      btn.classList.add("is-copied");
-      const original = btn.innerHTML;
-      btn.innerHTML = ICONS.check;
-      setTimeout(() => { btn.classList.remove("is-copied"); btn.innerHTML = original; }, 1400);
-    };
-
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(flashCopied).catch(() => fallbackCopy(text, flashCopied));
-    } else {
-      fallbackCopy(text, flashCopied);
-    }
-  }
-
-  function fallbackCopy(text, onSuccess) {
-    try {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.style.position = "fixed";
-      ta.style.opacity = "0";
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      document.body.removeChild(ta);
-      onSuccess();
-    } catch (e) { /* clipboard unavailable in this environment — no-op */ }
   }
 
   /* ------------------------------------------------------------------ */
