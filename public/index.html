@@ -1727,8 +1727,8 @@
         <!-- BeUIPromptBar will be initialized here -->
         <div id="prompt-bar-container"></div>
         
-        <!-- Fallback composer (shown if BeUIPromptBar fails) -->
-        <form class="composer__form" id="composer-form" style="display: none;">
+        <!-- Fallback composer (shown by default, hidden if BeUIPromptBar succeeds) -->
+        <form class="composer__form" id="composer-form">
           <textarea
             class="composer__input"
             id="composer-input"
