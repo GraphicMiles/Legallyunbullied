@@ -273,7 +273,7 @@ import {
     
     // Add timeout to fetch call
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minute timeout — full pipeline (classify + search + plan + draft + critique) can take 60-120s on free-tier LLMs
     
     try {
       const res = await fetch("/api/chat", {
