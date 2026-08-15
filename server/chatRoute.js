@@ -90,7 +90,7 @@ ${PRACTICE_AREA_BULLETS}
 
 Provide:
 - "practice_area": Single best-fitting category from the list above
-- "jurisdiction": Specific jurisdiction (e.g., "Lagos State", "Federal", "Rivers State"). If unclear from the question, set to "Federal" as default.
+- "jurisdiction": Specific jurisdiction (e.g., "Lagos State", "Federal", "Rivers State", "Federal Capital Territory" for Abuja/FCT). If unclear from the question, set to "Federal" as default.
 - "jurisdiction_status": "clear" if the state/jurisdiction is explicitly stated or strongly implied, "unclear" if it's missing and the answer could differ by state (e.g., tenancy, land, family law vary by state; criminal law, labour law, constitutional law are mostly federal)
 - "urgency": ["Low", "Medium", "High", "Critical"] — based on time sensitivity and potential harm
 - "summary": 1-2 sentence summary of the legal situation
@@ -188,6 +188,7 @@ RESPONSE STRUCTURE:
 **followUps**: Array of 2-3 natural follow-up questions the user might ask
 - Write them the way a real person would ask — conversational, not formal
 - Example: "How long does this court process usually take?" not "What is the typical duration of judicial proceedings?"
+- REQUIRED: You MUST provide at least 2 follow-up questions. An empty array is invalid.
 
 QUALITY STANDARDS:
 - Every legal claim must have a citation
