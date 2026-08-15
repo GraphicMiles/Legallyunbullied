@@ -10,7 +10,10 @@
   "scripts": {
     "start": "node server.js",
     "pdf-to-text": "node scripts/pdf-to-text.js",
-    "ingest": "node scripts/ingest.js"
+    "ingest": "node scripts/ingest.js",
+    "eval": "node scripts/run-eval.js",
+    "eval:quick": "node scripts/run-eval.js --limit 5",
+    "eval:offline": "node scripts/run-eval.js --offline"
   },
   "dependencies": {
     "dotenv": "^17.4.2",

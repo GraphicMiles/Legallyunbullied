@@ -1,0 +1,504 @@
+{
+  "report": {
+    "total": 32,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 32,
+    "avg_score": 0,
+    "pass_rate": 0,
+    "by_category": {},
+    "by_dimension": {},
+    "failing_scenarios": [],
+    "meta": {
+      "version": "1.0.0",
+      "description": "Eval scenarios for Legally Unbullied V1 regression testing",
+      "pass_threshold": 0.7,
+      "regression_gate": 0.65
+    },
+    "run_at": "2026-08-15T16:06:28.786Z",
+    "rate_limited": 0,
+    "errors": 0
+  },
+  "results": [
+    {
+      "scenario_id": "tenancy-lagos-eviction-no-notice",
+      "category": "complex_legal",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "tenancy-abuja-eviction",
+      "category": "jurisdiction_sensitive",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "employment-unpaid-wages",
+      "category": "complex_legal",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "criminal-arrest-without-warrant",
+      "category": "high_risk",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "domestic-violence-abuse",
+      "category": "high_risk",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "land-dispute-boundary",
+      "category": "complex_legal",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "consumer-defective-goods",
+      "category": "simple_legal",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "constitutional-free-speech",
+      "category": "complex_legal",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "traffic-fake-checkpoint",
+      "category": "simple_legal",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "minimum-wage-simple",
+      "category": "simple_factual",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "greeting-hi",
+      "category": "casual",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "greeting-good-morning",
+      "category": "casual",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "identity-what-are-you",
+      "category": "casual",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "casual-thank-you",
+      "category": "casual",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "casual-how-are-you",
+      "category": "casual",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "jurisdiction-unclear-eviction",
+      "category": "edge_case",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "ambiguous-help-me",
+      "category": "edge_case",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "non-legal-weather",
+      "category": "edge_case",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "employment-discrimination-multi",
+      "category": "complex_legal",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "criminal-assault-self-defense",
+      "category": "high_risk",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "family-divorce-grounds",
+      "category": "complex_legal",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "business-cac-registration",
+      "category": "simple_legal",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "tax-paye-obligations",
+      "category": "simple_legal",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "police-brutality-sars",
+      "category": "high_risk",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "tenancy-rent-increase",
+      "category": "simple_legal",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "immigration-passport-delay",
+      "category": "simple_legal",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "criminal-defamation-online",
+      "category": "complex_legal",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "edge-case-gibberish",
+      "category": "edge_case",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "edge-case-empty",
+      "category": "edge_case",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "edge-case-very-long",
+      "category": "edge_case",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "transport-accident-compensation",
+      "category": "complex_legal",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    },
+    {
+      "scenario_id": "ip-trademark-infringement",
+      "category": "complex_legal",
+      "total_score": 0,
+      "pass": false,
+      "skipped": true,
+      "dimensions": {},
+      "raw_response": {
+        "skipped": true
+      },
+      "error": null,
+      "response": {
+        "skipped": true
+      }
+    }
+  ]
+}
