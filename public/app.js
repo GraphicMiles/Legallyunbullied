@@ -1776,7 +1776,13 @@ import {
       live.pipelineLoading = null;
     }
 
-    agentMsg.steps.forEach((s) => { if (s.state === "active") s.state = "pending"; });
+    // Guard against missing steps
+    if (agentMsg.steps) {
+      agentMsg.steps.forEach((s) => { if (s.state === "active") s.state = "pending"; });
+    } else {
+      console.warn('[finishWithError] agentMsg.steps is missing, skipping step update');
+    }
+    
     agentMsg.thinkingElapsedMs = Date.now() - agentMsg.startedAt;
     agentMsg.traceOpen = false;
     agentMsg.status = "error";
