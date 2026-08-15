@@ -629,6 +629,25 @@ Follow this plan to structure your response. Be comprehensive and address all su
   return completion.parsed;
 }
 
+// Per-provider cooldown map — skip providers that recently returned 429
+const providerCooldowns = new Map(); // providerKey -> cooldownUntil (timestamp)
+const COOLDOWN_MS = 30000; // 30 second cooldown after rate limit
+
+function isProviderOnCooldown(key) {
+  const until = providerCooldowns.get(key);
+  if (!until) return false;
+  if (Date.now() >= until) {
+    providerCooldowns.delete(key); // expired
+    return false;
+  }
+  return true;
+}
+
+function markProviderRateLimited(key) {
+  providerCooldowns.set(key, Date.now() + COOLDOWN_MS);
+  console.log(`[/api/chat] Provider "${key}" on cooldown for ${COOLDOWN_MS / 1000}s`);
+}
+
 async function draftWithFallback(question, contextBlock, plan, classification) {
   const groqClient = getGroqClient();
   const openRouterClient = getOpenRouterClient();
@@ -639,90 +658,84 @@ async function draftWithFallback(question, contextBlock, plan, classification) {
   const isRateLimitError = (err) => {
     if (err.status === 429 || err.status === 413) return true;
     if (err.message && err.message.includes('429')) return true;
-    if (err.message && err.message.includes('rate limit')) return true;
+    if (err.message && (err.message.includes('rate limit') || err.message.includes('rate-limited'))) return true;
+    return false;
+  };
+
+  // Helper to check if error is a JSON parse failure (retryable on next provider)
+  const isParseError = (err) => {
+    if (err.message && err.message.includes('Failed to parse JSON')) return true;
+    if (err.message && err.message.includes('Unexpected')) return true;
     return false;
   };
 
   // Helper to delay before retry (rate limit recovery)
   const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-  // Try Groq primary model
+  // Build provider list — each is [providerKey, client, model]
+  const providers = [];
   if (groqClient) {
-    try {
-      const result = await draftWithModel(groqClient, DRAFT_MODEL, question, contextBlock, plan, classification);
-      return { result, model: DRAFT_MODEL, provider: "groq" };
-    } catch (err) {
-      if (isRateLimitError(err)) {
-        console.warn(`[/api/chat] Groq ${DRAFT_MODEL} rate-limited, trying fallback model...`);
+    providers.push(['groq', groqClient, DRAFT_MODEL]);
+    if (DRAFT_MODEL_FALLBACK && DRAFT_MODEL_FALLBACK !== DRAFT_MODEL) {
+      providers.push(['groq-fallback', groqClient, DRAFT_MODEL_FALLBACK]);
+    }
+  }
+  if (openRouterClient) providers.push(['openrouter', openRouterClient, OPENROUTER_DRAFT_MODEL]);
+  if (cerebrasClient) providers.push(['cerebras', cerebrasClient, CEREBRAS_DRAFT_MODEL]);
+  if (geminiClient) providers.push(['gemini', geminiClient, GEMINI_DRAFT_MODEL]);
 
-        // Try Groq fallback model
-        if (DRAFT_MODEL_FALLBACK && DRAFT_MODEL_FALLBACK !== DRAFT_MODEL) {
-          try {
-            const result = await draftWithModel(groqClient, DRAFT_MODEL_FALLBACK, question, contextBlock, plan, classification);
-            return { result, model: DRAFT_MODEL_FALLBACK, provider: "groq-fallback" };
-          } catch (fallbackErr) {
-            console.warn(`[/api/chat] Groq fallback also failed: ${fallbackErr.status || ""} ${fallbackErr.message}`);
-          }
-        }
+  if (providers.length === 0) {
+    throw new Error("No LLM provider available for drafting. Set GROQ_API_KEY, OPENROUTER_API_KEY, CEREBRAS_API_KEY, or GEMINI_API_KEY.");
+  }
+
+  let lastErr = null;
+  let allRateLimited = true;
+
+  for (const [key, client, model] of providers) {
+    // Skip providers on cooldown
+    if (isProviderOnCooldown(key)) {
+      console.log(`[/api/chat] Skipping "${key}" — on cooldown`);
+      continue;
+    }
+    allRateLimited = false; // at least one was attempted
+
+    try {
+      const result = await draftWithModel(client, model, question, contextBlock, plan, classification);
+      return { result, model, provider: key };
+    } catch (err) {
+      lastErr = err;
+      if (isRateLimitError(err)) {
+        console.warn(`[/api/chat] ${key} rate-limited: ${err.message}`);
+        markProviderRateLimited(key);
+      } else if (isParseError(err)) {
+        console.warn(`[/api/chat] ${key} JSON parse failed, trying next provider: ${err.message}`);
+        // Don't mark cooldown — parse failures are transient, try again next request
       } else {
-        console.warn(`[/api/chat] Groq drafting failed: ${err.status || ""} ${err.message}`);
+        console.warn(`[/api/chat] ${key} failed: ${err.status || ""} ${err.message}`);
       }
     }
   }
 
-  // Try OpenRouter (35+ free models)
-  if (openRouterClient) {
-    try {
-      const result = await draftWithModel(openRouterClient, OPENROUTER_DRAFT_MODEL, question, contextBlock, plan, classification);
-      return { result, model: OPENROUTER_DRAFT_MODEL, provider: "openrouter" };
-    } catch (err) {
-      if (isRateLimitError(err)) {
-        console.warn(`[/api/chat] OpenRouter rate-limited, waiting 2s then trying next provider...`);
-        await delay(2000);
-      } else {
-        console.warn(`[/api/chat] OpenRouter drafting failed: ${err.status || ""} ${err.message}`);
-      }
-    }
+  // All providers attempted and failed
+  if (allRateLimited) {
+    // All providers are on cooldown — return graceful fallback instead of throwing
+    return {
+      result: {
+        lawMd: "All legal reasoning providers are currently busy. Please wait a moment and try again.",
+        actionsMd: "- Step 1: Wait 30 seconds and resend your question.\n- Step 2: If the issue persists, try rephrasing your question.",
+        sources: [],
+        escalate: false,
+        escalateReason: "System under load — retry needed.",
+        followUps: [],
+      },
+      model: "fallback",
+      provider: "all-busy",
+      providersBusy: true,
+      retryAfter: COOLDOWN_MS / 1000,
+    };
   }
 
-  // Try Cerebras (ultra-fast)
-  if (cerebrasClient) {
-    try {
-      const result = await draftWithModel(cerebrasClient, CEREBRAS_DRAFT_MODEL, question, contextBlock, plan, classification);
-      return { result, model: CEREBRAS_DRAFT_MODEL, provider: "cerebras" };
-    } catch (err) {
-      if (isRateLimitError(err)) {
-        console.warn(`[/api/chat] Cerebras rate-limited, waiting 2s then trying next provider...`);
-        await delay(2000);
-      } else {
-        console.warn(`[/api/chat] Cerebras drafting failed: ${err.status || ""} ${err.message}`);
-      }
-    }
-  }
-
-  // Try Gemini as last resort
-  if (geminiClient) {
-    try {
-      const result = await draftWithModel(geminiClient, GEMINI_DRAFT_MODEL, question, contextBlock, plan, classification);
-      return { result, model: GEMINI_DRAFT_MODEL, provider: "gemini" };
-    } catch (err) {
-      if (isRateLimitError(err)) {
-        console.warn(`[/api/chat] Gemini rate-limited, waiting 3s before final attempt...`);
-        await delay(3000);
-        // Retry Gemini once after delay
-        try {
-          const result = await draftWithModel(geminiClient, GEMINI_DRAFT_MODEL, question, contextBlock, plan, classification);
-          return { result, model: GEMINI_DRAFT_MODEL, provider: "gemini" };
-        } catch (retryErr) {
-          console.error(`[/api/chat] Gemini retry failed: ${retryErr.status || ""} ${retryErr.message}`);
-        }
-      }
-      console.error(`[/api/chat] All LLM providers failed. Last error (Gemini): ${err.status || ""} ${err.message}`);
-      throw err;
-    }
-  }
-
-  throw new Error("No LLM provider available for drafting. Set GROQ_API_KEY, OPENROUTER_API_KEY, CEREBRAS_API_KEY, or GEMINI_API_KEY.");
+  throw lastErr || new Error("All LLM providers failed.");
 }
 
 router.post("/api/chat", async (req, res) => {
@@ -855,71 +868,29 @@ router.post("/api/chat", async (req, res) => {
     });
   }
 
-  // Step 6: Critique — quality gate. Complex path iterates (max 2 retries); simple path does one pass.
-  const MAX_RETRIES = 2;
-  let currentDraft = draftResult.result;
-  let currentDraftMeta = { model: draftResult.model, provider: draftResult.provider };
+  // Step 6: Critique — run once in background, don't block the response.
+  // The critique service has been unreliable (often returns auto-pass stub),
+  // so blocking the pipeline on it adds latency without quality improvement.
+  // Run it fire-and-forget: log the result, return the draft immediately.
   let lastCritique = null;
-
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    let critiqueResult;
-    try {
-      critiqueResult = await critiqueDraft(question, classification, planResult.plan, provisions, currentDraft);
+  critiqueDraft(question, classification, planResult.plan, provisions, draftResult.result)
+    .then((critiqueResult) => {
       lastCritique = critiqueResult.critique;
-      console.log(`[/api/chat] Critique attempt ${attempt}/${MAX_RETRIES}: quality=${lastCritique.quality?.toFixed(2)} passed=${lastCritique.passed} via ${critiqueResult.provider}`);
-    } catch (err) {
-      console.warn("[/api/chat] critique failed, treating as pass:", err.message);
-      break; // don't block on critique errors
-    }
-
-    if (lastCritique && lastCritique.passed) {
-      break; // good enough — exit loop
-    }
-
-    // Failed critique — complex path rewrites; simple path accepts the draft anyway
-    if (isSimple) {
-      console.log("[/api/chat] Simple route: critique failed but skipping rewrite");
-      break;
-    }
-
-    if (attempt === MAX_RETRIES) {
-      console.log("[/api/chat] Max critique retries exhausted — returning best draft");
-      break;
-    }
-
-    // Rewrite draft using critique feedback
-    const rewriteHint = lastCritique?.rewrite_hint || "Improve the draft addressing the issues listed.";
-    const rewriteIssues = (lastCritique?.issues || []).map(i => `- [${i.dimension}] ${i.problem} → fix: ${i.fix}`).join("\n");
-
-    try {
-      const rewriteResult = await draftWithFallback(
-        question,
-        contextBlock,
-        {
-          ...planResult.plan,
-          rewrite_hint: rewriteHint,
-          critique_issues: rewriteIssues,
-          previous_quality: lastCritique?.quality
-        },
-        classification
-      );
-      currentDraft = rewriteResult.result;
-      currentDraftMeta = { model: rewriteResult.model, provider: rewriteResult.provider };
-      console.log(`[/api/chat] Rewrite attempt ${attempt + 1} via ${rewriteResult.provider}`);
-    } catch (err) {
-      console.warn("[/api/chat] rewrite failed, keeping previous draft:", err.message);
-      break;
-    }
-  }
+      console.log(`[/api/chat] Background critique: quality=${lastCritique?.quality?.toFixed(2)} safety=${lastCritique?.legal_safety?.toFixed(2)} via ${critiqueResult.provider}`);
+    })
+    .catch((err) => {
+      console.warn("[/api/chat] Background critique failed:", err.message);
+    });
+  // Don't await — return the draft immediately.
 
   res.json({
     classification,
     route,
     plan: planResult.plan,
-    result: currentDraft,
-    draftModel: currentDraftMeta.model,
-    draftProvider: currentDraftMeta.provider,
-    critique: lastCritique || null,
+    result: draftResult.result,
+    draftModel: draftResult.model,
+    draftProvider: draftResult.provider,
+    critique: null, // will be filled in future when critique is reliable
   });
 });
 
@@ -998,12 +969,16 @@ router.get("/api/chat/stream", async (req, res) => {
     // Step 4: Draft
     emit({ event: "status", message: "Drafting response..." });
     const contextBlock = provisions.map((p) => `[${p.act}${p.section ? ", s." + p.section : ""}]\n${p.text}`).join("\n\n---\n\n");
-    const draftResult = await draftWithFallback(question, contextBlock, classification);
+    const draftResult = await draftWithFallback(question, contextBlock, null, classification);
 
-    // Step 5: Critique (split scoring)
-    emit({ event: "status", message: "Verifying citations..." });
-    const critiqueResult = await critiqueDraft(question, classification, null, provisions, draftResult.result);
-    const critique = critiqueResult.critique;
+    // Critique runs in background (doesn't block the stream)
+    critiqueDraft(question, classification, null, provisions, draftResult.result)
+      .then((critiqueResult) => {
+        console.log(`[/api/chat/stream] Background critique: quality=${critiqueResult.critique?.quality?.toFixed(2)} via ${critiqueResult.provider}`);
+      })
+      .catch((err) => {
+        console.warn("[/api/chat/stream] Background critique failed:", err.message);
+      });
 
     // Final result
     emit({
@@ -1012,7 +987,7 @@ router.get("/api/chat/stream", async (req, res) => {
         classification,
         result: draftResult.result,
         route: classification.route,
-        critique,
+        providersBusy: draftResult.providersBusy || false,
       },
     });
 

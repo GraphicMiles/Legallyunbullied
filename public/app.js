@@ -1235,7 +1235,7 @@ import {
     scrollChatToBottom(true);
 
     live.msgId = agentMsg.id;
-    live.refs = { wrap, body, traceEl: null, toggle: null, traceBody: null, stepEls: null };
+    live.refs = { wrap, body, traceEl: null, toggle: null, traceBody: null, stepEls: [] };
 
     runPipeline(convo, agentMsg, token);
   }
@@ -1407,6 +1407,21 @@ import {
       
       // Show inline prompt
       renderNeedsInput(agentMsg, response, originalQuestion);
+      finalizeAnswer(agentMsg, token);
+      return;
+    }
+
+    // All providers busy — show friendly retry banner, auto-retry after cooldown
+    if (response.providersBusy) {
+      console.log('[runPipeline] All providers busy, retrying in', response.retryAfter, 's');
+      
+      // Stop loading state
+      if (live.loadingState) {
+        live.loadingState.destroy();
+        live.loadingState = null;
+      }
+      
+      renderProvidersBusy(agentMsg, response);
       finalizeAnswer(agentMsg, token);
       return;
     }
@@ -1747,6 +1762,79 @@ import {
     
     // Focus input
     setTimeout(() => input.focus(), 100);
+  }
+
+  function renderProvidersBusy(agentMsg, response) {
+    if (!live.refs || !live.refs.body) {
+      console.warn('[renderProvidersBusy] live.refs.body not available');
+      return;
+    }
+    
+    const retryAfter = response.retryAfter || 30;
+    const lawMd = response.result?.lawMd || 'All legal reasoning providers are currently busy.';
+    const actionsMd = response.result?.actionsMd || '';
+    
+    const wrap = document.createElement("div");
+    wrap.className = "providers-busy";
+    wrap.style.cssText = `
+      background: var(--color-surface, #1a1a1a);
+      border: 1px solid var(--color-border, #2a2a2a);
+      border-radius: 10px;
+      padding: 14px;
+      margin: 12px 0;
+    `;
+    
+    const icon = document.createElement("div");
+    icon.innerHTML = '<i class="fa-solid fa-hourglass-half" style="color: var(--color-accent, #f2b705); font-size: 18px;"></i>';
+    icon.style.cssText = "margin-bottom: 8px;";
+    
+    const title = document.createElement("p");
+    title.textContent = `Providers are busy — retry in ${retryAfter}s`;
+    title.style.cssText = `
+      font-size: 14px;
+      color: var(--color-text, #f5f5f2);
+      margin: 0 0 8px 0;
+      font-weight: 600;
+    `;
+    
+    const message = document.createElement("p");
+    message.textContent = lawMd;
+    message.style.cssText = `
+      font-size: 13px;
+      color: var(--color-text-muted, #9a9a94);
+      margin: 0 0 8px 0;
+      line-height: 1.5;
+    `;
+    
+    if (actionsMd) {
+      const steps = document.createElement("p");
+      steps.innerHTML = actionsMd.replace(/\n/g, '<br>').replace(/^- /g, '• ');
+      steps.style.cssText = `
+        font-size: 13px;
+        color: var(--color-text, #f5f5f2);
+        margin: 0;
+      `;
+      wrap.appendChild(icon);
+      wrap.appendChild(title);
+      wrap.appendChild(message);
+      wrap.appendChild(steps);
+    } else {
+      wrap.appendChild(icon);
+      wrap.appendChild(title);
+      wrap.appendChild(message);
+    }
+    
+    live.refs.body.appendChild(wrap);
+    scrollChatToBottom();
+    
+    // Auto-retry after cooldown
+    setTimeout(() => {
+      const lastQ = lastUserText(agentMsg);
+      if (lastQ) {
+        console.log('[renderProvidersBusy] Auto-retrying:', lastQ);
+        submitQuestion(lastQ);
+      }
+    }, retryAfter * 1000);
   }
 
   function buildErrorEl(message) {
