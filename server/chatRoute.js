@@ -503,7 +503,7 @@ function withTimeout(promise, ms, operation = "operation") {
   ]);
 }
 
-async function classifyWithFallback(question) {
+async function classifyWithFallback(question, conversationContext) {
   const groqClient = getGroqClient();
   const openRouterClient = getOpenRouterClient();
   const cerebrasClient = getCerebrasClient();
@@ -517,7 +517,7 @@ async function classifyWithFallback(question) {
         CLASSIFY_MODEL,
         [
           { role: "system", content: CLASSIFY_SYSTEM_PROMPT },
-          { role: "user", content: question },
+          { role: "user", content: conversationContext ? `${conversationContext}\n\nUser: ${question}` : question },
         ],
         { temperature: 0, max_tokens: 2000, response_format: { type: "json_object" } }
       );
@@ -535,7 +535,7 @@ async function classifyWithFallback(question) {
         OPENROUTER_CLASSIFY_MODEL,
         [
           { role: "system", content: CLASSIFY_SYSTEM_PROMPT },
-          { role: "user", content: question },
+          { role: "user", content: conversationContext ? `${conversationContext}\n\nUser: ${question}` : question },
         ],
         { temperature: 0, max_tokens: 2000, response_format: { type: "json_object" } }
       );
@@ -553,7 +553,7 @@ async function classifyWithFallback(question) {
         CEREBRAS_CLASSIFY_MODEL,
         [
           { role: "system", content: CLASSIFY_SYSTEM_PROMPT },
-          { role: "user", content: question },
+          { role: "user", content: conversationContext ? `${conversationContext}\n\nUser: ${question}` : question },
         ],
         { temperature: 0, max_tokens: 2000, response_format: { type: "json_object" } }
       );
@@ -571,7 +571,7 @@ async function classifyWithFallback(question) {
         GEMINI_CLASSIFY_MODEL,
         [
           { role: "system", content: CLASSIFY_SYSTEM_PROMPT },
-          { role: "user", content: question },
+          { role: "user", content: conversationContext ? `${conversationContext}\n\nUser: ${question}` : question },
         ],
         { temperature: 0, max_tokens: 2000, response_format: { type: "json_object" } }
       );
@@ -788,10 +788,20 @@ router.post("/api/chat", async (req, res) => {
     });
   }
 
+  // Build conversation context for classify and draft
+  let conversationContext = "";
+  if (history && history.length > 0) {
+    const recent = history.slice(-6);
+    conversationContext = recent.map(msg => {
+      const role = msg.role === "user" ? "User" : "Agent";
+      return `${role}: ${msg.content}`;
+    }).join("\n");
+  }
+
   // Step 1: Classify (and detect casual chat)
   let classifyResult;
   try {
-    classifyResult = await classifyWithFallback(question);
+    classifyResult = await classifyWithFallback(question, conversationContext);
   } catch (err) {
     console.error("[/api/chat] classification failed:", err.status || "", err.message);
     return res.status(502).json({
