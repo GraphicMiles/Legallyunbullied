@@ -8,10 +8,9 @@ class BeUIPromptBar {
     this.options = {
       placeholder: options.placeholder || 'Ask a legal question...',
       onSubmit: options.onSubmit || (() => {}),
-      onStop: options.onStop || null,          // callback when stop button is clicked during submission
+      onStop: options.onStop || null,
       sources: options.sources || [],
       commands: options.commands || [],
-      models: options.models || [],
       ...options
     };
     
@@ -20,7 +19,7 @@ class BeUIPromptBar {
     this.submitButton = null;
     this.dropdown = null;
     this.isDropdownOpen = false;
-    this.dropdownType = null; // 'sources', 'commands', or 'models'
+    this.dropdownType = null;
     this.isSubmitting = false;
     
     // Click-outside handler reference for cleanup
@@ -49,25 +48,6 @@ class BeUIPromptBar {
     // Actions
     const actions = document.createElement('div');
     actions.className = 'beui-prompt-bar__actions';
-    
-    // Model picker button (if models provided)
-    if (this.options.models.length > 0) {
-      const modelBtn = document.createElement('button');
-      modelBtn.type = 'button';
-      modelBtn.className = 'beui-prompt-bar__button beui-prompt-bar__button--model';
-      const currentModel = this.options.models[0];
-      modelBtn.innerHTML = `
-        <i class="fa-solid ${currentModel.icon}"></i>
-        <span>${currentModel.name}</span>
-        <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
-      `;
-      modelBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.toggleModels();
-      });
-      actions.appendChild(modelBtn);
-      this.modelButton = modelBtn;
-    }
     
     // Submit button
     const submitBtn = document.createElement('button');
@@ -152,17 +132,6 @@ class BeUIPromptBar {
       this.submit();
     } else if (e.key === 'Escape') {
       this.hideDropdown();
-    }
-  }
-  
-  /**
-   * Toggle the model dropdown — open if closed, close if already open.
-   */
-  toggleModels() {
-    if (this.isDropdownOpen && this.dropdownType === 'models') {
-      this.hideDropdown();
-    } else {
-      this.showModels();
     }
   }
   
@@ -258,45 +227,6 @@ class BeUIPromptBar {
     this.isDropdownOpen = true;
   }
   
-  showModels() {
-    this.dropdown.innerHTML = '';
-    this.dropdownType = 'models';
-    
-    this.options.models.forEach(model => {
-      const item = document.createElement('div');
-      item.className = 'beui-prompt-bar__dropdown-item';
-      
-      const icon = document.createElement('i');
-      icon.className = `fa-solid ${model.icon}`;
-      
-      const textWrapper = document.createElement('div');
-      textWrapper.className = 'beui-prompt-bar__dropdown-text';
-      
-      const name = document.createElement('span');
-      name.className = 'beui-prompt-bar__dropdown-name';
-      name.textContent = model.name;
-      
-      const tag = document.createElement('span');
-      tag.className = 'beui-prompt-bar__dropdown-tag';
-      tag.textContent = model.tag || '';
-      
-      textWrapper.appendChild(name);
-      textWrapper.appendChild(tag);
-      
-      item.appendChild(icon);
-      item.appendChild(textWrapper);
-      
-      item.addEventListener('click', () => {
-        this.selectModel(model);
-      });
-      
-      this.dropdown.appendChild(item);
-    });
-    
-    this.dropdown.classList.add('is-visible');
-    this.isDropdownOpen = true;
-  }
-  
   hideDropdown() {
     this.dropdown.classList.remove('is-visible');
     this.isDropdownOpen = false;
@@ -330,23 +260,6 @@ class BeUIPromptBar {
     
     // Insert command as text
     this.inputElement.value = `${command.name} `;
-  }
-  
-  selectModel(model) {
-    if (this.modelButton) {
-      this.modelButton.innerHTML = `
-        <i class="fa-solid ${model.icon}"></i>
-        <span>${model.name}</span>
-        <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
-      `;
-    }
-    
-    this.hideDropdown();
-    this.inputElement.focus();
-    
-    if (this.options.onModelChange) {
-      this.options.onModelChange(model);
-    }
   }
   
   /**
