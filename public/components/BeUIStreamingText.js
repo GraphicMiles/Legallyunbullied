@@ -3,7 +3,7 @@
  * Words resolve out of blur individually as they stream in
  */
 
-const WORD_MS = 55;  // Time between each word
+const WORD_MS = 100;  // Time between each word (slowed for visibility)
 const HOLD_MS = 3400;  // Hold time before looping
 
 class BeUIStreamingText {
@@ -337,7 +337,7 @@ class BeUIStreamingText {
           const span = document.createElement('span');
           span.style.cssText = `
             display: inline;
-            animation: stream-in 420ms cubic-bezier(0.22, 0.61, 0.25, 1) both;
+            animation: stream-in 600ms cubic-bezier(0.22, 0.61, 0.25, 1) both;
           `;
           span.textContent = token.text;
           this.paragraph.appendChild(span);
