@@ -1418,6 +1418,11 @@ import {
     }
 
     // Legal question — create Beautiful UI Thinking State for pipeline execution
+    // Guard against null steps (migration safety) — apply to BOTH paths
+    if (!agentMsg.steps) {
+      agentMsg.steps = STEP_DEFS.map((s, i) => ({ ...s, state: "pending", elapsedMs: 0 }));
+    }
+    
     if (window.BeUIThinkingState) {
       const thinkingContainer = document.createElement("div");
       live.refs.body.insertBefore(thinkingContainer, live.refs.body.firstChild);
@@ -1427,11 +1432,6 @@ import {
       });
     } else {
       // Fallback to old trace UI if BeUIThinkingState not available
-      // Guard against null steps (migration safety)
-      if (!agentMsg.steps) {
-        agentMsg.steps = STEP_DEFS.map((s, i) => ({ ...s, state: "pending", elapsedMs: 0 }));
-      }
-      
       const traceEl = document.createElement("div");
       traceEl.className = "trace is-open is-thinking";
       const toggle = buildTraceToggle(agentMsg, traceEl);
