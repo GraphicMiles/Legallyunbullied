@@ -323,155 +323,6 @@ Analyze this question and create a structured plan for answering it.`;
   };
 }
 
-/**
- * CRITIQUE_PROMPT — evaluates a draft response against the question, plan, and provisions.
- * Returns a single quality score (0-1) and specific issues.
- * Phase 2 will split this into quality + legal_safety; Phase 1 keeps it unified.
- */
-const CRITIQUE_PROMPT = `You are a senior Nigerian legal reviewer. Critique the draft answer below.
-
-Evaluate on TWO separate dimensions:
-
-DIMENSION 1 — QUALITY (0 to 1):
-- Accuracy: Does the draft cite only provisions actually in the context?
-- Completeness: Does it address all key_issues from the plan?
-- Clarity: Is it written in plain language a layperson can understand?
-- Actionability: Are the next steps concrete and specific?
-
-DIMENSION 2 — LEGAL SAFETY (0 to 1):
-- Jurisdiction match: Does the answer apply to the correct jurisdiction?
-- Citation validity: Does every cited section exist in the provided provisions?
-- Escalation correctness: Is the escalate decision appropriate for the situation?
-- No invention: Does the draft avoid inventing laws, sections, or rights not in context?
-
-SCORING RULES:
-- 0.90+: Excellent
-- 0.75-0.89: Good — minor gaps
-- 0.60-0.74: Needs work
-- below 0.60: Poor — significant issues
-
-If either score is below threshold, list SPECIFIC fixable issues.
-
-Question: {{QUESTION}}
-
-Classification:
-- Practice area: {{PRACTICE_AREA}}
-- Jurisdiction: {{JURISDICTION}}
-- Key issues: {{KEY_ISSUES}}
-- Complexity: {{COMPLEXITY}}
-
-Plan:
-{{PLAN}}
-
-Provided provisions:
-{{PROVISIONS}}
-
-Draft answer to critique:
-{{DRAFT}}
-
-Respond with ONLY a JSON object:
-{
-  "quality": 0.00,
-  "legal_safety": 0.00,
-  "passed": true/false,
-  "quality_passed": true/false,
-  "safety_passed": true/false,
-  "issues": [
-    { "dimension": "quality|safety", "problem": "...", "fix": "..." }
-  ],
-  "strengths": ["..."],
-  "rewrite_hint": "..."
-}
-
-RULES:
-- "quality_passed" = true ONLY if quality >= 0.70
-- "safety_passed" = true ONLY if legal_safety >= 0.80
-- "passed" = true ONLY if BOTH quality_passed AND safety_passed
-- Do NOT pass drafts below 0.70 on quality OR below 0.80 on safety`;
-
-async function critiqueDraft(question, classification, plan, provisions, draft) {
-  const groqClient = getGroqClient();
-  const geminiClient = getGeminiClient();
-
-  // Build abbreviated provision list for critique context
-  const provisionSummary = (provisions || [])
-    .slice(0, 10)
-    .map(p => `[${p.act}${p.section ? ", s." + p.section : ""}] ${p.text.slice(0, 150)}...`)
-    .join("\n");
-
-  const planText = plan
-    ? `Analysis: ${plan.analysis || "N/A"}
-Key provisions: ${(plan.key_provisions || []).join("; ")}
-Sub-questions: ${(plan.sub_questions || []).join("; ")}
-Response structure: ${plan.response_structure || "N/A"}
-Gaps: ${(plan.gaps || []).join(", ") || "none"}`
-    : "(no plan — simple question)";
-
-  const keyIssues = (classification.key_issues || []).join("; ");
-
-  const critiquePrompt = CRITIQUE_PROMPT
-    .replace("{{QUESTION}}", question)
-    .replace("{{PRACTICE_AREA}}", classification.practice_area || "unknown")
-    .replace("{{JURISDICTION}}", classification.jurisdiction || "unknown")
-    .replace("{{KEY_ISSUES}}", keyIssues)
-    .replace("{{COMPLEXITY}}", classification.complexity || "unknown")
-    .replace("{{PLAN}}", planText)
-    .replace("{{PROVISIONS}}", provisionSummary)
-    .replace("{{DRAFT}}", JSON.stringify(draft));
-
-  // Try Groq with a fast, reliable model for critique
-  if (groqClient) {
-    try {
-      console.log('[/api/chat/critique] Trying Groq with model: llama-3.1-8b-instant');
-      const completion = await callCompletion(
-        groqClient,
-        "llama-3.1-8b-instant",
-        [
-          { role: "system", content: "You are a precise legal reviewer. Respond with ONLY valid JSON, no markdown." },
-          { role: "user", content: critiquePrompt }
-        ],
-        { temperature: 0.2, max_tokens: 1200, response_format: { type: "json_object" } }
-      );
-      console.log('[/api/chat/critique] Groq returned parsed:', JSON.stringify(completion.parsed));
-      return { critique: completion.parsed, provider: "groq" };
-    } catch (err) {
-      console.warn("[/api/chat/critique] Groq critique failed:", err.status || "", err.message);
-    }
-  }
-
-  // Try Gemini with a fast, reliable model for critique
-  if (geminiClient) {
-    try {
-      console.log('[/api/chat/critique] Trying Gemini with model: gemini-2.0-flash-lite');
-      const completion = await callCompletion(
-        geminiClient,
-        "gemini-2.0-flash-lite",
-        [
-          { role: "system", content: "You are a precise legal reviewer. Respond with ONLY valid JSON, no markdown." },
-          { role: "user", content: critiquePrompt }
-        ],
-        { temperature: 0.2, max_tokens: 1200, response_format: { type: "json_object" } }
-      );
-      console.log('[/api/chat/critique] Gemini returned parsed:', JSON.stringify(completion.parsed));
-      return { critique: completion.parsed, provider: "gemini" };
-    } catch (err) {
-      console.warn("[/api/chat/critique] Gemini critique failed:", err.status || "", err.message);
-    }
-  }
-
-  // Fallback: auto-pass with low quality to avoid blocking the pipeline
-  return {
-    critique: {
-      quality: 0.70,
-      passed: true,
-      issues: [],
-      strengths: ["auto-passed due to critique service unavailability"],
-      rewrite_hint: "No critique available — returning draft as-is."
-    },
-    provider: "fallback"
-  };
-}
-
 async function callCompletion(client, model, messages, options = {}) {
   const LLM_TIMEOUT_MS = 30000; // 30 second timeout for LLM calls
   
@@ -914,21 +765,6 @@ router.post("/api/chat", async (req, res) => {
     });
   }
 
-  // Step 6: Critique — run once in background, don't block the response.
-  // The critique service has been unreliable (often returns auto-pass stub),
-  // so blocking the pipeline on it adds latency without quality improvement.
-  // Run it fire-and-forget: log the result, return the draft immediately.
-  let lastCritique = null;
-  critiqueDraft(question, classification, planResult.plan, provisions, draftResult.result)
-    .then((critiqueResult) => {
-      lastCritique = critiqueResult.critique;
-      console.log(`[/api/chat] Background critique: quality=${lastCritique?.quality?.toFixed(2)} safety=${lastCritique?.legal_safety?.toFixed(2)} via ${critiqueResult.provider}`);
-    })
-    .catch((err) => {
-      console.warn("[/api/chat] Background critique failed:", err.message);
-    });
-  // Don't await — return the draft immediately.
-
   res.json({
     classification,
     route,
@@ -936,7 +772,6 @@ router.post("/api/chat", async (req, res) => {
     result: draftResult.result,
     draftModel: draftResult.model,
     draftProvider: draftResult.provider,
-    critique: null, // will be filled in future when critique is reliable
   });
 });
 
@@ -1018,14 +853,6 @@ router.get("/api/chat/stream", async (req, res) => {
     const contextBlock = provisions.map((p) => `[${p.act}${p.section ? ", s." + p.section : ""}]\n${p.text}`).join("\n\n---\n\n");
     const draftResult = await draftWithFallback(question, contextBlock, null, classification);
 
-    // Critique runs in background (doesn't block the stream)
-    critiqueDraft(question, classification, null, provisions, draftResult.result)
-      .then((critiqueResult) => {
-        console.log(`[/api/chat/stream] Background critique: quality=${critiqueResult.critique?.quality?.toFixed(2)} via ${critiqueResult.provider}`);
-      })
-      .catch((err) => {
-        console.warn("[/api/chat/stream] Background critique failed:", err.message);
-      });
 
     // Final result
     emit({
