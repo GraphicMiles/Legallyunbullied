@@ -875,7 +875,7 @@ import {
   }
 
   function buildVerdictEl(r) {
-    // Use BeUIRecommendationCard if available
+    // Use BeUIRecommendationCard
     if (window.BeUIRecommendationCard) {
       const container = document.createElement("div");
       
@@ -893,27 +893,6 @@ import {
             ctaStyle: r.escalate ? "var(--color-accent)" : "var(--color-success)"
           }
         ]
-      });
-      
-      return container;
-    } else if (window.BeUIRecommendation) {
-      const container = document.createElement("div");
-      
-      const recommendation = new window.BeUIRecommendation(container, {
-        action: r.escalate 
-          ? "This likely needs a lawyer" 
-          : "You can likely handle this yourself",
-        confidence: r.escalate ? 75 : 85,
-        reasoning: r.escalateReason,
-        alternatives: r.followUps || [],
-        onAccept: () => {
-          if (r.escalate) {
-            window.open(NBA_DIRECTORY_URL, "_blank");
-          }
-        },
-        onAlternative: (alt) => {
-          submitQuestion(alt);
-        }
       });
       
       return container;
@@ -1371,17 +1350,8 @@ import {
       live.thinkingComponent = new window.BeUIThinkingState(thinkingContainer, {
         variant: "Steps"
       });
-    } else if (window.BeUIThinking) {
-      // Fallback to old BeUIThinking if BeUIThinkingState not available
-      const thinkingContainer = document.createElement("div");
-      live.refs.body.insertBefore(thinkingContainer, live.refs.body.firstChild);
-      
-      live.thinkingComponent = new window.BeUIThinking(thinkingContainer, {
-        defaultOpen: true,
-        defaultTab: "steps"
-      });
     } else {
-      // Fallback to old trace UI if neither available
+      // Fallback to old trace UI if BeUIThinkingState not available
       const traceEl = document.createElement("div");
       traceEl.className = "trace is-open is-thinking";
       const toggle = buildTraceToggle(agentMsg, traceEl);
