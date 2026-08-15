@@ -2168,9 +2168,9 @@ import {
           { key: "constitutional", name: "/constitutional", desc: "Ask about constitutional rights" }
         ],
         models: [
-          { key: "groq", name: "Groq", tag: "Fast", icon: "⚡" },
-          { key: "openrouter", name: "OpenRouter", tag: "35+ models", icon: "🌐" },
-          { key: "cerebras", name: "Cerebras", tag: "Ultra-fast", icon: "🚀" }
+          { key: "groq", name: "Groq", tag: "Fast", icon: "fa-bolt" },
+          { key: "openrouter", name: "OpenRouter", tag: "35+ models", icon: "fa-globe" },
+          { key: "cerebras", name: "Cerebras", tag: "Ultra-fast", icon: "fa-rocket" }
         ]
       });
 
