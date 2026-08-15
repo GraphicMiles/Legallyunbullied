@@ -1,122 +1,193 @@
 /**
- * BeUIContextCards - Source-attributed knowledge chunks
- * Shows retrieved context with file/type badges
+ * Beautiful UI Context Cards - Vanilla JS
+ * Retrieved knowledge chunks with their sources
  */
+
 class BeUIContextCards {
   constructor(container, options = {}) {
     this.container = container;
-    this.options = {
-      maxVisible: options.maxVisible || 3,
-      ...options
-    };
-    
-    this.cards = [];
+    this.chunks = options.chunks || [];
+    this.chipsShown = false;
     this.element = null;
     
     this.render();
+    
+    // Show chips after delay
+    setTimeout(() => {
+      this.chipsShown = true;
+      this.render();
+    }, 700);
   }
   
   render() {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'beui-context';
-    
-    this.container.appendChild(wrapper);
-    this.element = wrapper;
-  }
-  
-  addCard(card) {
-    this.cards.push(card);
-    this.renderCard(card, this.cards.length - 1);
-  }
-  
-  renderCard(card, index) {
-    const cardEl = document.createElement('div');
-    cardEl.className = 'beui-context-card';
+    this.element = document.createElement("div");
+    this.element.className = "beui-context-cards";
+    this.element.style.cssText = "display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 380px;";
     
     // Header
-    const header = document.createElement('div');
-    header.className = 'beui-context-card__header';
+    const header = document.createElement("div");
+    header.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 2px;
+      animation: fade-in 400ms ease-out both;
+    `;
     
-    // Badge
-    const badge = document.createElement('span');
-    badge.className = 'beui-context-card__badge';
+    const headerLabel = document.createElement("span");
+    headerLabel.style.cssText = "font-size: 13px; font-weight: 600; color: var(--color-text);";
+    headerLabel.textContent = "All chunks";
     
-    const badgeIcon = document.createElement('span');
-    badgeIcon.className = 'beui-context-card__badge-icon';
-    badgeIcon.innerHTML = this.getBadgeIcon(card.type);
+    const headerCount = document.createElement("span");
+    headerCount.style.cssText = `
+      display: inline-flex;
+      align-items: center;
+      height: 20px;
+      padding: 0 6px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 500;
+      color: var(--color-text-muted);
+      font-variant-numeric: tabular-nums;
+    `;
+    headerCount.textContent = this.chunks.length.toString();
     
-    const badgeText = document.createTextNode(card.type || 'SOURCE');
+    header.appendChild(headerLabel);
+    header.appendChild(headerCount);
+    this.element.appendChild(header);
     
-    badge.appendChild(badgeIcon);
-    badge.appendChild(badgeText);
-    
-    // Title
-    const title = document.createElement('div');
-    title.className = 'beui-context-card__title';
-    title.textContent = card.title || card.source;
-    
-    // Chevron
-    const chevron = document.createElement('span');
-    chevron.className = 'beui-context-card__chevron';
-    chevron.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg>';
-    
-    header.appendChild(badge);
-    header.appendChild(title);
-    header.appendChild(chevron);
-    
-    // Body
-    const body = document.createElement('div');
-    body.className = 'beui-context-card__body';
-    
-    const excerpt = document.createElement('div');
-    excerpt.className = 'beui-context-card__excerpt';
-    excerpt.textContent = card.excerpt || card.text;
-    
-    body.appendChild(excerpt);
-    
-    // Toggle
-    header.addEventListener('click', () => {
-      cardEl.classList.toggle('is-open');
+    // Cards
+    this.chunks.forEach((chunk, i) => {
+      const card = document.createElement("div");
+      card.style.cssText = `
+        overflow: hidden;
+        border-radius: 10px;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        animation: fade-up 400ms cubic-bezier(0.23, 1, 0.32, 1) ${i * 100}ms both;
+      `;
+      
+      // Card header bar
+      const cardHeader = document.createElement("div");
+      cardHeader.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--color-border);
+      `;
+      
+      const cardIcon = document.createElement("span");
+      cardIcon.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--color-text);
+        flex: 1;
+        min-width: 0;
+      `;
+      cardIcon.innerHTML = `
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <path d="M4 6h16M4 12h16M4 18h10"/>
+        </svg>
+        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${chunk.title}</span>
+      `;
+      
+      const cardChars = document.createElement("span");
+      cardChars.style.cssText = `
+        flex-shrink: 0;
+        font-size: 12px;
+        color: var(--color-text-faint);
+        font-variant-numeric: tabular-nums;
+      `;
+      cardChars.textContent = chunk.chars;
+      
+      cardHeader.appendChild(cardIcon);
+      cardHeader.appendChild(cardChars);
+      card.appendChild(cardHeader);
+      
+      // Card body
+      const cardBody = document.createElement("p");
+      cardBody.style.cssText = `
+        padding: 8px 12px 4px;
+        font-size: 12.5px;
+        line-height: 1.5;
+        color: var(--color-text-muted);
+        margin: 0;
+      `;
+      cardBody.textContent = chunk.body;
+      card.appendChild(cardBody);
+      
+      // Card footer with source chip
+      const cardFooter = document.createElement("div");
+      cardFooter.style.cssText = "padding: 0 12px 12px;";
+      
+      const sourceChip = document.createElement("span");
+      sourceChip.style.cssText = `
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 24px;
+        padding: 0 8px;
+        background: var(--color-bg);
+        border: 1px solid var(--color-border);
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--color-text-muted);
+        opacity: ${this.chipsShown ? "1" : "0"};
+        transform: ${this.chipsShown ? "scale(1)" : "scale(0.95)"};
+        transition: opacity 300ms cubic-bezier(0.23, 1, 0.32, 1), 
+                    transform 300ms cubic-bezier(0.23, 1, 0.32, 1),
+                    background-color 300ms;
+        transition-delay: ${i * 80}ms;
+      `;
+      
+      // Badge
+      const badge = document.createElement("span");
+      badge.style.cssText = `
+        display: flex;
+        width: 14px;
+        height: 14px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        background: ${chunk.tone || "var(--color-accent)"};
+        font-size: 7px;
+        font-weight: 700;
+        color: white;
+      `;
+      badge.textContent = chunk.badge;
+      
+      const sourceName = document.createElement("span");
+      sourceName.textContent = chunk.source;
+      
+      const externalIcon = document.createElement("span");
+      externalIcon.innerHTML = `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg>`;
+      
+      sourceChip.appendChild(badge);
+      sourceChip.appendChild(sourceName);
+      sourceChip.appendChild(externalIcon);
+      
+      sourceChip.addEventListener("mouseenter", () => {
+        sourceChip.style.backgroundColor = "var(--color-surface-alt)";
+      });
+      sourceChip.addEventListener("mouseleave", () => {
+        sourceChip.style.backgroundColor = "var(--color-bg)";
+      });
+      
+      cardFooter.appendChild(sourceChip);
+      card.appendChild(cardFooter);
+      
+      this.element.appendChild(card);
     });
     
-    cardEl.appendChild(header);
-    cardEl.appendChild(body);
-    
-    this.element.appendChild(cardEl);
-  }
-  
-  getBadgeIcon(type) {
-    const typeUpper = (type || '').toUpperCase();
-    
-    if (typeUpper.includes('PDF')) {
-      return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
-    }
-    
-    if (typeUpper.includes('CSV') || typeUpper.includes('EXCEL')) {
-      return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>';
-    }
-    
-    if (typeUpper.includes('STATUTE') || typeUpper.includes('LAW')) {
-      return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>';
-    }
-    
-    if (typeUpper.includes('CASE')) {
-      return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>';
-    }
-    
-    // Default
-    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
-  }
-  
-  setCards(cards) {
-    this.cards = [];
-    this.element.innerHTML = '';
-    cards.forEach(card => this.addCard(card));
-  }
-  
-  clear() {
-    this.cards = [];
-    this.element.innerHTML = '';
+    this.container.innerHTML = "";
+    this.container.appendChild(this.element);
   }
   
   destroy() {
