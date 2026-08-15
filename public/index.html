@@ -1724,18 +1724,8 @@
 
     <footer class="composer">
       <div class="composer__inner">
-        <form class="composer__form" id="composer-form">
-          <textarea
-            class="composer__input"
-            id="composer-input"
-            rows="1"
-            placeholder="Describe your legal situation…"
-            aria-label="Describe your legal situation"
-          ></textarea>
-          <button class="composer__send" id="send-btn" type="submit" aria-label="Send" disabled>
-            <i class="fa-solid fa-paper-plane"></i>
-          </button>
-        </form>
+        <!-- BeUIPromptBar will be initialized here -->
+        <div id="prompt-bar-container"></div>
         <p class="composer__disclaimer">Legally Unbullied gives legal information, not legal advice. For urgent matters, contact a lawyer or the police directly.</p>
       </div>
     </footer>
@@ -1753,6 +1743,7 @@
 <script src="components/BeUIToolChips.js"></script>
 <script src="components/BeUITaskRows.js"></script>
 <script src="components/BeUIContextCards.js"></script>
+<script src="components/BeUIPromptBar.js"></script>
 <script src="components/BeUIRecommendationCard.js"></script>
 <script type="module" src="enhanced-streaming.js"></script>
 <script type="module" src="app.js?v=2.0.5"></script>
