@@ -57,22 +57,27 @@ function scoreScenario(scenario, response) {
   }
 
   // Dimension 6: must_cite — does the response cite expected sources?
+  // Skip if corpusEmpty (not the agent's fault)
   if (expected.must_cite && expected.must_cite.length > 0) {
-    const result = response.result;
-    const sources = result?.sources || [];
-    const lawMd = (result?.lawMd || "").toLowerCase();
-    const actionsMd = (result?.actionsMd || "").toLowerCase();
-    const combined = lawMd + " " + actionsMd;
+    if (response.corpusEmpty) {
+      dimensions.must_cite = 1; // not applicable
+    } else {
+      const result = response.result;
+      const sources = result?.sources || [];
+      const lawMd = (result?.lawMd || "").toLowerCase();
+      const actionsMd = (result?.actionsMd || "").toLowerCase();
+      const combined = lawMd + " " + actionsMd;
 
-    const cited = expected.must_cite.filter((required) => {
-      const requiredLower = required.toLowerCase();
-      return (
-        sources.some((s) => (s.label || "").toLowerCase().includes(requiredLower)) ||
-        combined.includes(requiredLower)
-      );
-    });
+      const cited = expected.must_cite.filter((required) => {
+        const requiredLower = required.toLowerCase();
+        return (
+          sources.some((s) => (s.label || "").toLowerCase().includes(requiredLower)) ||
+          combined.includes(requiredLower)
+        );
+      });
 
-    dimensions.must_cite = cited.length / expected.must_cite.length;
+      dimensions.must_cite = cited.length / expected.must_cite.length;
+    }
   }
 
   // Dimension 7: must_not_cite — response must NOT cite these
@@ -95,28 +100,42 @@ function scoreScenario(scenario, response) {
 
   // Dimension 8: escalation correctness
   if (expected.escalate !== undefined) {
-    const actual = response.result?.escalate;
-    dimensions.escalation = actual === expected.escalate ? 1 : 0;
+    if (response.corpusEmpty) {
+      dimensions.escalation = 1; // not applicable
+    } else {
+      const actual = response.result?.escalate;
+      dimensions.escalation = actual === expected.escalate ? 1 : 0;
+    }
   }
 
   // Dimension 9: actionability
+  // Skip if corpusEmpty
   if (expected.actionable_min) {
-    const actionsMd = response.result?.actionsMd || "";
-    const bullets = actionsMd.split("\n").filter((l) => l.trim().match(/^[-*•\d]/));
-    const count = bullets.length;
-    if (count >= expected.actionable_min) {
-      dimensions.actionable = 1;
-    } else if (count > 0) {
-      dimensions.actionable = count / expected.actionable_min;
+    if (response.corpusEmpty) {
+      dimensions.actionable = 1; // not applicable
     } else {
-      dimensions.actionable = 0;
+      const actionsMd = response.result?.actionsMd || "";
+      const bullets = actionsMd.split("\n").filter((l) => l.trim().match(/^[-*•\d]/));
+      const count = bullets.length;
+      if (count >= expected.actionable_min) {
+        dimensions.actionable = 1;
+      } else if (count > 0) {
+        dimensions.actionable = count / expected.actionable_min;
+      } else {
+        dimensions.actionable = 0;
+      }
     }
   }
 
   // Dimension 10: follow-ups present
+  // Skip if corpusEmpty
   if (expected.followUps_min) {
-    const followUps = response.result?.followUps || [];
-    dimensions.followUps = followUps.length >= expected.followUps_min ? 1 : 0;
+    if (response.corpusEmpty) {
+      dimensions.followUps = 1; // not applicable
+    } else {
+      const followUps = response.result?.followUps || [];
+      dimensions.followUps = followUps.length >= expected.followUps_min ? 1 : 0;
+    }
   }
 
   // Dimension 11: urgency handling

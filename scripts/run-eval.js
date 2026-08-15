@@ -82,8 +82,13 @@ runEval(opts)
         if (f.dimensions) {
           const failing = Object.entries(f.dimensions)
             .filter(([, v]) => v < 0.7)
-            .map(([k, v]) => `    ${k}: ${v.toFixed(2)}`);
-          failing.forEach(console.log);
+            .map(([k, v]) => `${k}: ${v.toFixed(2)}`)
+            .join(', ');
+          console.log(`    failing: ${failing}`);
+        }
+        // Show if it was corpusEmpty
+        if (f.response && f.response.corpusEmpty) {
+          console.log(`    [corpusEmpty] No provisions in corpus for this practice area/jurisdiction`);
         }
       }
     }

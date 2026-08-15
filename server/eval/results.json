@@ -1,21 +1,101 @@
 {
   "report": {
-    "total": 32,
-    "passed": 0,
-    "failed": 0,
-    "skipped": 32,
-    "avg_score": 0,
-    "pass_rate": 0,
-    "by_category": {},
-    "by_dimension": {},
-    "failing_scenarios": [],
+    "total": 5,
+    "passed": 4,
+    "failed": 1,
+    "skipped": 0,
+    "avg_score": 0.7321693121693122,
+    "pass_rate": 0.8,
+    "by_category": {
+      "complex_legal": {
+        "total": 2,
+        "passed": 2,
+        "scoreSum": 1.560846560846561,
+        "avg": 0.7804232804232805
+      },
+      "jurisdiction_sensitive": {
+        "total": 1,
+        "passed": 1,
+        "scoreSum": 0.9,
+        "avg": 0.9
+      },
+      "high_risk": {
+        "total": 2,
+        "passed": 1,
+        "scoreSum": 1.2,
+        "avg": 0.6
+      }
+    },
+    "by_dimension": {
+      "is_legal_classification": {
+        "total": 5,
+        "scoreSum": 4,
+        "avg": 0.8
+      },
+      "practice_area": {
+        "total": 5,
+        "scoreSum": 4.3,
+        "avg": 0.86
+      },
+      "jurisdiction": {
+        "total": 5,
+        "scoreSum": 3.5999999999999996,
+        "avg": 0.72
+      },
+      "must_cite": {
+        "total": 5,
+        "scoreSum": 2.5,
+        "avg": 0.5
+      },
+      "escalation": {
+        "total": 5,
+        "scoreSum": 2,
+        "avg": 0.4
+      },
+      "actionable": {
+        "total": 5,
+        "scoreSum": 3.333333333333333,
+        "avg": 0.6666666666666666
+      },
+      "followUps": {
+        "total": 1,
+        "scoreSum": 1,
+        "avg": 1
+      },
+      "urgency": {
+        "total": 3,
+        "scoreSum": 2.5,
+        "avg": 0.8333333333333334
+      },
+      "no_hallucination": {
+        "total": 5,
+        "scoreSum": 5,
+        "avg": 1
+      }
+    },
+    "failing_scenarios": [
+      {
+        "id": "domestic-violence-abuse",
+        "score": 0.35,
+        "dimensions": {
+          "is_legal_classification": 0,
+          "practice_area": 0.3,
+          "jurisdiction": 1,
+          "must_cite": 0,
+          "escalation": 0,
+          "actionable": 0,
+          "urgency": 0.5,
+          "no_hallucination": 1
+        }
+      }
+    ],
     "meta": {
       "version": "1.0.0",
       "description": "Eval scenarios for Legally Unbullied V1 regression testing",
       "pass_threshold": 0.7,
       "regression_gate": 0.65
     },
-    "run_at": "2026-08-15T16:06:28.786Z",
+    "run_at": "2026-08-15T16:19:05.705Z",
     "rate_limited": 0,
     "errors": 0
   },
@@ -23,481 +103,643 @@
     {
       "scenario_id": "tenancy-lagos-eviction-no-notice",
       "category": "complex_legal",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
+      "total_score": 0.7037037037037037,
+      "pass": true,
+      "dimensions": {
+        "is_legal_classification": 1,
+        "practice_area": 1,
+        "jurisdiction": 1,
+        "must_cite": 0,
+        "escalation": 0,
+        "actionable": 0.3333333333333333,
+        "followUps": 1,
+        "urgency": 1,
+        "no_hallucination": 1
+      },
       "raw_response": {
-        "skipped": true
+        "classification": {
+          "is_legal_question": true,
+          "practice_area": "tenancy",
+          "jurisdiction": "Lagos State",
+          "urgency": "High",
+          "summary": "Tenant facing potential illegal eviction after landlord changed locks without notice, despite verbal agreement and upfront rent payment.",
+          "keywords": [
+            "verbal tenancy agreement",
+            "notice to quit",
+            "seven days notice",
+            "court order",
+            "forcible entry",
+            "possession",
+            "magistrate court",
+            "Lagos State Tenancy Law 2011"
+          ],
+          "key_issues": [
+            "Whether landlord followed statutory notice requirements",
+            "Legality of self-help eviction (changing locks)",
+            "Tenant's right to peaceful possession",
+            "Effect of verbal agreement on statutory notice requirements"
+          ],
+          "complexity": "Medium",
+          "route": "complex",
+          "reasoning_approach": "First establish the statutory framework under Lagos State Tenancy Law 2011, particularly sections on notice requirements and prohibition of self-help. Then analyze whether the landlord's actions constitute illegal eviction. Next, consider the implications of the verbal agreement on the landlord's notice obligations. Finally, outline the tenant's remedies including potential court orders for repossession and damages.",
+          "stakeholders": [
+            "tenant",
+            "landlord"
+          ],
+          "potential_remedies": [
+            "Court order for repossession",
+            "Damages for illegal eviction",
+            "Injunction against further harassment"
+          ]
+        },
+        "route": "complex",
+        "plan": {
+          "analysis": "Analyzing the legal question and relevant provisions.",
+          "key_provisions": [],
+          "response_structure": "Review applicable law, apply to facts, provide guidance",
+          "gaps": []
+        },
+        "result": {
+          "lawMd": "The Lagos Tenancy Law 2011 governs this issue. **Lagos Tenancy Law 2011, s.2** establishes the jurisdiction of the Court to determine matters in respect of the tenancy of any premises let before or after the commencement of this Law. **Lagos Tenancy Law 2011, s.6** provides that a tenant's entitlement to quiet and peaceable enjoyment of the premises includes the right to privacy, freedom from unreasonable disturbance, exclusive possession of the premises, and the use of common areas for reasonable and lawful purposes. **Lagos Tenancy Law 2011, s.13** sets out the notice periods required for determining a tenancy, which are one month for a monthly tenant, three months for a quarterly tenant, and six months for a yearly tenant. **Lagos Tenancy Law 2011, s.16** requires the landlord to serve a written notice as in Form TL4, signed by the landlord or his agent, of the landlord's intention to proceed to recover possession, stating the grounds and particulars of the claim, on a date not less than seven days from the date of the notice. **Lagos Tenancy Law 2011, s.20** requires the landlord to ensure proper service of all notices required under this Law on the tenant. **Lagos Tenancy Law 2011, s.25** provides that the Court shall have power to make an order for possession upon proof of any of the following grounds: arrears of rent, breach of any covenant or agreement, where the premises is required by the landlord for personal use, or where the premises is being used for immoral or illegal purposes, abandoned, unsafe and unsound, or the tenant or any person residing on the premises is a nuisance to the landlord or his agent.",
+          "actionsMd": "- Step 1: The tenant should immediately seek legal advice to understand their rights and options. - Step 2: The tenant should gather evidence of the landlord's actions, including photographs, witness statements, and any correspondence with the landlord. - Step 3: The tenant should serve a notice on the landlord, as required by **Lagos Tenancy Law 2011, s.20**, to demand that the landlord restore the locks and return the tenant's belongings. - Step 4: If the landlord refuses to comply, the tenant should file a claim by way of summons as in Form TL6A and B for recovery of possession in the Magisterial District or High Court Division where the premises is situated. - Step 5: The tenant should also consider applying for an injunction to prevent further harassment by the landlord.",
+          "sources": [
+            {
+              "label": "Lagos Tenancy Law 2011, s.2",
+              "excerpt": "A Court shall have jurisdiction to determine matters in respect of the tenancy of any premises let before or after the commencement this Law."
+            },
+            {
+              "label": "Lagos Tenancy Law 2011, s.6",
+              "excerpt": "the tenant's entitlement to quiet and peaceable enjoyment of the Premises includes the right to – (a) privacy; (b) Freedom from unreasonable disturbance; (c) exclusive possession of the premises, subject to the landlord's restricted right of inspection; and (d) the use of common areas for reasonable and lawful purpose."
+            },
+            {
+              "label": "Lagos Tenancy Law 2011, s.13",
+              "excerpt": "where there is no stipulation as to the notice to be given by either party to determine the tenancy, the following shall apply- (a) a week’s notice for a tenant at will; (b) one (1) month’s notice for a monthly tenant; (c) three (3) months notice for a quarterly tenant; (d) three (3) months notice for a half-yearly tenant; and (e) six months notice for a yearly tenant"
+            }
+          ],
+          "escalate": true,
+          "escalateReason": "This case involves a high-stakes dispute between the tenant and landlord, and the tenant may require legal representation to navigate the complexities of the Lagos Tenancy Law 2011.",
+          "followUps": [
+            "How long does this court process usually take?",
+            "What are the potential damages I can claim against the landlord?",
+            "Can I still recover my belongings if the landlord has already disposed of them?"
+          ]
+        },
+        "draftModel": "llama-3.1-8b-instant",
+        "draftProvider": "groq-fallback",
+        "critique": {
+          "quality": 0.7,
+          "passed": true,
+          "issues": [],
+          "strengths": [
+            "auto-passed due to critique service unavailability"
+          ],
+          "rewrite_hint": "No critique available — returning draft as-is."
+        }
       },
       "error": null,
       "response": {
-        "skipped": true
+        "classification": {
+          "is_legal_question": true,
+          "practice_area": "tenancy",
+          "jurisdiction": "Lagos State",
+          "urgency": "High",
+          "summary": "Tenant facing potential illegal eviction after landlord changed locks without notice, despite verbal agreement and upfront rent payment.",
+          "keywords": [
+            "verbal tenancy agreement",
+            "notice to quit",
+            "seven days notice",
+            "court order",
+            "forcible entry",
+            "possession",
+            "magistrate court",
+            "Lagos State Tenancy Law 2011"
+          ],
+          "key_issues": [
+            "Whether landlord followed statutory notice requirements",
+            "Legality of self-help eviction (changing locks)",
+            "Tenant's right to peaceful possession",
+            "Effect of verbal agreement on statutory notice requirements"
+          ],
+          "complexity": "Medium",
+          "route": "complex",
+          "reasoning_approach": "First establish the statutory framework under Lagos State Tenancy Law 2011, particularly sections on notice requirements and prohibition of self-help. Then analyze whether the landlord's actions constitute illegal eviction. Next, consider the implications of the verbal agreement on the landlord's notice obligations. Finally, outline the tenant's remedies including potential court orders for repossession and damages.",
+          "stakeholders": [
+            "tenant",
+            "landlord"
+          ],
+          "potential_remedies": [
+            "Court order for repossession",
+            "Damages for illegal eviction",
+            "Injunction against further harassment"
+          ]
+        },
+        "route": "complex",
+        "plan": {
+          "analysis": "Analyzing the legal question and relevant provisions.",
+          "key_provisions": [],
+          "response_structure": "Review applicable law, apply to facts, provide guidance",
+          "gaps": []
+        },
+        "result": {
+          "lawMd": "The Lagos Tenancy Law 2011 governs this issue. **Lagos Tenancy Law 2011, s.2** establishes the jurisdiction of the Court to determine matters in respect of the tenancy of any premises let before or after the commencement of this Law. **Lagos Tenancy Law 2011, s.6** provides that a tenant's entitlement to quiet and peaceable enjoyment of the premises includes the right to privacy, freedom from unreasonable disturbance, exclusive possession of the premises, and the use of common areas for reasonable and lawful purposes. **Lagos Tenancy Law 2011, s.13** sets out the notice periods required for determining a tenancy, which are one month for a monthly tenant, three months for a quarterly tenant, and six months for a yearly tenant. **Lagos Tenancy Law 2011, s.16** requires the landlord to serve a written notice as in Form TL4, signed by the landlord or his agent, of the landlord's intention to proceed to recover possession, stating the grounds and particulars of the claim, on a date not less than seven days from the date of the notice. **Lagos Tenancy Law 2011, s.20** requires the landlord to ensure proper service of all notices required under this Law on the tenant. **Lagos Tenancy Law 2011, s.25** provides that the Court shall have power to make an order for possession upon proof of any of the following grounds: arrears of rent, breach of any covenant or agreement, where the premises is required by the landlord for personal use, or where the premises is being used for immoral or illegal purposes, abandoned, unsafe and unsound, or the tenant or any person residing on the premises is a nuisance to the landlord or his agent.",
+          "actionsMd": "- Step 1: The tenant should immediately seek legal advice to understand their rights and options. - Step 2: The tenant should gather evidence of the landlord's actions, including photographs, witness statements, and any correspondence with the landlord. - Step 3: The tenant should serve a notice on the landlord, as required by **Lagos Tenancy Law 2011, s.20**, to demand that the landlord restore the locks and return the tenant's belongings. - Step 4: If the landlord refuses to comply, the tenant should file a claim by way of summons as in Form TL6A and B for recovery of possession in the Magisterial District or High Court Division where the premises is situated. - Step 5: The tenant should also consider applying for an injunction to prevent further harassment by the landlord.",
+          "sources": [
+            {
+              "label": "Lagos Tenancy Law 2011, s.2",
+              "excerpt": "A Court shall have jurisdiction to determine matters in respect of the tenancy of any premises let before or after the commencement this Law."
+            },
+            {
+              "label": "Lagos Tenancy Law 2011, s.6",
+              "excerpt": "the tenant's entitlement to quiet and peaceable enjoyment of the Premises includes the right to – (a) privacy; (b) Freedom from unreasonable disturbance; (c) exclusive possession of the premises, subject to the landlord's restricted right of inspection; and (d) the use of common areas for reasonable and lawful purpose."
+            },
+            {
+              "label": "Lagos Tenancy Law 2011, s.13",
+              "excerpt": "where there is no stipulation as to the notice to be given by either party to determine the tenancy, the following shall apply- (a) a week’s notice for a tenant at will; (b) one (1) month’s notice for a monthly tenant; (c) three (3) months notice for a quarterly tenant; (d) three (3) months notice for a half-yearly tenant; and (e) six months notice for a yearly tenant"
+            }
+          ],
+          "escalate": true,
+          "escalateReason": "This case involves a high-stakes dispute between the tenant and landlord, and the tenant may require legal representation to navigate the complexities of the Lagos Tenancy Law 2011.",
+          "followUps": [
+            "How long does this court process usually take?",
+            "What are the potential damages I can claim against the landlord?",
+            "Can I still recover my belongings if the landlord has already disposed of them?"
+          ]
+        },
+        "draftModel": "llama-3.1-8b-instant",
+        "draftProvider": "groq-fallback",
+        "critique": {
+          "quality": 0.7,
+          "passed": true,
+          "issues": [],
+          "strengths": [
+            "auto-passed due to critique service unavailability"
+          ],
+          "rewrite_hint": "No critique available — returning draft as-is."
+        }
       }
     },
     {
       "scenario_id": "tenancy-abuja-eviction",
       "category": "jurisdiction_sensitive",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
+      "total_score": 0.9,
+      "pass": true,
+      "dimensions": {
+        "is_legal_classification": 1,
+        "practice_area": 1,
+        "jurisdiction": 0.3,
+        "must_cite": 1,
+        "escalation": 1,
+        "actionable": 1,
+        "no_hallucination": 1
+      },
       "raw_response": {
-        "skipped": true
+        "classification": {
+          "is_legal_question": true,
+          "practice_area": "tenancy",
+          "jurisdiction": "Abuja",
+          "urgency": "High",
+          "summary": "Tenant in Abuja has been evicted by their landlord without a court order, raising issues of illegal eviction and self-help.",
+          "keywords": [
+            "Recovery of Premises Act",
+            "notice to quit",
+            "seven days notice",
+            "self-help",
+            "unlawful eviction",
+            "trespass",
+            "possession"
+          ],
+          "key_issues": [
+            "Whether the landlord complied with the statutory eviction procedure under the Recovery of Premises Act",
+            "The legality of the landlord's self-help eviction without a valid court order",
+            "Available civil remedies for the tenant for unlawful eviction and trespass",
+            "Potential criminal liability of the landlord for forcible entry or harassment"
+          ],
+          "complexity": "Medium",
+          "route": "complex",
+          "reasoning_approach": "First, establish the governing legal framework in Abuja, which is the Recovery of Premises Act. Second, analyze the mandatory procedure for eviction, highlighting that self-help is strictly prohibited and a court order is required. Finally, evaluate the tenant's options for legal redress, including filing an action in court for damages and reinstatement.",
+          "stakeholders": [
+            "tenant",
+            "landlord",
+            "magistrate court"
+          ],
+          "potential_remedies": [
+            "Action for damages for trespass and unlawful eviction",
+            "Court order for reinstatement into the premises",
+            "Injunction restraining the landlord from further interference"
+          ]
+        },
+        "result": null,
+        "corpusEmpty": true,
+        "message": "No ingested legal sources match \"tenancy\" yet. Run the ingestion script for this practice area before this endpoint can answer it."
       },
       "error": null,
       "response": {
-        "skipped": true
+        "classification": {
+          "is_legal_question": true,
+          "practice_area": "tenancy",
+          "jurisdiction": "Abuja",
+          "urgency": "High",
+          "summary": "Tenant in Abuja has been evicted by their landlord without a court order, raising issues of illegal eviction and self-help.",
+          "keywords": [
+            "Recovery of Premises Act",
+            "notice to quit",
+            "seven days notice",
+            "self-help",
+            "unlawful eviction",
+            "trespass",
+            "possession"
+          ],
+          "key_issues": [
+            "Whether the landlord complied with the statutory eviction procedure under the Recovery of Premises Act",
+            "The legality of the landlord's self-help eviction without a valid court order",
+            "Available civil remedies for the tenant for unlawful eviction and trespass",
+            "Potential criminal liability of the landlord for forcible entry or harassment"
+          ],
+          "complexity": "Medium",
+          "route": "complex",
+          "reasoning_approach": "First, establish the governing legal framework in Abuja, which is the Recovery of Premises Act. Second, analyze the mandatory procedure for eviction, highlighting that self-help is strictly prohibited and a court order is required. Finally, evaluate the tenant's options for legal redress, including filing an action in court for damages and reinstatement.",
+          "stakeholders": [
+            "tenant",
+            "landlord",
+            "magistrate court"
+          ],
+          "potential_remedies": [
+            "Action for damages for trespass and unlawful eviction",
+            "Court order for reinstatement into the premises",
+            "Injunction restraining the landlord from further interference"
+          ]
+        },
+        "result": null,
+        "corpusEmpty": true,
+        "message": "No ingested legal sources match \"tenancy\" yet. Run the ingestion script for this practice area before this endpoint can answer it."
       }
     },
     {
       "scenario_id": "employment-unpaid-wages",
       "category": "complex_legal",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
+      "total_score": 0.8571428571428571,
+      "pass": true,
+      "dimensions": {
+        "is_legal_classification": 1,
+        "practice_area": 1,
+        "jurisdiction": 1,
+        "must_cite": 1,
+        "escalation": 0,
+        "actionable": 1,
+        "no_hallucination": 1
+      },
       "raw_response": {
-        "skipped": true
+        "classification": {
+          "is_legal_question": true,
+          "practice_area": "employment",
+          "jurisdiction": "Federal",
+          "urgency": "High",
+          "summary": "Employee in Lagos facing non-payment of salary for 4 months despite having an employment contract.",
+          "keywords": [
+            "unpaid wages",
+            "Labour Act",
+            "National Industrial Court",
+            "4 months salary",
+            "employment contract"
+          ],
+          "key_issues": [
+            "Whether employer's non-payment constitutes a breach of contract",
+            "Available remedies for unpaid wages",
+            "Procedure for filing a complaint with the National Industrial Court"
+          ],
+          "complexity": "Medium",
+          "route": "complex",
+          "reasoning_approach": "First establish the employer's obligations under the Labour Act, particularly sections on payment of wages and notice periods. Then analyze whether the employer's non-payment constitutes a breach of contract. Finally outline the employee's remedies including potential court orders for payment of wages and damages.",
+          "stakeholders": [
+            "employee",
+            "employer"
+          ],
+          "potential_remedies": [
+            "Court order for payment of wages",
+            "Damages for breach of contract",
+            "Injunction against further non-payment"
+          ]
+        },
+        "route": "complex",
+        "plan": {
+          "analysis": "Analyzing the legal question and relevant provisions.",
+          "key_provisions": [],
+          "response_structure": "Review applicable law, apply to facts, provide guidance",
+          "gaps": []
+        },
+        "result": {
+          "lawMd": "My friend, I am so sorry you are going through this stress. Working for four months without pay is incredibly tough, but the law is very clear on this, and you have strong rights here. Under the **Labour Act, s.15**, your wages must be paid at the end of the agreed period in your contract. Even if your contract says something else, the law strictly states that wages must be paid at intervals not exceeding one month. By holding your salary for four months, your employer is in direct violation of this provision.\n\nFurthermore, under the **Labour Act, s.9(2)**, your employer is fully responsible for performing every part of the employment contract they signed with you. The law does not allow them to delay your payment indefinitely; in fact, **Labour Act, s.9(4)** makes it clear that no contract can set payment intervals longer than one month without written permission from the State Authority. Since you have a written contract (which is your right to have under **Labour Act, s.7**), this is a straightforward breach of contract.\n\nTo get your money, you have the right to take them to court. The proper place to handle this is the National Industrial Court of Nigeria (NICN). According to the **National Industrial Court Act 2006, s.1**, this is a specialized superior court of record with the same powers as a High Court, specifically set up to deal with employment disputes and unpaid salaries. You can sue them to recover your complete arrears, and potentially claim damages for the hardship they have caused you.",
+          "actionsMd": "- **Gather your evidence immediately**: Collect your written employment contract, bank statements showing the last time you were paid, payslips, and any emails, letters, or WhatsApp messages where you asked for your salary and they gave excuses.\n- **Write a formal demand letter**: Send a strongly-worded letter to your employer (or the person acting on their behalf under **Labour Act, s.9(2)**) demanding the immediate payment of your 4 months' outstanding salary. Give them a clear deadline, like 7 to 14 days, to pay up.\n- **Consult a labor lawyer**: Since this has dragged on for four months, you need a lawyer to help draft a professional demand letter and prepare to file a case if the employer plays games.\n- **File a claim at the National Industrial Court**: If they refuse to pay after receiving the demand letter, have your lawyer file a suit at the National Industrial Court (established under **National Industrial Court Act 2006, s.1**) to recover your wages and claim damages.\n- **Review your termination options**: If you want to leave the job because of this, remember that **Labour Act, s.11** requires notice to terminate. However, because they breached the contract first by not paying you, your lawyer can advise you on claiming 'constructive dismissal' so you don't lose your benefits.",
+          "sources": [
+            {
+              "label": "Labour Act, s.15",
+              "excerpt": "Wages shall become due and payable at the end of each period for which the contract is expressed to subsist... Provided that, where the period is more than one month, the wages shall become due and payable at intervals not exceeding one month."
+            },
+            {
+              "label": "Labour Act, s.9(2) & (4)",
+              "excerpt": "An employer shall be responsible for the performance of any contract made by any person acting on his behalf... No contract shall provide for the payment of wages at intervals exceeding one month unless the written consent of the State Authority has been previously obtained."
+            },
+            {
+              "label": "National Industrial Court Act 2006, s.1",
+              "excerpt": "There is established a court to be known as the National Industrial Court... The Court shall be a superior court of record; and except as may be otherwise provided by any enactment or law, have all the powers of a High Court."
+            }
+          ],
+          "escalate": true,
+          "escalateReason": "Recovering four months of unpaid salary from an employer who is refusing to pay will require filing a formal lawsuit at the National Industrial Court, which requires a lawyer to navigate the court processes and rules effectively.",
+          "followUps": [
+            "Can I stop going to work since they haven't paid me for four months?",
+            "Am I entitled to receive interest on the unpaid salaries when they finally pay?",
+            "What happens if my employer claims they don't have money because the company is struggling?"
+          ]
+        },
+        "draftModel": "gemini-3.5-flash",
+        "draftProvider": "gemini",
+        "critique": {
+          "quality": 0.7,
+          "passed": true,
+          "issues": [],
+          "strengths": [
+            "auto-passed due to critique service unavailability"
+          ],
+          "rewrite_hint": "No critique available — returning draft as-is."
+        }
       },
       "error": null,
       "response": {
-        "skipped": true
+        "classification": {
+          "is_legal_question": true,
+          "practice_area": "employment",
+          "jurisdiction": "Federal",
+          "urgency": "High",
+          "summary": "Employee in Lagos facing non-payment of salary for 4 months despite having an employment contract.",
+          "keywords": [
+            "unpaid wages",
+            "Labour Act",
+            "National Industrial Court",
+            "4 months salary",
+            "employment contract"
+          ],
+          "key_issues": [
+            "Whether employer's non-payment constitutes a breach of contract",
+            "Available remedies for unpaid wages",
+            "Procedure for filing a complaint with the National Industrial Court"
+          ],
+          "complexity": "Medium",
+          "route": "complex",
+          "reasoning_approach": "First establish the employer's obligations under the Labour Act, particularly sections on payment of wages and notice periods. Then analyze whether the employer's non-payment constitutes a breach of contract. Finally outline the employee's remedies including potential court orders for payment of wages and damages.",
+          "stakeholders": [
+            "employee",
+            "employer"
+          ],
+          "potential_remedies": [
+            "Court order for payment of wages",
+            "Damages for breach of contract",
+            "Injunction against further non-payment"
+          ]
+        },
+        "route": "complex",
+        "plan": {
+          "analysis": "Analyzing the legal question and relevant provisions.",
+          "key_provisions": [],
+          "response_structure": "Review applicable law, apply to facts, provide guidance",
+          "gaps": []
+        },
+        "result": {
+          "lawMd": "My friend, I am so sorry you are going through this stress. Working for four months without pay is incredibly tough, but the law is very clear on this, and you have strong rights here. Under the **Labour Act, s.15**, your wages must be paid at the end of the agreed period in your contract. Even if your contract says something else, the law strictly states that wages must be paid at intervals not exceeding one month. By holding your salary for four months, your employer is in direct violation of this provision.\n\nFurthermore, under the **Labour Act, s.9(2)**, your employer is fully responsible for performing every part of the employment contract they signed with you. The law does not allow them to delay your payment indefinitely; in fact, **Labour Act, s.9(4)** makes it clear that no contract can set payment intervals longer than one month without written permission from the State Authority. Since you have a written contract (which is your right to have under **Labour Act, s.7**), this is a straightforward breach of contract.\n\nTo get your money, you have the right to take them to court. The proper place to handle this is the National Industrial Court of Nigeria (NICN). According to the **National Industrial Court Act 2006, s.1**, this is a specialized superior court of record with the same powers as a High Court, specifically set up to deal with employment disputes and unpaid salaries. You can sue them to recover your complete arrears, and potentially claim damages for the hardship they have caused you.",
+          "actionsMd": "- **Gather your evidence immediately**: Collect your written employment contract, bank statements showing the last time you were paid, payslips, and any emails, letters, or WhatsApp messages where you asked for your salary and they gave excuses.\n- **Write a formal demand letter**: Send a strongly-worded letter to your employer (or the person acting on their behalf under **Labour Act, s.9(2)**) demanding the immediate payment of your 4 months' outstanding salary. Give them a clear deadline, like 7 to 14 days, to pay up.\n- **Consult a labor lawyer**: Since this has dragged on for four months, you need a lawyer to help draft a professional demand letter and prepare to file a case if the employer plays games.\n- **File a claim at the National Industrial Court**: If they refuse to pay after receiving the demand letter, have your lawyer file a suit at the National Industrial Court (established under **National Industrial Court Act 2006, s.1**) to recover your wages and claim damages.\n- **Review your termination options**: If you want to leave the job because of this, remember that **Labour Act, s.11** requires notice to terminate. However, because they breached the contract first by not paying you, your lawyer can advise you on claiming 'constructive dismissal' so you don't lose your benefits.",
+          "sources": [
+            {
+              "label": "Labour Act, s.15",
+              "excerpt": "Wages shall become due and payable at the end of each period for which the contract is expressed to subsist... Provided that, where the period is more than one month, the wages shall become due and payable at intervals not exceeding one month."
+            },
+            {
+              "label": "Labour Act, s.9(2) & (4)",
+              "excerpt": "An employer shall be responsible for the performance of any contract made by any person acting on his behalf... No contract shall provide for the payment of wages at intervals exceeding one month unless the written consent of the State Authority has been previously obtained."
+            },
+            {
+              "label": "National Industrial Court Act 2006, s.1",
+              "excerpt": "There is established a court to be known as the National Industrial Court... The Court shall be a superior court of record; and except as may be otherwise provided by any enactment or law, have all the powers of a High Court."
+            }
+          ],
+          "escalate": true,
+          "escalateReason": "Recovering four months of unpaid salary from an employer who is refusing to pay will require filing a formal lawsuit at the National Industrial Court, which requires a lawyer to navigate the court processes and rules effectively.",
+          "followUps": [
+            "Can I stop going to work since they haven't paid me for four months?",
+            "Am I entitled to receive interest on the unpaid salaries when they finally pay?",
+            "What happens if my employer claims they don't have money because the company is struggling?"
+          ]
+        },
+        "draftModel": "gemini-3.5-flash",
+        "draftProvider": "gemini",
+        "critique": {
+          "quality": 0.7,
+          "passed": true,
+          "issues": [],
+          "strengths": [
+            "auto-passed due to critique service unavailability"
+          ],
+          "rewrite_hint": "No critique available — returning draft as-is."
+        }
       }
     },
     {
       "scenario_id": "criminal-arrest-without-warrant",
       "category": "high_risk",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
+      "total_score": 0.85,
+      "pass": true,
+      "dimensions": {
+        "is_legal_classification": 1,
+        "practice_area": 1,
+        "jurisdiction": 0.3,
+        "must_cite": 0.5,
+        "escalation": 1,
+        "actionable": 1,
+        "urgency": 1,
+        "no_hallucination": 1
+      },
       "raw_response": {
-        "skipped": true
+        "classification": {
+          "is_legal_question": true,
+          "practice_area": "criminal_rights",
+          "jurisdiction": "Rivers State",
+          "urgency": "High",
+          "summary": "Individual arrested at home without warrant, taken to police station, questioning legality of arrest.",
+          "keywords": [
+            "arrest without warrant",
+            "2am",
+            "home arrest",
+            "police station",
+            "Rivers State Police Code of Conduct"
+          ],
+          "key_issues": [
+            "Whether arrest was lawful under Rivers State Police Code of Conduct",
+            "Procedural requirements for arrest without warrant",
+            "Potential consequences of unlawful arrest"
+          ],
+          "complexity": "Medium",
+          "route": "complex",
+          "reasoning_approach": "First, establish the relevant provisions of the Rivers State Police Code of Conduct, particularly sections on arrest procedures and warrant requirements. Then analyze whether the arrest in question complied with these provisions. Finally, outline the potential consequences of an unlawful arrest, including potential remedies for the individual.",
+          "stakeholders": [
+            "individual",
+            "police"
+          ],
+          "potential_remedies": [
+            "Compensation for unlawful arrest",
+            "Release from custody",
+            "Injunction against further harassment"
+          ]
+        },
+        "route": "complex",
+        "plan": {
+          "analysis": "Analyzing the legal question and relevant provisions.",
+          "key_provisions": [],
+          "response_structure": "Review applicable law, apply to facts, provide guidance",
+          "gaps": []
+        },
+        "result": {
+          "lawMd": "The law on arrest without warrant is governed by the Criminal Procedure Act and the Administration of Criminal Justice Act 2015. According to **Criminal Procedure Act, s.2**, an arrest without warrant is only lawful if the police officer or other persons making the arrest inform the suspect immediately of the reason for the arrest. **Administration of Criminal Justice Act 2015, s.6** also requires the police officer to inform the suspect of their rights, including the right to remain silent and consult a legal practitioner. However, **Criminal Justice (Miscellaneous Provisions) Act, s.6** allows for an armed patrol to arrest without warrant any person reasonably suspected of having committed or being about to commit an offence. The arrest must be made with minimum force and the suspect must be taken to a police station without delay. **Criminal Procedure Act, s.9** and **Administration of Criminal Justice Act 2015, s.14** require the police to inform the suspect of the charge against them and provide them with reasonable facilities for obtaining legal advice and making arrangements for their defence or release. **Criminal Procedure Act, s.20** requires the police to report apprehensions to the nearest magistrate. In this case, the arrest was made at 2am without a warrant, which may be considered unlawful under the provisions of the Criminal Procedure Act and the Administration of Criminal Justice Act 2015. The police failed to inform the suspect of the reason for the arrest and their rights, and the arrest was not made with minimum force. The suspect was taken to a police station without delay, but the police failed to inform the suspect of the charge against them and provide them with reasonable facilities for obtaining legal advice and making arrangements for their defence or release.",
+          "actionsMd": "- Step 1: Seek legal advice from a lawyer to understand the potential consequences of the unlawful arrest and the available remedies.\n- Step 2: File a complaint with the police station where the arrest was made, detailing the circumstances of the arrest and the failure of the police to comply with the relevant provisions of the Criminal Procedure Act and the Administration of Criminal Justice Act 2015.\n- Step 3: Request a copy of the police report and any other relevant documentation related to the arrest.\n- Step 4: Consider filing a petition with the Rivers State High Court to seek an injunction against further harassment and compensation for the unlawful arrest.\n- Step 5: Keep a record of all correspondence and interactions with the police and any other relevant authorities.",
+          "sources": [
+            {
+              "label": "Criminal Procedure Act, s.2",
+              "excerpt": "In this Act, unless the context otherwise requires..."
+            },
+            {
+              "label": "Administration of Criminal Justice Act 2015, s.6",
+              "excerpt": "Except when the suspect is in the actual course of the commission of an offence..."
+            },
+            {
+              "label": "Criminal Justice (Miscellaneous Provisions) Act, s.6",
+              "excerpt": "An armed patrol may arrest, without warrant, any person reasonably suspected of having committed or of being about to commit an offence..."
+            },
+            {
+              "label": "Criminal Procedure Act, s.9",
+              "excerpt": "Any person who is arrested, whether with or without a warrant, shall be taken with all reasonable despatch to a police station..."
+            }
+          ],
+          "escalate": true,
+          "escalateReason": "The situation is urgent and the potential consequences of the unlawful arrest are severe. It is recommended that a lawyer be consulted to ensure that the available remedies are pursued effectively.",
+          "followUps": [
+            "What are the potential consequences of the unlawful arrest?",
+            "How can I ensure that the police comply with the relevant provisions of the Criminal Procedure Act and the Administration of Criminal Justice Act 2015?"
+          ]
+        },
+        "draftModel": "llama-3.1-8b-instant",
+        "draftProvider": "groq-fallback",
+        "critique": {
+          "quality": 0.7,
+          "passed": true,
+          "issues": [],
+          "strengths": [
+            "auto-passed due to critique service unavailability"
+          ],
+          "rewrite_hint": "No critique available — returning draft as-is."
+        }
       },
       "error": null,
       "response": {
-        "skipped": true
+        "classification": {
+          "is_legal_question": true,
+          "practice_area": "criminal_rights",
+          "jurisdiction": "Rivers State",
+          "urgency": "High",
+          "summary": "Individual arrested at home without warrant, taken to police station, questioning legality of arrest.",
+          "keywords": [
+            "arrest without warrant",
+            "2am",
+            "home arrest",
+            "police station",
+            "Rivers State Police Code of Conduct"
+          ],
+          "key_issues": [
+            "Whether arrest was lawful under Rivers State Police Code of Conduct",
+            "Procedural requirements for arrest without warrant",
+            "Potential consequences of unlawful arrest"
+          ],
+          "complexity": "Medium",
+          "route": "complex",
+          "reasoning_approach": "First, establish the relevant provisions of the Rivers State Police Code of Conduct, particularly sections on arrest procedures and warrant requirements. Then analyze whether the arrest in question complied with these provisions. Finally, outline the potential consequences of an unlawful arrest, including potential remedies for the individual.",
+          "stakeholders": [
+            "individual",
+            "police"
+          ],
+          "potential_remedies": [
+            "Compensation for unlawful arrest",
+            "Release from custody",
+            "Injunction against further harassment"
+          ]
+        },
+        "route": "complex",
+        "plan": {
+          "analysis": "Analyzing the legal question and relevant provisions.",
+          "key_provisions": [],
+          "response_structure": "Review applicable law, apply to facts, provide guidance",
+          "gaps": []
+        },
+        "result": {
+          "lawMd": "The law on arrest without warrant is governed by the Criminal Procedure Act and the Administration of Criminal Justice Act 2015. According to **Criminal Procedure Act, s.2**, an arrest without warrant is only lawful if the police officer or other persons making the arrest inform the suspect immediately of the reason for the arrest. **Administration of Criminal Justice Act 2015, s.6** also requires the police officer to inform the suspect of their rights, including the right to remain silent and consult a legal practitioner. However, **Criminal Justice (Miscellaneous Provisions) Act, s.6** allows for an armed patrol to arrest without warrant any person reasonably suspected of having committed or being about to commit an offence. The arrest must be made with minimum force and the suspect must be taken to a police station without delay. **Criminal Procedure Act, s.9** and **Administration of Criminal Justice Act 2015, s.14** require the police to inform the suspect of the charge against them and provide them with reasonable facilities for obtaining legal advice and making arrangements for their defence or release. **Criminal Procedure Act, s.20** requires the police to report apprehensions to the nearest magistrate. In this case, the arrest was made at 2am without a warrant, which may be considered unlawful under the provisions of the Criminal Procedure Act and the Administration of Criminal Justice Act 2015. The police failed to inform the suspect of the reason for the arrest and their rights, and the arrest was not made with minimum force. The suspect was taken to a police station without delay, but the police failed to inform the suspect of the charge against them and provide them with reasonable facilities for obtaining legal advice and making arrangements for their defence or release.",
+          "actionsMd": "- Step 1: Seek legal advice from a lawyer to understand the potential consequences of the unlawful arrest and the available remedies.\n- Step 2: File a complaint with the police station where the arrest was made, detailing the circumstances of the arrest and the failure of the police to comply with the relevant provisions of the Criminal Procedure Act and the Administration of Criminal Justice Act 2015.\n- Step 3: Request a copy of the police report and any other relevant documentation related to the arrest.\n- Step 4: Consider filing a petition with the Rivers State High Court to seek an injunction against further harassment and compensation for the unlawful arrest.\n- Step 5: Keep a record of all correspondence and interactions with the police and any other relevant authorities.",
+          "sources": [
+            {
+              "label": "Criminal Procedure Act, s.2",
+              "excerpt": "In this Act, unless the context otherwise requires..."
+            },
+            {
+              "label": "Administration of Criminal Justice Act 2015, s.6",
+              "excerpt": "Except when the suspect is in the actual course of the commission of an offence..."
+            },
+            {
+              "label": "Criminal Justice (Miscellaneous Provisions) Act, s.6",
+              "excerpt": "An armed patrol may arrest, without warrant, any person reasonably suspected of having committed or of being about to commit an offence..."
+            },
+            {
+              "label": "Criminal Procedure Act, s.9",
+              "excerpt": "Any person who is arrested, whether with or without a warrant, shall be taken with all reasonable despatch to a police station..."
+            }
+          ],
+          "escalate": true,
+          "escalateReason": "The situation is urgent and the potential consequences of the unlawful arrest are severe. It is recommended that a lawyer be consulted to ensure that the available remedies are pursued effectively.",
+          "followUps": [
+            "What are the potential consequences of the unlawful arrest?",
+            "How can I ensure that the police comply with the relevant provisions of the Criminal Procedure Act and the Administration of Criminal Justice Act 2015?"
+          ]
+        },
+        "draftModel": "llama-3.1-8b-instant",
+        "draftProvider": "groq-fallback",
+        "critique": {
+          "quality": 0.7,
+          "passed": true,
+          "issues": [],
+          "strengths": [
+            "auto-passed due to critique service unavailability"
+          ],
+          "rewrite_hint": "No critique available — returning draft as-is."
+        }
       }
     },
     {
       "scenario_id": "domestic-violence-abuse",
       "category": "high_risk",
-      "total_score": 0,
+      "total_score": 0.35,
       "pass": false,
-      "skipped": true,
-      "dimensions": {},
+      "dimensions": {
+        "is_legal_classification": 0,
+        "practice_area": 0.3,
+        "jurisdiction": 1,
+        "must_cite": 0,
+        "escalation": 0,
+        "actionable": 0,
+        "urgency": 0.5,
+        "no_hallucination": 1
+      },
       "raw_response": {
-        "skipped": true
+        "error": "drafting_failed",
+        "message": "The drafting model failed to respond. 429 status code (no body)"
       },
       "error": null,
       "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "land-dispute-boundary",
-      "category": "complex_legal",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "consumer-defective-goods",
-      "category": "simple_legal",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "constitutional-free-speech",
-      "category": "complex_legal",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "traffic-fake-checkpoint",
-      "category": "simple_legal",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "minimum-wage-simple",
-      "category": "simple_factual",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "greeting-hi",
-      "category": "casual",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "greeting-good-morning",
-      "category": "casual",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "identity-what-are-you",
-      "category": "casual",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "casual-thank-you",
-      "category": "casual",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "casual-how-are-you",
-      "category": "casual",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "jurisdiction-unclear-eviction",
-      "category": "edge_case",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "ambiguous-help-me",
-      "category": "edge_case",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "non-legal-weather",
-      "category": "edge_case",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "employment-discrimination-multi",
-      "category": "complex_legal",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "criminal-assault-self-defense",
-      "category": "high_risk",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "family-divorce-grounds",
-      "category": "complex_legal",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "business-cac-registration",
-      "category": "simple_legal",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "tax-paye-obligations",
-      "category": "simple_legal",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "police-brutality-sars",
-      "category": "high_risk",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "tenancy-rent-increase",
-      "category": "simple_legal",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "immigration-passport-delay",
-      "category": "simple_legal",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "criminal-defamation-online",
-      "category": "complex_legal",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "edge-case-gibberish",
-      "category": "edge_case",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "edge-case-empty",
-      "category": "edge_case",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "edge-case-very-long",
-      "category": "edge_case",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "transport-accident-compensation",
-      "category": "complex_legal",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
-      }
-    },
-    {
-      "scenario_id": "ip-trademark-infringement",
-      "category": "complex_legal",
-      "total_score": 0,
-      "pass": false,
-      "skipped": true,
-      "dimensions": {},
-      "raw_response": {
-        "skipped": true
-      },
-      "error": null,
-      "response": {
-        "skipped": true
+        "error": "drafting_failed",
+        "message": "The drafting model failed to respond. 429 status code (no body)"
       }
     }
   ]
