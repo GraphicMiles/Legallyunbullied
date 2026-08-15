@@ -1424,6 +1424,11 @@ import {
       });
     } else {
       // Fallback to old trace UI if BeUIThinkingState not available
+      // Guard against null steps (migration safety)
+      if (!agentMsg.steps) {
+        agentMsg.steps = STEP_DEFS.map((s, i) => ({ ...s, state: "pending", elapsedMs: 0 }));
+      }
+      
       const traceEl = document.createElement("div");
       traceEl.className = "trace is-open is-thinking";
       const toggle = buildTraceToggle(agentMsg, traceEl);
@@ -1444,11 +1449,6 @@ import {
     startTimer(agentMsg, token);
 
     agentMsg.classification = normalizeClassification(response.classification);
-    
-    // Guard against null steps (migration safety)
-    if (!agentMsg.steps) {
-      agentMsg.steps = STEP_DEFS.map((s, i) => ({ ...s, state: "pending", elapsedMs: 0 }));
-    }
     
     if (agentMsg.steps[1]) {
       agentMsg.steps[1].detail = `${agentMsg.classification.practiceArea} · ${agentMsg.classification.jurisdictionGuess} · ${agentMsg.classification.urgency} urgency`;
