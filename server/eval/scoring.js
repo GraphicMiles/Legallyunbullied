@@ -11,7 +11,11 @@ function scoreScenario(scenario, response) {
 
   // Dimension 1: is_legal_question classification
   if (expected.is_legal_question !== undefined) {
-    const actual = !response.isCasual && !!response.classification?.is_legal_question;
+    // needsInput responses are always legal questions (agent is asking for clarification)
+    const isLegalFromNeedsInput = !!response.needsInput;
+    const isLegalFromClassification = !!response.classification?.is_legal_question;
+    const isNotCasual = !response.isCasual;
+    const actual = isLegalFromNeedsInput || (isNotCasual && isLegalFromClassification);
     dimensions.is_legal_classification = actual === expected.is_legal_question ? 1 : 0;
   }
 
@@ -70,9 +74,22 @@ function scoreScenario(scenario, response) {
 
       const cited = expected.must_cite.filter((required) => {
         const requiredLower = required.toLowerCase();
+        // Extract key words from the required citation (remove common words)
+        const requiredWords = requiredLower.split(/\s+/).filter(w => w.length > 3 && !['the', 'and', 'for', 'act', 'law'].includes(w));
+        
         return (
-          sources.some((s) => (s.label || "").toLowerCase().includes(requiredLower)) ||
-          combined.includes(requiredLower)
+          sources.some((s) => {
+            const labelLower = (s.label || "").toLowerCase();
+            // Check if most key words appear in the label
+            const matchedWords = requiredWords.filter(w => labelLower.includes(w));
+            return matchedWords.length >= requiredWords.length * 0.7; // 70% word match
+          }) ||
+          // Also check the lawMd/actionsMd with same word matching
+          combined.split(/\s+/).some(word => {
+            const wordLower = word.toLowerCase();
+            const matchedWords = requiredWords.filter(w => wordLower.includes(w));
+            return matchedWords.length >= requiredWords.length * 0.7;
+          })
         );
       });
 

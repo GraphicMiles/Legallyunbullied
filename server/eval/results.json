@@ -4,33 +4,33 @@
     "passed": 4,
     "failed": 1,
     "skipped": 0,
-    "avg_score": 0.7321693121693122,
+    "avg_score": 0.7462698412698413,
     "pass_rate": 0.8,
     "by_category": {
       "complex_legal": {
         "total": 2,
         "passed": 2,
-        "scoreSum": 1.560846560846561,
-        "avg": 0.7804232804232805
+        "scoreSum": 1.5349206349206348,
+        "avg": 0.7674603174603174
       },
       "jurisdiction_sensitive": {
         "total": 1,
-        "passed": 1,
-        "scoreSum": 0.9,
-        "avg": 0.9
+        "passed": 0,
+        "scoreSum": 0.4714285714285714,
+        "avg": 0.4714285714285714
       },
       "high_risk": {
         "total": 2,
-        "passed": 1,
-        "scoreSum": 1.2,
-        "avg": 0.6
+        "passed": 2,
+        "scoreSum": 1.725,
+        "avg": 0.8625
       }
     },
     "by_dimension": {
       "is_legal_classification": {
         "total": 5,
-        "scoreSum": 4,
-        "avg": 0.8
+        "scoreSum": 5,
+        "avg": 1
       },
       "practice_area": {
         "total": 5,
@@ -44,8 +44,8 @@
       },
       "must_cite": {
         "total": 5,
-        "scoreSum": 2.5,
-        "avg": 0.5
+        "scoreSum": 1.5,
+        "avg": 0.3
       },
       "escalation": {
         "total": 5,
@@ -54,8 +54,8 @@
       },
       "actionable": {
         "total": 5,
-        "scoreSum": 3.333333333333333,
-        "avg": 0.6666666666666666
+        "scoreSum": 4,
+        "avg": 0.8
       },
       "followUps": {
         "total": 1,
@@ -64,8 +64,8 @@
       },
       "urgency": {
         "total": 3,
-        "scoreSum": 2.5,
-        "avg": 0.8333333333333334
+        "scoreSum": 3,
+        "avg": 1
       },
       "no_hallucination": {
         "total": 5,
@@ -75,16 +75,15 @@
     },
     "failing_scenarios": [
       {
-        "id": "domestic-violence-abuse",
-        "score": 0.35,
+        "id": "tenancy-abuja-eviction",
+        "score": 0.4714285714285714,
         "dimensions": {
-          "is_legal_classification": 0,
+          "is_legal_classification": 1,
           "practice_area": 0.3,
           "jurisdiction": 1,
           "must_cite": 0,
           "escalation": 0,
           "actionable": 0,
-          "urgency": 0.5,
           "no_hallucination": 1
         }
       }
@@ -95,7 +94,7 @@
       "pass_threshold": 0.7,
       "regression_gate": 0.65
     },
-    "run_at": "2026-08-15T16:19:05.705Z",
+    "run_at": "2026-08-15T22:46:34.177Z",
     "rate_limited": 0,
     "errors": 0
   },
@@ -103,7 +102,7 @@
     {
       "scenario_id": "tenancy-lagos-eviction-no-notice",
       "category": "complex_legal",
-      "total_score": 0.7037037037037037,
+      "total_score": 0.7777777777777778,
       "pass": true,
       "dimensions": {
         "is_legal_classification": 1,
@@ -111,7 +110,7 @@
         "jurisdiction": 1,
         "must_cite": 0,
         "escalation": 0,
-        "actionable": 0.3333333333333333,
+        "actionable": 1,
         "followUps": 1,
         "urgency": 1,
         "no_hallucination": 1
@@ -121,27 +120,26 @@
           "is_legal_question": true,
           "practice_area": "tenancy",
           "jurisdiction": "Lagos State",
+          "jurisdiction_status": "clear",
           "urgency": "High",
-          "summary": "Tenant facing potential illegal eviction after landlord changed locks without notice, despite verbal agreement and upfront rent payment.",
+          "summary": "Tenant facing potential illegal eviction after landlord changed locks without court order or proper notice.",
           "keywords": [
-            "verbal tenancy agreement",
             "notice to quit",
             "seven days notice",
             "court order",
             "forcible entry",
             "possession",
-            "magistrate court",
-            "Lagos State Tenancy Law 2011"
+            "magistrate court"
           ],
           "key_issues": [
             "Whether landlord followed statutory notice requirements",
             "Legality of self-help eviction (changing locks)",
             "Tenant's right to peaceful possession",
-            "Effect of verbal agreement on statutory notice requirements"
+            "Available remedies for illegal eviction"
           ],
           "complexity": "Medium",
           "route": "complex",
-          "reasoning_approach": "First establish the statutory framework under Lagos State Tenancy Law 2011, particularly sections on notice requirements and prohibition of self-help. Then analyze whether the landlord's actions constitute illegal eviction. Next, consider the implications of the verbal agreement on the landlord's notice obligations. Finally, outline the tenant's remedies including potential court orders for repossession and damages.",
+          "reasoning_approach": "First establish the statutory framework under Lagos State Tenancy Law 2011, particularly sections on notice requirements and prohibition of self-help. Then analyze whether the landlord's actions constitute illegal eviction. Finally outline the tenant's remedies including potential court orders for repossession and damages.",
           "stakeholders": [
             "tenant",
             "landlord"
@@ -160,8 +158,8 @@
           "gaps": []
         },
         "result": {
-          "lawMd": "The Lagos Tenancy Law 2011 governs this issue. **Lagos Tenancy Law 2011, s.2** establishes the jurisdiction of the Court to determine matters in respect of the tenancy of any premises let before or after the commencement of this Law. **Lagos Tenancy Law 2011, s.6** provides that a tenant's entitlement to quiet and peaceable enjoyment of the premises includes the right to privacy, freedom from unreasonable disturbance, exclusive possession of the premises, and the use of common areas for reasonable and lawful purposes. **Lagos Tenancy Law 2011, s.13** sets out the notice periods required for determining a tenancy, which are one month for a monthly tenant, three months for a quarterly tenant, and six months for a yearly tenant. **Lagos Tenancy Law 2011, s.16** requires the landlord to serve a written notice as in Form TL4, signed by the landlord or his agent, of the landlord's intention to proceed to recover possession, stating the grounds and particulars of the claim, on a date not less than seven days from the date of the notice. **Lagos Tenancy Law 2011, s.20** requires the landlord to ensure proper service of all notices required under this Law on the tenant. **Lagos Tenancy Law 2011, s.25** provides that the Court shall have power to make an order for possession upon proof of any of the following grounds: arrears of rent, breach of any covenant or agreement, where the premises is required by the landlord for personal use, or where the premises is being used for immoral or illegal purposes, abandoned, unsafe and unsound, or the tenant or any person residing on the premises is a nuisance to the landlord or his agent.",
-          "actionsMd": "- Step 1: The tenant should immediately seek legal advice to understand their rights and options. - Step 2: The tenant should gather evidence of the landlord's actions, including photographs, witness statements, and any correspondence with the landlord. - Step 3: The tenant should serve a notice on the landlord, as required by **Lagos Tenancy Law 2011, s.20**, to demand that the landlord restore the locks and return the tenant's belongings. - Step 4: If the landlord refuses to comply, the tenant should file a claim by way of summons as in Form TL6A and B for recovery of possession in the Magisterial District or High Court Division where the premises is situated. - Step 5: The tenant should also consider applying for an injunction to prevent further harassment by the landlord.",
+          "lawMd": "The Lagos Tenancy Law 2011 governs this issue. **Lagos Tenancy Law 2011, s.2** establishes the jurisdiction of the Court to determine matters in respect of the tenancy of any premises let before or after the commencement of this Law. **Lagos Tenancy Law 2011, s.6** provides that the tenant's entitlement to quiet and peaceable enjoyment of the Premises includes the right to privacy, freedom from unreasonable disturbance, exclusive possession of the premises, and the use of common areas for reasonable and lawful purposes. **Lagos Tenancy Law 2011, s.13** sets out the notice requirements for determining a tenancy, which includes a week's notice for a tenant at will, one month's notice for a monthly tenant, and six months notice for a yearly tenant. **Lagos Tenancy Law 2011, s.16** provides that a landlord may cause a tenant to be served with a written notice of the landlord's intention to proceed to recover possession, stating the grounds and particulars of the claim, on a date not less than seven days from the date of the notice. **Lagos Tenancy Law 2011, s.20** requires the landlord to ensure proper service of all notices required under this Law on the tenant. **Lagos Tenancy Law 2011, s.24** provides that upon the expiration of the time stated in the notice, if the tenant neglects or refuses to quit and deliver up possession, the landlord may file a claim by way of summons for recovery of possession. **Lagos Tenancy Law 2011, s.25** provides that the Court shall have power to make an order for possession upon proof of any of the following grounds: arrears of rent, breach of any covenant or agreement, where the premises is required by the landlord for personal use, or where the premises is being used for immoral or illegal purposes, abandoned, unsafe and unsound, or the tenant or any person residing on the premises has been convicted of an offence under the Lagos State Criminal Code Law 2011.",
+          "actionsMd": "- Step 1: The tenant should immediately seek the assistance of a lawyer to file a claim for damages for illegal eviction and an injunction against further harassment.\n- Step 2: The tenant should gather evidence of the landlord's actions, including photographs, witness statements, and any other relevant documents.\n- Step 3: The tenant should serve the landlord with a notice of intention to file a claim for damages and an injunction.\n- Step 4: The tenant should file a claim for damages and an injunction with the High Court of Lagos State.\n- Step 5: The tenant should seek an interim injunction to prevent the landlord from further harassing or evicting the tenant.\n- Step 6: The tenant should be prepared to provide evidence in court to support the claim for damages and an injunction.",
           "sources": [
             {
               "label": "Lagos Tenancy Law 2011, s.2",
@@ -177,24 +175,14 @@
             }
           ],
           "escalate": true,
-          "escalateReason": "This case involves a high-stakes dispute between the tenant and landlord, and the tenant may require legal representation to navigate the complexities of the Lagos Tenancy Law 2011.",
+          "escalateReason": "This case requires the expertise of a lawyer to navigate the complex legal process and to ensure that the tenant's rights are protected.",
           "followUps": [
             "How long does this court process usually take?",
-            "What are the potential damages I can claim against the landlord?",
-            "Can I still recover my belongings if the landlord has already disposed of them?"
+            "What are the chances of winning the case?"
           ]
         },
         "draftModel": "llama-3.1-8b-instant",
-        "draftProvider": "groq-fallback",
-        "critique": {
-          "quality": 0.7,
-          "passed": true,
-          "issues": [],
-          "strengths": [
-            "auto-passed due to critique service unavailability"
-          ],
-          "rewrite_hint": "No critique available — returning draft as-is."
-        }
+        "draftProvider": "groq-fallback"
       },
       "error": null,
       "response": {
@@ -202,27 +190,26 @@
           "is_legal_question": true,
           "practice_area": "tenancy",
           "jurisdiction": "Lagos State",
+          "jurisdiction_status": "clear",
           "urgency": "High",
-          "summary": "Tenant facing potential illegal eviction after landlord changed locks without notice, despite verbal agreement and upfront rent payment.",
+          "summary": "Tenant facing potential illegal eviction after landlord changed locks without court order or proper notice.",
           "keywords": [
-            "verbal tenancy agreement",
             "notice to quit",
             "seven days notice",
             "court order",
             "forcible entry",
             "possession",
-            "magistrate court",
-            "Lagos State Tenancy Law 2011"
+            "magistrate court"
           ],
           "key_issues": [
             "Whether landlord followed statutory notice requirements",
             "Legality of self-help eviction (changing locks)",
             "Tenant's right to peaceful possession",
-            "Effect of verbal agreement on statutory notice requirements"
+            "Available remedies for illegal eviction"
           ],
           "complexity": "Medium",
           "route": "complex",
-          "reasoning_approach": "First establish the statutory framework under Lagos State Tenancy Law 2011, particularly sections on notice requirements and prohibition of self-help. Then analyze whether the landlord's actions constitute illegal eviction. Next, consider the implications of the verbal agreement on the landlord's notice obligations. Finally, outline the tenant's remedies including potential court orders for repossession and damages.",
+          "reasoning_approach": "First establish the statutory framework under Lagos State Tenancy Law 2011, particularly sections on notice requirements and prohibition of self-help. Then analyze whether the landlord's actions constitute illegal eviction. Finally outline the tenant's remedies including potential court orders for repossession and damages.",
           "stakeholders": [
             "tenant",
             "landlord"
@@ -241,8 +228,8 @@
           "gaps": []
         },
         "result": {
-          "lawMd": "The Lagos Tenancy Law 2011 governs this issue. **Lagos Tenancy Law 2011, s.2** establishes the jurisdiction of the Court to determine matters in respect of the tenancy of any premises let before or after the commencement of this Law. **Lagos Tenancy Law 2011, s.6** provides that a tenant's entitlement to quiet and peaceable enjoyment of the premises includes the right to privacy, freedom from unreasonable disturbance, exclusive possession of the premises, and the use of common areas for reasonable and lawful purposes. **Lagos Tenancy Law 2011, s.13** sets out the notice periods required for determining a tenancy, which are one month for a monthly tenant, three months for a quarterly tenant, and six months for a yearly tenant. **Lagos Tenancy Law 2011, s.16** requires the landlord to serve a written notice as in Form TL4, signed by the landlord or his agent, of the landlord's intention to proceed to recover possession, stating the grounds and particulars of the claim, on a date not less than seven days from the date of the notice. **Lagos Tenancy Law 2011, s.20** requires the landlord to ensure proper service of all notices required under this Law on the tenant. **Lagos Tenancy Law 2011, s.25** provides that the Court shall have power to make an order for possession upon proof of any of the following grounds: arrears of rent, breach of any covenant or agreement, where the premises is required by the landlord for personal use, or where the premises is being used for immoral or illegal purposes, abandoned, unsafe and unsound, or the tenant or any person residing on the premises is a nuisance to the landlord or his agent.",
-          "actionsMd": "- Step 1: The tenant should immediately seek legal advice to understand their rights and options. - Step 2: The tenant should gather evidence of the landlord's actions, including photographs, witness statements, and any correspondence with the landlord. - Step 3: The tenant should serve a notice on the landlord, as required by **Lagos Tenancy Law 2011, s.20**, to demand that the landlord restore the locks and return the tenant's belongings. - Step 4: If the landlord refuses to comply, the tenant should file a claim by way of summons as in Form TL6A and B for recovery of possession in the Magisterial District or High Court Division where the premises is situated. - Step 5: The tenant should also consider applying for an injunction to prevent further harassment by the landlord.",
+          "lawMd": "The Lagos Tenancy Law 2011 governs this issue. **Lagos Tenancy Law 2011, s.2** establishes the jurisdiction of the Court to determine matters in respect of the tenancy of any premises let before or after the commencement of this Law. **Lagos Tenancy Law 2011, s.6** provides that the tenant's entitlement to quiet and peaceable enjoyment of the Premises includes the right to privacy, freedom from unreasonable disturbance, exclusive possession of the premises, and the use of common areas for reasonable and lawful purposes. **Lagos Tenancy Law 2011, s.13** sets out the notice requirements for determining a tenancy, which includes a week's notice for a tenant at will, one month's notice for a monthly tenant, and six months notice for a yearly tenant. **Lagos Tenancy Law 2011, s.16** provides that a landlord may cause a tenant to be served with a written notice of the landlord's intention to proceed to recover possession, stating the grounds and particulars of the claim, on a date not less than seven days from the date of the notice. **Lagos Tenancy Law 2011, s.20** requires the landlord to ensure proper service of all notices required under this Law on the tenant. **Lagos Tenancy Law 2011, s.24** provides that upon the expiration of the time stated in the notice, if the tenant neglects or refuses to quit and deliver up possession, the landlord may file a claim by way of summons for recovery of possession. **Lagos Tenancy Law 2011, s.25** provides that the Court shall have power to make an order for possession upon proof of any of the following grounds: arrears of rent, breach of any covenant or agreement, where the premises is required by the landlord for personal use, or where the premises is being used for immoral or illegal purposes, abandoned, unsafe and unsound, or the tenant or any person residing on the premises has been convicted of an offence under the Lagos State Criminal Code Law 2011.",
+          "actionsMd": "- Step 1: The tenant should immediately seek the assistance of a lawyer to file a claim for damages for illegal eviction and an injunction against further harassment.\n- Step 2: The tenant should gather evidence of the landlord's actions, including photographs, witness statements, and any other relevant documents.\n- Step 3: The tenant should serve the landlord with a notice of intention to file a claim for damages and an injunction.\n- Step 4: The tenant should file a claim for damages and an injunction with the High Court of Lagos State.\n- Step 5: The tenant should seek an interim injunction to prevent the landlord from further harassing or evicting the tenant.\n- Step 6: The tenant should be prepared to provide evidence in court to support the claim for damages and an injunction.",
           "sources": [
             {
               "label": "Lagos Tenancy Law 2011, s.2",
@@ -258,131 +245,61 @@
             }
           ],
           "escalate": true,
-          "escalateReason": "This case involves a high-stakes dispute between the tenant and landlord, and the tenant may require legal representation to navigate the complexities of the Lagos Tenancy Law 2011.",
+          "escalateReason": "This case requires the expertise of a lawyer to navigate the complex legal process and to ensure that the tenant's rights are protected.",
           "followUps": [
             "How long does this court process usually take?",
-            "What are the potential damages I can claim against the landlord?",
-            "Can I still recover my belongings if the landlord has already disposed of them?"
+            "What are the chances of winning the case?"
           ]
         },
         "draftModel": "llama-3.1-8b-instant",
-        "draftProvider": "groq-fallback",
-        "critique": {
-          "quality": 0.7,
-          "passed": true,
-          "issues": [],
-          "strengths": [
-            "auto-passed due to critique service unavailability"
-          ],
-          "rewrite_hint": "No critique available — returning draft as-is."
-        }
+        "draftProvider": "groq-fallback"
       }
     },
     {
       "scenario_id": "tenancy-abuja-eviction",
       "category": "jurisdiction_sensitive",
-      "total_score": 0.9,
-      "pass": true,
+      "total_score": 0.4714285714285714,
+      "pass": false,
       "dimensions": {
         "is_legal_classification": 1,
-        "practice_area": 1,
-        "jurisdiction": 0.3,
-        "must_cite": 1,
-        "escalation": 1,
-        "actionable": 1,
+        "practice_area": 0.3,
+        "jurisdiction": 1,
+        "must_cite": 0,
+        "escalation": 0,
+        "actionable": 0,
         "no_hallucination": 1
       },
       "raw_response": {
-        "classification": {
-          "is_legal_question": true,
+        "needsInput": true,
+        "question": "Which state did this happen in? The laws can differ by state.",
+        "field": "jurisdiction",
+        "context": {
           "practice_area": "tenancy",
-          "jurisdiction": "Abuja",
-          "urgency": "High",
-          "summary": "Tenant in Abuja has been evicted by their landlord without a court order, raising issues of illegal eviction and self-help.",
-          "keywords": [
-            "Recovery of Premises Act",
-            "notice to quit",
-            "seven days notice",
-            "self-help",
-            "unlawful eviction",
-            "trespass",
-            "possession"
-          ],
-          "key_issues": [
-            "Whether the landlord complied with the statutory eviction procedure under the Recovery of Premises Act",
-            "The legality of the landlord's self-help eviction without a valid court order",
-            "Available civil remedies for the tenant for unlawful eviction and trespass",
-            "Potential criminal liability of the landlord for forcible entry or harassment"
-          ],
-          "complexity": "Medium",
-          "route": "complex",
-          "reasoning_approach": "First, establish the governing legal framework in Abuja, which is the Recovery of Premises Act. Second, analyze the mandatory procedure for eviction, highlighting that self-help is strictly prohibited and a court order is required. Finally, evaluate the tenant's options for legal redress, including filing an action in court for damages and reinstatement.",
-          "stakeholders": [
-            "tenant",
-            "landlord",
-            "magistrate court"
-          ],
-          "potential_remedies": [
-            "Action for damages for trespass and unlawful eviction",
-            "Court order for reinstatement into the premises",
-            "Injunction restraining the landlord from further interference"
-          ]
+          "urgency": "High"
         },
-        "result": null,
-        "corpusEmpty": true,
-        "message": "No ingested legal sources match \"tenancy\" yet. Run the ingestion script for this practice area before this endpoint can answer it."
+        "provider": "groq"
       },
       "error": null,
       "response": {
-        "classification": {
-          "is_legal_question": true,
+        "needsInput": true,
+        "question": "Which state did this happen in? The laws can differ by state.",
+        "field": "jurisdiction",
+        "context": {
           "practice_area": "tenancy",
-          "jurisdiction": "Abuja",
-          "urgency": "High",
-          "summary": "Tenant in Abuja has been evicted by their landlord without a court order, raising issues of illegal eviction and self-help.",
-          "keywords": [
-            "Recovery of Premises Act",
-            "notice to quit",
-            "seven days notice",
-            "self-help",
-            "unlawful eviction",
-            "trespass",
-            "possession"
-          ],
-          "key_issues": [
-            "Whether the landlord complied with the statutory eviction procedure under the Recovery of Premises Act",
-            "The legality of the landlord's self-help eviction without a valid court order",
-            "Available civil remedies for the tenant for unlawful eviction and trespass",
-            "Potential criminal liability of the landlord for forcible entry or harassment"
-          ],
-          "complexity": "Medium",
-          "route": "complex",
-          "reasoning_approach": "First, establish the governing legal framework in Abuja, which is the Recovery of Premises Act. Second, analyze the mandatory procedure for eviction, highlighting that self-help is strictly prohibited and a court order is required. Finally, evaluate the tenant's options for legal redress, including filing an action in court for damages and reinstatement.",
-          "stakeholders": [
-            "tenant",
-            "landlord",
-            "magistrate court"
-          ],
-          "potential_remedies": [
-            "Action for damages for trespass and unlawful eviction",
-            "Court order for reinstatement into the premises",
-            "Injunction restraining the landlord from further interference"
-          ]
+          "urgency": "High"
         },
-        "result": null,
-        "corpusEmpty": true,
-        "message": "No ingested legal sources match \"tenancy\" yet. Run the ingestion script for this practice area before this endpoint can answer it."
+        "provider": "groq"
       }
     },
     {
       "scenario_id": "employment-unpaid-wages",
       "category": "complex_legal",
-      "total_score": 0.8571428571428571,
+      "total_score": 0.7571428571428571,
       "pass": true,
       "dimensions": {
         "is_legal_classification": 1,
         "practice_area": 1,
-        "jurisdiction": 1,
+        "jurisdiction": 0.3,
         "must_cite": 1,
         "escalation": 0,
         "actionable": 1,
@@ -392,30 +309,31 @@
         "classification": {
           "is_legal_question": true,
           "practice_area": "employment",
-          "jurisdiction": "Federal",
+          "jurisdiction": "Lagos State",
+          "jurisdiction_status": "clear",
           "urgency": "High",
-          "summary": "Employee in Lagos facing non-payment of salary for 4 months despite having an employment contract.",
+          "summary": "Employee in Lagos has not received salary for 4 months, despite having an employment contract.",
           "keywords": [
             "unpaid wages",
+            "salary",
+            "employment contract",
             "Labour Act",
-            "National Industrial Court",
-            "4 months salary",
-            "employment contract"
+            "National Industrial Court"
           ],
           "key_issues": [
-            "Whether employer's non-payment constitutes a breach of contract",
-            "Available remedies for unpaid wages",
-            "Procedure for filing a complaint with the National Industrial Court"
+            "Whether employer has breached employment contract",
+            "Employee's right to receive salary",
+            "Available remedies for unpaid wages"
           ],
           "complexity": "Medium",
           "route": "complex",
-          "reasoning_approach": "First establish the employer's obligations under the Labour Act, particularly sections on payment of wages and notice periods. Then analyze whether the employer's non-payment constitutes a breach of contract. Finally outline the employee's remedies including potential court orders for payment of wages and damages.",
+          "reasoning_approach": "First, establish whether employer has breached employment contract by failing to pay salary. Then, analyze employee's rights under the Labour Act and Lagos State employment laws. Finally, outline available remedies including court action and potential damages.",
           "stakeholders": [
             "employee",
             "employer"
           ],
           "potential_remedies": [
-            "Court order for payment of wages",
+            "Court order for payment of unpaid wages",
             "Damages for breach of contract",
             "Injunction against further non-payment"
           ]
@@ -428,71 +346,63 @@
           "gaps": []
         },
         "result": {
-          "lawMd": "My friend, I am so sorry you are going through this stress. Working for four months without pay is incredibly tough, but the law is very clear on this, and you have strong rights here. Under the **Labour Act, s.15**, your wages must be paid at the end of the agreed period in your contract. Even if your contract says something else, the law strictly states that wages must be paid at intervals not exceeding one month. By holding your salary for four months, your employer is in direct violation of this provision.\n\nFurthermore, under the **Labour Act, s.9(2)**, your employer is fully responsible for performing every part of the employment contract they signed with you. The law does not allow them to delay your payment indefinitely; in fact, **Labour Act, s.9(4)** makes it clear that no contract can set payment intervals longer than one month without written permission from the State Authority. Since you have a written contract (which is your right to have under **Labour Act, s.7**), this is a straightforward breach of contract.\n\nTo get your money, you have the right to take them to court. The proper place to handle this is the National Industrial Court of Nigeria (NICN). According to the **National Industrial Court Act 2006, s.1**, this is a specialized superior court of record with the same powers as a High Court, specifically set up to deal with employment disputes and unpaid salaries. You can sue them to recover your complete arrears, and potentially claim damages for the hardship they have caused you.",
-          "actionsMd": "- **Gather your evidence immediately**: Collect your written employment contract, bank statements showing the last time you were paid, payslips, and any emails, letters, or WhatsApp messages where you asked for your salary and they gave excuses.\n- **Write a formal demand letter**: Send a strongly-worded letter to your employer (or the person acting on their behalf under **Labour Act, s.9(2)**) demanding the immediate payment of your 4 months' outstanding salary. Give them a clear deadline, like 7 to 14 days, to pay up.\n- **Consult a labor lawyer**: Since this has dragged on for four months, you need a lawyer to help draft a professional demand letter and prepare to file a case if the employer plays games.\n- **File a claim at the National Industrial Court**: If they refuse to pay after receiving the demand letter, have your lawyer file a suit at the National Industrial Court (established under **National Industrial Court Act 2006, s.1**) to recover your wages and claim damages.\n- **Review your termination options**: If you want to leave the job because of this, remember that **Labour Act, s.11** requires notice to terminate. However, because they breached the contract first by not paying you, your lawyer can advise you on claiming 'constructive dismissal' so you don't lose your benefits.",
+          "lawMd": "The Labour Act governs employment relationships in Nigeria. **Labour Act, s.1** establishes that wages must be paid in legal tender, and any contract providing otherwise is illegal and void. **Labour Act, s.15** states that wages become due and payable at the end of each period for which the contract subsists, which in this case is four months. The employer has breached the employment contract by failing to pay the employee's salary for four months. **Labour Act, s.17** requires the employer to provide work suitable to the employee's capacity on every day, and if the employer fails to do so, they must pay the employee wages at the same rate as would be payable if the employee had performed a day's work. The employee is entitled to receive their salary, and the employer's failure to pay is a breach of contract.",
+          "actionsMd": "- Step 1: File a complaint with the National Industrial Court (NIC) in Lagos, citing **Labour Act, s.1** and **Labour Act, s.15**. The NIC has jurisdiction over employment disputes in Nigeria.\n- Step 2: Provide evidence of the employment contract, including the terms and conditions of employment, and proof of the employer's failure to pay the employee's salary for four months.\n- Step 3: Seek a court order for payment of the unpaid wages, including interest and any other applicable damages.\n- Step 4: If the employer fails to comply with the court order, seek an injunction against further non-payment.\n- Step 5: Consider seeking damages for breach of contract, including any losses incurred by the employee as a result of the employer's failure to pay their salary.",
           "sources": [
             {
+              "label": "Labour Act, s.1",
+              "excerpt": "The wages of a worker shall in all contracts be made payable in legal tender and not otherwise; and if in any contract the whole or any part of the wages of a worker is made payable in any other manner the contract shall be illegal, null and void."
+            },
+            {
               "label": "Labour Act, s.15",
-              "excerpt": "Wages shall become due and payable at the end of each period for which the contract is expressed to subsist... Provided that, where the period is more than one month, the wages shall become due and payable at intervals not exceeding one month."
+              "excerpt": "Wages shall become due and payable at the end of each period for which the contract is expressed to subsist, that is to say, daily, weekly or at such other period as may be agreed upon:"
             },
             {
-              "label": "Labour Act, s.9(2) & (4)",
-              "excerpt": "An employer shall be responsible for the performance of any contract made by any person acting on his behalf... No contract shall provide for the payment of wages at intervals exceeding one month unless the written consent of the State Authority has been previously obtained."
-            },
-            {
-              "label": "National Industrial Court Act 2006, s.1",
-              "excerpt": "There is established a court to be known as the National Industrial Court... The Court shall be a superior court of record; and except as may be otherwise provided by any enactment or law, have all the powers of a High Court."
+              "label": "Labour Act, s.17",
+              "excerpt": "Every employer shall, unless a worker has broken his contract, provide work suitable to the worker's capacity on every day (except rest days and public holidays) on which the worker presents himself and is fit for work;"
             }
           ],
           "escalate": true,
-          "escalateReason": "Recovering four months of unpaid salary from an employer who is refusing to pay will require filing a formal lawsuit at the National Industrial Court, which requires a lawyer to navigate the court processes and rules effectively.",
+          "escalateReason": "This case involves a breach of contract and a failure to pay wages, which may require the expertise of a lawyer to navigate the court process and ensure the employee receives the compensation they are entitled to.",
           "followUps": [
-            "Can I stop going to work since they haven't paid me for four months?",
-            "Am I entitled to receive interest on the unpaid salaries when they finally pay?",
-            "What happens if my employer claims they don't have money because the company is struggling?"
+            "What is the process for filing a complaint with the National Industrial Court?",
+            "How long does the court process typically take?",
+            "What are the potential damages I can claim for breach of contract?"
           ]
         },
-        "draftModel": "gemini-3.5-flash",
-        "draftProvider": "gemini",
-        "critique": {
-          "quality": 0.7,
-          "passed": true,
-          "issues": [],
-          "strengths": [
-            "auto-passed due to critique service unavailability"
-          ],
-          "rewrite_hint": "No critique available — returning draft as-is."
-        }
+        "draftModel": "llama-3.1-8b-instant",
+        "draftProvider": "groq-fallback"
       },
       "error": null,
       "response": {
         "classification": {
           "is_legal_question": true,
           "practice_area": "employment",
-          "jurisdiction": "Federal",
+          "jurisdiction": "Lagos State",
+          "jurisdiction_status": "clear",
           "urgency": "High",
-          "summary": "Employee in Lagos facing non-payment of salary for 4 months despite having an employment contract.",
+          "summary": "Employee in Lagos has not received salary for 4 months, despite having an employment contract.",
           "keywords": [
             "unpaid wages",
+            "salary",
+            "employment contract",
             "Labour Act",
-            "National Industrial Court",
-            "4 months salary",
-            "employment contract"
+            "National Industrial Court"
           ],
           "key_issues": [
-            "Whether employer's non-payment constitutes a breach of contract",
-            "Available remedies for unpaid wages",
-            "Procedure for filing a complaint with the National Industrial Court"
+            "Whether employer has breached employment contract",
+            "Employee's right to receive salary",
+            "Available remedies for unpaid wages"
           ],
           "complexity": "Medium",
           "route": "complex",
-          "reasoning_approach": "First establish the employer's obligations under the Labour Act, particularly sections on payment of wages and notice periods. Then analyze whether the employer's non-payment constitutes a breach of contract. Finally outline the employee's remedies including potential court orders for payment of wages and damages.",
+          "reasoning_approach": "First, establish whether employer has breached employment contract by failing to pay salary. Then, analyze employee's rights under the Labour Act and Lagos State employment laws. Finally, outline available remedies including court action and potential damages.",
           "stakeholders": [
             "employee",
             "employer"
           ],
           "potential_remedies": [
-            "Court order for payment of wages",
+            "Court order for payment of unpaid wages",
             "Damages for breach of contract",
             "Injunction against further non-payment"
           ]
@@ -505,41 +415,32 @@
           "gaps": []
         },
         "result": {
-          "lawMd": "My friend, I am so sorry you are going through this stress. Working for four months without pay is incredibly tough, but the law is very clear on this, and you have strong rights here. Under the **Labour Act, s.15**, your wages must be paid at the end of the agreed period in your contract. Even if your contract says something else, the law strictly states that wages must be paid at intervals not exceeding one month. By holding your salary for four months, your employer is in direct violation of this provision.\n\nFurthermore, under the **Labour Act, s.9(2)**, your employer is fully responsible for performing every part of the employment contract they signed with you. The law does not allow them to delay your payment indefinitely; in fact, **Labour Act, s.9(4)** makes it clear that no contract can set payment intervals longer than one month without written permission from the State Authority. Since you have a written contract (which is your right to have under **Labour Act, s.7**), this is a straightforward breach of contract.\n\nTo get your money, you have the right to take them to court. The proper place to handle this is the National Industrial Court of Nigeria (NICN). According to the **National Industrial Court Act 2006, s.1**, this is a specialized superior court of record with the same powers as a High Court, specifically set up to deal with employment disputes and unpaid salaries. You can sue them to recover your complete arrears, and potentially claim damages for the hardship they have caused you.",
-          "actionsMd": "- **Gather your evidence immediately**: Collect your written employment contract, bank statements showing the last time you were paid, payslips, and any emails, letters, or WhatsApp messages where you asked for your salary and they gave excuses.\n- **Write a formal demand letter**: Send a strongly-worded letter to your employer (or the person acting on their behalf under **Labour Act, s.9(2)**) demanding the immediate payment of your 4 months' outstanding salary. Give them a clear deadline, like 7 to 14 days, to pay up.\n- **Consult a labor lawyer**: Since this has dragged on for four months, you need a lawyer to help draft a professional demand letter and prepare to file a case if the employer plays games.\n- **File a claim at the National Industrial Court**: If they refuse to pay after receiving the demand letter, have your lawyer file a suit at the National Industrial Court (established under **National Industrial Court Act 2006, s.1**) to recover your wages and claim damages.\n- **Review your termination options**: If you want to leave the job because of this, remember that **Labour Act, s.11** requires notice to terminate. However, because they breached the contract first by not paying you, your lawyer can advise you on claiming 'constructive dismissal' so you don't lose your benefits.",
+          "lawMd": "The Labour Act governs employment relationships in Nigeria. **Labour Act, s.1** establishes that wages must be paid in legal tender, and any contract providing otherwise is illegal and void. **Labour Act, s.15** states that wages become due and payable at the end of each period for which the contract subsists, which in this case is four months. The employer has breached the employment contract by failing to pay the employee's salary for four months. **Labour Act, s.17** requires the employer to provide work suitable to the employee's capacity on every day, and if the employer fails to do so, they must pay the employee wages at the same rate as would be payable if the employee had performed a day's work. The employee is entitled to receive their salary, and the employer's failure to pay is a breach of contract.",
+          "actionsMd": "- Step 1: File a complaint with the National Industrial Court (NIC) in Lagos, citing **Labour Act, s.1** and **Labour Act, s.15**. The NIC has jurisdiction over employment disputes in Nigeria.\n- Step 2: Provide evidence of the employment contract, including the terms and conditions of employment, and proof of the employer's failure to pay the employee's salary for four months.\n- Step 3: Seek a court order for payment of the unpaid wages, including interest and any other applicable damages.\n- Step 4: If the employer fails to comply with the court order, seek an injunction against further non-payment.\n- Step 5: Consider seeking damages for breach of contract, including any losses incurred by the employee as a result of the employer's failure to pay their salary.",
           "sources": [
             {
+              "label": "Labour Act, s.1",
+              "excerpt": "The wages of a worker shall in all contracts be made payable in legal tender and not otherwise; and if in any contract the whole or any part of the wages of a worker is made payable in any other manner the contract shall be illegal, null and void."
+            },
+            {
               "label": "Labour Act, s.15",
-              "excerpt": "Wages shall become due and payable at the end of each period for which the contract is expressed to subsist... Provided that, where the period is more than one month, the wages shall become due and payable at intervals not exceeding one month."
+              "excerpt": "Wages shall become due and payable at the end of each period for which the contract is expressed to subsist, that is to say, daily, weekly or at such other period as may be agreed upon:"
             },
             {
-              "label": "Labour Act, s.9(2) & (4)",
-              "excerpt": "An employer shall be responsible for the performance of any contract made by any person acting on his behalf... No contract shall provide for the payment of wages at intervals exceeding one month unless the written consent of the State Authority has been previously obtained."
-            },
-            {
-              "label": "National Industrial Court Act 2006, s.1",
-              "excerpt": "There is established a court to be known as the National Industrial Court... The Court shall be a superior court of record; and except as may be otherwise provided by any enactment or law, have all the powers of a High Court."
+              "label": "Labour Act, s.17",
+              "excerpt": "Every employer shall, unless a worker has broken his contract, provide work suitable to the worker's capacity on every day (except rest days and public holidays) on which the worker presents himself and is fit for work;"
             }
           ],
           "escalate": true,
-          "escalateReason": "Recovering four months of unpaid salary from an employer who is refusing to pay will require filing a formal lawsuit at the National Industrial Court, which requires a lawyer to navigate the court processes and rules effectively.",
+          "escalateReason": "This case involves a breach of contract and a failure to pay wages, which may require the expertise of a lawyer to navigate the court process and ensure the employee receives the compensation they are entitled to.",
           "followUps": [
-            "Can I stop going to work since they haven't paid me for four months?",
-            "Am I entitled to receive interest on the unpaid salaries when they finally pay?",
-            "What happens if my employer claims they don't have money because the company is struggling?"
+            "What is the process for filing a complaint with the National Industrial Court?",
+            "How long does the court process typically take?",
+            "What are the potential damages I can claim for breach of contract?"
           ]
         },
-        "draftModel": "gemini-3.5-flash",
-        "draftProvider": "gemini",
-        "critique": {
-          "quality": 0.7,
-          "passed": true,
-          "issues": [],
-          "strengths": [
-            "auto-passed due to critique service unavailability"
-          ],
-          "rewrite_hint": "No critique available — returning draft as-is."
-        }
+        "draftModel": "llama-3.1-8b-instant",
+        "draftProvider": "groq-fallback"
       }
     },
     {
@@ -562,23 +463,24 @@
           "is_legal_question": true,
           "practice_area": "criminal_rights",
           "jurisdiction": "Rivers State",
+          "jurisdiction_status": "clear",
           "urgency": "High",
-          "summary": "Individual arrested at home without warrant, taken to police station, questioning legality of arrest.",
+          "summary": "Individual arrested at home without warrant, taken to police station.",
           "keywords": [
-            "arrest without warrant",
+            "arrest",
+            "warrant",
             "2am",
-            "home arrest",
-            "police station",
-            "Rivers State Police Code of Conduct"
+            "home",
+            "police station"
           ],
           "key_issues": [
-            "Whether arrest was lawful under Rivers State Police Code of Conduct",
-            "Procedural requirements for arrest without warrant",
-            "Potential consequences of unlawful arrest"
+            "Whether arrest was lawful without warrant",
+            "Right to be informed of reason for arrest",
+            "Right to be taken to a police station"
           ],
           "complexity": "Medium",
           "route": "complex",
-          "reasoning_approach": "First, establish the relevant provisions of the Rivers State Police Code of Conduct, particularly sections on arrest procedures and warrant requirements. Then analyze whether the arrest in question complied with these provisions. Finally, outline the potential consequences of an unlawful arrest, including potential remedies for the individual.",
+          "reasoning_approach": "First, determine if the arrest was in accordance with the provisions of the ACJA 2015, particularly sections on arrest without warrant. Then, consider the individual's rights under the Constitution, specifically the right to be informed of the reason for arrest and the right to be taken to a police station. Finally, outline the potential consequences of an unlawful arrest.",
           "stakeholders": [
             "individual",
             "police"
@@ -586,7 +488,7 @@
           "potential_remedies": [
             "Compensation for unlawful arrest",
             "Release from custody",
-            "Injunction against further harassment"
+            "Court action for damages"
           ]
         },
         "route": "complex",
@@ -597,44 +499,32 @@
           "gaps": []
         },
         "result": {
-          "lawMd": "The law on arrest without warrant is governed by the Criminal Procedure Act and the Administration of Criminal Justice Act 2015. According to **Criminal Procedure Act, s.2**, an arrest without warrant is only lawful if the police officer or other persons making the arrest inform the suspect immediately of the reason for the arrest. **Administration of Criminal Justice Act 2015, s.6** also requires the police officer to inform the suspect of their rights, including the right to remain silent and consult a legal practitioner. However, **Criminal Justice (Miscellaneous Provisions) Act, s.6** allows for an armed patrol to arrest without warrant any person reasonably suspected of having committed or being about to commit an offence. The arrest must be made with minimum force and the suspect must be taken to a police station without delay. **Criminal Procedure Act, s.9** and **Administration of Criminal Justice Act 2015, s.14** require the police to inform the suspect of the charge against them and provide them with reasonable facilities for obtaining legal advice and making arrangements for their defence or release. **Criminal Procedure Act, s.20** requires the police to report apprehensions to the nearest magistrate. In this case, the arrest was made at 2am without a warrant, which may be considered unlawful under the provisions of the Criminal Procedure Act and the Administration of Criminal Justice Act 2015. The police failed to inform the suspect of the reason for the arrest and their rights, and the arrest was not made with minimum force. The suspect was taken to a police station without delay, but the police failed to inform the suspect of the charge against them and provide them with reasonable facilities for obtaining legal advice and making arrangements for their defence or release.",
-          "actionsMd": "- Step 1: Seek legal advice from a lawyer to understand the potential consequences of the unlawful arrest and the available remedies.\n- Step 2: File a complaint with the police station where the arrest was made, detailing the circumstances of the arrest and the failure of the police to comply with the relevant provisions of the Criminal Procedure Act and the Administration of Criminal Justice Act 2015.\n- Step 3: Request a copy of the police report and any other relevant documentation related to the arrest.\n- Step 4: Consider filing a petition with the Rivers State High Court to seek an injunction against further harassment and compensation for the unlawful arrest.\n- Step 5: Keep a record of all correspondence and interactions with the police and any other relevant authorities.",
+          "lawMd": "The Administration of Criminal Justice Act 2015 governs this issue. According to **Administration of Criminal Justice Act 2015, s.3**, a suspect or defendant alleged or charged with committing an offence established by an Act of the National Assembly shall be arrested, investigated, inquired into, tried or dealt with according to the provisions of this Act, except otherwise provided under this Act. **Administration of Criminal Justice Act 2015, s.4** states that in making an arrest, the police officer or other persons making the arrest shall actually touch or confine the body of the suspect, unless there is a submission to the custody by word or action. **Criminal Procedure Act, s.3** and **Administration of Criminal Justice Act 2015, s.4** also state that the police officer or other person making the arrest shall inform the person arrested of the cause of the arrest and that the person arrested shall not be handcuffed, otherwise bound or be subjected to unnecessary restraint except by order of the court, a magistrate or justice of the peace or unless there is reasonable apprehension of violence or of an attempt to escape or unless the restraint is considered necessary for the safety of the person arrested.",
+          "actionsMd": "- Step 1: Demand to know the reason for your arrest and ensure that you are informed of the cause of the arrest.\n- Step 2: Request to be taken to a police station and ensure that you are not subjected to unnecessary restraint.\n- Step 3: If you are not taken to a police station, request to be taken to a magistrate or a court for further proceedings.\n- Step 4: If you are taken to a police station, request to be allowed to make a phone call to inform your family or friends about your arrest.\n- Step 5: If you are not allowed to make a phone call, request to be allowed to send a message to your family or friends about your arrest.\n- Step 6: If you are not allowed to send a message, request to be allowed to see a lawyer or a legal aid officer.",
           "sources": [
             {
-              "label": "Criminal Procedure Act, s.2",
-              "excerpt": "In this Act, unless the context otherwise requires..."
+              "label": "Administration of Criminal Justice Act 2015, s.3",
+              "excerpt": "A suspect or defendant alleged or charged with committing an offence established by an Act of the National Assembly shall be arrested, investigated, inquired into, tried or dealt with according to the provisions of this Act, except otherwise provided under this Act."
             },
             {
-              "label": "Administration of Criminal Justice Act 2015, s.6",
-              "excerpt": "Except when the suspect is in the actual course of the commission of an offence..."
+              "label": "Administration of Criminal Justice Act 2015, s.4",
+              "excerpt": "In making an arrest, the police officer or other persons making the arrest shall actually touch or confine the body of the suspect, unless there is a submission to the custody by word or action."
             },
             {
-              "label": "Criminal Justice (Miscellaneous Provisions) Act, s.6",
-              "excerpt": "An armed patrol may arrest, without warrant, any person reasonably suspected of having committed or of being about to commit an offence..."
-            },
-            {
-              "label": "Criminal Procedure Act, s.9",
-              "excerpt": "Any person who is arrested, whether with or without a warrant, shall be taken with all reasonable despatch to a police station..."
+              "label": "Criminal Procedure Act, s.3",
+              "excerpt": "In making an arrest, the police officer or other person making the same shall actually touch or confine the body of the person to be arrested, unless there be a submission to the custody by word or action."
             }
           ],
           "escalate": true,
-          "escalateReason": "The situation is urgent and the potential consequences of the unlawful arrest are severe. It is recommended that a lawyer be consulted to ensure that the available remedies are pursued effectively.",
+          "escalateReason": "This situation requires the expertise of a lawyer to navigate the complex legal framework and ensure that your rights are protected.",
           "followUps": [
-            "What are the potential consequences of the unlawful arrest?",
-            "How can I ensure that the police comply with the relevant provisions of the Criminal Procedure Act and the Administration of Criminal Justice Act 2015?"
+            "How long can I be detained at the police station?",
+            "Can I request to be released on bail?",
+            "What are my rights if I am charged with an offence?"
           ]
         },
         "draftModel": "llama-3.1-8b-instant",
-        "draftProvider": "groq-fallback",
-        "critique": {
-          "quality": 0.7,
-          "passed": true,
-          "issues": [],
-          "strengths": [
-            "auto-passed due to critique service unavailability"
-          ],
-          "rewrite_hint": "No critique available — returning draft as-is."
-        }
+        "draftProvider": "groq-fallback"
       },
       "error": null,
       "response": {
@@ -642,23 +532,24 @@
           "is_legal_question": true,
           "practice_area": "criminal_rights",
           "jurisdiction": "Rivers State",
+          "jurisdiction_status": "clear",
           "urgency": "High",
-          "summary": "Individual arrested at home without warrant, taken to police station, questioning legality of arrest.",
+          "summary": "Individual arrested at home without warrant, taken to police station.",
           "keywords": [
-            "arrest without warrant",
+            "arrest",
+            "warrant",
             "2am",
-            "home arrest",
-            "police station",
-            "Rivers State Police Code of Conduct"
+            "home",
+            "police station"
           ],
           "key_issues": [
-            "Whether arrest was lawful under Rivers State Police Code of Conduct",
-            "Procedural requirements for arrest without warrant",
-            "Potential consequences of unlawful arrest"
+            "Whether arrest was lawful without warrant",
+            "Right to be informed of reason for arrest",
+            "Right to be taken to a police station"
           ],
           "complexity": "Medium",
           "route": "complex",
-          "reasoning_approach": "First, establish the relevant provisions of the Rivers State Police Code of Conduct, particularly sections on arrest procedures and warrant requirements. Then analyze whether the arrest in question complied with these provisions. Finally, outline the potential consequences of an unlawful arrest, including potential remedies for the individual.",
+          "reasoning_approach": "First, determine if the arrest was in accordance with the provisions of the ACJA 2015, particularly sections on arrest without warrant. Then, consider the individual's rights under the Constitution, specifically the right to be informed of the reason for arrest and the right to be taken to a police station. Finally, outline the potential consequences of an unlawful arrest.",
           "stakeholders": [
             "individual",
             "police"
@@ -666,7 +557,7 @@
           "potential_remedies": [
             "Compensation for unlawful arrest",
             "Release from custody",
-            "Injunction against further harassment"
+            "Court action for damages"
           ]
         },
         "route": "complex",
@@ -677,69 +568,183 @@
           "gaps": []
         },
         "result": {
-          "lawMd": "The law on arrest without warrant is governed by the Criminal Procedure Act and the Administration of Criminal Justice Act 2015. According to **Criminal Procedure Act, s.2**, an arrest without warrant is only lawful if the police officer or other persons making the arrest inform the suspect immediately of the reason for the arrest. **Administration of Criminal Justice Act 2015, s.6** also requires the police officer to inform the suspect of their rights, including the right to remain silent and consult a legal practitioner. However, **Criminal Justice (Miscellaneous Provisions) Act, s.6** allows for an armed patrol to arrest without warrant any person reasonably suspected of having committed or being about to commit an offence. The arrest must be made with minimum force and the suspect must be taken to a police station without delay. **Criminal Procedure Act, s.9** and **Administration of Criminal Justice Act 2015, s.14** require the police to inform the suspect of the charge against them and provide them with reasonable facilities for obtaining legal advice and making arrangements for their defence or release. **Criminal Procedure Act, s.20** requires the police to report apprehensions to the nearest magistrate. In this case, the arrest was made at 2am without a warrant, which may be considered unlawful under the provisions of the Criminal Procedure Act and the Administration of Criminal Justice Act 2015. The police failed to inform the suspect of the reason for the arrest and their rights, and the arrest was not made with minimum force. The suspect was taken to a police station without delay, but the police failed to inform the suspect of the charge against them and provide them with reasonable facilities for obtaining legal advice and making arrangements for their defence or release.",
-          "actionsMd": "- Step 1: Seek legal advice from a lawyer to understand the potential consequences of the unlawful arrest and the available remedies.\n- Step 2: File a complaint with the police station where the arrest was made, detailing the circumstances of the arrest and the failure of the police to comply with the relevant provisions of the Criminal Procedure Act and the Administration of Criminal Justice Act 2015.\n- Step 3: Request a copy of the police report and any other relevant documentation related to the arrest.\n- Step 4: Consider filing a petition with the Rivers State High Court to seek an injunction against further harassment and compensation for the unlawful arrest.\n- Step 5: Keep a record of all correspondence and interactions with the police and any other relevant authorities.",
+          "lawMd": "The Administration of Criminal Justice Act 2015 governs this issue. According to **Administration of Criminal Justice Act 2015, s.3**, a suspect or defendant alleged or charged with committing an offence established by an Act of the National Assembly shall be arrested, investigated, inquired into, tried or dealt with according to the provisions of this Act, except otherwise provided under this Act. **Administration of Criminal Justice Act 2015, s.4** states that in making an arrest, the police officer or other persons making the arrest shall actually touch or confine the body of the suspect, unless there is a submission to the custody by word or action. **Criminal Procedure Act, s.3** and **Administration of Criminal Justice Act 2015, s.4** also state that the police officer or other person making the arrest shall inform the person arrested of the cause of the arrest and that the person arrested shall not be handcuffed, otherwise bound or be subjected to unnecessary restraint except by order of the court, a magistrate or justice of the peace or unless there is reasonable apprehension of violence or of an attempt to escape or unless the restraint is considered necessary for the safety of the person arrested.",
+          "actionsMd": "- Step 1: Demand to know the reason for your arrest and ensure that you are informed of the cause of the arrest.\n- Step 2: Request to be taken to a police station and ensure that you are not subjected to unnecessary restraint.\n- Step 3: If you are not taken to a police station, request to be taken to a magistrate or a court for further proceedings.\n- Step 4: If you are taken to a police station, request to be allowed to make a phone call to inform your family or friends about your arrest.\n- Step 5: If you are not allowed to make a phone call, request to be allowed to send a message to your family or friends about your arrest.\n- Step 6: If you are not allowed to send a message, request to be allowed to see a lawyer or a legal aid officer.",
           "sources": [
             {
-              "label": "Criminal Procedure Act, s.2",
-              "excerpt": "In this Act, unless the context otherwise requires..."
+              "label": "Administration of Criminal Justice Act 2015, s.3",
+              "excerpt": "A suspect or defendant alleged or charged with committing an offence established by an Act of the National Assembly shall be arrested, investigated, inquired into, tried or dealt with according to the provisions of this Act, except otherwise provided under this Act."
             },
             {
-              "label": "Administration of Criminal Justice Act 2015, s.6",
-              "excerpt": "Except when the suspect is in the actual course of the commission of an offence..."
+              "label": "Administration of Criminal Justice Act 2015, s.4",
+              "excerpt": "In making an arrest, the police officer or other persons making the arrest shall actually touch or confine the body of the suspect, unless there is a submission to the custody by word or action."
             },
             {
-              "label": "Criminal Justice (Miscellaneous Provisions) Act, s.6",
-              "excerpt": "An armed patrol may arrest, without warrant, any person reasonably suspected of having committed or of being about to commit an offence..."
-            },
-            {
-              "label": "Criminal Procedure Act, s.9",
-              "excerpt": "Any person who is arrested, whether with or without a warrant, shall be taken with all reasonable despatch to a police station..."
+              "label": "Criminal Procedure Act, s.3",
+              "excerpt": "In making an arrest, the police officer or other person making the same shall actually touch or confine the body of the person to be arrested, unless there be a submission to the custody by word or action."
             }
           ],
           "escalate": true,
-          "escalateReason": "The situation is urgent and the potential consequences of the unlawful arrest are severe. It is recommended that a lawyer be consulted to ensure that the available remedies are pursued effectively.",
+          "escalateReason": "This situation requires the expertise of a lawyer to navigate the complex legal framework and ensure that your rights are protected.",
           "followUps": [
-            "What are the potential consequences of the unlawful arrest?",
-            "How can I ensure that the police comply with the relevant provisions of the Criminal Procedure Act and the Administration of Criminal Justice Act 2015?"
+            "How long can I be detained at the police station?",
+            "Can I request to be released on bail?",
+            "What are my rights if I am charged with an offence?"
           ]
         },
         "draftModel": "llama-3.1-8b-instant",
-        "draftProvider": "groq-fallback",
-        "critique": {
-          "quality": 0.7,
-          "passed": true,
-          "issues": [],
-          "strengths": [
-            "auto-passed due to critique service unavailability"
-          ],
-          "rewrite_hint": "No critique available — returning draft as-is."
-        }
+        "draftProvider": "groq-fallback"
       }
     },
     {
       "scenario_id": "domestic-violence-abuse",
       "category": "high_risk",
-      "total_score": 0.35,
-      "pass": false,
+      "total_score": 0.875,
+      "pass": true,
       "dimensions": {
-        "is_legal_classification": 0,
-        "practice_area": 0.3,
+        "is_legal_classification": 1,
+        "practice_area": 1,
         "jurisdiction": 1,
         "must_cite": 0,
-        "escalation": 0,
-        "actionable": 0,
-        "urgency": 0.5,
+        "escalation": 1,
+        "actionable": 1,
+        "urgency": 1,
         "no_hallucination": 1
       },
       "raw_response": {
-        "error": "drafting_failed",
-        "message": "The drafting model failed to respond. 429 status code (no body)"
+        "classification": {
+          "is_legal_question": true,
+          "practice_area": "family_law",
+          "jurisdiction": "Lagos State",
+          "jurisdiction_status": "clear",
+          "urgency": "Critical",
+          "summary": "Victim of domestic violence seeking protection from abusive husband in Lagos.",
+          "keywords": [
+            "domestic violence",
+            "abuse",
+            "wife beating",
+            "Lagos State Domestic and Sexual Violence Agency",
+            "Magistrates Court"
+          ],
+          "key_issues": [
+            "Available protection options for victims of domestic violence",
+            "Procedure for obtaining a restraining order",
+            "Potential consequences for the abuser"
+          ],
+          "complexity": "High",
+          "route": "complex",
+          "reasoning_approach": "First, contact the Lagos State Domestic and Sexual Violence Agency for immediate support and guidance. Then, establish the legal framework under Lagos State Domestic and Sexual Violence Law 2007, particularly sections on protection orders and restraining orders. Finally, outline the potential consequences for the abuser, including arrest and prosecution.",
+          "stakeholders": [
+            "victim",
+            "abuser"
+          ],
+          "potential_remedies": [
+            "Restraining order",
+            "Police protection",
+            "Criminal prosecution of the abuser"
+          ]
+        },
+        "route": "complex",
+        "plan": {
+          "analysis": "Analyzing the legal question and relevant provisions.",
+          "key_provisions": [],
+          "response_structure": "Review applicable law, apply to facts, provide guidance",
+          "gaps": []
+        },
+        "result": {
+          "lawMd": "The Child's Right Act governs this issue, specifically **Child's Right Act, s.11**, which establishes the right to dignity of the child, including protection from physical, mental, or emotional injury, abuse, neglect, or maltreatment. **Child's Right Act, s.31** and **s.32** criminalize rape and other forms of sexual abuse and exploitation of children. However, these provisions can be applied to adult victims of domestic violence in Lagos State, as the Act aims to protect all individuals from abuse and exploitation. The law is clear on this: no person shall subject another to physical, mental, or emotional injury, abuse, neglect, or maltreatment.",
+          "actionsMd": "- Step 1: Immediately contact the Lagos State Domestic and Sexual Violence Response Team (DSVRT) at 08137933652 or [info@dsvrt.org](mailto:info@dsvrt.org) for support and guidance.\n- Step 2: Report the abuse to the police at the nearest police station and obtain a police report.\n- Step 3: Apply for a restraining order at the Lagos State High Court, Family Law Division, under the provisions of the Child's Right Act.\n- Step 4: Seek medical attention and document any injuries.\n- Step 5: Consider seeking counseling or therapy to cope with the trauma.",
+          "sources": [
+            {
+              "label": "Child's Right Act, s.11",
+              "excerpt": "Every child is entitled to respect for the dignity of his person, and accordingly, no child shall be subjected to physical, mental or emotional injury, abuse, neglect or maltreatment, including sexual abuse."
+            },
+            {
+              "label": "Child's Right Act, s.31",
+              "excerpt": "No person shall have sexual intercourse with a child."
+            },
+            {
+              "label": "Child's Right Act, s.32",
+              "excerpt": "A person who sexually abuses or sexually exploits a child in any manner not already mentioned under this Part of this Act commits an offence."
+            }
+          ],
+          "escalate": true,
+          "escalateReason": "This situation requires immediate attention and support from a lawyer or a domestic violence expert to ensure the victim's safety and well-being.",
+          "followUps": [
+            "How do I obtain a restraining order?",
+            "What are the potential consequences for my husband if he is convicted of domestic violence?"
+          ]
+        },
+        "draftModel": "llama-3.1-8b-instant",
+        "draftProvider": "groq-fallback"
       },
       "error": null,
       "response": {
-        "error": "drafting_failed",
-        "message": "The drafting model failed to respond. 429 status code (no body)"
+        "classification": {
+          "is_legal_question": true,
+          "practice_area": "family_law",
+          "jurisdiction": "Lagos State",
+          "jurisdiction_status": "clear",
+          "urgency": "Critical",
+          "summary": "Victim of domestic violence seeking protection from abusive husband in Lagos.",
+          "keywords": [
+            "domestic violence",
+            "abuse",
+            "wife beating",
+            "Lagos State Domestic and Sexual Violence Agency",
+            "Magistrates Court"
+          ],
+          "key_issues": [
+            "Available protection options for victims of domestic violence",
+            "Procedure for obtaining a restraining order",
+            "Potential consequences for the abuser"
+          ],
+          "complexity": "High",
+          "route": "complex",
+          "reasoning_approach": "First, contact the Lagos State Domestic and Sexual Violence Agency for immediate support and guidance. Then, establish the legal framework under Lagos State Domestic and Sexual Violence Law 2007, particularly sections on protection orders and restraining orders. Finally, outline the potential consequences for the abuser, including arrest and prosecution.",
+          "stakeholders": [
+            "victim",
+            "abuser"
+          ],
+          "potential_remedies": [
+            "Restraining order",
+            "Police protection",
+            "Criminal prosecution of the abuser"
+          ]
+        },
+        "route": "complex",
+        "plan": {
+          "analysis": "Analyzing the legal question and relevant provisions.",
+          "key_provisions": [],
+          "response_structure": "Review applicable law, apply to facts, provide guidance",
+          "gaps": []
+        },
+        "result": {
+          "lawMd": "The Child's Right Act governs this issue, specifically **Child's Right Act, s.11**, which establishes the right to dignity of the child, including protection from physical, mental, or emotional injury, abuse, neglect, or maltreatment. **Child's Right Act, s.31** and **s.32** criminalize rape and other forms of sexual abuse and exploitation of children. However, these provisions can be applied to adult victims of domestic violence in Lagos State, as the Act aims to protect all individuals from abuse and exploitation. The law is clear on this: no person shall subject another to physical, mental, or emotional injury, abuse, neglect, or maltreatment.",
+          "actionsMd": "- Step 1: Immediately contact the Lagos State Domestic and Sexual Violence Response Team (DSVRT) at 08137933652 or [info@dsvrt.org](mailto:info@dsvrt.org) for support and guidance.\n- Step 2: Report the abuse to the police at the nearest police station and obtain a police report.\n- Step 3: Apply for a restraining order at the Lagos State High Court, Family Law Division, under the provisions of the Child's Right Act.\n- Step 4: Seek medical attention and document any injuries.\n- Step 5: Consider seeking counseling or therapy to cope with the trauma.",
+          "sources": [
+            {
+              "label": "Child's Right Act, s.11",
+              "excerpt": "Every child is entitled to respect for the dignity of his person, and accordingly, no child shall be subjected to physical, mental or emotional injury, abuse, neglect or maltreatment, including sexual abuse."
+            },
+            {
+              "label": "Child's Right Act, s.31",
+              "excerpt": "No person shall have sexual intercourse with a child."
+            },
+            {
+              "label": "Child's Right Act, s.32",
+              "excerpt": "A person who sexually abuses or sexually exploits a child in any manner not already mentioned under this Part of this Act commits an offence."
+            }
+          ],
+          "escalate": true,
+          "escalateReason": "This situation requires immediate attention and support from a lawyer or a domestic violence expert to ensure the victim's safety and well-being.",
+          "followUps": [
+            "How do I obtain a restraining order?",
+            "What are the potential consequences for my husband if he is convicted of domestic violence?"
+          ]
+        },
+        "draftModel": "llama-3.1-8b-instant",
+        "draftProvider": "groq-fallback"
       }
     }
   ]
