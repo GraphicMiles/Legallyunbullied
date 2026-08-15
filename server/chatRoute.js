@@ -29,9 +29,29 @@ const PRACTICE_AREAS = PRACTICE_AREA_KEYS;
  * Some models occasionally wrap JSON-mode output in markdown code fences
  * even when told not to. Strip those before parsing rather than failing outright.
  */
-function parseModelJson(content) {
-  const trimmed = content.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "");
-  return JSON.parse(trimmed);
+function extractJsonFromResponse(content) {
+  // Remove markdown fences first
+  let cleaned = content.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "");
+  
+  // Try to parse as-is
+  try {
+    return JSON.parse(cleaned);
+  } catch (e) {
+    // If that fails, try to find JSON object by matching braces
+    const firstBrace = cleaned.indexOf('{');
+    const lastBrace = cleaned.lastIndexOf('}');
+    
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      const jsonCandidate = cleaned.substring(firstBrace, lastBrace + 1);
+      try {
+        return JSON.parse(jsonCandidate);
+      } catch (e2) {
+        return null;
+      }
+    }
+    
+    return null;
+  }
 }
 
 const PRACTICE_AREA_BULLETS = PRACTICE_AREA_DEFS.map((p) => `- "${p.key}": ${p.description}`).join("\n");
@@ -248,7 +268,7 @@ Analyze this question and create a structured plan for answering it.`;
         ],
         { temperature: 0.3, max_tokens: 800, response_format: { type: "json_object" } }
       );
-      return { plan: parseModelJson(completion.choices[0].message.content), provider: "groq" };
+      return { plan: completion.parsed, provider: "groq" };
     } catch (err) {
       console.warn(`[/api/chat] Groq planning failed: ${err.status || ""} ${err.message}`);
     }
@@ -266,7 +286,7 @@ Analyze this question and create a structured plan for answering it.`;
         ],
         { temperature: 0.3, max_tokens: 800, response_format: { type: "json_object" } }
       );
-      return { plan: parseModelJson(completion.choices[0].message.content), provider: "gemini" };
+      return { plan: completion.parsed, provider: "gemini" };
     } catch (err) {
       console.warn(`[/api/chat] Gemini planning failed: ${err.status || ""} ${err.message}`);
     }
@@ -376,7 +396,7 @@ Gaps: ${(plan.gaps || []).join(", ") || "none"}`
         ],
         { temperature: 0.2, max_tokens: 800, response_format: { type: "json_object" } }
       );
-      return { critique: parseModelJson(completion.choices[0].message.content), provider: "groq" };
+      return { critique: completion.parsed, provider: "groq" };
     } catch (err) {
       console.warn("[/api/chat] Groq critique failed:", err.status || "", err.message);
     }
@@ -394,7 +414,7 @@ Gaps: ${(plan.gaps || []).join(", ") || "none"}`
         ],
         { temperature: 0.2, max_tokens: 800, response_format: { type: "json_object" } }
       );
-      return { critique: parseModelJson(completion.choices[0].message.content), provider: "gemini" };
+      return { critique: completion.parsed, provider: "gemini" };
     } catch (err) {
       console.warn("[/api/chat] Gemini critique failed:", err.status || "", err.message);
     }
@@ -424,7 +444,16 @@ async function callCompletion(client, model, messages, options = {}) {
     messages,
   });
   
-  return withTimeout(completionPromise, LLM_TIMEOUT_MS, `LLM call to ${model}`);
+  try {
+    const result = await withTimeout(completionPromise, LLM_TIMEOUT_MS, `LLM call to ${model}`);
+    const parsed = extractJsonFromResponse(result.choices[0].message.content);
+    if (!parsed) {
+      throw new Error(`Failed to parse JSON from ${model} response`);
+    }
+    return { ...result, parsed };
+  } catch (err) {
+    throw err;
+  }
 }
 
 /**
@@ -457,7 +486,7 @@ async function classifyWithFallback(question) {
         ],
         { temperature: 0, max_tokens: 2000, response_format: { type: "json_object" } }
       );
-      return { classification: parseModelJson(completion.choices[0].message.content), provider: "groq" };
+      return { classification: completion.parsed, provider: "groq" };
     } catch (err) {
       console.warn(`[/api/chat] Groq classification failed: ${err.status || ""} ${err.message}`);
     }
@@ -475,7 +504,7 @@ async function classifyWithFallback(question) {
         ],
         { temperature: 0, max_tokens: 2000, response_format: { type: "json_object" } }
       );
-      return { classification: parseModelJson(completion.choices[0].message.content), provider: "openrouter" };
+      return { classification: completion.parsed, provider: "openrouter" };
     } catch (err) {
       console.warn(`[/api/chat] OpenRouter classification failed: ${err.status || ""} ${err.message}`);
     }
@@ -493,7 +522,7 @@ async function classifyWithFallback(question) {
         ],
         { temperature: 0, max_tokens: 2000, response_format: { type: "json_object" } }
       );
-      return { classification: parseModelJson(completion.choices[0].message.content), provider: "cerebras" };
+      return { classification: completion.parsed, provider: "cerebras" };
     } catch (err) {
       console.warn(`[/api/chat] Cerebras classification failed: ${err.status || ""} ${err.message}`);
     }
@@ -511,7 +540,7 @@ async function classifyWithFallback(question) {
         ],
         { temperature: 0, max_tokens: 2000, response_format: { type: "json_object" } }
       );
-      return { classification: parseModelJson(completion.choices[0].message.content), provider: "gemini" };
+      return { classification: completion.parsed, provider: "gemini" };
     } catch (err) {
       console.error(`[/api/chat] All LLM providers failed. Last error (Gemini): ${err.status || ""} ${err.message}`);
       throw err;
@@ -562,7 +591,7 @@ Follow this plan to structure your response. Be comprehensive and address all su
     ],
     { response_format: { type: "json_object" }, max_tokens: 3000 }
   );
-  return parseModelJson(completion.choices[0].message.content);
+  return completion.parsed;
 }
 
 async function draftWithFallback(question, contextBlock, plan, classification) {
