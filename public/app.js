@@ -1142,7 +1142,6 @@ import {
         label: "Analyzing",
         variant: "drive"
       });
-      live.loadingState.start();
     }
 
     el.chatMessages.appendChild(wrap);
