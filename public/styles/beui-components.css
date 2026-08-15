@@ -1039,15 +1039,17 @@
   width: 40px;
   height: 40px;
   flex: 0 0 auto;
+  background: transparent;
 }
 
 .beui-prompt-bar__button--submit:hover {
-  background: var(--color-accent-hover);
+  background: var(--color-surface-alt);
 }
 
 .beui-prompt-bar__button--submit:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  background: transparent;
 }
 
 .beui-prompt-bar__button-icon {

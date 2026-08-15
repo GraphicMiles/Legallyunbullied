@@ -288,8 +288,12 @@ class BeUIPromptBar {
     const value = this.inputElement.value.trim();
     if (value.length === 0) return;
     
-    this.options.onSubmit(value);
-    this.clear();
+    try {
+      this.options.onSubmit(value);
+    } finally {
+      // Always clear the input, even if onSubmit throws
+      this.clear();
+    }
   }
   
   clear() {
