@@ -1844,6 +1844,29 @@ import {
     confirmClearConversation(state.activeId);
   });
 
+  // Composer event listeners
+  el.composerInput.addEventListener("input", () => {
+    autoGrowTextarea();
+    updateComposerState();
+  });
+
+  el.composerInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      el.composerForm.requestSubmit();
+    }
+  });
+
+  el.composerForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const text = el.composerInput.value.trim();
+    if (!text || state.isAgentBusy) return;
+    el.composerInput.value = "";
+    autoGrowTextarea();
+    updateComposerState();
+    submitQuestion(text);
+  });
+
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeMobileSidebar();
   });
