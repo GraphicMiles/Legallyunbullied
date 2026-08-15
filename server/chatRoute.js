@@ -422,6 +422,7 @@ Gaps: ${(plan.gaps || []).join(", ") || "none"}`
   // Try Groq
   if (groqClient) {
     try {
+      console.log('[/api/chat/critique] Trying Groq with model:', DRAFT_MODEL);
       const completion = await callCompletion(
         groqClient,
         DRAFT_MODEL,
@@ -429,17 +430,19 @@ Gaps: ${(plan.gaps || []).join(", ") || "none"}`
           { role: "system", content: "You are a precise legal reviewer. Respond with ONLY valid JSON, no markdown." },
           { role: "user", content: critiquePrompt }
         ],
-        { temperature: 0.2, max_tokens: 800, response_format: { type: "json_object" } }
+        { temperature: 0.2, max_tokens: 1200, response_format: { type: "json_object" } }
       );
+      console.log('[/api/chat/critique] Groq returned parsed:', JSON.stringify(completion.parsed));
       return { critique: completion.parsed, provider: "groq" };
     } catch (err) {
-      console.warn("[/api/chat] Groq critique failed:", err.status || "", err.message);
+      console.warn("[/api/chat/critique] Groq critique failed:", err.status || "", err.message);
     }
   }
 
   // Try Gemini
   if (geminiClient) {
     try {
+      console.log('[/api/chat/critique] Trying Gemini with model:', GEMINI_DRAFT_MODEL);
       const completion = await callCompletion(
         geminiClient,
         GEMINI_DRAFT_MODEL,
@@ -447,11 +450,12 @@ Gaps: ${(plan.gaps || []).join(", ") || "none"}`
           { role: "system", content: "You are a precise legal reviewer. Respond with ONLY valid JSON, no markdown." },
           { role: "user", content: critiquePrompt }
         ],
-        { temperature: 0.2, max_tokens: 800, response_format: { type: "json_object" } }
+        { temperature: 0.2, max_tokens: 1200, response_format: { type: "json_object" } }
       );
+      console.log('[/api/chat/critique] Gemini returned parsed:', JSON.stringify(completion.parsed));
       return { critique: completion.parsed, provider: "gemini" };
     } catch (err) {
-      console.warn("[/api/chat] Gemini critique failed:", err.status || "", err.message);
+      console.warn("[/api/chat/critique] Gemini critique failed:", err.status || "", err.message);
     }
   }
 
