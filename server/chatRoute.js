@@ -419,13 +419,13 @@ Gaps: ${(plan.gaps || []).join(", ") || "none"}`
     .replace("{{PROVISIONS}}", provisionSummary)
     .replace("{{DRAFT}}", JSON.stringify(draft));
 
-  // Try Groq
+  // Try Groq with a fast, reliable model for critique
   if (groqClient) {
     try {
-      console.log('[/api/chat/critique] Trying Groq with model:', DRAFT_MODEL);
+      console.log('[/api/chat/critique] Trying Groq with model: llama-3.1-8b-instant');
       const completion = await callCompletion(
         groqClient,
-        DRAFT_MODEL,
+        "llama-3.1-8b-instant",
         [
           { role: "system", content: "You are a precise legal reviewer. Respond with ONLY valid JSON, no markdown." },
           { role: "user", content: critiquePrompt }
@@ -439,13 +439,13 @@ Gaps: ${(plan.gaps || []).join(", ") || "none"}`
     }
   }
 
-  // Try Gemini
+  // Try Gemini with a fast, reliable model for critique
   if (geminiClient) {
     try {
-      console.log('[/api/chat/critique] Trying Gemini with model:', GEMINI_DRAFT_MODEL);
+      console.log('[/api/chat/critique] Trying Gemini with model: gemini-2.0-flash-lite');
       const completion = await callCompletion(
         geminiClient,
-        GEMINI_DRAFT_MODEL,
+        "gemini-2.0-flash-lite",
         [
           { role: "system", content: "You are a precise legal reviewer. Respond with ONLY valid JSON, no markdown." },
           { role: "user", content: critiquePrompt }
