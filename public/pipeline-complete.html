@@ -516,11 +516,11 @@
         </div>
         <div class="legend-item">
           <div class="legend-dot dead"></div>
-          <span>Dead (2)</span>
+          <span>Dead (0)</span>
         </div>
         <div class="legend-item">
           <div class="legend-dot builtin"></div>
-          <span>Built-in (3)</span>
+          <span>Built-in (1)</span>
         </div>
       </div>
     </header>
@@ -638,33 +638,7 @@
           </div>
         </div>
 
-        <!-- 7. buildSectionShell -->
-        <div class="component-card">
-          <div class="component-header">
-            <div class="component-name">buildSectionShell()</div>
-            <div class="component-status status-builtin">BUILTIN</div>
-          </div>
-          <div class="component-desc">Creates "What the law says" / "What you can do" section headers with icons and live dots.</div>
-          <div class="component-meta">
-            <div class="meta-item"><i class="fa-solid fa-code"></i> app.js:824</div>
-            <div class="meta-item"><i class="fa-solid fa-bolt"></i> Used in buildAnswerBlock</div>
-          </div>
-          <div class="demo-area">
-            <div class="demo-label">Live Demo - Animated dot shows live state</div>
-            <div class="answer-section">
-              <div class="answer-section__head">
-                <div class="answer-section__icon"><i class="fa-solid fa-bolt"></i></div>
-                <span class="answer-section__title">What the law says</span>
-                <span class="answer-section__live-dot"></span>
-              </div>
-              <div class="answer-section__text">
-                <p>Under the Lagos State Tenancy Law 2011, your landlord cannot evict you without proper notice.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 8. buildVerdictEl -->
+        <!-- 7. buildVerdictEl -->
         <div class="component-card">
           <div class="component-header">
             <div class="component-name">buildVerdictEl()</div>
@@ -691,56 +665,19 @@
           </div>
         </div>
 
-        <!-- 9. buildFollowUpsEl + buildMetaRow -->
-        <div class="component-card">
-          <div class="component-header">
-            <div class="component-name">buildFollowUpsEl() + buildMetaRow()</div>
-            <div class="component-status status-builtin">BUILTIN</div>
-          </div>
-          <div class="component-desc">Contextual follow-up prompt buttons and timestamp/action buttons (copy/retry/vote).</div>
-          <div class="component-meta">
-            <div class="meta-item"><i class="fa-solid fa-code"></i> app.js:936, 953</div>
-            <div class="meta-item"><i class="fa-solid fa-bolt"></i> Used in buildAnswerBlock</div>
-          </div>
-          <div class="demo-area">
-            <div class="demo-label">Interactive Demo - Click follow-ups and action buttons</div>
-            <div class="follow-ups" style="margin-bottom: 16px;">
-              <div class="follow-ups-label">Follow-ups</div>
-              <button class="follow-up-btn" onclick="alert('Follow-up: What evidence do I need?')"><i class="fa-solid fa-arrow-right"></i> What evidence do I need?</button>
-              <button class="follow-up-btn" onclick="alert('Follow-up: How long does court take?')"><i class="fa-solid fa-arrow-right"></i> How long does court take?</button>
-            </div>
-            <div class="meta-row">
-              <span class="meta-time">09:41 AM</span>
-              <div class="meta-actions">
-                <button class="meta-action-btn" onclick="alert('Copy clicked')" title="Copy"><i class="fa-solid fa-copy"></i></button>
-                <button class="meta-action-btn" onclick="alert('Retry clicked')" title="Retry"><i class="fa-solid fa-rotate-right"></i></button>
-                <button class="meta-action-btn" onclick="alert('Helpful clicked')" title="Helpful"><i class="fa-solid fa-thumbs-up"></i></button>
-              </div>
-            </div>
-          </div>
-        </div>
-
       </div>
     </section>
 
-    <!-- DEAD COMPONENTS -->
-    <section>
-      <div class="section-header">
-        <div class="section-num dead">DEAD</div>
-        <div class="section-title">Unused Components (2)</div>
-      </div>
-      <div class="component-grid">
-
-        <!-- 10. BeUIApprovalCard -->
+        <!-- 8. BeUIApprovalCard -->
         <div class="component-card">
           <div class="component-header">
             <div class="component-name">BeUIApprovalCard</div>
-            <div class="component-status status-dead">DEAD</div>
+            <div class="component-status status-live">LIVE</div>
           </div>
-          <div class="component-desc">Human-in-the-loop approval requests. Shows questions with selectable options. Optimized for mobile viewport.</div>
+          <div class="component-desc">Human-in-the-loop approval requests. Shows questions with selectable options with animations and success state.</div>
           <div class="component-meta">
             <div class="meta-item"><i class="fa-solid fa-file-code"></i> components/BeUIApprovalCard.js</div>
-            <div class="meta-item"><i class="fa-solid fa-circle-xmark"></i> Not wired to pipeline</div>
+            <div class="meta-item"><i class="fa-solid fa-bolt"></i> Improved with animations</div>
           </div>
           <div class="demo-area">
             <div class="demo-label">Interactive Demo - Select option and approve/reject</div>
@@ -748,19 +685,19 @@
           </div>
         </div>
 
-        <!-- 11. BeUIToolChips -->
+        <!-- 9. BeUIToolChips -->
         <div class="component-card">
           <div class="component-header">
             <div class="component-name">BeUIToolChips</div>
-            <div class="component-status status-dead">DEAD</div>
+            <div class="component-status status-live">LIVE</div>
           </div>
-          <div class="component-desc">Compact tool call indicators. Shows tool calls as collapsible chips with status.</div>
+          <div class="component-desc">Compact tool call indicators with expandable details, live duration timer, and status animations.</div>
           <div class="component-meta">
             <div class="meta-item"><i class="fa-solid fa-file-code"></i> components/BeUIToolChips.js</div>
-            <div class="meta-item"><i class="fa-solid fa-circle-xmark"></i> Not wired to pipeline</div>
+            <div class="meta-item"><i class="fa-solid fa-bolt"></i> Improved with expand/collapse</div>
           </div>
           <div class="demo-area">
-            <div class="demo-label">Live Demo - Click chips to expand/collapse</div>
+            <div class="demo-label">Interactive Demo - Click chips to expand/collapse</div>
             <div id="toolchips-demo"></div>
           </div>
         </div>
@@ -769,7 +706,7 @@
     </section>
 
     <footer>
-      <p>14 total structures · 9 live · 2 dead · 3 built-in</p>
+      <p>10 total structures · 9 live · 0 dead · 1 built-in</p>
     </footer>
   </div>
 
@@ -914,9 +851,24 @@
 
       if (window.BeUIToolChips) {
         const toolChips = new BeUIToolChips(document.getElementById('toolchips-demo'));
-        toolChips.addTool({ name: 'Legal Search', status: 'is-running', query: 'Lagos Tenancy Law s.13' });
-        toolChips.addTool({ name: 'Case Lookup', status: 'is-complete', query: 'Eviction precedents' });
-        toolChips.addTool({ name: 'Statute Check', status: 'is-failed', query: 'Notice period requirements' });
+        toolChips.addTool({ 
+          name: 'Legal Search', 
+          status: 'is-running', 
+          query: 'Lagos Tenancy Law s.13',
+          details: 'Searching: Lagos State Tenancy Law 2011\nSection 13: Notice periods for monthly tenancies\nQuery: "eviction notice requirements Lagos"'
+        });
+        toolChips.addTool({ 
+          name: 'Case Lookup', 
+          status: 'is-complete', 
+          query: 'Eviction precedents',
+          details: 'Found 3 relevant cases:\n• Akinwale v. Olatunji (2019)\n• Lagos State v. Adeyemi (2020)\n• Federal High Court Ruling (2021)'
+        });
+        toolChips.addTool({ 
+          name: 'Statute Check', 
+          status: 'is-failed', 
+          query: 'Notice period requirements',
+          details: 'Error: Connection timeout\nRetrying in 3 seconds...\nFallback: Using cached statute data'
+        });
       }
     });
   </script>

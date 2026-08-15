@@ -9,6 +9,7 @@ class BeUIToolChips {
     
     this.tools = [];
     this.element = null;
+    this.expandedTool = null;
     
     this.render();
   }
@@ -23,25 +24,70 @@ class BeUIToolChips {
   
   addTool(tool) {
     const id = tool.id || `tool-${this.tools.length}`;
-    const toolData = { ...tool, id };
+    const toolData = { 
+      ...tool, 
+      id,
+      startTime: tool.status === 'is-running' ? Date.now() : null,
+      duration: 0
+    };
     this.tools.push(toolData);
     
     this.renderTool(toolData);
+    
+    // Start timer for running tools
+    if (toolData.status === 'is-running') {
+      this.startTimer(toolData);
+    }
+    
     return id;
+  }
+  
+  startTimer(tool) {
+    tool.timerInterval = setInterval(() => {
+      if (tool.status !== 'is-running') {
+        clearInterval(tool.timerInterval);
+        return;
+      }
+      tool.duration = Date.now() - tool.startTime;
+      const chip = this.element.querySelector(`[data-tool-id="${tool.id}"]`);
+      if (chip) {
+        const durationEl = chip.querySelector('.beui-tool-chip__duration');
+        if (durationEl) {
+          durationEl.textContent = this.formatDuration(tool.duration);
+        }
+      }
+    }, 100);
+  }
+  
+  formatDuration(ms) {
+    if (ms < 1000) return `${ms}ms`;
+    return `${(ms / 1000).toFixed(1)}s`;
   }
   
   renderTool(tool) {
     const chip = document.createElement('div');
     chip.className = `beui-tool-chip ${tool.status || ''}`;
     chip.dataset.toolId = tool.id;
+    chip.style.animation = 'slideInRight 0.3s ease-out';
     
     // Icon/spinner
     const iconWrapper = document.createElement('span');
+    iconWrapper.className = 'beui-tool-chip__icon-wrapper';
     
     if (tool.status === 'is-running') {
       const spinner = document.createElement('span');
       spinner.className = 'beui-tool-chip__spinner';
       iconWrapper.appendChild(spinner);
+    } else if (tool.status === 'is-complete') {
+      const icon = document.createElement('span');
+      icon.className = 'beui-tool-chip__icon beui-tool-chip__icon--complete';
+      icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>';
+      iconWrapper.appendChild(icon);
+    } else if (tool.status === 'is-failed') {
+      const icon = document.createElement('span');
+      icon.className = 'beui-tool-chip__icon beui-tool-chip__icon--failed';
+      icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+      iconWrapper.appendChild(icon);
     } else {
       const icon = document.createElement('span');
       icon.className = 'beui-tool-chip__icon';
@@ -51,28 +97,88 @@ class BeUIToolChips {
     
     // Label
     const label = document.createElement('span');
+    label.className = 'beui-tool-chip__label';
     label.textContent = tool.name;
+    
+    // Duration
+    const duration = document.createElement('span');
+    duration.className = 'beui-tool-chip__duration';
+    duration.textContent = tool.duration ? this.formatDuration(tool.duration) : '';
+    
+    // Expand indicator
+    const expandIcon = document.createElement('span');
+    expandIcon.className = 'beui-tool-chip__expand';
+    expandIcon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="6 9 12 15 18 9"/></svg>';
     
     chip.appendChild(iconWrapper);
     chip.appendChild(label);
+    chip.appendChild(duration);
+    chip.appendChild(expandIcon);
     
-    if (tool.onClick) {
-      chip.addEventListener('click', () => tool.onClick(tool));
-    }
+    // Click to expand
+    chip.addEventListener('click', () => {
+      this.toggleExpand(tool.id);
+      if (tool.onClick) tool.onClick(tool);
+    });
     
     this.element.appendChild(chip);
+    
+    // Details panel (hidden by default)
+    if (tool.details) {
+      const details = document.createElement('div');
+      details.className = 'beui-tool-chip__details';
+      details.dataset.toolId = tool.id;
+      details.innerHTML = `<pre>${tool.details}</pre>`;
+      this.element.appendChild(details);
+    }
+  }
+  
+  toggleExpand(toolId) {
+    const details = this.element.querySelector(`.beui-tool-chip__details[data-tool-id="${toolId}"]`);
+    const chip = this.element.querySelector(`[data-tool-id="${toolId}"]`);
+    
+    if (!details || !chip) return;
+    
+    const isExpanded = details.classList.contains('is-open');
+    
+    // Close all others
+    this.element.querySelectorAll('.beui-tool-chip__details.is-open').forEach(d => {
+      d.classList.remove('is-open');
+    });
+    this.element.querySelectorAll('.beui-tool-chip.is-expanded').forEach(c => {
+      c.classList.remove('is-expanded');
+    });
+    
+    if (!isExpanded) {
+      details.classList.add('is-open');
+      chip.classList.add('is-expanded');
+      this.expandedTool = toolId;
+    } else {
+      this.expandedTool = null;
+    }
   }
   
   updateTool(id, updates) {
     const toolIndex = this.tools.findIndex(t => t.id === id);
     if (toolIndex === -1) return;
     
+    const oldStatus = this.tools[toolIndex].status;
     this.tools[toolIndex] = { ...this.tools[toolIndex], ...updates };
+    
+    // Stop timer if no longer running
+    if (oldStatus === 'is-running' && updates.status !== 'is-running') {
+      if (this.tools[toolIndex].timerInterval) {
+        clearInterval(this.tools[toolIndex].timerInterval);
+      }
+      this.tools[toolIndex].duration = Date.now() - this.tools[toolIndex].startTime;
+    }
     
     // Re-render
     const chip = this.element.querySelector(`[data-tool-id="${id}"]`);
     if (chip) {
       chip.remove();
+      const details = this.element.querySelector(`.beui-tool-chip__details[data-tool-id="${id}"]`);
+      if (details) details.remove();
       this.renderTool(this.tools[toolIndex]);
     }
   }
@@ -101,11 +207,15 @@ class BeUIToolChips {
   }
   
   clear() {
+    this.tools.forEach(tool => {
+      if (tool.timerInterval) clearInterval(tool.timerInterval);
+    });
     this.tools = [];
     this.element.innerHTML = '';
   }
   
   destroy() {
+    this.clear();
     if (this.element && this.element.parentNode) {
       this.element.parentNode.removeChild(this.element);
     }
