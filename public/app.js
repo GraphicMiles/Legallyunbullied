@@ -1324,10 +1324,10 @@ import {
     updateStepEl(index, step);
     
     // Update BeUIThinking component if available
-    if (live.thinkingComponent) {
+    if (live.thinkingComponent && live.thinkingComponent.data) {
       // Mark the last added step as complete
       const steps = live.thinkingComponent.data.steps;
-      if (steps.length > 0) {
+      if (steps && steps.length > 0) {
         steps[steps.length - 1].status = "is-complete";
         live.thinkingComponent.renderSteps();
       }
