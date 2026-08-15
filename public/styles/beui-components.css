@@ -457,13 +457,13 @@
 }
 
 .beui-approval.is-approved {
-  border-color: var(--color-success);
-  background: rgba(76, 174, 107, 0.08);
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
 }
 
 .beui-approval.is-rejected {
-  border-color: var(--color-danger);
-  background: rgba(229, 72, 77, 0.08);
+  border-color: var(--color-border);
+  background: var(--color-surface-alt);
 }
 
 .beui-approval__header {
@@ -687,18 +687,18 @@
 }
 
 .beui-tool-chip.is-running {
-  border-color: var(--beui-info);
-  color: var(--beui-info);
+  border-color: var(--color-accent-border);
+  color: var(--color-accent);
 }
 
 .beui-tool-chip.is-complete {
-  border-color: var(--beui-success);
-  color: var(--beui-success);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .beui-tool-chip.is-failed {
-  border-color: var(--beui-error);
-  color: var(--beui-error);
+  border-color: var(--color-border);
+  color: var(--color-text-faint);
 }
 
 .beui-tool-chip__icon-wrapper {
@@ -718,11 +718,11 @@
 }
 
 .beui-tool-chip__icon--complete {
-  color: var(--beui-success);
+  color: var(--color-accent);
 }
 
 .beui-tool-chip__icon--failed {
-  color: var(--beui-error);
+  color: var(--color-text-faint);
 }
 
 .beui-tool-chip__spinner {
@@ -825,19 +825,19 @@
 }
 
 .beui-task-row__status.is-running {
-  background: var(--beui-info);
-  color: white;
+  background: var(--color-accent);
+  color: var(--color-accent-text);
   animation: beui-pulse 2s ease-in-out infinite;
 }
 
 .beui-task-row__status.is-complete {
-  background: var(--beui-success);
-  color: white;
+  background: var(--color-accent);
+  color: var(--color-accent-text);
 }
 
 .beui-task-row__status.is-failed {
-  background: var(--beui-error);
-  color: white;
+  background: var(--color-border);
+  color: var(--color-text-faint);
 }
 
 .beui-task-row__icon {
@@ -1457,7 +1457,7 @@
 @keyframes stream-in {
   0% {
     opacity: 0;
-    filter: blur(8px);
+    filter: blur(10px);
     transform: translateY(4px);
   }
   100% {

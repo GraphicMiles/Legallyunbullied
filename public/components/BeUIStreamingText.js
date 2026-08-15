@@ -337,7 +337,10 @@ class BeUIStreamingText {
           const span = document.createElement('span');
           span.style.cssText = `
             display: inline;
-            animation: stream-in 600ms cubic-bezier(0.22, 0.61, 0.25, 1) both;
+            opacity: 0;
+            filter: blur(10px);
+            transform: translateY(4px);
+            animation: stream-in 500ms cubic-bezier(0.22, 0.61, 0.25, 1) forwards;
           `;
           span.textContent = token.text;
           this.paragraph.appendChild(span);
