@@ -18,6 +18,8 @@ const express = require("express");
 const router = express.Router();
 const { getClient: getGroqClient, CLASSIFY_MODEL, DRAFT_MODEL, DRAFT_MODEL_FALLBACK } = require("./groq");
 const { getClient: getGeminiClient, GEMINI_CLASSIFY_MODEL, GEMINI_DRAFT_MODEL, GEMINI_CHAT_MODEL } = require("./gemini");
+const { getClient: getOpenRouterClient, OPENROUTER_CLASSIFY_MODEL, OPENROUTER_DRAFT_MODEL, OPENROUTER_CHAT_MODEL } = require("./openrouter");
+const { getClient: getCerebrasClient, CEREBRAS_CLASSIFY_MODEL, CEREBRAS_DRAFT_MODEL, CEREBRAS_CHAT_MODEL } = require("./cerebras");
 const { findProvisions } = require("./legalCorpus");
 const { PRACTICE_AREAS: PRACTICE_AREA_DEFS, PRACTICE_AREA_KEYS } = require("./practiceAreas");
 
@@ -278,9 +280,11 @@ function withTimeout(promise, ms, operation = "operation") {
 
 async function classifyWithFallback(question) {
   const groqClient = getGroqClient();
+  const openRouterClient = getOpenRouterClient();
+  const cerebrasClient = getCerebrasClient();
   const geminiClient = getGeminiClient();
 
-  // Try Groq first
+  // Try Groq first (fastest, already working for casual chat)
   if (groqClient) {
     try {
       const completion = await callCompletion(
@@ -295,11 +299,46 @@ async function classifyWithFallback(question) {
       return { classification: parseModelJson(completion.choices[0].message.content), provider: "groq" };
     } catch (err) {
       console.warn(`[/api/chat] Groq classification failed: ${err.status || ""} ${err.message}`);
-      // Fall through to Gemini
     }
   }
 
-  // Try Gemini
+  // Try OpenRouter (35+ free models, OpenAI-compatible)
+  if (openRouterClient) {
+    try {
+      const completion = await callCompletion(
+        openRouterClient,
+        OPENROUTER_CLASSIFY_MODEL,
+        [
+          { role: "system", content: CLASSIFY_SYSTEM_PROMPT },
+          { role: "user", content: question },
+        ],
+        { temperature: 0, max_tokens: 2000, response_format: { type: "json_object" } }
+      );
+      return { classification: parseModelJson(completion.choices[0].message.content), provider: "openrouter" };
+    } catch (err) {
+      console.warn(`[/api/chat] OpenRouter classification failed: ${err.status || ""} ${err.message}`);
+    }
+  }
+
+  // Try Cerebras (ultra-fast, high rate limits)
+  if (cerebrasClient) {
+    try {
+      const completion = await callCompletion(
+        cerebrasClient,
+        CEREBRAS_CLASSIFY_MODEL,
+        [
+          { role: "system", content: CLASSIFY_SYSTEM_PROMPT },
+          { role: "user", content: question },
+        ],
+        { temperature: 0, max_tokens: 2000, response_format: { type: "json_object" } }
+      );
+      return { classification: parseModelJson(completion.choices[0].message.content), provider: "cerebras" };
+    } catch (err) {
+      console.warn(`[/api/chat] Cerebras classification failed: ${err.status || ""} ${err.message}`);
+    }
+  }
+
+  // Try Gemini as last resort
   if (geminiClient) {
     try {
       const completion = await callCompletion(
@@ -313,12 +352,12 @@ async function classifyWithFallback(question) {
       );
       return { classification: parseModelJson(completion.choices[0].message.content), provider: "gemini" };
     } catch (err) {
-      console.error(`[/api/chat] Gemini classification also failed: ${err.status || ""} ${err.message}`);
+      console.error(`[/api/chat] All LLM providers failed. Last error (Gemini): ${err.status || ""} ${err.message}`);
       throw err;
     }
   }
 
-  throw new Error("No LLM provider configured for classification.");
+  throw new Error("No LLM provider configured for classification. Set GROQ_API_KEY, OPENROUTER_API_KEY, CEREBRAS_API_KEY, or GEMINI_API_KEY.");
 }
 
 async function draftWithModel(client, model, question, contextBlock, plan, classification) {
@@ -367,6 +406,8 @@ Follow this plan to structure your response. Be comprehensive and address all su
 
 async function draftWithFallback(question, contextBlock, plan, classification) {
   const groqClient = getGroqClient();
+  const openRouterClient = getOpenRouterClient();
+  const cerebrasClient = getCerebrasClient();
   const geminiClient = getGeminiClient();
 
   // Try Groq primary model
@@ -377,7 +418,7 @@ async function draftWithFallback(question, contextBlock, plan, classification) {
     } catch (err) {
       const isRateLimited = err.status === 429 || err.status === 413;
       if (isRateLimited) {
-        console.warn(`[/api/chat] Groq ${DRAFT_MODEL} rate-limited, trying fallback...`);
+        console.warn(`[/api/chat] Groq ${DRAFT_MODEL} rate-limited, trying fallback model...`);
 
         // Try Groq fallback model
         if (DRAFT_MODEL_FALLBACK && DRAFT_MODEL_FALLBACK !== DRAFT_MODEL) {
@@ -386,28 +427,46 @@ async function draftWithFallback(question, contextBlock, plan, classification) {
             return { result, model: DRAFT_MODEL_FALLBACK, provider: "groq-fallback" };
           } catch (fallbackErr) {
             console.warn(`[/api/chat] Groq fallback also failed: ${fallbackErr.status || ""} ${fallbackErr.message}`);
-            // Fall through to Gemini
           }
         }
       } else {
-        console.error(`[/api/chat] Groq drafting failed with non-rate-limit error: ${err.status || ""} ${err.message}`);
-        // For non-rate-limit errors, still try Gemini as a safety net
+        console.warn(`[/api/chat] Groq drafting failed: ${err.status || ""} ${err.message}`);
       }
     }
   }
 
-  // Try Gemini
+  // Try OpenRouter (35+ free models)
+  if (openRouterClient) {
+    try {
+      const result = await draftWithModel(openRouterClient, OPENROUTER_DRAFT_MODEL, question, contextBlock, plan, classification);
+      return { result, model: OPENROUTER_DRAFT_MODEL, provider: "openrouter" };
+    } catch (err) {
+      console.warn(`[/api/chat] OpenRouter drafting failed: ${err.status || ""} ${err.message}`);
+    }
+  }
+
+  // Try Cerebras (ultra-fast)
+  if (cerebrasClient) {
+    try {
+      const result = await draftWithModel(cerebrasClient, CEREBRAS_DRAFT_MODEL, question, contextBlock, plan, classification);
+      return { result, model: CEREBRAS_DRAFT_MODEL, provider: "cerebras" };
+    } catch (err) {
+      console.warn(`[/api/chat] Cerebras drafting failed: ${err.status || ""} ${err.message}`);
+    }
+  }
+
+  // Try Gemini as last resort
   if (geminiClient) {
     try {
       const result = await draftWithModel(geminiClient, GEMINI_DRAFT_MODEL, question, contextBlock, plan, classification);
       return { result, model: GEMINI_DRAFT_MODEL, provider: "gemini" };
     } catch (err) {
-      console.error(`[/api/chat] Gemini drafting also failed: ${err.status || ""} ${err.message}`);
+      console.error(`[/api/chat] All LLM providers failed. Last error (Gemini): ${err.status || ""} ${err.message}`);
       throw err;
     }
   }
 
-  throw new Error("No LLM provider available for drafting.");
+  throw new Error("No LLM provider available for drafting. Set GROQ_API_KEY, OPENROUTER_API_KEY, CEREBRAS_API_KEY, or GEMINI_API_KEY.");
 }
 
 router.post("/api/chat", async (req, res) => {
@@ -418,11 +477,13 @@ router.post("/api/chat", async (req, res) => {
 
   // Check that at least one LLM provider is configured
   const groqClient = getGroqClient();
+  const openRouterClient = getOpenRouterClient();
+  const cerebrasClient = getCerebrasClient();
   const geminiClient = getGeminiClient();
-  if (!groqClient && !geminiClient) {
+  if (!groqClient && !openRouterClient && !cerebrasClient && !geminiClient) {
     return res.status(503).json({
       error: "not_configured",
-      message: "No LLM provider configured. Set GROQ_API_KEY and/or GEMINI_API_KEY.",
+      message: "No LLM provider configured. Set GROQ_API_KEY, OPENROUTER_API_KEY, CEREBRAS_API_KEY, or GEMINI_API_KEY.",
     });
   }
 
