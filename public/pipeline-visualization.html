@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Legally Unbullied — Live Pipeline</title>
+  <link rel="stylesheet" href="styles/beui-inspired.css">
+  <link rel="stylesheet" href="styles/beui-components.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    :root {
+      --color-bg: #0a0a0a;
+      --color-bg-raised: #121212;
+      --color-surface: #161616;
+      --color-surface-alt: #1c1c1c;
+      --color-border: #2a2a2a;
+      --color-text: #f5f5f2;
+      --color-text-muted: #9a9a94;
+      --color-text-faint: #6b6b66;
+      --color-accent: #f2b705;
+      --color-accent-hover: #ffc61a;
+      --color-accent-text: #14120a;
+      --color-accent-soft: rgba(242, 183, 5, 0.12);
+      --color-accent-border: rgba(242, 183, 5, 0.35);
+    }
+    
+    body {
+      margin: 0;
+      padding: 32px 16px;
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-family: var(--font-sans);
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      margin: 0 0 4px;
+      color: var(--color-accent);
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: var(--color-text-muted);
+      margin: 0 0 32px;
+    }
+
+    /* Pipeline stage headers */
+    .pipeline-stage {
+      margin-bottom: 32px;
+    }
+
+    .stage-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .stage-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--color-accent);
+      color: var(--color-accent-text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .stage-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .stage-desc {
+      font-size: 12px;
+      color: var(--color-text-faint);
+      margin-left: 34px;
+      margin-bottom: 12px;
+    }
+
+    /* Message shell */
+    .msg {
+      display: flex;
+      gap: 12px;
+    }
+
+    .msg__avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-accent);
+      flex-shrink: 0;
+    }
+
+    .msg__body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    /* Answer block */
+    .answer {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .answer-section {
+      border: 1px solid var(--color-border);
+      border-radius: 10px;
+      background: var(--color-bg-raised);
+    }
+
+    .answer-section.is-live {
+      border-color: var(--color-accent-border);
+    }
+
+    .answer-section__head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--color-border-soft, #1f1f1f);
+    }
+
+    .answer-section__icon {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-accent);
+    }
+
+    .answer-section__title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .answer-section__live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--color-accent);
+      animation: dotPulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes dotPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.7); }
+    }
+
+    .answer-section__text {
+      padding: 14px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--color-text);
+    }
+
+    .answer-section__text p {
+      margin: 0 0 10px;
+    }
+
+    .answer-section__text p:last-child {
+      margin: 0;
+    }
+
+    .answer-section__text strong {
+      color: var(--color-text);
+      font-weight: 700;
+    }
+
+    .answer-section__text ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .answer-section__text li {
+      margin-bottom: 4px;
+    }
+
+    /* Verdict */
+    .verdict {
+      border: 1px solid var(--color-accent-border);
+      border-radius: 10px;
+      background: var(--color-accent-soft);
+      padding: 14px;
+    }
+
+    .verdict--self {
+      border-color: rgba(76, 174, 107, 0.35);
+      background: rgba(76, 174, 107, 0.08);
+    }
+
+    .verdict--escalate {
+      border-color: rgba(229, 72, 77, 0.35);
+      background: rgba(229, 72, 77, 0.08);
+    }
+
+    .verdict__head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .verdict__icon {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: var(--color-surface);
+    }
+
+    .verdict--self .verdict__icon { color: #4cae6b; }
+    .verdict--escalate .verdict__icon { color: #e5484d; }
+
+    .verdict__title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .verdict__text {
+      font-size: 13px;
+      color: var(--color-text-muted);
+      margin: 0 0 12px;
+      line-height: 1.5;
+    }
+
+    .verdict__actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .link-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-accent);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+
+    .link-btn:hover {
+      background: var(--color-surface-alt);
+    }
+
+    /* Follow-ups */
+    .follow-ups {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .follow-ups__label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--color-text-faint);
+      margin-bottom: 4px;
+    }
+
+    .follow-up-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      font-size: 13px;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+      transition: background 120ms, border-color 120ms, color 120ms;
+    }
+
+    .follow-up-btn:hover {
+      background: var(--color-surface);
+      border-color: var(--color-border);
+      color: var(--color-text);
+    }
+
+    .follow-up-btn i {
+      color: var(--color-text-faint);
+      font-size: 11px;
+    }
+
+    /* Meta row */
+    .meta-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-top: 12px;
+    }
+
+    .meta-row__time {
+      font-size: 11px;
+      color: var(--color-text-faint);
+    }
+
+    .meta-row__actions {
+      display: flex;
+      gap: 4px;
+      margin-left: auto;
+    }
+
+    .meta-row__action-btn {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      color: var(--color-text-faint);
+      cursor: pointer;
+      transition: background 100ms, color 100ms;
+    }
+
+    .meta-row__action-btn:hover {
+      background: var(--color-surface);
+      color: var(--color-text);
+    }
+
+    /* Composer bar */
+    .composer-bar {
+      margin-top: 32px;
+      background: var(--color-surface);
+      border: 2px solid var(--color-border);
+      border-radius: 12px;
+      padding: 10px;
+    }
+
+    .composer-bar:focus-within {
+      border-color: var(--color-accent-border);
+    }
+
+    .composer-bar__inner {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 0;
+      width: 100%;
+    }
+
+    .composer-bar textarea {
+      flex: 1 1 auto;
+      min-height: 40px;
+      max-height: 120px;
+      padding: 8px;
+      background: transparent;
+      border: none;
+      color: var(--color-text);
+      font-size: 14px;
+      font-family: inherit;
+      resize: none;
+      outline: none;
+      min-width: 0;
+    }
+
+    .composer-bar textarea::placeholder {
+      color: var(--color-text-faint);
+    }
+
+    .composer-bar__actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0;
+      flex: 0 0 auto;
+      min-width: 180px;
+    }
+
+    .composer-bar__model-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--color-text-muted);
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      cursor: pointer;
+      transition: all 150ms;
+      min-width: 120px;
+      max-width: 140px;
+      overflow: hidden;
+      margin-right: 1rem;
+    }
+
+    .composer-bar__model-btn:hover {
+      background: var(--color-bg-raised);
+      border-color: var(--color-accent-border);
+      color: var(--color-text);
+    }
+
+    .composer-bar__model-btn span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+
+    .composer-bar__send {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-accent);
+      color: var(--color-accent-text);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 120ms;
+    }
+
+    .composer-bar__send:hover {
+      background: var(--color-accent-hover);
+    }
+
+    /* Composer dropdown (live) */
+    .composer-bar__dropdown {
+      position: relative;
+      width: 180px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      box-shadow: 0 -4px 12px rgba(0,0,0,0.4);
+      margin-top: 4px;
+      overflow: hidden;
+    }
+
+    .composer-bar__dropdown-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: background 150ms;
+      border-bottom: 1px solid var(--color-border-soft, #1f1f1f);
+    }
+
+    .composer-bar__dropdown-item:last-child {
+      border-bottom: none;
+    }
+
+    .composer-bar__dropdown-item:hover {
+      background: var(--color-surface-alt);
+    }
+
+    .composer-bar__dropdown-item i {
+      display: none;
+    }
+
+    .composer-bar__dropdown-text {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .composer-bar__dropdown-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--color-text);
+    }
+
+    .composer-bar__dropdown-tag {
+      font-size: 11px;
+      color: var(--color-accent);
+      background: var(--color-accent-soft);
+      padding: 2px 6px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .composer-bar__disclaimer {
+      text-align: center;
+      font-size: 11px;
+      color: var(--color-text-faint);
+      margin-top: 8px;
+    }
+
+    /* Status bar */
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 24px;
+    }
+
+    .status--ok {
+      background: rgba(76, 174, 107, 0.08);
+      color: #4cae6b;
+      border: 1px solid rgba(76, 174, 107, 0.2);
+    }
+
+    .status--warn {
+      background: rgba(242, 183, 5, 0.08);
+      color: var(--color-accent);
+      border: 1px solid rgba(242, 183, 5, 0.2);
+    }
+
+    .status i {
+      font-size: 12px;
+    }
+
+    /* Demo buttons */
+    .demo-controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .demo-btn {
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      color: var(--color-text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 150ms;
+    }
+
+    .demo-btn:hover {
+      background: var(--color-surface-alt);
+      color: var(--color-text);
+    }
+
+    .demo-btn.active {
+      background: var(--color-accent);
+      color: var(--color-accent-text);
+      border-color: var(--color-accent);
+    }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Legally Unbullied — Live Pipeline</h1>
+    <p class="subtitle">What actually renders in the DOM, animations and colors included</p>
+
+    <!-- Status -->
+    <div class="status status--ok">
+      <i class="fa-solid fa-circle-check"></i>
+      All 5 BeUI components loaded and integrated
+    </div>
+
+    <!-- Demo controls -->
+    <div class="demo-controls">
+      <button class="demo-btn active" id="btn-complete" onclick="showComplete()">Complete Pipeline</button>
+      <button class="demo-btn" id="btn-loading" onclick="showLoading()">Loading State</button>
+      <button class="demo-btn" id="btn-thinking" onclick="showThinking()">Thinking State</button>
+      <button class="demo-btn" id="btn-streaming" onclick="showStreaming()">Streaming Text</button>
+      <button class="demo-btn" id="btn-composer" onclick="showComposer()">Composer Bar</button>
+    </div>
+
+    <!-- ===================== COMPLETE PIPELINE ===================== -->
+    <div id="view-complete">
+      <div class="pipeline-stage">
+        <div class="stage-header">
+          <div class="stage-num">3</div>
+          <div class="stage-name">BeUIStreamingText — "What the law says"</div>
+        </div>
+        <div class="stage-desc">Word-by-word blur-to-clear animation with oneShot mode</div>
+
+        <div class="msg">
+          <div class="msg__avatar">
+            <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+              <path d="M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+              <path d="M11 15.5L14.2 18.7L21 11.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="msg__body">
+            <div class="answer">
+
+              <!-- Law section -->
+              <div class="answer-section">
+                <div class="answer-section__head">
+                  <div class="answer-section__icon"><i class="fa-solid fa-bolt"></i></div>
+                  <span class="answer-section__title">What the law says</span>
+                </div>
+                <div class="answer-section__text">
+                  <p>Under the <strong>Lagos State Tenancy Law 2011</strong>, your landlord cannot evict you without proper notice. Section 13 requires a minimum of <strong>7 days notice</strong> for monthly tenants.</p>
+                  <p>Furthermore, Section 20 prohibits <strong>self-help eviction</strong> such as changing locks or removing your belongings. Only a court order can authorize eviction.</p>
+                </div>
+              </div>
+
+              <!-- Context cards -->
+              <div class="pipeline-stage" style="margin-bottom: 16px;">
+                <div class="stage-header">
+                  <div class="stage-num">4</div>
+                  <div class="stage-name">BeUIContextCards</div>
+                </div>
+                <div class="stage-desc">Retrieved knowledge chunks appended after law section</div>
+                <div id="ctx-demo"></div>
+              </div>
+
+              <!-- Actions section -->
+              <div class="answer-section">
+                <div class="answer-section__head">
+                  <div class="answer-section__icon"><i class="fa-solid fa-list"></i></div>
+                  <span class="answer-section__title">What you can do</span>
+                </div>
+                <div class="answer-section__text">
+                  <ul>
+                    <li>File a complaint at the nearest Magistrate Court with your tenancy agreement and evidence</li>
+                    <li>Contact the Lagos State Citizens Mediation Centre for free dispute resolution</li>
+                    <li>Send a formal demand letter to your landlord requesting immediate repossession</li>
+                  </ul>
+                </div>
+              </div>
+
+              <!-- Verdict -->
+              <div class="pipeline-stage" style="margin-bottom: 16px;">
+                <div class="stage-header">
+                  <div class="stage-num">6</div>
+                  <div class="stage-name">Verdict</div>
+                </div>
+                <div class="stage-desc">Legal position summary — self-handle vs lawyer needed</div>
+                <div class="verdict verdict--self">
+                  <div class="verdict__head">
+                    <div class="verdict__icon"><i class="fa-solid fa-shield-halved"></i></div>
+                    <span class="verdict__title">You can likely handle this yourself</span>
+                  </div>
+                  <p class="verdict__text">The law is clear on notice periods for tenancy. You have strong grounds to challenge the eviction without immediate legal representation.</p>
+                  <div class="verdict__actions">
+                    <button class="link-btn"><i class="fa-solid fa-scale-balanced"></i> Find a lawyer (NBA)</button>
+                    <button class="link-btn"><i class="fa-solid fa-phone"></i> Citizens Mediation</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Follow-ups -->
+              <div class="pipeline-stage" style="margin-bottom: 16px;">
+                <div class="stage-header">
+                  <div class="stage-num">7</div>
+                  <div class="stage-name">Follow-ups</div>
+                </div>
+                <div class="stage-desc">Contextual prompts for next questions</div>
+                <div class="follow-ups">
+                  <button class="follow-up-btn"><i class="fa-solid fa-arrow-right"></i> What evidence do I need to gather?</button>
+                  <button class="follow-up-btn"><i class="fa-solid fa-arrow-right"></i> How long does the court process take?</button>
+                  <button class="follow-up-btn"><i class="fa-solid fa-arrow-right"></i> Can I stay in the apartment during the dispute?</button>
+                </div>
+              </div>
+
+              <!-- Meta row -->
+              <div class="pipeline-stage" style="margin-bottom: 0;">
+                <div class="stage-header">
+                  <div class="stage-num">8</div>
+                  <div class="stage-name">Meta row</div>
+                </div>
+                <div class="stage-desc">Timestamp and action buttons</div>
+                <div class="meta-row">
+                  <span class="meta-row__time">09:41 AM · 1.2s response</span>
+                  <div class="meta-row__actions">
+                    <button class="meta-row__action-btn" title="Copy"><i class="fa-solid fa-copy"></i></button>
+                    <button class="meta-row__action-btn" title="Retry"><i class="fa-solid fa-rotate-right"></i></button>
+                    <button class="meta-row__action-btn" title="Helpful"><i class="fa-solid fa-thumbs-up"></i></button>
+                    <button class="meta-row__action-btn" title="Not helpful"><i class="fa-solid fa-thumbs-down"></i></button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== LOADING STATE ===================== -->
+    <div id="view-loading" class="hidden">
+      <div class="pipeline-stage">
+        <div class="stage-header">
+          <div class="stage-num">1</div>
+          <div class="stage-name">BeUILoadingState</div>
+        </div>
+        <div class="stage-desc">Pixel-grid loader with shimmer — shown during API call</div>
+        <div class="msg">
+          <div class="msg__avatar">
+            <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+              <path d="M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="msg__body">
+            <div id="loading-demo"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== THINKING STATE ===================== -->
+    <div id="view-thinking" class="hidden">
+      <div class="pipeline-stage">
+        <div class="stage-header">
+          <div class="stage-num">2</div>
+          <div class="stage-name">BeUIThinkingState</div>
+        </div>
+        <div class="stage-desc">Expandable trace — Steps, Reasoning, Search, Coding variants</div>
+        <div class="msg">
+          <div class="msg__avatar">
+            <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+              <path d="M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="msg__body">
+            <div class="variant-tabs" style="margin-bottom: 12px;">
+              <button class="variant-tab active" data-v="Steps">Steps</button>
+              <button class="variant-tab" data-v="Reasoning">Reasoning</button>
+              <button class="variant-tab" data-v="Search">Search</button>
+              <button class="variant-tab" data-v="Coding">Coding</button>
+            </div>
+            <div id="thinking-demo"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== STREAMING TEXT ===================== -->
+    <div id="view-streaming" class="hidden">
+      <div class="pipeline-stage">
+        <div class="stage-header">
+          <div class="stage-num">3</div>
+          <div class="stage-name">BeUIStreamingText — Word animation</div>
+        </div>
+        <div class="stage-desc">Each word resolves from blur(8px) to blur(0) over 420ms</div>
+        <div class="msg">
+          <div class="msg__avatar">
+            <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+              <path d="M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="msg__body">
+            <div id="streaming-demo"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== COMPOSER BAR ===================== -->
+    <div id="view-composer" class="hidden">
+      <div class="pipeline-stage">
+        <div class="stage-header">
+          <div class="stage-num">—</div>
+          <div class="stage-name">Composer Bar — Live DOM</div>
+        </div>
+        <div class="stage-desc">60% input + model picker + send button, model dropdown toggles</div>
+        <div class="composer-bar">
+          <div class="composer-bar__inner">
+            <textarea placeholder="Describe your legal situation…" rows="1"></textarea>
+            <div class="composer-bar__actions">
+              <button class="composer-bar__model-btn" id="model-toggle">
+                <span>Groq</span>
+                <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
+              </button>
+              <button class="composer-bar__send"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+          </div>
+          <div class="composer-bar__dropdown" id="model-dropdown">
+            <div class="composer-bar__dropdown-item">
+              <div class="composer-bar__dropdown-text">
+                <span class="composer-bar__dropdown-name">Groq</span>
+                <span class="composer-bar__dropdown-tag">Fast</span>
+              </div>
+            </div>
+            <div class="composer-bar__dropdown-item">
+              <div class="composer-bar__dropdown-text">
+                <span class="composer-bar__dropdown-name">OpenRouter</span>
+                <span class="composer-bar__dropdown-tag">35+ models</span>
+              </div>
+            </div>
+            <div class="composer-bar__dropdown-item">
+              <div class="composer-bar__dropdown-text">
+                <span class="composer-bar__dropdown-name">Cerebras</span>
+                <span class="composer-bar__dropdown-tag">Ultra-fast</span>
+              </div>
+            </div>
+          </div>
+          <p class="composer-bar__disclaimer">Legally Unbullied gives legal information, not legal advice. For urgent matters, contact a lawyer or the police directly.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Load actual BeUI components to show real animations -->
+  <script src="components/BeUILoadingState.js"></script>
+  <script src="components/BeUIThinkingState.js"></script>
+  <script src="components/BeUIStreamingText.js"></script>
+  <script src="components/BeUIContextCards.js"></script>
+
+  <script>
+    // View switching
+    function showComplete() { setActive('complete'); }
+    function showLoading() { setActive('loading'); }
+    function showThinking() { setActive('thinking'); }
+    function showStreaming() { setActive('streaming'); }
+    function showComposer() { setActive('composer'); }
+
+    function setActive(view) {
+      ['complete','loading','thinking','streaming','composer'].forEach(v => {
+        document.getElementById('view-' + v).classList.toggle('hidden', v !== view);
+        document.getElementById('btn-' + v).classList.toggle('active', v === view);
+      });
+    }
+
+    // Thinking variant tabs
+    document.querySelectorAll('.variant-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.variant-tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderThinking(btn.dataset.v);
+      });
+    });
+
+    // Model dropdown toggle
+    document.getElementById('model-toggle').addEventListener('click', () => {
+      const dd = document.getElementById('model-dropdown');
+      dd.style.display = dd.style.display === 'block' ? 'none' : 'block';
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.composer-bar__model-btn') && !e.target.closest('.composer-bar__dropdown')) {
+        document.getElementById('model-dropdown').style.display = 'none';
+      }
+    });
+
+    // Initialize BeUI components
+    function initComponents() {
+      // Loading state
+      if (window.BeUILoadingState) {
+        new BeUILoadingState(document.getElementById('loading-demo'), {
+          label: 'Analyzing your question',
+          variant: 'Drive'
+        });
+      }
+
+      // Thinking state
+      renderThinking('Steps');
+
+      // Streaming text
+      if (window.BeUIStreamingText) {
+        new BeUIStreamingText(document.getElementById('streaming-demo'), {
+          text: 'Under the Lagos State Tenancy Law 2011, your landlord cannot evict you without proper notice. Section 13 requires a minimum of 7 days notice for monthly tenants. Furthermore, Section 20 prohibits self-help eviction such as changing locks or removing your belongings. Only a court order can authorize eviction.',
+          sources: [
+            { name: 'Lagos State Tenancy Law', domain: 's.13', href: '#' },
+            { name: 'Lagos State Tenancy Law', domain: 's.20', href: '#' }
+          ],
+          followUps: [],
+          oneShot: true,
+          showActions: true
+        });
+      }
+
+      // Context cards
+      if (window.BeUIContextCards) {
+        new BeUIContextCards(document.getElementById('ctx-demo'), {
+          chunks: [
+            {
+              title: 'Lagos State Tenancy Law 2011',
+              chars: '245 characters',
+              body: 'A landlord shall not evict a tenant without giving proper notice to quit. For monthly tenancies, the notice period shall be seven days.',
+              source: 's.13',
+              badge: 'LAW',
+              tone: 'var(--color-accent)'
+            },
+            {
+              title: 'Lagos State Tenancy Law 2011',
+              chars: '189 characters',
+              body: 'No landlord shall take the law into his own hands by ejecting a tenant without a court order. Self-help eviction is prohibited and punishable by law.',
+              source: 's.20',
+              badge: 'LAW',
+              tone: 'var(--color-accent)'
+            }
+          ]
+        });
+      }
+    }
+
+    let thinkingInstance = null;
+    function renderThinking(variant) {
+      const el = document.getElementById('thinking-demo');
+      if (thinkingInstance) thinkingInstance.destroy();
+      if (window.BeUIThinkingState) {
+        thinkingInstance = new BeUIThinkingState(el, { variant });
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', initComponents);
+  </script>
+</body>
+</html>

@@ -828,14 +828,14 @@
 .beui-prompt-bar__input-wrapper {
   display: flex;
   align-items: flex-end;
-  justify-content: space-evenly;
-  gap: var(--beui-spacing-sm);
+  justify-content: space-between;
+  gap: 0;
   padding: var(--beui-spacing-sm);
   width: 100%;
 }
 
 .beui-prompt-bar__input {
-  flex: 0 0 60%;
+  flex: 1 1 auto;
   min-height: 40px;
   max-height: 200px;
   padding: var(--beui-spacing-sm);
@@ -845,17 +845,18 @@
   color: var(--color-text);
   resize: none;
   font-family: inherit;
+  min-width: 0;
 }
 
 @media (max-width: 900px) {
   .beui-prompt-bar__input {
-    flex: 0 0 55%;
+    flex: 1 1 auto;
   }
 }
 
 @media (max-width: 480px) {
   .beui-prompt-bar__input {
-    flex: 0 0 50%;
+    flex: 1 1 auto;
   }
 }
 
@@ -870,20 +871,21 @@
 .beui-prompt-bar__actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--beui-spacing-sm);
-  flex: 0 0 40%;
+  justify-content: flex-end;
+  gap: 0;
+  flex: 0 0 auto;
+  min-width: 200px;
 }
 
 @media (max-width: 900px) {
   .beui-prompt-bar__actions {
-    flex: 0 0 45%;
+    min-width: 180px;
   }
 }
 
 @media (max-width: 480px) {
   .beui-prompt-bar__actions {
-    flex: 0 0 50%;
+    min-width: 160px;
   }
 }
 
@@ -906,20 +908,22 @@
 }
 
 .beui-prompt-bar__button--submit {
-  flex: 0 0 45%;
-  min-width: 80px;
-  max-width: 120px;
+  flex: 0 0 auto;
+  min-width: 36px;
+  max-width: 44px;
 }
 
 @media (max-width: 900px) {
   .beui-prompt-bar__button--submit {
-    flex: 0 0 48%;
+    min-width: 36px;
+    max-width: 40px;
   }
 }
 
 @media (max-width: 480px) {
   .beui-prompt-bar__button--submit {
-    flex: 0 0 50%;
+    min-width: 36px;
+    max-width: 36px;
   }
 }
 
@@ -1154,7 +1158,7 @@
   position: absolute;
   bottom: 100%;
   left: 0;
-  width: 280px;
+  width: 200px;
   max-width: 90%;
   margin-bottom: 8px;
   background: var(--color-surface, #1a1a1a);
@@ -1192,23 +1196,17 @@
 }
 
 .beui-prompt-bar__dropdown-item i {
-  font-size: 16px;
-  color: var(--color-text-muted, #888);
-  flex-shrink: 0;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 2px;
+  display: none;
 }
 
 .beui-prompt-bar__dropdown-text {
   flex: 1;
   min-width: 0;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .beui-prompt-bar__dropdown-name {
@@ -1226,6 +1224,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex-shrink: 0;
 }
 
 .beui-prompt-bar__dropdown-tag {
@@ -1375,5 +1374,8 @@
   100% {
     opacity: 1;
     transform: translateY(-1px) scale(1);
+  }
+}
+teY(-1px) scale(1);
   }
 }
