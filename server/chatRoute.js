@@ -689,6 +689,7 @@ async function draftWithFallback(question, contextBlock, plan, classification) {
   }
 
   let lastErr = null;
+  let allSkipped = true;
   let allRateLimited = true;
 
   for (const [key, client, model] of providers) {
@@ -697,7 +698,7 @@ async function draftWithFallback(question, contextBlock, plan, classification) {
       console.log(`[/api/chat] Skipping "${key}" — on cooldown`);
       continue;
     }
-    allRateLimited = false; // at least one was attempted
+    allSkipped = false; // at least one was attempted
 
     try {
       const result = await draftWithModel(client, model, question, contextBlock, plan, classification);
@@ -709,33 +710,51 @@ async function draftWithFallback(question, contextBlock, plan, classification) {
         markProviderRateLimited(key);
       } else if (isParseError(err)) {
         console.warn(`[/api/chat] ${key} JSON parse failed, trying next provider: ${err.message}`);
-        // Don't mark cooldown — parse failures are transient, try again next request
+      } else if (err.status === 404 || (err.message && err.message.includes('404'))) {
+        console.warn(`[/api/chat] ${key} model unavailable (404): ${err.message}`);
+        allRateLimited = false;
       } else {
         console.warn(`[/api/chat] ${key} failed: ${err.status || ""} ${err.message}`);
+        allRateLimited = false;
       }
     }
   }
 
-  // All providers attempted and failed
-  if (allRateLimited) {
-    // All providers are on cooldown — return graceful fallback instead of throwing
+  // All providers attempted and failed — return graceful fallback
+  if (!allSkipped) {
+    const retrySeconds = 30;
+    console.log(`[/api/chat] All providers failed, returning providersBusy fallback`);
     return {
       result: {
-        lawMd: "All legal reasoning providers are currently busy. Please wait a moment and try again.",
-        actionsMd: "- Step 1: Wait 30 seconds and resend your question.\n- Step 2: If the issue persists, try rephrasing your question.",
+        lawMd: "Our legal reasoning providers are temporarily unavailable. Please try again in a moment.",
+        actionsMd: `- Step 1: Wait ${retrySeconds} seconds and resend your question.\n- Step 2: If the issue persists, try rephrasing your question.\n- Step 3: For urgent matters, contact a lawyer directly.`,
         sources: [],
         escalate: false,
-        escalateReason: "System under load — retry needed.",
+        escalateReason: "System temporarily unavailable — retry needed.",
         followUps: [],
       },
       model: "fallback",
-      provider: "all-busy",
+      provider: "all-failed",
       providersBusy: true,
-      retryAfter: COOLDOWN_MS / 1000,
+      retryAfter: retrySeconds,
     };
   }
 
-  throw lastErr || new Error("All LLM providers failed.");
+  // All providers were on cooldown
+  return {
+    result: {
+      lawMd: "All legal reasoning providers are currently busy. Please wait a moment and try again.",
+      actionsMd: "- Step 1: Wait 30 seconds and resend your question.\n- Step 2: If the issue persists, try rephrasing your question.",
+      sources: [],
+      escalate: false,
+      escalateReason: "System under load — retry needed.",
+      followUps: [],
+    },
+    model: "fallback",
+    provider: "all-busy",
+    providersBusy: true,
+    retryAfter: COOLDOWN_MS / 1000,
+  };
 }
 
 router.post("/api/chat", async (req, res) => {
