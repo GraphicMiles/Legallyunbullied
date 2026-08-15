@@ -1433,7 +1433,7 @@ import {
   }
 
   function updateStepEl(index, step) {
-    if (!live.refs) return;
+    if (!live.refs || !live.refs.stepEls) return;
     const fresh = buildStepEl(step);
     const old = live.refs.stepEls[index];
     if (old && old.parentNode) old.parentNode.replaceChild(fresh, old);
