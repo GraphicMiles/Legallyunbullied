@@ -98,6 +98,20 @@ function scoreScenario(scenario, response) {
     dimensions.must_not_cite = wronglyCited.length === 0 ? 1 : 0;
   }
 
+  // Dimension 7b: split scoring — quality and legal_safety
+  if (response.critique) {
+    const critique = response.critique;
+    if (critique.quality !== undefined) dimensions.critique_quality = critique.quality;
+    if (critique.legal_safety !== undefined) dimensions.critique_safety = critique.legal_safety;
+    if (critique.quality_passed !== undefined) dimensions.quality_passed = critique.quality_passed ? 1 : 0;
+    if (critique.safety_passed !== undefined) dimensions.safety_passed = critique.safety_passed ? 1 : 0;
+  }
+
+  // Dimension 7c: HITL — needsInput handling
+  if (expected.needs_input) {
+    dimensions.needs_input = response.needsInput ? 1 : 0;
+  }
+
   // Dimension 8: escalation correctness
   if (expected.escalate !== undefined) {
     if (response.corpusEmpty) {

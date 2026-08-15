@@ -29,59 +29,20 @@ const PRACTICE_AREAS = PRACTICE_AREA_KEYS;
  * Some models occasionally wrap JSON-mode output in markdown code fences
  * even when told not to. Strip those before parsing rather than failing outright.
  */
-function extractJsonFromResponse(content) {
-  // Remove markdown fences first
-  let cleaned = content.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "");
-  
-  // Try to parse as-is
-  try {
-    return JSON.parse(cleaned);
-  } catch (e) {
-    // If that fails, try to find JSON object by matching braces
-    const firstBrace = cleaned.indexOf('{');
-    const lastBrace = cleaned.lastIndexOf('}');
-    
-    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-      const jsonCandidate = cleaned.substring(firstBrace, lastBrace + 1);
-      try {
-        return JSON.parse(jsonCandidate);
-      } catch (e2) {
-        return null;
-      }
-    }
-    
-    return null;
-  }
+function parseModelJson(content) {
+  const trimmed = content.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "");
+  return JSON.parse(trimmed);
 }
 
 const PRACTICE_AREA_BULLETS = PRACTICE_AREA_DEFS.map((p) => `- "${p.key}": ${p.description}`).join("\n");
 
 
-const CLASSIFY_SYSTEM_PROMPT = `You are Legally Unbullied, a smart Nigerian legal assistant with personality. You're knowledgeable, warm, and speak like a well-educated Nigerian friend — not a robot.
+const CLASSIFY_SYSTEM_PROMPT = `You are an expert Nigerian legal classifier. Analyze the user's message with precision.
 
 First, determine if this is a legal question or casual conversation.
 
-If it's NOT a legal question, respond naturally based on the context:
-
-**For greetings** ("hi", "hello", "good morning"):
-Reply warmly and briefly introduce yourself. Example: "Hello! I'm here to help with any Nigerian legal questions. What's on your mind?"
-
-**For identity questions** ("what are you", "who made you", "are you a lawyer"):
-Be honest and clear. Example: "I'm an AI legal assistant trained on Nigerian law. I'm not a lawyer, but I can help you understand your rights and point you in the right direction."
-
-**For casual chat** (non-legal topics, small talk):
-Engage naturally but gently steer toward legal help if relevant. Example: "That's interesting! By the way, if you ever need help with a legal question — tenancy, employment, family matters — I'm here for that too."
-
-**For thanks/compliments**:
-Respond warmly. Example: "You're welcome! Don't hesitate to reach out if you need anything else."
-
-**For unclear/off-topic messages**:
-Be helpful but honest. Example: "I'm not sure I understand. Could you rephrase that? I'm best at answering questions about Nigerian law."
-
-Respond with:
-{"is_legal_question": false, "casual_reply": "your natural response here"}
-
-IMPORTANT: Your casual replies should feel human, not templated. Vary your wording. Use Nigerian expressions naturally where appropriate (e.g., "no wahala", "I dey here", "make I help you"). But don't force it — be genuine.
+If it's NOT a legal question (greetings, casual chat, meta-questions, or non-legal topics), respond with:
+{"is_legal_question": false, "casual_reply": "A warm, natural response mentioning you help with Nigerian legal questions."}
 
 If it IS a legal question, perform DEEP ANALYSIS:
 
@@ -90,14 +51,12 @@ ${PRACTICE_AREA_BULLETS}
 
 Provide:
 - "practice_area": Single best-fitting category from the list above
-- "jurisdiction": Specific jurisdiction (e.g., "Lagos State", "Federal", "Rivers State"). If unclear from the question, set to "Federal" as default.
-- "jurisdiction_status": "clear" if the state/jurisdiction is explicitly stated or strongly implied, "unclear" if it's missing and the answer could differ by state (e.g., tenancy, land, family law vary by state; criminal law, labour law, constitutional law are mostly federal)
+- "jurisdiction": Specific jurisdiction (e.g., "Lagos State", "Federal", "Rivers State")
 - "urgency": ["Low", "Medium", "High", "Critical"] — based on time sensitivity and potential harm
 - "summary": 1-2 sentence summary of the legal situation
 - "keywords": 4-8 specific legal/factual terms likely in relevant statutes (procedural terms, timeframes, named concepts)
 - "key_issues": Array of 3-5 specific legal issues or questions that need to be addressed
 - "complexity": ["Low", "Medium", "High"] — Low: straightforward single issue, Medium: multiple issues or interpretation needed, High: complex multi-party/constitutional/novel questions
-- "route": ["simple", "complex"] — simple: direct factual lookup that can be answered from a single statute lookup (e.g. "What is the minimum wage in Nigeria?", "What is the legal drinking age?"). complex: a described situation requiring investigation, multi-step analysis, or interpretation of how law applies to facts.
 - "reasoning_approach": Detailed 2-3 sentence description of how to systematically answer this question, including what legal framework to establish, how to apply it to the facts, and what remedies/guidance to provide
 - "stakeholders": Array of parties involved (e.g., ["tenant", "landlord", "court"])
 - "potential_remedies": Array of 2-4 possible legal remedies or outcomes to explore
@@ -107,7 +66,6 @@ Example (use realistic values, don't copy):
   "is_legal_question": true,
   "practice_area": "tenancy",
   "jurisdiction": "Lagos State",
-  "jurisdiction_status": "clear",
   "urgency": "High",
   "summary": "Tenant facing potential illegal eviction after landlord changed locks without court order or proper notice.",
   "keywords": ["notice to quit", "seven days notice", "court order", "forcible entry", "possession", "magistrate court"],
@@ -118,40 +76,14 @@ Example (use realistic values, don't copy):
     "Available remedies for illegal eviction"
   ],
   "complexity": "Medium",
-  "route": "complex",
   "reasoning_approach": "First establish the statutory framework under Lagos State Tenancy Law 2011, particularly sections on notice requirements and prohibition of self-help. Then analyze whether the landlord's actions constitute illegal eviction. Finally outline the tenant's remedies including potential court orders for repossession and damages.",
   "stakeholders": ["tenant", "landlord"],
   "potential_remedies": ["Court order for repossession", "Damages for illegal eviction", "Injunction against further harassment"]
 }
 
-Example 2 (unclear jurisdiction — no state mentioned):
-{
-  "is_legal_question": true,
-  "practice_area": "tenancy",
-  "jurisdiction": "Federal",
-  "jurisdiction_status": "unclear",
-  "urgency": "High",
-  "summary": "Landlord evicted tenant without notice.",
-  "keywords": ["eviction", "notice", "tenant", "landlord"],
-  "key_issues": ["Was notice given?", "Is eviction legal?"],
-  "complexity": "Medium",
-  "route": "complex",
-  "reasoning_approach": "Need state to determine applicable tenancy law.",
-  "stakeholders": ["tenant", "landlord"],
-  "potential_remedies": ["Court action", "Mediation"]
-}
-
 Respond with ONLY a JSON object, no prose, no markdown.`;
 
 const DRAFT_SYSTEM_PROMPT = `You are Legally Unbullied, an expert Nigerian legal-information assistant. You provide clear, comprehensive, and actionable legal information based ONLY on the statute excerpts provided.
-
-TONE & PERSONALITY:
-- Speak like a well-educated Nigerian friend who happens to know the law very well
-- Be warm, direct, and practical — not cold or overly formal
-- Use plain Nigerian English. Avoid heavy legalese unless citing a specific provision
-- Where natural, you may use mild Nigerian expressions ("no wahala", "this one is straightforward", "the law is clear on this") — but don't force it
-- Be empathetic when the user's situation sounds stressful or urgent
-- Be honest and direct when something needs a lawyer — don't sugarcoat it
 
 CORE PRINCIPLES:
 - Use ONLY the provided statute excerpts — never cite provisions not in the context
@@ -175,7 +107,6 @@ RESPONSE STRUCTURE:
 - Order them logically (immediate actions first, then follow-up steps)
 - Include practical details (where to go, what to file, timeframes)
 - Use bullet points with clear, direct language
-- Write steps the way you'd advise a friend — practical and encouraging
 
 **sources**: Array of 3-4 most important statutory provisions cited, with:
 - "label": "Act Name, s.X"
@@ -186,8 +117,6 @@ RESPONSE STRUCTURE:
 **escalateReason**: 1-2 sentences explaining why a lawyer is/isn't needed
 
 **followUps**: Array of 2-3 natural follow-up questions the user might ask
-- Write them the way a real person would ask — conversational, not formal
-- Example: "How long does this court process usually take?" not "What is the typical duration of judicial proceedings?"
 
 QUALITY STANDARDS:
 - Every legal claim must have a citation
@@ -287,7 +216,7 @@ Analyze this question and create a structured plan for answering it.`;
         ],
         { temperature: 0.3, max_tokens: 800, response_format: { type: "json_object" } }
       );
-      return { plan: completion.parsed, provider: "groq" };
+      return { plan: parseModelJson(completion.choices[0].message.content), provider: "groq" };
     } catch (err) {
       console.warn(`[/api/chat] Groq planning failed: ${err.status || ""} ${err.message}`);
     }
@@ -305,7 +234,7 @@ Analyze this question and create a structured plan for answering it.`;
         ],
         { temperature: 0.3, max_tokens: 800, response_format: { type: "json_object" } }
       );
-      return { plan: completion.parsed, provider: "gemini" };
+      return { plan: parseModelJson(completion.choices[0].message.content), provider: "gemini" };
     } catch (err) {
       console.warn(`[/api/chat] Gemini planning failed: ${err.status || ""} ${err.message}`);
     }
@@ -323,151 +252,6 @@ Analyze this question and create a structured plan for answering it.`;
   };
 }
 
-/**
- * CRITIQUE_PROMPT — evaluates a draft response against the question, plan, and provisions.
- * Returns a single quality score (0-1) and specific issues.
- * Phase 2 will split this into quality + legal_safety; Phase 1 keeps it unified.
- */
-const CRITIQUE_PROMPT = `You are a senior Nigerian legal reviewer. Critique the draft answer below.
-
-Evaluate on TWO separate dimensions:
-
-DIMENSION 1 — QUALITY (0 to 1):
-- Accuracy: Does the draft cite only provisions actually in the context?
-- Completeness: Does it address all key_issues from the plan?
-- Clarity: Is it written in plain language a layperson can understand?
-- Actionability: Are the next steps concrete and specific?
-
-DIMENSION 2 — LEGAL SAFETY (0 to 1):
-- Jurisdiction match: Does the answer apply to the correct jurisdiction?
-- Citation validity: Does every cited section exist in the provided provisions?
-- Escalation correctness: Is the escalate decision appropriate for the situation?
-- No invention: Does the draft avoid inventing laws, sections, or rights not in context?
-
-SCORING RULES:
-- 0.90+: Excellent
-- 0.75-0.89: Good — minor gaps
-- 0.60-0.74: Needs work
-- below 0.60: Poor — significant issues
-
-If either score is below threshold, list SPECIFIC fixable issues.
-
-Question: {{QUESTION}}
-
-Classification:
-- Practice area: {{PRACTICE_AREA}}
-- Jurisdiction: {{JURISDICTION}}
-- Key issues: {{KEY_ISSUES}}
-- Complexity: {{COMPLEXITY}}
-
-Plan:
-{{PLAN}}
-
-Provided provisions:
-{{PROVISIONS}}
-
-Draft answer to critique:
-{{DRAFT}}
-
-Respond with ONLY a JSON object:
-{
-  "quality": 0.00,
-  "legal_safety": 0.00,
-  "passed": true/false,
-  "quality_passed": true/false,
-  "safety_passed": true/false,
-  "issues": [
-    { "dimension": "quality|safety", "problem": "...", "fix": "..." }
-  ],
-  "strengths": ["..."],
-  "rewrite_hint": "..."
-}
-
-RULES:
-- "quality_passed" = true ONLY if quality >= 0.70
-- "safety_passed" = true ONLY if legal_safety >= 0.80
-- "passed" = true ONLY if BOTH quality_passed AND safety_passed
-- Do NOT pass drafts below 0.70 on quality OR below 0.80 on safety`;
-
-async function critiqueDraft(question, classification, plan, provisions, draft) {
-  const groqClient = getGroqClient();
-  const geminiClient = getGeminiClient();
-
-  // Build abbreviated provision list for critique context
-  const provisionSummary = (provisions || [])
-    .slice(0, 10)
-    .map(p => `[${p.act}${p.section ? ", s." + p.section : ""}] ${p.text.slice(0, 150)}...`)
-    .join("\n");
-
-  const planText = plan
-    ? `Analysis: ${plan.analysis || "N/A"}
-Key provisions: ${(plan.key_provisions || []).join("; ")}
-Sub-questions: ${(plan.sub_questions || []).join("; ")}
-Response structure: ${plan.response_structure || "N/A"}
-Gaps: ${(plan.gaps || []).join(", ") || "none"}`
-    : "(no plan — simple question)";
-
-  const keyIssues = (classification.key_issues || []).join("; ");
-
-  const critiquePrompt = CRITIQUE_PROMPT
-    .replace("{{QUESTION}}", question)
-    .replace("{{PRACTICE_AREA}}", classification.practice_area || "unknown")
-    .replace("{{JURISDICTION}}", classification.jurisdiction || "unknown")
-    .replace("{{KEY_ISSUES}}", keyIssues)
-    .replace("{{COMPLEXITY}}", classification.complexity || "unknown")
-    .replace("{{PLAN}}", planText)
-    .replace("{{PROVISIONS}}", provisionSummary)
-    .replace("{{DRAFT}}", JSON.stringify(draft));
-
-  // Try Groq
-  if (groqClient) {
-    try {
-      const completion = await callCompletion(
-        groqClient,
-        DRAFT_MODEL,
-        [
-          { role: "system", content: "You are a precise legal reviewer. Respond with ONLY valid JSON, no markdown." },
-          { role: "user", content: critiquePrompt }
-        ],
-        { temperature: 0.2, max_tokens: 800, response_format: { type: "json_object" } }
-      );
-      return { critique: completion.parsed, provider: "groq" };
-    } catch (err) {
-      console.warn("[/api/chat] Groq critique failed:", err.status || "", err.message);
-    }
-  }
-
-  // Try Gemini
-  if (geminiClient) {
-    try {
-      const completion = await callCompletion(
-        geminiClient,
-        GEMINI_DRAFT_MODEL,
-        [
-          { role: "system", content: "You are a precise legal reviewer. Respond with ONLY valid JSON, no markdown." },
-          { role: "user", content: critiquePrompt }
-        ],
-        { temperature: 0.2, max_tokens: 800, response_format: { type: "json_object" } }
-      );
-      return { critique: completion.parsed, provider: "gemini" };
-    } catch (err) {
-      console.warn("[/api/chat] Gemini critique failed:", err.status || "", err.message);
-    }
-  }
-
-  // Fallback: auto-pass with low quality to avoid blocking the pipeline
-  return {
-    critique: {
-      quality: 0.70,
-      passed: true,
-      issues: [],
-      strengths: ["auto-passed due to critique service unavailability"],
-      rewrite_hint: "No critique available — returning draft as-is."
-    },
-    provider: "fallback"
-  };
-}
-
 async function callCompletion(client, model, messages, options = {}) {
   const LLM_TIMEOUT_MS = 30000; // 30 second timeout for LLM calls
   
@@ -479,16 +263,7 @@ async function callCompletion(client, model, messages, options = {}) {
     messages,
   });
   
-  try {
-    const result = await withTimeout(completionPromise, LLM_TIMEOUT_MS, `LLM call to ${model}`);
-    const parsed = extractJsonFromResponse(result.choices[0].message.content);
-    if (!parsed) {
-      throw new Error(`Failed to parse JSON from ${model} response`);
-    }
-    return { ...result, parsed };
-  } catch (err) {
-    throw err;
-  }
+  return withTimeout(completionPromise, LLM_TIMEOUT_MS, `LLM call to ${model}`);
 }
 
 /**
@@ -521,7 +296,7 @@ async function classifyWithFallback(question) {
         ],
         { temperature: 0, max_tokens: 2000, response_format: { type: "json_object" } }
       );
-      return { classification: completion.parsed, provider: "groq" };
+      return { classification: parseModelJson(completion.choices[0].message.content), provider: "groq" };
     } catch (err) {
       console.warn(`[/api/chat] Groq classification failed: ${err.status || ""} ${err.message}`);
     }
@@ -539,7 +314,7 @@ async function classifyWithFallback(question) {
         ],
         { temperature: 0, max_tokens: 2000, response_format: { type: "json_object" } }
       );
-      return { classification: completion.parsed, provider: "openrouter" };
+      return { classification: parseModelJson(completion.choices[0].message.content), provider: "openrouter" };
     } catch (err) {
       console.warn(`[/api/chat] OpenRouter classification failed: ${err.status || ""} ${err.message}`);
     }
@@ -557,7 +332,7 @@ async function classifyWithFallback(question) {
         ],
         { temperature: 0, max_tokens: 2000, response_format: { type: "json_object" } }
       );
-      return { classification: completion.parsed, provider: "cerebras" };
+      return { classification: parseModelJson(completion.choices[0].message.content), provider: "cerebras" };
     } catch (err) {
       console.warn(`[/api/chat] Cerebras classification failed: ${err.status || ""} ${err.message}`);
     }
@@ -575,7 +350,7 @@ async function classifyWithFallback(question) {
         ],
         { temperature: 0, max_tokens: 2000, response_format: { type: "json_object" } }
       );
-      return { classification: completion.parsed, provider: "gemini" };
+      return { classification: parseModelJson(completion.choices[0].message.content), provider: "gemini" };
     } catch (err) {
       console.error(`[/api/chat] All LLM providers failed. Last error (Gemini): ${err.status || ""} ${err.message}`);
       throw err;
@@ -626,7 +401,7 @@ Follow this plan to structure your response. Be comprehensive and address all su
     ],
     { response_format: { type: "json_object" }, max_tokens: 3000 }
   );
-  return completion.parsed;
+  return parseModelJson(completion.choices[0].message.content);
 }
 
 async function draftWithFallback(question, contextBlock, plan, classification) {
@@ -735,21 +510,6 @@ router.post("/api/chat", async (req, res) => {
     });
   }
 
-  // Step 2b: HITL — if jurisdiction is unclear and the answer depends on state,
-  // ask the user before proceeding. Don't guess and risk wrong law.
-  if (classification.jurisdiction_status === "unclear") {
-    return res.json({
-      needsInput: true,
-      question: "Which state did this happen in? The laws can differ by state.",
-      field: "jurisdiction",
-      context: {
-        practice_area: classification.practice_area,
-        urgency: classification.urgency,
-      },
-      provider: classifyProvider,
-    });
-  }
-
   // Step 3: Legal question — proceed with full pipeline
   let provisions;
   try {
@@ -790,29 +550,22 @@ router.post("/api/chat", async (req, res) => {
   const EXCERPT_CHAR_CAP = 700; // keep total context small enough to fit even the tighter fallback model's per-minute limit
   const contextBlock = provisions
     .map((p) => {
-      const text = p.text.length > EXCERPT_CHAR_CAP ? p.text.slice(0, EXCERPT_CHAR_CAP) + "\u2026" : p.text;
-      return `[${p.act}${p.section ? ", s." + p.section : ""}]\\n${text}`;
+      const text = p.text.length > EXCERPT_CHAR_CAP ? p.text.slice(0, EXCERPT_CHAR_CAP) + "…" : p.text;
+      return `[${p.act}${p.section ? ", s." + p.section : ""}]\n${text}`;
     })
     .join("\n\n---\n\n");
 
-  // Step 4: Route — simple skips planning, complex plans + iterates
-  const route = classification.route || (classification.complexity === "Low" ? "simple" : "complex");
-  const isSimple = route === "simple";
-
-  let planResult = { plan: null, provider: "skipped" };
-  if (!isSimple) {
-    try {
-      planResult = await planResponse(question, classification, provisions);
-      console.log(`[/api/chat] Planning completed via ${planResult.provider} (route=${route})`);
-    } catch (err) {
-      console.warn("[/api/chat] planning failed, continuing without plan:", err.message);
-      planResult = { plan: null, provider: "none" };
-    }
-  } else {
-    console.log(`[/api/chat] Simple route — skipping planning (route=${route})`);
+  // Step 4: Plan the response (thinking/reasoning phase)
+  let planResult;
+  try {
+    planResult = await planResponse(question, classification, provisions);
+    console.log(`[/api/chat] Planning completed via ${planResult.provider}`);
+  } catch (err) {
+    console.warn("[/api/chat] planning failed, continuing without plan:", err.message);
+    planResult = { plan: null, provider: "none" };
   }
 
-  // Step 5: Draft with fallback chain (plan is null for simple route)
+  // Step 5: Draft with fallback chain (using the plan to guide the response)
   let draftResult;
   try {
     draftResult = await draftWithFallback(question, contextBlock, planResult.plan, classification);
@@ -824,173 +577,13 @@ router.post("/api/chat", async (req, res) => {
     });
   }
 
-  // Step 6: Critique — quality gate. Complex path iterates (max 2 retries); simple path does one pass.
-  const MAX_RETRIES = 2;
-  let currentDraft = draftResult.result;
-  let currentDraftMeta = { model: draftResult.model, provider: draftResult.provider };
-  let lastCritique = null;
-
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    let critiqueResult;
-    try {
-      critiqueResult = await critiqueDraft(question, classification, planResult.plan, provisions, currentDraft);
-      lastCritique = critiqueResult.critique;
-      console.log(`[/api/chat] Critique attempt ${attempt}/${MAX_RETRIES}: quality=${lastCritique.quality?.toFixed(2)} passed=${lastCritique.passed} via ${critiqueResult.provider}`);
-    } catch (err) {
-      console.warn("[/api/chat] critique failed, treating as pass:", err.message);
-      break; // don't block on critique errors
-    }
-
-    if (lastCritique && lastCritique.passed) {
-      break; // good enough — exit loop
-    }
-
-    // Failed critique — complex path rewrites; simple path accepts the draft anyway
-    if (isSimple) {
-      console.log("[/api/chat] Simple route: critique failed but skipping rewrite");
-      break;
-    }
-
-    if (attempt === MAX_RETRIES) {
-      console.log("[/api/chat] Max critique retries exhausted — returning best draft");
-      break;
-    }
-
-    // Rewrite draft using critique feedback
-    const rewriteHint = lastCritique?.rewrite_hint || "Improve the draft addressing the issues listed.";
-    const rewriteIssues = (lastCritique?.issues || []).map(i => `- [${i.dimension}] ${i.problem} → fix: ${i.fix}`).join("\n");
-
-    try {
-      const rewriteResult = await draftWithFallback(
-        question,
-        contextBlock,
-        {
-          ...planResult.plan,
-          rewrite_hint: rewriteHint,
-          critique_issues: rewriteIssues,
-          previous_quality: lastCritique?.quality
-        },
-        classification
-      );
-      currentDraft = rewriteResult.result;
-      currentDraftMeta = { model: rewriteResult.model, provider: rewriteResult.provider };
-      console.log(`[/api/chat] Rewrite attempt ${attempt + 1} via ${rewriteResult.provider}`);
-    } catch (err) {
-      console.warn("[/api/chat] rewrite failed, keeping previous draft:", err.message);
-      break;
-    }
-  }
-
   res.json({
     classification,
-    route,
     plan: planResult.plan,
-    result: currentDraft,
-    draftModel: currentDraftMeta.model,
-    draftProvider: currentDraftMeta.provider,
-    critique: lastCritique || null,
+    result: draftResult.result,
+    draftModel: draftResult.model,
+    draftProvider: draftResult.provider,
   });
-});
-
-
-/**
- * GET /api/chat/stream — SSE endpoint for real-time progress updates.
- *
- * Emits sanitized status events (never raw CoT or prompt text):
- *   data: {"event": "start"}
- *   data: {"event": "status", "message": "Classifying the question..."}
- *   data: {"event": "status", "message": "Searching Nigerian law..."}
- *   data: {"event": "status", "message": "Drafting response..."}
- *   data: {"event": "complete", "result": { ... }}
- *   data: {"event": "error", "message": "..."}
- *
- * The /api/chat REST endpoint remains unchanged and live in parallel.
- */
-router.get("/api/chat/stream", async (req, res) => {
-  const question = (req.query && req.query.question || "").toString().trim();
-  if (!question) {
-    res.writeHead(400, { "Content-Type": "text/event-stream" });
-    res.write(`data: ${JSON.stringify({ event: "error", message: "question is required" })}\n\n`);
-    return res.end();
-  }
-
-  // SSE headers
-  res.writeHead(200, {
-    "Content-Type": "text/event-stream",
-    "Cache-Control": "no-cache",
-    "Connection": "keep-alive",
-    "X-Accel-Buffering": "no", // disable nginx buffering
-  });
-
-  const emit = (data) => {
-    res.write(`data: ${JSON.stringify(data)}\n\n`);
-  };
-
-  try {
-    emit({ event: "start" });
-
-    // Step 1: Classify
-    emit({ event: "status", message: "Classifying the question..." });
-    const classifyResult = await classifyWithFallback(question);
-    const classification = classifyResult.classification;
-
-    if (classification.is_legal_question === false) {
-      emit({ event: "complete", result: { isCasual: true, casualReply: classification.casual_reply } });
-      return res.end();
-    }
-
-    // Step 2: Jurisdiction check
-    if (classification.jurisdiction_status === "unclear") {
-      emit({ event: "complete", result: { needsInput: true, question: "Which state did this happen in?", field: "jurisdiction" } });
-      return res.end();
-    }
-
-    // Step 3: Search
-    emit({ event: "status", message: "Searching Nigerian law..." });
-    let provisions;
-    try {
-      provisions = await findProvisions({
-        practiceArea: classification.practice_area,
-        jurisdiction: classification.jurisdiction,
-        keywords: classification.keywords,
-      });
-    } catch (err) {
-      emit({ event: "error", message: "Legal database unavailable." });
-      return res.end();
-    }
-
-    if (!provisions.length) {
-      emit({ event: "complete", result: { corpusEmpty: true, message: "No sources for this area yet." } });
-      return res.end();
-    }
-
-    // Step 4: Draft
-    emit({ event: "status", message: "Drafting response..." });
-    const contextBlock = provisions.map((p) => `[${p.act}${p.section ? ", s." + p.section : ""}]\n${p.text}`).join("\n\n---\n\n");
-    const draftResult = await draftWithFallback(question, contextBlock, classification);
-
-    // Step 5: Critique (split scoring)
-    emit({ event: "status", message: "Verifying citations..." });
-    const critiqueResult = await critiqueDraft(question, classification, null, provisions, draftResult.result);
-    const critique = critiqueResult.critique;
-
-    // Final result
-    emit({
-      event: "complete",
-      result: {
-        classification,
-        result: draftResult.result,
-        route: classification.route,
-        critique,
-      },
-    });
-
-    res.end();
-  } catch (err) {
-    console.error("[/api/chat/stream] Error:", err.message);
-    emit({ event: "error", message: err.message });
-    res.end();
-  }
 });
 
 /**

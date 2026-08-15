@@ -420,6 +420,40 @@
         "actionable_min": 3
       },
       "notes": "Trade Marks Act governs trademark infringement. Can sue for damages and injunction."
+    },
+    {
+      "id": "hitl-jurisdiction-unclear",
+      "category": "hitl",
+      "question": "My landlord evicted me without notice. What are my rights?",
+      "expected": {
+        "is_legal_question": true,
+        "needs_input": true,
+        "practice_area": "tenancy"
+      },
+      "notes": "No state mentioned. Agent should return needsInput: true asking for jurisdiction."
+    },
+    {
+      "id": "hitl-jurisdiction-clear",
+      "category": "hitl",
+      "question": "My Lagos landlord evicted me without notice. What are my rights?",
+      "expected": {
+        "is_legal_question": true,
+        "needs_input": false,
+        "practice_area": "tenancy",
+        "jurisdiction": "Lagos State"
+      },
+      "notes": "State is clear. Should proceed with full pipeline, no needsInput."
+    },
+    {
+      "id": "split-scoring-high-quality-low-safety",
+      "category": "split_scoring",
+      "question": "My Lagos landlord evicted me without notice. What are my rights?",
+      "expected": {
+        "is_legal_question": true,
+        "critique_safety_min": 0.70,
+        "critique_quality_min": 0.70
+      },
+      "notes": "Both quality and safety scores should pass. Safety checks citation validity and jurisdiction match."
     }
   ]
 }
