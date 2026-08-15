@@ -635,14 +635,24 @@ async function draftWithFallback(question, contextBlock, plan, classification) {
   const cerebrasClient = getCerebrasClient();
   const geminiClient = getGeminiClient();
 
+  // Helper to check if error is a rate limit
+  const isRateLimitError = (err) => {
+    if (err.status === 429 || err.status === 413) return true;
+    if (err.message && err.message.includes('429')) return true;
+    if (err.message && err.message.includes('rate limit')) return true;
+    return false;
+  };
+
+  // Helper to delay before retry (rate limit recovery)
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
   // Try Groq primary model
   if (groqClient) {
     try {
       const result = await draftWithModel(groqClient, DRAFT_MODEL, question, contextBlock, plan, classification);
       return { result, model: DRAFT_MODEL, provider: "groq" };
     } catch (err) {
-      const isRateLimited = err.status === 429 || err.status === 413;
-      if (isRateLimited) {
+      if (isRateLimitError(err)) {
         console.warn(`[/api/chat] Groq ${DRAFT_MODEL} rate-limited, trying fallback model...`);
 
         // Try Groq fallback model
@@ -666,7 +676,12 @@ async function draftWithFallback(question, contextBlock, plan, classification) {
       const result = await draftWithModel(openRouterClient, OPENROUTER_DRAFT_MODEL, question, contextBlock, plan, classification);
       return { result, model: OPENROUTER_DRAFT_MODEL, provider: "openrouter" };
     } catch (err) {
-      console.warn(`[/api/chat] OpenRouter drafting failed: ${err.status || ""} ${err.message}`);
+      if (isRateLimitError(err)) {
+        console.warn(`[/api/chat] OpenRouter rate-limited, waiting 2s then trying next provider...`);
+        await delay(2000);
+      } else {
+        console.warn(`[/api/chat] OpenRouter drafting failed: ${err.status || ""} ${err.message}`);
+      }
     }
   }
 
@@ -676,7 +691,12 @@ async function draftWithFallback(question, contextBlock, plan, classification) {
       const result = await draftWithModel(cerebrasClient, CEREBRAS_DRAFT_MODEL, question, contextBlock, plan, classification);
       return { result, model: CEREBRAS_DRAFT_MODEL, provider: "cerebras" };
     } catch (err) {
-      console.warn(`[/api/chat] Cerebras drafting failed: ${err.status || ""} ${err.message}`);
+      if (isRateLimitError(err)) {
+        console.warn(`[/api/chat] Cerebras rate-limited, waiting 2s then trying next provider...`);
+        await delay(2000);
+      } else {
+        console.warn(`[/api/chat] Cerebras drafting failed: ${err.status || ""} ${err.message}`);
+      }
     }
   }
 
@@ -686,6 +706,17 @@ async function draftWithFallback(question, contextBlock, plan, classification) {
       const result = await draftWithModel(geminiClient, GEMINI_DRAFT_MODEL, question, contextBlock, plan, classification);
       return { result, model: GEMINI_DRAFT_MODEL, provider: "gemini" };
     } catch (err) {
+      if (isRateLimitError(err)) {
+        console.warn(`[/api/chat] Gemini rate-limited, waiting 3s before final attempt...`);
+        await delay(3000);
+        // Retry Gemini once after delay
+        try {
+          const result = await draftWithModel(geminiClient, GEMINI_DRAFT_MODEL, question, contextBlock, plan, classification);
+          return { result, model: GEMINI_DRAFT_MODEL, provider: "gemini" };
+        } catch (retryErr) {
+          console.error(`[/api/chat] Gemini retry failed: ${retryErr.status || ""} ${retryErr.message}`);
+        }
+      }
       console.error(`[/api/chat] All LLM providers failed. Last error (Gemini): ${err.status || ""} ${err.message}`);
       throw err;
     }
