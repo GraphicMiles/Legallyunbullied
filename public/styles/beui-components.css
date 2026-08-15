@@ -1114,7 +1114,8 @@
   position: absolute;
   bottom: 100%;
   left: 0;
-  right: 0;
+  width: 280px;
+  max-width: 90%;
   margin-bottom: 8px;
   background: var(--color-surface, #1a1a1a);
   border: 1px solid var(--color-border, #333);
@@ -1132,12 +1133,14 @@
 
 .beui-prompt-bar__dropdown-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: flex-start;
   gap: 12px;
-  padding: 10px 14px;
+  padding: 12px 14px;
   cursor: pointer;
   transition: background-color 0.15s ease;
   border-bottom: 1px solid var(--color-border-soft, #2a2a2a);
+  text-align: left;
 }
 
 .beui-prompt-bar__dropdown-item:last-child {
@@ -1153,7 +1156,11 @@
   color: var(--color-text-muted, #888);
   flex-shrink: 0;
   width: 20px;
-  text-align: center;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
 }
 
 .beui-prompt-bar__dropdown-text {
@@ -1161,7 +1168,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .beui-prompt-bar__dropdown-name {
