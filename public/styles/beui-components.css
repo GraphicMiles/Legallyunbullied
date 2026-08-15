@@ -1210,6 +1210,13 @@
   border: 1px solid var(--color-border, #333);
   cursor: pointer;
   transition: all 0.15s ease;
+  margin-left: 2rem;
+}
+
+@media (max-width: 900px) {
+  .beui-prompt-bar__button--model {
+    margin-left: 1rem;
+  }
 }
 
 .beui-prompt-bar__button--model:hover {
