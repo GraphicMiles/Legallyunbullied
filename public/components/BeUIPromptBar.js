@@ -8,6 +8,7 @@ class BeUIPromptBar {
     this.options = {
       placeholder: options.placeholder || 'Ask a legal question...',
       onSubmit: options.onSubmit || (() => {}),
+      onStop: options.onStop || null,          // callback when stop button is clicked during submission
       sources: options.sources || [],
       commands: options.commands || [],
       models: options.models || [],
@@ -20,8 +21,13 @@ class BeUIPromptBar {
     this.dropdown = null;
     this.isDropdownOpen = false;
     this.dropdownType = null; // 'sources', 'commands', or 'models'
+    this.isSubmitting = false;
+    
+    // Click-outside handler reference for cleanup
+    this._outsideClickHandler = (e) => this.handleOutsideClick(e);
     
     this.render();
+    this.attachOutsideClickListener();
   }
   
   render() {
@@ -55,7 +61,10 @@ class BeUIPromptBar {
         <span>${currentModel.name}</span>
         <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
       `;
-      modelBtn.addEventListener('click', () => this.showModels());
+      modelBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleModels();
+      });
       actions.appendChild(modelBtn);
       this.modelButton = modelBtn;
     }
@@ -66,7 +75,7 @@ class BeUIPromptBar {
     submitBtn.className = 'beui-prompt-bar__button beui-prompt-bar__button--submit';
     submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
     submitBtn.disabled = true;
-    submitBtn.addEventListener('click', () => this.submit());
+    submitBtn.addEventListener('click', (e) => this.handleSubmitClick(e));
     
     actions.appendChild(submitBtn);
     
@@ -93,12 +102,30 @@ class BeUIPromptBar {
     });
   }
   
+  /**
+   * Attach a global click listener to close dropdowns when clicking outside.
+   */
+  attachOutsideClickListener() {
+    document.addEventListener('click', this._outsideClickHandler, true);
+  }
+  
+  /**
+   * If a click happens outside the prompt bar element, close any open dropdown.
+   */
+  handleOutsideClick(e) {
+    if (this.element && !this.element.contains(e.target)) {
+      this.hideDropdown();
+    }
+  }
+  
   handleInput(e) {
     const value = e.target.value;
     const cursorPos = e.target.selectionStart;
     
-    // Enable/disable submit
-    this.submitButton.disabled = value.trim().length === 0;
+    // Don't change button state while submitting (stop button should stay visible)
+    if (!this.isSubmitting) {
+      this.submitButton.disabled = value.trim().length === 0;
+    }
     
     // Check for @ mention
     const textBeforeCursor = value.slice(0, cursorPos);
@@ -125,6 +152,17 @@ class BeUIPromptBar {
       this.submit();
     } else if (e.key === 'Escape') {
       this.hideDropdown();
+    }
+  }
+  
+  /**
+   * Toggle the model dropdown — open if closed, close if already open.
+   */
+  toggleModels() {
+    if (this.isDropdownOpen && this.dropdownType === 'models') {
+      this.hideDropdown();
+    } else {
+      this.showModels();
     }
   }
   
@@ -311,7 +349,29 @@ class BeUIPromptBar {
     }
   }
   
+  /**
+   * Submit button click handler.
+   * During submission, clicking the button stops the generation.
+   * Otherwise, it submits the current text.
+   */
+  handleSubmitClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (this.isSubmitting) {
+      // During submission the button acts as a stop button
+      if (this.options.onStop) {
+        this.options.onStop();
+      }
+      return;
+    }
+    
+    this.submit();
+  }
+  
   submit() {
+    if (this.isSubmitting) return; // can't submit while already submitting
+    
     const value = this.inputElement.value.trim();
     if (value.length === 0) return;
     
@@ -332,25 +392,35 @@ class BeUIPromptBar {
   
   setValue(value) {
     this.inputElement.value = value;
-    this.submitButton.disabled = value.trim().length === 0;
+    if (!this.isSubmitting) {
+      this.submitButton.disabled = value.trim().length === 0;
+    }
   }
   
   setDisabled(disabled) {
     this.inputElement.disabled = disabled;
-    this.submitButton.disabled = disabled || this.inputElement.value.trim().length === 0;
+    if (!this.isSubmitting) {
+      this.submitButton.disabled = disabled || this.inputElement.value.trim().length === 0;
+    }
   }
   
   setSubmitting(isSubmitting) {
+    this.isSubmitting = isSubmitting;
     if (isSubmitting) {
-      this.submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-      this.submitButton.disabled = true;
+      // Show stop button — enabled so user can click to abort
+      this.submitButton.innerHTML = '<i class="fa-solid fa-stop"></i>';
+      this.submitButton.disabled = false;
+      this.submitButton.title = 'Stop generating';
     } else {
+      // Restore send button
       this.submitButton.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
       this.submitButton.disabled = this.inputElement.value.trim().length === 0;
+      this.submitButton.title = '';
     }
   }
   
   destroy() {
+    document.removeEventListener('click', this._outsideClickHandler, true);
     if (this.element && this.element.parentNode) {
       this.element.parentNode.removeChild(this.element);
     }

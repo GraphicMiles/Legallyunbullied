@@ -2208,6 +2208,11 @@ import {
           if (!text || state.isAgentBusy) return;
           submitQuestion(text);
         },
+        onStop: () => {
+          if (state.isAgentBusy) {
+            stopGeneration();
+          }
+        },
         sources: [
           { key: "attach", name: "Add photos & files", desc: "Upload from your computer", glyph: "clip", attach: true },
           { key: "legal-db", name: "Legal Database", desc: "Search Nigerian laws", glyph: "layers" },
