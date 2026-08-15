@@ -56,6 +56,7 @@ import {
     planValue: document.getElementById("plan-value"),
     upgradeBtn: document.getElementById("upgrade-btn"),
     clearChatBtn: document.getElementById("clear-chat-btn"),
+    copyChatBtn: document.getElementById("copy-chat-btn"),
     topbarAvatar: document.getElementById("topbar-avatar"),
     authSection: document.getElementById("auth-section"),
     authModalOverlay: document.getElementById("auth-modal-overlay"),
@@ -548,6 +549,70 @@ import {
     }
   }
 
+  function copyConversationToClipboard(id) {
+    const convo = state.conversations.find((c) => c.id === id);
+    if (!convo || !convo.messages.length) return;
+
+    const lines = convo.messages.map((msg) => {
+      const timestamp = new Date(msg.createdAt).toLocaleTimeString();
+      if (msg.role === "user") {
+        return `[${timestamp}] You: ${msg.content}`;
+      } else if (msg.role === "agent") {
+        if (msg.status === "casual" && msg.casualReply) {
+          return `[${timestamp}] Agent: ${msg.casualReply}`;
+        } else if (msg.status === "done" && msg.result) {
+          const law = msg.result.lawMd || "";
+          const actions = msg.result.actionsMd || "";
+          const verdict = msg.result.escalate ? "Lawyer recommended" : "Can handle yourself";
+          return `[${timestamp}] Agent:\n\nWhat the law says:\n${law}\n\nWhat you can do:\n${actions}\n\nVerdict: ${verdict}`;
+        } else if (msg.status === "stopped") {
+          return `[${timestamp}] Agent: [Response stopped]`;
+        } else if (msg.status === "error") {
+          return `[${timestamp}] Agent: [Error: ${msg.errorMessage || "Something went wrong"}]`;
+        } else if (msg.status === "corpusEmpty") {
+          return `[${timestamp}] Agent: [No legal sources available]`;
+        }
+        return `[${timestamp}] Agent: [No response]`;
+      }
+      return "";
+    });
+
+    const text = `Conversation: ${convo.title}\nDate: ${new Date(convo.messages[0].createdAt).toLocaleDateString()}\n\n${lines.join("\n\n---\n\n")}`;
+
+    const flashCopied = () => {
+      const btn = el.copyChatBtn;
+      btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+      setTimeout(() => {
+        btn.innerHTML = '<i class="fa-solid fa-copy"></i>';
+      }, 1400);
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(flashCopied).catch(() => {
+        console.warn("[copy] Clipboard write failed, trying fallback");
+        fallbackCopy(text, flashCopied);
+      });
+    } else {
+      fallbackCopy(text, flashCopied);
+    }
+  }
+
+  function fallbackCopy(text, onSuccess) {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      onSuccess();
+    } catch (e) {
+      console.error("[copy] Fallback copy failed:", e);
+    }
+  }
+
   function confirmDeleteConversation(id) {
     const convo = state.conversations.find((c) => c.id === id);
     if (!convo) return;
@@ -581,6 +646,7 @@ import {
     const convo = getActiveConversation();
     const hasMessages = !!(convo && convo.messages.length);
     el.clearChatBtn.disabled = !hasMessages || state.isAgentBusy;
+    el.copyChatBtn.disabled = !hasMessages || state.isAgentBusy;
   }
 
   /* ------------------------------------------------------------------ */
@@ -1906,6 +1972,11 @@ import {
   el.clearChatBtn.addEventListener("click", () => {
     if (!state.activeId || state.isAgentBusy) return;
     confirmClearConversation(state.activeId);
+  });
+
+  el.copyChatBtn.addEventListener("click", () => {
+    if (!state.activeId || state.isAgentBusy) return;
+    copyConversationToClipboard(state.activeId);
   });
 
   document.addEventListener("keydown", (e) => {
