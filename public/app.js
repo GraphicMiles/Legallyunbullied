@@ -808,7 +808,7 @@ import {
     const seconds = ((msg.thinkingElapsedMs || 0) / 1000).toFixed(1);
     const label = isDone ? `Thought for ${seconds}s` : "Thinking";
     const statusHtml = isDone
-      ? `<span class="trace__status" style="color: var(--color-text-faint);">${msg.steps.length} steps</span>`
+      ? `<span class="trace__status" style="color: var(--color-text-faint);">${(msg.steps || []).length} steps</span>`
       : `<span class="trace__status"></span>`;
     toggle.innerHTML = `
       <i class="fa-solid fa-chevron-right trace__toggle-icon"></i>
