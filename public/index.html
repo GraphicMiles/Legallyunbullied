@@ -1724,7 +1724,23 @@
 
     <footer class="composer">
       <div class="composer__inner">
+        <!-- BeUIPromptBar will be initialized here -->
         <div id="prompt-bar-container"></div>
+        
+        <!-- Fallback composer (shown if BeUIPromptBar fails) -->
+        <form class="composer__form" id="composer-form" style="display: none;">
+          <textarea
+            class="composer__input"
+            id="composer-input"
+            rows="1"
+            placeholder="Describe your legal situation…"
+            aria-label="Describe your legal situation"
+          ></textarea>
+          <button class="composer__send" id="send-btn" type="submit" aria-label="Send" disabled>
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </form>
+        
         <p class="composer__disclaimer">Legally Unbullied gives legal information, not legal advice. For urgent matters, contact a lawyer or the police directly.</p>
       </div>
     </footer>
