@@ -1475,6 +1475,10 @@ import {
       live.thinkingComponent.complete();
       live.thinkingComponent = null;
     }
+    if (live.beuiStreaming) {
+      live.beuiStreaming.destroy();
+      live.beuiStreaming = null;
+    }
 
     agentMsg.thinkingElapsedMs = Date.now() - agentMsg.startedAt;
     agentMsg.traceOpen = false;
@@ -1583,6 +1587,11 @@ import {
       live.thinkingComponent.setStatus("Error");
       live.thinkingComponent = null;
     }
+    // Handle BeUIStreamingText
+    if (live.beuiStreaming) {
+      live.beuiStreaming.destroy();
+      live.beuiStreaming = null;
+    }
     
     // Handle old trace UI
     if (live.refs.traceEl && live.refs.toggle) {
@@ -1602,6 +1611,29 @@ import {
     finalizeAnswer(agentMsg, token);
   }
 
+  /**
+   * Hybrid streaming wrapper — uses BeUIStreamingText for the beautiful
+   * blur-to-clear word animation while keeping the multi-stage pipeline
+   * structure (live dots, staggered reveals, context cards, verdict, etc.)
+   */
+  function streamWithBeUI(container, text, { onDone } = {}) {
+    if (window.BeUIStreamingText) {
+      const instance = new window.BeUIStreamingText(container, {
+        text,
+        sources: [],         // sources shown separately via BeUIContextCards stage
+        followUps: [],       // follow-ups shown separately in their own stage
+        oneShot: true,       // no loop — pipeline moves forward
+        showActions: false,  // actions row handled by pipeline verdict stage
+        onDone
+      });
+      // Track for cleanup on stop/abort
+      live.beuiStreaming = instance;
+      return instance;
+    }
+    // Fallback to the old streamText if component unavailable
+    return streamText(container, text, { onDone });
+  }
+
   function streamAnswerSequence(agentMsg, answerBlock, token) {
     const r = agentMsg.result;
     const refs = answerBlock._refs;
@@ -1609,8 +1641,7 @@ import {
     refs.lawSection.el.classList.add("is-live");
     refs.lawSection.liveDot.style.display = "inline-block";
 
-    streamText(refs.lawSection.textEl, r.lawMd, {
-      token,
+    streamWithBeUI(refs.lawSection.textEl, r.lawMd, {
       onDone: () => {
         if (token !== pipelineToken) return;
         const stickAfterLaw = isNearBottom();
@@ -1630,8 +1661,7 @@ import {
           refs.actionsSection.liveDot.style.display = "inline-block";
           scrollChatToBottom(stickBeforeActions);
 
-          streamText(refs.actionsSection.textEl, r.actionsMd, {
-            token,
+          streamWithBeUI(refs.actionsSection.textEl, r.actionsMd, {
             onDone: () => {
               if (token !== pipelineToken) return;
               const stickAfterActions = isNearBottom();
@@ -1754,6 +1784,11 @@ import {
     if (live.thinkingComponent) {
       live.thinkingComponent.setStatus("Stopped");
       live.thinkingComponent = null;
+    }
+    // Stop BeUIStreamingText if active
+    if (live.beuiStreaming) {
+      live.beuiStreaming.destroy();
+      live.beuiStreaming = null;
     }
     
     // Mark current agent message as stopped
@@ -2077,6 +2112,10 @@ import {
     if (live.thinkingComponent) {
       live.thinkingComponent.destroy();
       live.thinkingComponent = null;
+    }
+    if (live.beuiStreaming) {
+      live.beuiStreaming.destroy();
+      live.beuiStreaming = null;
     }
     
     // Re-render

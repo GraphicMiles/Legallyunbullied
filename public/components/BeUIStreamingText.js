@@ -13,6 +13,9 @@ class BeUIStreamingText {
       text: options.text || '',
       sources: options.sources || [],
       followUps: options.followUps || [],
+      oneShot: options.oneShot || false,        // no loop after completion
+      onDone: options.onDone || null,           // callback when streaming finishes
+      showActions: options.showActions !== false, // hide actions row when false
       ...options
     };
     
@@ -64,7 +67,8 @@ class BeUIStreamingText {
     
     this.element.appendChild(this.paragraph);
     
-    // Actions row (copy, retry, vote, sources)
+    // Actions row (copy, retry, vote, sources) — only if showActions is true
+    if (this.options.showActions) {
     this.actionsRow = document.createElement('div');
     this.actionsRow.style.cssText = `
       display: flex;
@@ -176,6 +180,9 @@ class BeUIStreamingText {
     }
     
     this.element.appendChild(this.actionsRow);
+    } else {
+      this.actionsRow = null;
+    }
     
     // Sources dropdown
     this.sourcesDropdown = document.createElement('div');
@@ -375,9 +382,11 @@ class BeUIStreamingText {
         this.count++;
         setTimeout(tick, WORD_MS);
       } else {
-        // Done streaming - show actions and follow-ups
-        this.actionsRow.style.opacity = '1';
-        this.actionsRow.style.pointerEvents = 'auto';
+        // Done streaming
+        if (this.actionsRow) {
+          this.actionsRow.style.opacity = '1';
+          this.actionsRow.style.pointerEvents = 'auto';
+        }
         
         if (this.followUpsRow) {
           this.followUpsRow.style.opacity = '1';
@@ -389,12 +398,21 @@ class BeUIStreamingText {
           });
         }
         
-        // Hold, then loop
+        // Call onDone callback if provided
+        if (this.options.onDone) {
+          this.options.onDone();
+        }
+        
+        // Loop unless oneShot mode
+        if (this.options.oneShot) return;
+        
         setTimeout(() => {
           this.count = 0;
           this.paragraph.innerHTML = '';
-          this.actionsRow.style.opacity = '0';
-          this.actionsRow.style.pointerEvents = 'none';
+          if (this.actionsRow) {
+            this.actionsRow.style.opacity = '0';
+            this.actionsRow.style.pointerEvents = 'none';
+          }
           
           if (this.followUpsRow) {
             this.followUpsRow.style.opacity = '0';
