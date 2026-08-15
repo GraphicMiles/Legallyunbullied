@@ -1844,29 +1844,6 @@ import {
     confirmClearConversation(state.activeId);
   });
 
-  // Composer event listeners
-  el.composerInput.addEventListener("input", () => {
-    autoGrowTextarea();
-    updateComposerState();
-  });
-
-  el.composerInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      el.composerForm.requestSubmit();
-    }
-  });
-
-  el.composerForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const text = el.composerInput.value.trim();
-    if (!text || state.isAgentBusy) return;
-    el.composerInput.value = "";
-    autoGrowTextarea();
-    updateComposerState();
-    submitQuestion(text);
-  });
-
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeMobileSidebar();
   });
@@ -2153,6 +2130,54 @@ import {
     updateComposerState();
     updatePlanLabel();
     initAuth();
+    initPromptBar();
+  }
+
+  function initPromptBar() {
+    const container = document.getElementById("prompt-bar-container");
+    if (!container) {
+      console.warn('[init] Prompt bar container not found');
+      return;
+    }
+    
+    if (!window.BeUIPromptBar) {
+      console.warn('[init] BeUIPromptBar not available');
+      return;
+    }
+
+    try {
+      // Initialize BeUIPromptBar with full features
+      window.promptBar = new window.BeUIPromptBar(container, {
+        placeholder: "Describe your legal situation…",
+        onSubmit: (text) => {
+          if (!text || state.isAgentBusy) return;
+          submitQuestion(text);
+        },
+        sources: [
+          { key: "attach", name: "Add photos & files", desc: "Upload from your computer", glyph: "clip", attach: true },
+          { key: "legal-db", name: "Legal Database", desc: "Search Nigerian laws", glyph: "layers" },
+          { key: "cases", name: "Case Law", desc: "Search court decisions", glyph: "chart" },
+          { key: "web", name: "Web Search", desc: "Search the web", glyph: "globe" }
+        ],
+        commands: [
+          { key: "tenancy", name: "/tenancy", desc: "Ask about tenancy law" },
+          { key: "employment", name: "/employment", desc: "Ask about employment law" },
+          { key: "criminal", name: "/criminal", desc: "Ask about criminal law" },
+          { key: "family", name: "/family", desc: "Ask about family law" },
+          { key: "business", name: "/business", desc: "Ask about business law" },
+          { key: "constitutional", name: "/constitutional", desc: "Ask about constitutional rights" }
+        ],
+        models: [
+          { key: "groq", name: "Groq", tag: "Fast", icon: "⚡" },
+          { key: "openrouter", name: "OpenRouter", tag: "35+ models", icon: "🌐" },
+          { key: "cerebras", name: "Cerebras", tag: "Ultra-fast", icon: "🚀" }
+        ]
+      });
+
+      console.log('[init] BeUIPromptBar initialized successfully');
+    } catch (err) {
+      console.error('[init] BeUIPromptBar initialization failed:', err);
+    }
   }
 
   // Unregister service workers and clear caches on load
