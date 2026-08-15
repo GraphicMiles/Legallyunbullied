@@ -1392,6 +1392,22 @@ import {
       return;
     }
 
+    // HITL — agent needs clarification before continuing
+    if (response.needsInput) {
+      console.log('[runPipeline] Agent needs input:', response.question);
+      
+      // Stop loading state
+      if (live.loadingState) {
+        live.loadingState.destroy();
+        live.loadingState = null;
+      }
+      
+      // Show inline prompt
+      renderNeedsInput(agentMsg, response);
+      finalizeAnswer(agentMsg, token);
+      return;
+    }
+
     // Stop loading state now that we have a response
     if (live.loadingState) {
       live.loadingState.destroy();
@@ -1618,6 +1634,90 @@ import {
     }
     live.refs.body.appendChild(buildCasualReplyEl(replyText));
     scrollChatToBottom();
+  }
+
+  function renderNeedsInput(agentMsg, response) {
+    if (!live.refs || !live.refs.body) {
+      console.warn('[renderNeedsInput] live.refs.body not available');
+      return;
+    }
+    console.log('[renderNeedsInput] Rendering input prompt:', response.question);
+    
+    const wrap = document.createElement("div");
+    wrap.className = "needs-input";
+    wrap.style.cssText = `
+      background: var(--color-surface, #1a1a1a);
+      border: 1px solid var(--color-accent-border, rgba(242, 183, 5, 0.35));
+      border-radius: 10px;
+      padding: 14px;
+      margin: 12px 0;
+    `;
+    
+    const icon = document.createElement("div");
+    icon.innerHTML = '<i class="fa-solid fa-circle-question" style="color: var(--color-accent, #f2b705); font-size: 18px;"></i>';
+    icon.style.cssText = "margin-bottom: 8px;";
+    
+    const question = document.createElement("p");
+    question.textContent = response.question || "Can you clarify?";
+    question.style.cssText = `
+      font-size: 14px;
+      color: var(--color-text, #f5f5f2);
+      margin: 0 0 12px 0;
+      font-weight: 500;
+    `;
+    
+    const inputRow = document.createElement("div");
+    inputRow.style.cssText = "display: flex; gap: 8px;";
+    
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = response.field === "jurisdiction" ? "e.g., Lagos State" : "Your answer";
+    input.style.cssText = `
+      flex: 1;
+      padding: 8px 12px;
+      background: var(--color-bg, #0a0a0a);
+      border: 1px solid var(--color-border, #2a2a2a);
+      border-radius: 6px;
+      color: var(--color-text, #f5f5f2);
+      font-size: 14px;
+      outline: none;
+    `;
+    
+    const submitBtn = document.createElement("button");
+    submitBtn.textContent = "Send";
+    submitBtn.style.cssText = `
+      padding: 8px 16px;
+      background: var(--color-accent, #f2b705);
+      color: var(--color-accent-text, #14120a);
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+    `;
+    
+    submitBtn.addEventListener("click", () => {
+      const answer = input.value.trim();
+      if (!answer) return;
+      
+      console.log('[renderNeedsInput] User answered:', answer);
+      submitQuestion(answer);
+    });
+    
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") submitBtn.click();
+    });
+    
+    inputRow.appendChild(input);
+    inputRow.appendChild(submitBtn);
+    wrap.appendChild(icon);
+    wrap.appendChild(question);
+    wrap.appendChild(inputRow);
+    
+    live.refs.body.appendChild(wrap);
+    scrollChatToBottom();
+    
+    // Focus input
+    setTimeout(() => input.focus(), 100);
   }
 
   function buildErrorEl(message) {

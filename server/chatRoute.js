@@ -90,7 +90,8 @@ ${PRACTICE_AREA_BULLETS}
 
 Provide:
 - "practice_area": Single best-fitting category from the list above
-- "jurisdiction": Specific jurisdiction (e.g., "Lagos State", "Federal", "Rivers State")
+- "jurisdiction": Specific jurisdiction (e.g., "Lagos State", "Federal", "Rivers State"). If unclear from the question, set to "Federal" as default.
+- "jurisdiction_status": "clear" if the state/jurisdiction is explicitly stated or strongly implied, "unclear" if it's missing and the answer could differ by state (e.g., tenancy, land, family law vary by state; criminal law, labour law, constitutional law are mostly federal)
 - "urgency": ["Low", "Medium", "High", "Critical"] — based on time sensitivity and potential harm
 - "summary": 1-2 sentence summary of the legal situation
 - "keywords": 4-8 specific legal/factual terms likely in relevant statutes (procedural terms, timeframes, named concepts)
@@ -106,6 +107,7 @@ Example (use realistic values, don't copy):
   "is_legal_question": true,
   "practice_area": "tenancy",
   "jurisdiction": "Lagos State",
+  "jurisdiction_status": "clear",
   "urgency": "High",
   "summary": "Tenant facing potential illegal eviction after landlord changed locks without court order or proper notice.",
   "keywords": ["notice to quit", "seven days notice", "court order", "forcible entry", "possession", "magistrate court"],
@@ -120,6 +122,23 @@ Example (use realistic values, don't copy):
   "reasoning_approach": "First establish the statutory framework under Lagos State Tenancy Law 2011, particularly sections on notice requirements and prohibition of self-help. Then analyze whether the landlord's actions constitute illegal eviction. Finally outline the tenant's remedies including potential court orders for repossession and damages.",
   "stakeholders": ["tenant", "landlord"],
   "potential_remedies": ["Court order for repossession", "Damages for illegal eviction", "Injunction against further harassment"]
+}
+
+Example 2 (unclear jurisdiction — no state mentioned):
+{
+  "is_legal_question": true,
+  "practice_area": "tenancy",
+  "jurisdiction": "Federal",
+  "jurisdiction_status": "unclear",
+  "urgency": "High",
+  "summary": "Landlord evicted tenant without notice.",
+  "keywords": ["eviction", "notice", "tenant", "landlord"],
+  "key_issues": ["Was notice given?", "Is eviction legal?"],
+  "complexity": "Medium",
+  "route": "complex",
+  "reasoning_approach": "Need state to determine applicable tenancy law.",
+  "stakeholders": ["tenant", "landlord"],
+  "potential_remedies": ["Court action", "Mediation"]
 }
 
 Respond with ONLY a JSON object, no prose, no markdown.`;
@@ -311,32 +330,40 @@ Analyze this question and create a structured plan for answering it.`;
  */
 const CRITIQUE_PROMPT = `You are a senior Nigerian legal reviewer. Critique the draft answer below.
 
-Evaluate on these dimensions and produce a SINGLE quality score (0 to 1):
-- Accuracy: Does the draft cite only provisions actually in the context? Does it invent laws?
+Evaluate on TWO separate dimensions:
+
+DIMENSION 1 — QUALITY (0 to 1):
+- Accuracy: Does the draft cite only provisions actually in the context?
 - Completeness: Does it address all key_issues from the plan?
 - Clarity: Is it written in plain language a layperson can understand?
 - Actionability: Are the next steps concrete and specific?
-- Citation quality: Does every legal claim cite an Act and section from the provided excerpts?
 
-Scoring guidance:
-- 0.90+ : Excellent — accurate, complete, clear, well-cited, actionable
-- 0.75-0.89: Good — minor gaps but substantively correct
-- 0.60-0.74: Needs work — missing citations, unclear, or incomplete
-- below 0.60: Poor — significant issues that require rewriting
+DIMENSION 2 — LEGAL SAFETY (0 to 1):
+- Jurisdiction match: Does the answer apply to the correct jurisdiction?
+- Citation validity: Does every cited section exist in the provided provisions?
+- Escalation correctness: Is the escalate decision appropriate for the situation?
+- No invention: Does the draft avoid inventing laws, sections, or rights not in context?
 
-If the draft fails, list SPECIFIC fixable issues (not vague complaints). Each issue should name what's wrong and how to fix it.
+SCORING RULES:
+- 0.90+: Excellent
+- 0.75-0.89: Good — minor gaps
+- 0.60-0.74: Needs work
+- below 0.60: Poor — significant issues
+
+If either score is below threshold, list SPECIFIC fixable issues.
 
 Question: {{QUESTION}}
 
 Classification:
 - Practice area: {{PRACTICE_AREA}}
+- Jurisdiction: {{JURISDICTION}}
 - Key issues: {{KEY_ISSUES}}
 - Complexity: {{COMPLEXITY}}
 
-Plan (if available):
+Plan:
 {{PLAN}}
 
-Provided provisions (abbreviated):
+Provided provisions:
 {{PROVISIONS}}
 
 Draft answer to critique:
@@ -345,15 +372,22 @@ Draft answer to critique:
 Respond with ONLY a JSON object:
 {
   "quality": 0.00,
+  "legal_safety": 0.00,
   "passed": true/false,
+  "quality_passed": true/false,
+  "safety_passed": true/false,
   "issues": [
-    { "dimension": "accuracy|completeness|clarity|actionability|citations", "problem": "what's wrong", "fix": "how to fix it" }
+    { "dimension": "quality|safety", "problem": "...", "fix": "..." }
   ],
-  "strengths": ["what the draft does well"],
-  "rewrite_hint": "1-2 sentence instruction for how to improve the draft if it needs rewriting"
+  "strengths": ["..."],
+  "rewrite_hint": "..."
 }
 
-Rule: "passed" must be true ONLY if quality >= 0.70. Do not pass drafts below 0.70.`;
+RULES:
+- "quality_passed" = true ONLY if quality >= 0.70
+- "safety_passed" = true ONLY if legal_safety >= 0.80
+- "passed" = true ONLY if BOTH quality_passed AND safety_passed
+- Do NOT pass drafts below 0.70 on quality OR below 0.80 on safety`;
 
 async function critiqueDraft(question, classification, plan, provisions, draft) {
   const groqClient = getGroqClient();
@@ -378,6 +412,7 @@ Gaps: ${(plan.gaps || []).join(", ") || "none"}`
   const critiquePrompt = CRITIQUE_PROMPT
     .replace("{{QUESTION}}", question)
     .replace("{{PRACTICE_AREA}}", classification.practice_area || "unknown")
+    .replace("{{JURISDICTION}}", classification.jurisdiction || "unknown")
     .replace("{{KEY_ISSUES}}", keyIssues)
     .replace("{{COMPLEXITY}}", classification.complexity || "unknown")
     .replace("{{PLAN}}", planText)
@@ -700,6 +735,21 @@ router.post("/api/chat", async (req, res) => {
     });
   }
 
+  // Step 2b: HITL — if jurisdiction is unclear and the answer depends on state,
+  // ask the user before proceeding. Don't guess and risk wrong law.
+  if (classification.jurisdiction_status === "unclear") {
+    return res.json({
+      needsInput: true,
+      question: "Which state did this happen in? The laws can differ by state.",
+      field: "jurisdiction",
+      context: {
+        practice_area: classification.practice_area,
+        urgency: classification.urgency,
+      },
+      provider: classifyProvider,
+    });
+  }
+
   // Step 3: Legal question — proceed with full pipeline
   let provisions;
   try {
@@ -842,6 +892,106 @@ router.post("/api/chat", async (req, res) => {
   });
 });
 
+
+/**
+ * GET /api/chat/stream — SSE endpoint for real-time progress updates.
+ *
+ * Emits sanitized status events (never raw CoT or prompt text):
+ *   data: {"event": "start"}
+ *   data: {"event": "status", "message": "Classifying the question..."}
+ *   data: {"event": "status", "message": "Searching Nigerian law..."}
+ *   data: {"event": "status", "message": "Drafting response..."}
+ *   data: {"event": "complete", "result": { ... }}
+ *   data: {"event": "error", "message": "..."}
+ *
+ * The /api/chat REST endpoint remains unchanged and live in parallel.
+ */
+router.get("/api/chat/stream", async (req, res) => {
+  const question = (req.query && req.query.question || "").toString().trim();
+  if (!question) {
+    res.writeHead(400, { "Content-Type": "text/event-stream" });
+    res.write(`data: ${JSON.stringify({ event: "error", message: "question is required" })}\n\n`);
+    return res.end();
+  }
+
+  // SSE headers
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    "Connection": "keep-alive",
+    "X-Accel-Buffering": "no", // disable nginx buffering
+  });
+
+  const emit = (data) => {
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
+
+  try {
+    emit({ event: "start" });
+
+    // Step 1: Classify
+    emit({ event: "status", message: "Classifying the question..." });
+    const classifyResult = await classifyWithFallback(question);
+    const classification = classifyResult.classification;
+
+    if (classification.is_legal_question === false) {
+      emit({ event: "complete", result: { isCasual: true, casualReply: classification.casual_reply } });
+      return res.end();
+    }
+
+    // Step 2: Jurisdiction check
+    if (classification.jurisdiction_status === "unclear") {
+      emit({ event: "complete", result: { needsInput: true, question: "Which state did this happen in?", field: "jurisdiction" } });
+      return res.end();
+    }
+
+    // Step 3: Search
+    emit({ event: "status", message: "Searching Nigerian law..." });
+    let provisions;
+    try {
+      provisions = await findProvisions({
+        practiceArea: classification.practice_area,
+        jurisdiction: classification.jurisdiction,
+        keywords: classification.keywords,
+      });
+    } catch (err) {
+      emit({ event: "error", message: "Legal database unavailable." });
+      return res.end();
+    }
+
+    if (!provisions.length) {
+      emit({ event: "complete", result: { corpusEmpty: true, message: "No sources for this area yet." } });
+      return res.end();
+    }
+
+    // Step 4: Draft
+    emit({ event: "status", message: "Drafting response..." });
+    const contextBlock = provisions.map((p) => `[${p.act}${p.section ? ", s." + p.section : ""}]\n${p.text}`).join("\n\n---\n\n");
+    const draftResult = await draftWithFallback(question, contextBlock, classification);
+
+    // Step 5: Critique (split scoring)
+    emit({ event: "status", message: "Verifying citations..." });
+    const critiqueResult = await critiqueDraft(question, classification, null, provisions, draftResult.result);
+    const critique = critiqueResult.critique;
+
+    // Final result
+    emit({
+      event: "complete",
+      result: {
+        classification,
+        result: draftResult.result,
+        route: classification.route,
+        critique,
+      },
+    });
+
+    res.end();
+  } catch (err) {
+    console.error("[/api/chat/stream] Error:", err.message);
+    emit({ event: "error", message: err.message });
+    res.end();
+  }
+});
 
 /**
  * POST /api/generate-title — Generate a short contextual title for a conversation
