@@ -1699,6 +1699,22 @@
   </div>
 
   <!-- ============================================================
+       DEBUG PANEL (live error/log capture)
+       ============================================================ -->
+  <div id="debug-panel" style="display: none; position: fixed; bottom: 0; right: 0; width: 400px; max-width: 90vw; max-height: 50vh; background: var(--color-surface, #1a1a1a); border: 1px solid var(--color-border, #333); border-radius: 8px 0 0 0; z-index: 9999; font-family: monospace; font-size: 11px; overflow: hidden; flex-direction: column;">
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--color-bg-raised, #121212); border-bottom: 1px solid var(--color-border, #333);">
+      <span style="font-weight: 600; color: var(--color-text, #f5f5f2);"> Debug Panel</span>
+      <div>
+        <button onclick="debugPanel.clear()" style="background: none; border: none; color: var(--color-text-muted, #9a9a94); cursor: pointer; padding: 2px 6px;">Clear</button>
+        <button onclick="debugPanel.toggle()" style="background: none; border: none; color: var(--color-text-muted, #9a9a94); cursor: pointer; padding: 2px 6px;">✕</button>
+      </div>
+    </div>
+    <div id="debug-logs" style="flex: 1; overflow-y: auto; padding: 8px; color: var(--color-text-muted, #9a9a94); line-height: 1.4;"></div>
+  </div>
+
+  <button id="debug-toggle" style="position: fixed; bottom: 16px; right: 16px; width: 36px; height: 36px; border-radius: 50%; background: var(--color-surface, #1a1a1a); border: 1px solid var(--color-border, #333); color: var(--color-text-muted, #9a9a94); cursor: pointer; z-index: 9998; display: flex; align-items: center; justify-content: center; font-size: 18px;" title="Toggle Debug Panel (Ctrl+Shift+D)"></button>
+
+  <!-- ============================================================
        MAIN
        ============================================================ -->
   <main class="main">
@@ -1761,6 +1777,173 @@
 <script src="components/BeUIPromptBar.js"></script>
 <script src="components/BeUIRecommendationCard.js"></script>
 <script type="module" src="enhanced-streaming.js"></script>
-<script type="module" src="app.js?v=2.0.5"></script>
+  <script type="module" src="app.js?v=2.0.5"></script>
+  
+  <!-- ============================================================
+       DEBUG PANEL LOGIC
+       ============================================================ -->
+  <script>
+    // Debug Panel - live error/log capture
+    window.debugPanel = {
+      logs: [],
+      maxLogs: 200,
+      enabled: false,
+      
+      init() {
+        const logsEl = document.getElementById('debug-logs');
+        const panelEl = document.getElementById('debug-panel');
+        const toggleBtn = document.getElementById('debug-toggle');
+        
+        if (!logsEl || !panelEl || !toggleBtn) return;
+        
+        // Toggle button
+        toggleBtn.addEventListener('click', () => this.toggle());
+        
+        // Keyboard shortcut: Ctrl+Shift+D
+        document.addEventListener('keydown', (e) => {
+          if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+            e.preventDefault();
+            this.toggle();
+          }
+        });
+        
+        // Override console methods
+        const originalLog = console.log;
+        const originalWarn = console.warn;
+        const originalError = console.error;
+        const originalInfo = console.info;
+        
+        console.log = (...args) => {
+          originalLog.apply(console, args);
+          this.addLog('log', args);
+        };
+        
+        console.warn = (...args) => {
+          originalWarn.apply(console, args);
+          this.addLog('warn', args);
+        };
+        
+        console.error = (...args) => {
+          originalError.apply(console, args);
+          this.addLog('error', args);
+        };
+        
+        console.info = (...args) => {
+          originalInfo.apply(console, args);
+          this.addLog('info', args);
+        };
+        
+        // Capture unhandled errors
+        window.addEventListener('error', (e) => {
+          this.addLog('error', [`Unhandled error: ${e.message} at ${e.filename}:${e.lineno}`]);
+        });
+        
+        window.addEventListener('unhandledrejection', (e) => {
+          this.addLog('error', [`Unhandled promise rejection: ${e.reason}`]);
+        });
+        
+        // Capture fetch requests
+        const originalFetch = window.fetch;
+        window.fetch = async (...args) => {
+          this.addLog('info', [`→ ${args[0]} ${args[1]?.method || 'GET'}`]);
+          try {
+            const response = await originalFetch.apply(window, args);
+            this.addLog('info', [`← ${response.status} ${args[0]}`]);
+            return response;
+          } catch (err) {
+            this.addLog('error', [`✗ ${args[0]}: ${err.message}`]);
+            throw err;
+          }
+        };
+        
+        this.addLog('info', ['Debug panel initialized']);
+      },
+      
+      toggle() {
+        const panelEl = document.getElementById('debug-panel');
+        const toggleBtn = document.getElementById('debug-toggle');
+        if (!panelEl || !toggleBtn) return;
+        
+        this.enabled = !this.enabled;
+        panelEl.style.display = this.enabled ? 'flex' : 'none';
+        toggleBtn.textContent = this.enabled ? '×' : '';
+        
+        if (this.enabled) {
+          this.render();
+        }
+      },
+      
+      addLog(type, args) {
+        const timestamp = new Date().toLocaleTimeString();
+        const message = args.map(arg => {
+          if (typeof arg === 'object') {
+            try {
+              return JSON.stringify(arg, null, 2);
+            } catch (e) {
+              return String(arg);
+            }
+          }
+          return String(arg);
+        }).join(' ');
+        
+        this.logs.push({ type, timestamp, message });
+        if (this.logs.length > this.maxLogs) {
+          this.logs.shift();
+        }
+        
+        if (this.enabled) {
+          this.render();
+        }
+        
+        // Update badge count on toggle button
+        const errorCount = this.logs.filter(l => l.type === 'error').length;
+        const toggleBtn = document.getElementById('debug-toggle');
+        if (toggleBtn && !this.enabled && errorCount > 0) {
+          toggleBtn.textContent = errorCount;
+          toggleBtn.style.color = 'var(--color-danger, #e5484d)';
+        }
+      },
+      
+      render() {
+        const logsEl = document.getElementById('debug-logs');
+        if (!logsEl) return;
+        
+        logsEl.innerHTML = this.logs.slice(-50).map(log => {
+          const colors = {
+            log: 'var(--color-text-muted, #9a9a94)',
+            warn: 'var(--color-accent, #f2b705)',
+            error: 'var(--color-danger, #e5484d)',
+            info: 'var(--color-text-faint, #6b6b66)'
+          };
+          const icons = { log: '›', warn: '⚠', error: '✗', info: 'i' };
+          const color = colors[log.type] || colors.log;
+          const icon = icons[log.type] || icons.log;
+          
+          return `<div style="margin-bottom: 4px; color: ${color};"><span style="opacity: 0.5;">${log.timestamp}</span> <span style="font-weight: 600;">${icon}</span> <span style="white-space: pre-wrap; word-break: break-word;">${this.escapeHtml(log.message)}</span></div>`;
+        }).join('');
+        
+        // Auto-scroll to bottom
+        logsEl.scrollTop = logsEl.scrollHeight;
+      },
+      
+      clear() {
+        this.logs = [];
+        this.render();
+      },
+      
+      escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+    };
+    
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => window.debugPanel.init());
+    } else {
+      window.debugPanel.init();
+    }
+  </script>
 </body>
 </html>
