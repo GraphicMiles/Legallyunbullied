@@ -585,9 +585,19 @@ async function classifyWithFallback(question) {
   throw new Error("No LLM provider configured for classification. Set GROQ_API_KEY, OPENROUTER_API_KEY, CEREBRAS_API_KEY, or GEMINI_API_KEY.");
 }
 
-async function draftWithModel(client, model, question, contextBlock, plan, classification) {
+async function draftWithModel(client, model, question, contextBlock, plan, classification, conversationHistory) {
   // Build comprehensive context from classification and plan
   let enhancedContext = "";
+  
+  // Prepend conversation history if available
+  let historyContext = "";
+  if (conversationHistory && conversationHistory.length > 0) {
+    const formattedHistory = conversationHistory.map(msg => {
+      const role = msg.role === "user" ? "User" : "Agent";
+      return `${role}: ${msg.content}`;
+    }).join("\n");
+    historyContext = `\n\nPREVIOUS CONVERSATION CONTEXT:\n${formattedHistory}\n\nUse this context to understand the user's current question. Don't re-ask for information already provided. If the user is answering a question you asked, incorporate their answer directly.`;
+  }
   
   if (classification) {
     enhancedContext += `\n\nLEGAL ANALYSIS CONTEXT:
@@ -622,7 +632,7 @@ Follow this plan to structure your response. Be comprehensive and address all su
     model,
     [
       { role: "system", content: DRAFT_SYSTEM_PROMPT },
-      { role: "user", content: `Question: ${question}\n\nAvailable statute excerpts:\n\n${contextBlock}${enhancedContext}` },
+      { role: "user", content: `${historyContext}\n\nQuestion: ${question}\n\nAvailable statute excerpts:\n\n${contextBlock}${enhancedContext}` },
     ],
     { response_format: { type: "json_object" }, max_tokens: 3000 }
   );
@@ -648,7 +658,7 @@ function markProviderRateLimited(key) {
   console.log(`[/api/chat] Provider "${key}" on cooldown for ${COOLDOWN_MS / 1000}s`);
 }
 
-async function draftWithFallback(question, contextBlock, plan, classification) {
+async function draftWithFallback(question, contextBlock, plan, classification, conversationHistory) {
   const groqClient = getGroqClient();
   const openRouterClient = getOpenRouterClient();
   const cerebrasClient = getCerebrasClient();
@@ -701,7 +711,7 @@ async function draftWithFallback(question, contextBlock, plan, classification) {
     allSkipped = false; // at least one was attempted
 
     try {
-      const result = await draftWithModel(client, model, question, contextBlock, plan, classification);
+      const result = await draftWithModel(client, model, question, contextBlock, plan, classification, conversationHistory);
       return { result, model, provider: key };
     } catch (err) {
       lastErr = err;
@@ -762,6 +772,9 @@ router.post("/api/chat", async (req, res) => {
   if (!question) {
     return res.status(400).json({ error: "bad_request", message: '"question" is required.' });
   }
+
+  // Conversation history for multi-turn context (optional, additive)
+  const history = (req.body && Array.isArray(req.body.history)) ? req.body.history : [];
 
   // Check that at least one LLM provider is configured
   const groqClient = getGroqClient();
@@ -878,7 +891,7 @@ router.post("/api/chat", async (req, res) => {
   // Step 5: Draft with fallback chain (plan is null for simple route)
   let draftResult;
   try {
-    draftResult = await draftWithFallback(question, contextBlock, planResult.plan, classification);
+    draftResult = await draftWithFallback(question, contextBlock, planResult.plan, classification, history);
   } catch (err) {
     console.error("[/api/chat] drafting failed:", err.status || "", err.message);
     return res.status(502).json({
@@ -929,6 +942,7 @@ router.post("/api/chat", async (req, res) => {
  */
 router.get("/api/chat/stream", async (req, res) => {
   const question = (req.query && req.query.question || "").toString().trim();
+  // SSE does not support conversation history (stateless)
   if (!question) {
     res.writeHead(400, { "Content-Type": "text/event-stream" });
     res.write(`data: ${JSON.stringify({ event: "error", message: "question is required" })}\n\n`);

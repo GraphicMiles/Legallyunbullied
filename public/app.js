@@ -269,7 +269,7 @@ import {
     };
   }
 
-  async function callChatApi(question) {
+  async function callChatApi(question, history) {
     console.log('[callChatApi] Starting API call to /api/chat');
     
     // Add timeout to fetch call
@@ -280,7 +280,7 @@ import {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ question, history: history || [] }),
         signal: controller.signal,
       });
       
@@ -1357,7 +1357,13 @@ import {
     let response;
     let requestError = null;
     try {
-      response = await callChatApi(question);
+      // Build conversation history — last 6 messages (3 user + 3 agent pairs)
+      const recentMessages = convo.messages
+        .filter(m => m.role === "user" || m.status === "done" || m.status === "casual")
+        .slice(-6)
+        .map(m => ({ role: m.role, content: m.content || m.casualReply || "" }));
+      
+      response = await callChatApi(question, recentMessages);
       console.log('[runPipeline] API call completed successfully');
     } catch (err) {
       console.error('[runPipeline] API call failed:', err);
@@ -1738,13 +1744,9 @@ import {
       
       console.log('[renderNeedsInput] User answered:', answer);
       
-      // Combine original question with answer for context
-      const combinedQuestion = response.field === "jurisdiction"
-        ? `${originalQuestion} [State: ${answer}]`
-        : `${originalQuestion} [${answer}]`;
-      
-      console.log('[renderNeedsInput] Combined question:', combinedQuestion);
-      submitQuestion(combinedQuestion);
+      // With conversation history, server has context — just send the answer
+      console.log('[renderNeedsInput] Sending answer:', answer);
+      submitQuestion(answer);
     });
     
     input.addEventListener("keydown", (e) => {
