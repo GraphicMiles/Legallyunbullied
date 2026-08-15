@@ -1889,12 +1889,34 @@ import {
   let authMode = "signin";
 
   function initAuth() {
+    // Wait for Firebase to be ready
+    if (window.firebaseAuth) {
+      setupAuth();
+    } else {
+      console.log("[auth] Waiting for Firebase to initialize...");
+      window.addEventListener("firebase-ready", () => {
+        console.log("[auth] Firebase ready, setting up auth");
+        setupAuth();
+      }, { once: true });
+      
+      // Fallback: if Firebase doesn't load within 3 seconds, show sign-in disabled
+      setTimeout(() => {
+        if (!window.firebaseAuth) {
+          console.warn("[auth] Firebase Auth isn't configured — sign-in disabled.");
+          renderAuthSection(null);
+        }
+      }, 3000);
+    }
+  }
+
+  function setupAuth() {
     const auth = window.firebaseAuth;
     if (!auth) {
       console.warn("[auth] Firebase Auth isn't configured — sign-in disabled.");
       renderAuthSection(null);
       return;
     }
+    
     onAuthStateChanged(auth, (user) => {
       const previousUserId = state.user?.uid;
       const newUserId = user?.uid;
@@ -1927,7 +1949,7 @@ import {
       
       renderAuthSection(user);
     });
-  }
+  } // end setupAuth()
 
   function renderAuthSection(user) {
     const container = el.authSection;
