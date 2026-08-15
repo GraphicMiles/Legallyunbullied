@@ -875,8 +875,28 @@ import {
   }
 
   function buildVerdictEl(r) {
-    // Use BeUIRecommendation if available
-    if (window.BeUIRecommendation) {
+    // Use BeUIRecommendationCard if available
+    if (window.BeUIRecommendationCard) {
+      const container = document.createElement("div");
+      
+      const recommendation = new window.BeUIRecommendationCard(container, {
+        options: [
+          {
+            body: r.escalate 
+              ? "This situation likely requires professional legal assistance. A lawyer can help you navigate the legal process and protect your rights."
+              : "You can likely handle this yourself by following the steps outlined above. No lawyer needed for this situation.",
+            short: r.escalate ? "Consult a lawyer" : "Handle yourself",
+            signal: r.escalate ? 3 : 2,
+            tone: r.escalate ? "var(--color-accent)" : "var(--color-success)",
+            label: r.escalate ? "High confidence" : "Good option",
+            cta: r.escalate ? "Find lawyer" : "Got it",
+            ctaStyle: r.escalate ? "var(--color-accent)" : "var(--color-success)"
+          }
+        ]
+      });
+      
+      return container;
+    } else if (window.BeUIRecommendation) {
       const container = document.createElement("div");
       
       const recommendation = new window.BeUIRecommendation(container, {
@@ -1343,18 +1363,16 @@ import {
       live.loadingState = null;
     }
 
-    // Legal question — create Beautiful UI Loading State for pipeline execution
-    if (window.LoadingState) {
-      const loadingContainer = document.createElement("div");
-      live.refs.body.insertBefore(loadingContainer, live.refs.body.firstChild);
+    // Legal question — create Beautiful UI Thinking State for pipeline execution
+    if (window.BeUIThinkingState) {
+      const thinkingContainer = document.createElement("div");
+      live.refs.body.insertBefore(thinkingContainer, live.refs.body.firstChild);
       
-      live.pipelineLoading = new window.LoadingState({
-        container: loadingContainer,
-        label: "Thinking",
-        variant: "Drive"
+      live.thinkingComponent = new window.BeUIThinkingState(thinkingContainer, {
+        variant: "Steps"
       });
     } else if (window.BeUIThinking) {
-      // Fallback to BeUIThinking if LoadingState not available
+      // Fallback to old BeUIThinking if BeUIThinkingState not available
       const thinkingContainer = document.createElement("div");
       live.refs.body.insertBefore(thinkingContainer, live.refs.body.firstChild);
       
