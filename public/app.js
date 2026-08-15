@@ -50,7 +50,7 @@ import {
     emptyState: document.getElementById("empty-state"),
     conversationTitle: document.getElementById("conversation-title"),
     classificationBadges: document.getElementById("classification-badges"),
-    composerForm: document.getElementById("composer-form"),
+    composerForm: document.getElementById("composer-form") || document.getElementById("prompt-bar-container"),
     composerInput: document.getElementById("composer-input"),
     sendBtn: document.getElementById("send-btn"),
     planValue: document.getElementById("plan-value"),
@@ -1874,27 +1874,30 @@ import {
     confirmClearConversation(state.activeId);
   });
 
-  el.composerInput.addEventListener("input", () => {
-    autoGrowTextarea();
-    updateComposerState();
-  });
+  // Only set up old composer event listeners if BeUIPromptBar is not available
+  if (!window.BeUIPromptBar && el.composerInput && el.composerForm) {
+    el.composerInput.addEventListener("input", () => {
+      autoGrowTextarea();
+      updateComposerState();
+    });
 
-  el.composerInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    el.composerInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        el.composerForm.requestSubmit();
+      }
+    });
+
+    el.composerForm.addEventListener("submit", (e) => {
       e.preventDefault();
-      el.composerForm.requestSubmit();
-    }
-  });
-
-  el.composerForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const text = el.composerInput.value.trim();
-    if (!text || state.isAgentBusy) return;
-    el.composerInput.value = "";
-    autoGrowTextarea();
-    updateComposerState();
-    submitQuestion(text);
-  });
+      const text = el.composerInput.value.trim();
+      if (!text || state.isAgentBusy) return;
+      el.composerInput.value = "";
+      autoGrowTextarea();
+      updateComposerState();
+      submitQuestion(text);
+    });
+  }
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeMobileSidebar();
@@ -2160,6 +2163,43 @@ import {
     updateComposerState();
     updatePlanLabel();
     initAuth();
+    initPromptBar();
+  }
+
+  function initPromptBar() {
+    const container = document.getElementById("prompt-bar-container");
+    if (!container || !window.BeUIPromptBar) {
+      console.warn('BeUIPromptBar not available, using basic composer');
+      return;
+    }
+
+    // Initialize BeUIPromptBar
+    window.promptBar = new window.BeUIPromptBar(container, {
+      placeholder: "Describe your legal situation…",
+      onSubmit: (text) => {
+        if (!text || state.isAgentBusy) return;
+        submitQuestion(text);
+      },
+      sources: [
+        { key: "attach", name: "Add photos & files", desc: "Upload from your computer", glyph: "clip", attach: true },
+        { key: "legal-db", name: "Legal Database", desc: "Search Nigerian laws", glyph: "layers" },
+        { key: "cases", name: "Case Law", desc: "Search court decisions", glyph: "chart" }
+      ],
+      commands: [
+        { key: "tenancy", name: "/tenancy", desc: "Ask about tenancy law" },
+        { key: "employment", name: "/employment", desc: "Ask about employment law" },
+        { key: "criminal", name: "/criminal", desc: "Ask about criminal law" },
+        { key: "family", name: "/family", desc: "Ask about family law" },
+        { key: "business", name: "/business", desc: "Ask about business law" }
+      ],
+      models: [
+        { key: "groq", name: "Groq", tag: "Fast", icon: "⚡" },
+        { key: "openrouter", name: "OpenRouter", tag: "35+ models", icon: "🌐" },
+        { key: "cerebras", name: "Cerebras", tag: "Ultra-fast", icon: "🚀" }
+      ]
+    });
+
+    console.log('[init] BeUIPromptBar initialized');
   }
 
   // Unregister service workers and clear caches on load
