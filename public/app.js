@@ -1874,29 +1874,9 @@ import {
     confirmClearConversation(state.activeId);
   });
 
-  // Only set up old composer event listeners if BeUIPromptBar is not available
-  if (!window.BeUIPromptBar && el.composerInput && el.composerForm) {
-    el.composerInput.addEventListener("input", () => {
-      autoGrowTextarea();
-      updateComposerState();
-    });
-
-    el.composerInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        el.composerForm.requestSubmit();
-      }
-    });
-
-    el.composerForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const text = el.composerInput.value.trim();
-      if (!text || state.isAgentBusy) return;
-      el.composerInput.value = "";
-      autoGrowTextarea();
-      updateComposerState();
-      submitQuestion(text);
-    });
+  // Set up composer event listeners (only if using fallback composer)
+  if (!window.BeUIPromptBar || !window.promptBar) {
+    setupFallbackComposerListeners();
   }
 
   document.addEventListener("keydown", (e) => {
@@ -2168,38 +2148,101 @@ import {
 
   function initPromptBar() {
     const container = document.getElementById("prompt-bar-container");
-    if (!container || !window.BeUIPromptBar) {
-      console.warn('BeUIPromptBar not available, using basic composer');
+    if (!container) {
+      console.warn('Prompt bar container not found');
+      showFallbackComposer();
+      return;
+    }
+    
+    if (!window.BeUIPromptBar) {
+      console.warn('BeUIPromptBar not available, using fallback composer');
+      showFallbackComposer();
       return;
     }
 
-    // Initialize BeUIPromptBar
-    window.promptBar = new window.BeUIPromptBar(container, {
-      placeholder: "Describe your legal situation…",
-      onSubmit: (text) => {
-        if (!text || state.isAgentBusy) return;
-        submitQuestion(text);
-      },
-      sources: [
-        { key: "attach", name: "Add photos & files", desc: "Upload from your computer", glyph: "clip", attach: true },
-        { key: "legal-db", name: "Legal Database", desc: "Search Nigerian laws", glyph: "layers" },
-        { key: "cases", name: "Case Law", desc: "Search court decisions", glyph: "chart" }
-      ],
-      commands: [
-        { key: "tenancy", name: "/tenancy", desc: "Ask about tenancy law" },
-        { key: "employment", name: "/employment", desc: "Ask about employment law" },
-        { key: "criminal", name: "/criminal", desc: "Ask about criminal law" },
-        { key: "family", name: "/family", desc: "Ask about family law" },
-        { key: "business", name: "/business", desc: "Ask about business law" }
-      ],
-      models: [
-        { key: "groq", name: "Groq", tag: "Fast", icon: "⚡" },
-        { key: "openrouter", name: "OpenRouter", tag: "35+ models", icon: "🌐" },
-        { key: "cerebras", name: "Cerebras", tag: "Ultra-fast", icon: "🚀" }
-      ]
+    try {
+      // Initialize BeUIPromptBar
+      window.promptBar = new window.BeUIPromptBar(container, {
+        placeholder: "Describe your legal situation…",
+        onSubmit: (text) => {
+          if (!text || state.isAgentBusy) return;
+          submitQuestion(text);
+        },
+        sources: [
+          { key: "attach", name: "Add photos & files", desc: "Upload from your computer", glyph: "clip", attach: true },
+          { key: "legal-db", name: "Legal Database", desc: "Search Nigerian laws", glyph: "layers" },
+          { key: "cases", name: "Case Law", desc: "Search court decisions", glyph: "chart" }
+        ],
+        commands: [
+          { key: "tenancy", name: "/tenancy", desc: "Ask about tenancy law" },
+          { key: "employment", name: "/employment", desc: "Ask about employment law" },
+          { key: "criminal", name: "/criminal", desc: "Ask about criminal law" },
+          { key: "family", name: "/family", desc: "Ask about family law" },
+          { key: "business", name: "/business", desc: "Ask about business law" }
+        ],
+        models: [
+          { key: "groq", name: "Groq", tag: "Fast", icon: "⚡" },
+          { key: "openrouter", name: "OpenRouter", tag: "35+ models", icon: "🌐" },
+          { key: "cerebras", name: "Cerebras", tag: "Ultra-fast", icon: "🚀" }
+        ]
+      });
+
+      console.log('[init] BeUIPromptBar initialized successfully');
+    } catch (err) {
+      console.error('[init] BeUIPromptBar initialization failed:', err);
+      showFallbackComposer();
+    }
+  }
+
+  function showFallbackComposer() {
+    const container = document.getElementById("prompt-bar-container");
+    const fallbackForm = document.getElementById("composer-form");
+    
+    if (container) {
+      container.style.display = "none";
+    }
+    
+    if (fallbackForm) {
+      fallbackForm.style.display = "flex";
+      console.log('[init] Fallback composer shown');
+      
+      // Set up event listeners for fallback composer
+      setupFallbackComposerListeners();
+    }
+  }
+
+  function setupFallbackComposerListeners() {
+    const composerInput = document.getElementById("composer-input");
+    const composerForm = document.getElementById("composer-form");
+    
+    if (!composerInput || !composerForm) {
+      console.error('Fallback composer elements not found');
+      return;
+    }
+    
+    composerInput.addEventListener("input", () => {
+      autoGrowTextarea();
+      updateComposerState();
     });
 
-    console.log('[init] BeUIPromptBar initialized');
+    composerInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        composerForm.requestSubmit();
+      }
+    });
+
+    composerForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const text = composerInput.value.trim();
+      if (!text || state.isAgentBusy) return;
+      composerInput.value = "";
+      autoGrowTextarea();
+      updateComposerState();
+      submitQuestion(text);
+    });
+    
+    console.log('[init] Fallback composer listeners attached');
   }
 
   // Unregister service workers and clear caches on load
