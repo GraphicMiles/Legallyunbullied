@@ -1293,7 +1293,7 @@ import {
   }
 
   function setStepActive(agentMsg, index) {
-    if (!agentMsg.steps || !agentMsg.steps[index]) return;
+    if (!agentMsg || !agentMsg.steps || !agentMsg.steps[index]) return;
     if (index > 0) {
       const prev = agentMsg.steps[index - 1];
       if (prev && prev.state !== "done") {
@@ -1317,7 +1317,7 @@ import {
   }
 
   function setStepDone(agentMsg, index) {
-    if (!agentMsg.steps || !agentMsg.steps[index]) return;
+    if (!agentMsg || !agentMsg.steps || !agentMsg.steps[index]) return;
     const step = agentMsg.steps[index];
     step.state = "done";
     step.elapsedMs = Date.now() - (step._start || Date.now());
