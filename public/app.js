@@ -2148,15 +2148,17 @@ import {
 
   function initPromptBar() {
     const container = document.getElementById("prompt-bar-container");
+    const fallbackForm = document.getElementById("composer-form");
+    
     if (!container) {
       console.warn('Prompt bar container not found');
-      showFallbackComposer();
       return;
     }
     
     if (!window.BeUIPromptBar) {
       console.warn('BeUIPromptBar not available, using fallback composer');
-      showFallbackComposer();
+      // Fallback is already visible, just set up listeners
+      setupFallbackComposerListeners();
       return;
     }
 
@@ -2187,26 +2189,15 @@ import {
         ]
       });
 
+      // BeUIPromptBar initialized successfully, hide fallback
+      if (fallbackForm) {
+        fallbackForm.style.display = "none";
+      }
+      
       console.log('[init] BeUIPromptBar initialized successfully');
     } catch (err) {
       console.error('[init] BeUIPromptBar initialization failed:', err);
-      showFallbackComposer();
-    }
-  }
-
-  function showFallbackComposer() {
-    const container = document.getElementById("prompt-bar-container");
-    const fallbackForm = document.getElementById("composer-form");
-    
-    if (container) {
-      container.style.display = "none";
-    }
-    
-    if (fallbackForm) {
-      fallbackForm.style.display = "flex";
-      console.log('[init] Fallback composer shown');
-      
-      // Set up event listeners for fallback composer
+      // Fallback is already visible, just set up listeners
       setupFallbackComposerListeners();
     }
   }
