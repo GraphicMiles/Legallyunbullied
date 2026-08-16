@@ -187,3 +187,20 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`  Auth: required for /api/chat and /api/cache-invalidate`);
   console.log(`  Body limit: 50kb`);
 });
+
+// ── Process-level safety net ───────────────────────────────────────────────
+// Node 20 terminates the process on any unhandled promise rejection, which on
+// Render surfaces as a 502 Bad Gateway for the next request. Express 4 does
+// not route async handler rejections to the error middleware, so a single
+// stray Firestore/network rejection could otherwise take the whole service
+// down. Log rejections instead of dying; log uncaught exceptions and exit
+// cleanly (Render restarts the service).
+process.on("unhandledRejection", (reason) => {
+  console.error("[server] Unhandled promise rejection (kept alive):",
+    reason && reason.stack ? reason.stack : reason);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("[server] Uncaught exception — exiting for restart:", err && err.stack ? err.stack : err);
+  process.exit(1);
+});

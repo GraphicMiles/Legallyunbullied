@@ -82,8 +82,10 @@ function toMillis(v) {
 }
 
 // ── GET /api/conversations — list summaries or full conversations ──────────
-// ?full=true returns conversations with all messages inline (avoids N+1 queries)
-// Without ?full, returns summaries only (lightweight for sidebar)
+// ?full=true returns conversations with all messages inline (avoids N+1
+// client round-trips). Messages are fetched in parallel chunks, and each
+// conversation is individually fault-tolerant so a single bad read can never
+// take down the whole listing request.
 router.get("/", async (req, res) => {
   try {
     const includeFull = req.query.full === "true";
@@ -92,34 +94,55 @@ router.get("/", async (req, res) => {
       .limit(100)
       .get();
 
-    const conversations = [];
-    for (const doc of snapshot.docs) {
+    const conversations = snapshot.docs.map((doc) => {
       const data = doc.data();
-      const base = {
+      return {
         id: doc.id,
         title: data.title || "New question",
-        createdAt: data.createdAt?._seconds ? data.createdAt._seconds * 1000 : data.createdAt || Date.now(),
-        updatedAt: data.updatedAt?._seconds ? data.updatedAt._seconds * 1000 : data.updatedAt || Date.now(),
+        createdAt: toMillis(data.createdAt),
+        updatedAt: toMillis(data.updatedAt),
       };
+    });
 
-      if (includeFull) {
-        // Fetch all messages for this conversation inline
-        const msgSnapshot = await convoRef(req.uid, doc.id)
-          .collection("messages")
-          .orderBy("createdAt", "asc")
-          .get();
-        base.messages = msgSnapshot.docs.map(d => {
-          const msgData = d.data();
-          const { userId, ...rest } = msgData;
-          return { id: d.id, ...rest };
-        });
-      } else {
-        // Lightweight: just message count
-        const msgSnapshot = await convoRef(req.uid, doc.id).collection("messages").count().get();
-        base.messageCount = msgSnapshot.data().count;
+    if (!includeFull) {
+      // Lightweight: just message counts (parallel chunks).
+      const CHUNK = 20;
+      for (let i = 0; i < conversations.length; i += CHUNK) {
+        const chunk = conversations.slice(i, i + CHUNK);
+        await Promise.all(chunk.map(async (convo) => {
+          try {
+            const msgSnapshot = await convoRef(req.uid, convo.id)
+              .collection("messages").count().get();
+            convo.messageCount = msgSnapshot.data().count;
+          } catch (err) {
+            console.warn(`[conversations] count failed for ${convo.id}:`, err.message);
+            convo.messageCount = 0;
+          }
+        }));
       }
+      return res.json({ conversations });
+    }
 
-      conversations.push(base);
+    // Full: fetch every conversation's messages in parallel chunks.
+    const CHUNK = 20;
+    for (let i = 0; i < conversations.length; i += CHUNK) {
+      const chunk = conversations.slice(i, i + CHUNK);
+      await Promise.all(chunk.map(async (convo) => {
+        try {
+          const msgSnapshot = await convoRef(req.uid, convo.id)
+            .collection("messages")
+            .orderBy("createdAt", "asc")
+            .get();
+          convo.messages = msgSnapshot.docs.map((d) => {
+            const msgData = d.data();
+            const { userId, ...rest } = msgData;
+            return { id: d.id, ...rest };
+          });
+        } catch (err) {
+          console.warn(`[conversations] GET full: failed to load messages for ${convo.id}:`, err.message);
+          convo.messages = [];
+        }
+      }));
     }
 
     res.json({ conversations });
