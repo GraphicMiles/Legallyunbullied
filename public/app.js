@@ -942,16 +942,18 @@ import {
       const container = document.createElement("div");
       sectionEl.appendChild(container);
       
-      const contextCards = new window.BeUIContextCards(container, {
-        maxVisible: 3
-      });
+      // Convert sources to chunks format expected by BeUIContextCards
+      const chunks = sources.map((src) => ({
+        title: src.label || "Unknown Source",
+        body: src.excerpt || "",
+        source: src.label || "",
+        badge: src.type || "SOURCE",
+        tone: "var(--color-accent)"
+      }));
       
-      sources.forEach((src) => {
-        contextCards.addCard({
-          type: src.type || "SOURCE",
-          title: src.label,
-          excerpt: src.excerpt
-        });
+      new window.BeUIContextCards(container, {
+        chunks: chunks,
+        maxVisible: 3
       });
     } else {
       // Fallback to old context cards
@@ -1243,49 +1245,35 @@ import {
   function startTimer(agentMsg, token) {
     clearInterval(live.timerId);
     
-    // Create BeUI components for reasoning text and progress
+    // Update the trace status with elapsed time
     if (live.refs && live.refs.toggle) {
       const statusSpan = live.refs.toggle.querySelector(".trace__status");
       if (statusSpan) {
         statusSpan.innerHTML = "";
         
-        // Create reasoning text component
-        const reasoningContainer = document.createElement("span");
-        reasoningContainer.className = "reasoning-text";
-        statusSpan.appendChild(reasoningContainer);
+        // Simple reasoning text display
+        const reasoningText = document.createElement("span");
+        reasoningText.className = "reasoning-text";
+        reasoningText.textContent = "Thinking";
+        reasoningText.style.cssText = "font-size: 12px; color: var(--color-text-muted);";
+        statusSpan.appendChild(reasoningText);
         
-        live.reasoningText = new window.BeUI.ReasoningText(reasoningContainer, {
-          phrases: [
-            "Reading the question",
-            "Classifying the issue",
-            "Searching legal sources",
-            "Analyzing provisions",
-            "Planning the response",
-            "Drafting the answer"
-          ],
-          interval: 2000
-        });
+        // Progress timer
+        const progressText = document.createElement("span");
+        progressText.style.cssText = "margin-left: 0.5em; font-size: 12px; color: var(--color-text-faint); font-variant-numeric: tabular-nums;";
+        progressText.textContent = "0s";
+        statusSpan.appendChild(progressText);
         
-        // Create progress timer
-        const progressContainer = document.createElement("span");
-        progressContainer.style.marginLeft = "0.5em";
-        statusSpan.appendChild(progressContainer);
-        
-        live.agentProgress = new window.BeUI.AgentProgress(progressContainer, {
-          label: "",
-          initialSeconds: 0
-        });
+        live.timerId = setInterval(() => {
+          if (token !== pipelineToken || !live.refs) {
+            clearInterval(live.timerId);
+            return;
+          }
+          const elapsed = Math.floor((Date.now() - agentMsg.startedAt) / 1000);
+          progressText.textContent = `${elapsed}s`;
+        }, 1000);
       }
     }
-    
-    // Keep the interval for updating elapsed time display
-    live.timerId = setInterval(() => {
-      if (token !== pipelineToken || !live.refs) {
-        clearInterval(live.timerId);
-        return;
-      }
-      // The AgentProgress component handles its own updates
-    }, 1000);
   }
 
   function sleep(ms) {
