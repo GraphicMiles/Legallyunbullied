@@ -374,6 +374,37 @@ const questionCache = new Map();
 const QUESTION_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 const QUESTION_CACHE_MAX = 200;
 
+// ── Pending safety acknowledgments (V1 Phase 3 — HITL on safety fail) ────
+// When a high-risk answer fails critique after all retries, the response is
+// held in this map until the user explicitly acknowledges the safety warning.
+const pendingSafetyAck = new Map();  // token → { result, classification, ... }
+const SAFETY_ACK_TTL = 10 * 60 * 1000; // 10 minutes
+
+function generateAckToken() {
+  return "safety_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+function getPendingAck(token) {
+  const entry = pendingSafetyAck.get(token);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > SAFETY_ACK_TTL) {
+    pendingSafetyAck.delete(token);
+    return null;
+  }
+  return entry.data;
+}
+
+function setPendingAck(token, data) {
+  pendingSafetyAck.set(token, { data, timestamp: Date.now() });
+  // Clean expired entries periodically
+  if (pendingSafetyAck.size > 50) {
+    const now = Date.now();
+    for (const [k, v] of pendingSafetyAck) {
+      if (now - v.timestamp > SAFETY_ACK_TTL) pendingSafetyAck.delete(k);
+    }
+  }
+}
+
 function getCacheKey(question, jurisdiction) {
   return `${(jurisdiction || "any").toLowerCase()}::${question.toLowerCase().trim().slice(0, 200)}`;
 }
@@ -1026,17 +1057,39 @@ router.post("/api/chat", async (req, res) => {
         }
       }
 
-      // Phase 2 escalation: If high-risk category STILL fails after all retries,
-      // flag the response so the client can show a safety warning.
+      // Phase 3 escalation: If high-risk category STILL fails after all retries,
+      // cache the response and require explicit user acknowledgment before delivering.
       if (isHighRisk && critiqueResult && !critiqueResult.passed) {
-        console.warn(`[/api/chat] HIGH-RISK category "${practiceArea}" failed critique after ${MAX_CRITIQUE_RETRIES + 1} attempts — flagging for safety review`);
-        draftResult.result._safetyFlag = {
-          practiceArea,
-          quality: critiqueResult.quality,
-          legal_safety: critiqueResult.legal_safety,
-          issues: critiqueResult.issues,
-          message: "This response covers a high-risk legal area and could not be verified to our standard. Please consult a qualified lawyer for this matter.",
-        };
+        console.warn(`[/api/chat] HIGH-RISK category "${practiceArea}" failed critique after ${MAX_CRITIQUE_RETRIES + 1} attempts — requiring safety acknowledgment (HITL)`);
+
+        const ackToken = generateAckToken();
+        setPendingAck(ackToken, {
+          question,
+          classification,
+          draftResult,
+          critiqueResult,
+          route,
+          planResult,
+          cacheKey,
+        });
+
+        // Return HITL response — client shows ApprovalCard for safety acknowledgment
+        res.json({
+          needsInput: true,
+          safetyAck: true,
+          ackToken,
+          question: `This question involves ${practiceArea.replace(/_/g, " ")} — a high-risk legal area. Our quality review could not fully verify the response accuracy.`,
+          field: "safety_acknowledgment",
+          context: {
+            practiceArea,
+            quality: critiqueResult.quality,
+            legal_safety: critiqueResult.legal_safety,
+            issues: critiqueResult.issues,
+            message: "This response covers a high-risk legal area and could not be verified to our standard. Do you still want to see the response? We strongly recommend consulting a qualified lawyer.",
+          },
+          provider: draftResult.provider,
+        });
+        return;
       }
     }
 
@@ -1073,60 +1126,154 @@ router.post("/api/chat", async (req, res) => {
 
 
 /**
- * GET /api/chat/stream — SSE endpoint for real-time progress updates.
+ * POST /api/chat/acknowledge — User acknowledges a safety-flagged response.
  *
- * Emits sanitized status events (never raw CoT or prompt text):
- *   data: {"event": "start"}
- *   data: {"event": "status", "message": "Classifying the question..."}
- *   data: {"event": "status", "message": "Searching Nigerian law..."}
- *   data: {"event": "status", "message": "Drafting response..."}
- *   data: {"event": "complete", "result": { ... }}
- *   data: {"event": "error", "message": "..."}
+ * When a high-risk answer fails critique, the server caches it and returns
+ * a needsInput with an ackToken. The client shows an ApprovalCard; when the
+ * user clicks "I understand, show me the response", this endpoint is called
+ * with the token, and the cached response is returned.
+ */
+router.post("/api/chat/acknowledge", async (req, res) => {
+  const { ackToken, acknowledged } = req.body || {};
+
+  if (!ackToken) {
+    return res.status(400).json({ error: "bad_request", message: "ackToken is required" });
+  }
+
+  const pending = getPendingAck(ackToken);
+  if (!pending) {
+    return res.status(404).json({ error: "not_found", message: "Acknowledgment token expired or not found. Please re-ask your question." });
+  }
+
+  // User rejected — don't return the response
+  if (acknowledged === false) {
+    pendingSafetyAck.delete(ackToken);
+    return res.json({
+      acknowledged: false,
+      message: "Response withheld. Please consult a qualified lawyer for this matter.",
+    });
+  }
+
+  // User acknowledged — return the cached response with safety flag attached
+  pendingSafetyAck.delete(ackToken);
+  const { question, classification, draftResult, critiqueResult, route, planResult, cacheKey } = pending;
+
+  // Attach safety flag so the client can render the warning banner
+  if (draftResult.result) {
+    draftResult.result._safetyFlag = {
+      practiceArea: critiqueResult.isHighRisk ? (classification.practice_area || "unknown") : "unknown",
+      quality: critiqueResult.quality,
+      legal_safety: critiqueResult.legal_safety,
+      issues: critiqueResult.issues,
+      message: "This response covers a high-risk legal area and could not be verified to our standard. Please consult a qualified lawyer for this matter.",
+      acknowledged: true,
+    };
+  }
+
+  // Cache the result now that it's been acknowledged
+  if (cacheKey && !draftResult.providersBusy) {
+    setCachedResult(cacheKey, draftResult);
+  }
+
+  res.json({
+    acknowledged: true,
+    classification,
+    route,
+    plan: planResult?.plan || null,
+    result: draftResult.result,
+    draftModel: draftResult.model,
+    draftProvider: draftResult.provider,
+    critique: {
+      quality: critiqueResult.quality,
+      legal_safety: critiqueResult.legal_safety,
+      passed: critiqueResult.passed,
+      issues: critiqueResult.issues,
+      thresholds: critiqueResult.thresholds || null,
+      isHighRisk: critiqueResult.isHighRisk || false,
+    },
+    safetyFlag: draftResult.result?._safetyFlag || null,
+    providersBusy: false,
+    retryAfter: null,
+  });
+});
+
+
+/**
+ * GET /api/chat/stream — SSE endpoint with granular event-driven UI (V1 Phase 4).
  *
- * The /api/chat REST endpoint remains unchanged and live in parallel.
+ * Emits sanitized structured events — no raw reasoning or prompts leaked:
+ *   { event: "start" }
+ *   { event: "classify_start" }
+ *   { event: "classify_done", practiceArea, jurisdiction, urgency, route }
+ *   { event: "needs_input", question, field }          ← HITL jurisdiction
+ *   { event: "search_start" }
+ *   { event: "search_done", sourceCount, sources[] }   ← sanitized labels only
+ *   { event: "draft_start" }
+ *   { event: "draft_done" }
+ *   { event: "critique_start" }
+ *   { event: "critique_done", quality, legal_safety, passed, isHighRisk }
+ *   { event: "safety_flag", practiceArea, message, ackToken }  ← Phase 3 HITL
+ *   { event: "complete", result, classification, critique, safetyFlag }
+ *   { event: "casual", casualReply }
+ *   { event: "corpus_empty", message }
+ *   { event: "error", message }
  */
 router.get("/api/chat/stream", async (req, res) => {
   const question = (req.query && req.query.question || "").toString().trim();
-  // SSE does not support conversation history (stateless)
   if (!question) {
     res.writeHead(400, { "Content-Type": "text/event-stream" });
     res.write(`data: ${JSON.stringify({ event: "error", message: "question is required" })}\n\n`);
     return res.end();
   }
 
-  // SSE headers
   res.writeHead(200, {
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache",
     "Connection": "keep-alive",
-    "X-Accel-Buffering": "no", // disable nginx buffering
+    "X-Accel-Buffering": "no",
   });
 
   const emit = (data) => {
     res.write(`data: ${JSON.stringify(data)}\n\n`);
   };
 
+  // Handle client disconnect
+  let cancelled = false;
+  req.on("close", () => { cancelled = true; });
+
   try {
+    const pipelineStart = Date.now();
     emit({ event: "start" });
 
-    // Step 1: Classify
-    emit({ event: "status", message: "Classifying the question..." });
+    // ── Step 1: Classify ──
+    emit({ event: "classify_start" });
     const classifyResult = await classifyWithFallback(question);
+    if (cancelled) return res.end();
     const classification = classifyResult.classification;
 
+    emit({
+      event: "classify_done",
+      practiceArea: classification.practice_area,
+      jurisdiction: classification.jurisdiction,
+      urgency: classification.urgency,
+      route: classification.route || "simple",
+      elapsedMs: Date.now() - pipelineStart,
+    });
+
+    // Casual chat shortcut
     if (classification.is_legal_question === false) {
-      emit({ event: "complete", result: { isCasual: true, casualReply: classification.casual_reply } });
+      emit({ event: "casual", casualReply: classification.casual_reply });
       return res.end();
     }
 
-    // Step 2: Jurisdiction check
+    // HITL: Jurisdiction unclear
     if (classification.jurisdiction_status === "unclear") {
-      emit({ event: "complete", result: { needsInput: true, question: "Which state did this happen in?", field: "jurisdiction" } });
+      emit({ event: "needs_input", question: "Which state did this happen in? The laws can differ by state.", field: "jurisdiction" });
       return res.end();
     }
 
-    // Step 3: Search
-    emit({ event: "status", message: "Searching Nigerian law..." });
+    // ── Step 2: Search legal sources ──
+    emit({ event: "search_start" });
     let provisions;
     try {
       provisions = await findProvisions({
@@ -1138,33 +1285,101 @@ router.get("/api/chat/stream", async (req, res) => {
       emit({ event: "error", message: "Legal database unavailable." });
       return res.end();
     }
+    if (cancelled) return res.end();
 
     if (!provisions.length) {
-      emit({ event: "complete", result: { corpusEmpty: true, message: "No sources for this area yet." } });
+      emit({ event: "corpus_empty", message: "No ingested legal sources match this area yet." });
       return res.end();
     }
 
-    // Step 4: Draft
-    emit({ event: "status", message: "Drafting response..." });
+    // Sanitized source labels only — no raw excerpts leaked
+    const sanitizedSources = provisions.slice(0, 6).map(p => ({
+      label: `${p.act}${p.section ? ", s." + p.section : ""}`,
+    }));
+    emit({ event: "search_done", sourceCount: provisions.length, sources: sanitizedSources });
+
+    // ── Step 3: Draft ──
+    emit({ event: "draft_start" });
     const contextBlock = provisions.map((p) => `[${p.act}${p.section ? ", s." + p.section : ""}]\n${p.text}`).join("\n\n---\n\n");
     const draftResult = await draftWithFallback(question, contextBlock, null, classification);
+    if (cancelled) return res.end();
 
+    if (draftResult.providersBusy) {
+      emit({ event: "complete", providersBusy: true, retryAfter: draftResult.retryAfter || 30, result: draftResult.result });
+      return res.end();
+    }
 
-    // Final result
+    emit({ event: "draft_done", elapsedMs: Date.now() - pipelineStart });
+
+    // ── Step 4: Critique (V1 Phase 1+2) ──
+    emit({ event: "critique_start" });
+    let critiqueResult = null;
+    const MAX_RETRIES = 2;
+    const practiceArea = (classification.practice_area || "").toLowerCase();
+    const HIGH_RISK = ["criminal_rights", "criminal_offences", "immigration_citizenship", "constitutional_rights", "family_law"];
+    const isHighRisk = HIGH_RISK.includes(practiceArea);
+    const QUALITY_T = 0.6;
+    const SAFETY_T = isHighRisk ? 0.7 : 0.6;
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        critiqueResult = await critiqueWithFallback(question, provisions, draftResult.result, classification);
+        critiqueResult.passed = critiqueResult.quality >= QUALITY_T && critiqueResult.legal_safety >= SAFETY_T;
+        critiqueResult.thresholds = { quality: QUALITY_T, safety: SAFETY_T };
+        critiqueResult.isHighRisk = isHighRisk;
+
+        if (critiqueResult.passed || attempt === MAX_RETRIES) break;
+
+        // Retry draft with feedback
+        const feedback = `\n\nFIX THESE ISSUES: ${critiqueResult.issues.join("; ")}${isHighRisk ? " This is HIGH-RISK — accuracy is critical." : ""}`;
+        draftResult = await draftWithFallback(question, contextBlock + feedback, null, classification);
+        if (cancelled) return res.end();
+      } catch (err) {
+        critiqueResult = { quality: 0.5, legal_safety: 0.5, issues: ["critique_unavailable"], passed: true, thresholds: { quality: QUALITY_T, safety: SAFETY_T }, isHighRisk };
+        break;
+      }
+    }
+
     emit({
-      event: "complete",
-      result: {
-        classification,
-        result: draftResult.result,
-        route: classification.route,
-        providersBusy: draftResult.providersBusy || false,
-      },
+      event: "critique_done",
+      quality: critiqueResult.quality,
+      legal_safety: critiqueResult.legal_safety,
+      passed: critiqueResult.passed,
+      isHighRisk: critiqueResult.isHighRisk,
+      elapsedMs: Date.now() - pipelineStart,
     });
 
+    // ── Phase 3: Safety HITL ──
+    if (isHighRisk && critiqueResult && !critiqueResult.passed) {
+      const ackToken = generateAckToken();
+      setPendingAck(ackToken, { question, classification, draftResult, critiqueResult, route: classification.route });
+      emit({
+        event: "safety_flag",
+        practiceArea,
+        message: "This response covers a high-risk legal area and could not be verified to our standard.",
+        ackToken,
+      });
+      return res.end();
+    }
+
+    // ── Complete ──
+    emit({
+      event: "complete",
+      result: draftResult.result,
+      classification,
+      route: classification.route,
+      critique: {
+        quality: critiqueResult.quality,
+        legal_safety: critiqueResult.legal_safety,
+        passed: critiqueResult.passed,
+      },
+      totalElapsedMs: Date.now() - pipelineStart,
+    });
     res.end();
+
   } catch (err) {
     console.error("[/api/chat/stream] Error:", err.message);
-    emit({ event: "error", message: err.message });
+    emit({ event: "error", message: "Something went wrong. Please try again." });
     res.end();
   }
 });
