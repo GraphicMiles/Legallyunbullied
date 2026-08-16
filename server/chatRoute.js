@@ -981,33 +981,62 @@ router.post("/api/chat", async (req, res) => {
     // Skip critique for providersBusy responses (they're fallback errors, not real answers)
     if (!draftResult.providersBusy && draftResult.result) {
       const MAX_CRITIQUE_RETRIES = 2;
-      const CRITIQUE_QUALITY_THRESHOLD = 0.6;
-      const CRITIQUE_SAFETY_THRESHOLD = 0.6;
+
+      // Phase 2: Category-specific thresholds — high-risk categories get a stricter bar.
+      // Wrong advice in these areas could lead to arrest, deportation, loss of custody, etc.
+      const practiceArea = (classification.practice_area || "").toLowerCase();
+      const HIGH_RISK_AREAS = [
+        "criminal_rights", "criminal_offences", "immigration_citizenship",
+        "constitutional_rights", "family_law",
+      ];
+      const isHighRisk = HIGH_RISK_AREAS.includes(practiceArea);
+      const QUALITY_THRESHOLD = 0.6;
+      const SAFETY_THRESHOLD = isHighRisk ? 0.7 : 0.6;
 
       for (let attempt = 0; attempt <= MAX_CRITIQUE_RETRIES; attempt++) {
         try {
           critiqueResult = await critiqueWithFallback(
             question, provisions, draftResult.result, classification
           );
-          console.log(`[/api/chat] Critique attempt ${attempt + 1}: quality=${critiqueResult.quality.toFixed(2)}, safety=${critiqueResult.legal_safety.toFixed(2)}, passed=${critiqueResult.passed}`);
+
+          // Override the critique's own "passed" with our category-specific thresholds
+          critiqueResult.passed = critiqueResult.quality >= QUALITY_THRESHOLD
+                               && critiqueResult.legal_safety >= SAFETY_THRESHOLD;
+          critiqueResult.thresholds = { quality: QUALITY_THRESHOLD, safety: SAFETY_THRESHOLD };
+          critiqueResult.isHighRisk = isHighRisk;
+
+          console.log(`[/api/chat] Critique ${attempt + 1}/${MAX_CRITIQUE_RETRIES + 1} [${isHighRisk ? "HIGH-RISK" : "standard"}]: quality=${critiqueResult.quality.toFixed(2)}>=${QUALITY_THRESHOLD}, safety=${critiqueResult.legal_safety.toFixed(2)}>=${SAFETY_THRESHOLD} → ${critiqueResult.passed ? "PASS" : "FAIL"}`);
 
           if (critiqueResult.passed || attempt === MAX_CRITIQUE_RETRIES) {
-            break; // Pass or out of retries — keep this draft
+            break;
           }
 
           // Critique failed — retry draft with feedback
-          console.log(`[/api/chat] Critique failed, re-drafting with feedback: ${critiqueResult.issues.join("; ").slice(0, 100)}`);
-          const feedbackContext = `\n\nIMPORTANT FEEDBACK FROM PREVIOUS DRAFT REVIEW:\nThe previous draft had these issues: ${critiqueResult.issues.join("; ")}\nPlease fix these problems in your new response.`;
+          console.log(`[/api/chat] Re-drafting with feedback: ${critiqueResult.issues.join("; ").slice(0, 100)}`);
+          const feedbackContext = `\n\nIMPORTANT FEEDBACK FROM PREVIOUS DRAFT REVIEW (attempt ${attempt + 1} failed):\n${critiqueResult.issues.map(i => "- " + i).join("\n")}\n\nFix ALL of these issues. ${isHighRisk ? "This is a HIGH-RISK legal area — accuracy and safety are critical." : ""}`;
 
           draftResult = await draftWithFallback(
             question, contextBlock + feedbackContext, planResult.plan, classification, history
           );
         } catch (err) {
-          // Critique failed entirely — don't block the response, just use the draft
-          console.warn(`[/api/chat] Critique attempt ${attempt + 1} failed: ${err.message}`);
-          critiqueResult = { quality: 0.5, legal_safety: 0.5, issues: ["critique_unavailable"], passed: true };
+          // Critique itself failed — don't block the response
+          console.warn(`[/api/chat] Critique ${attempt + 1} error: ${err.message}`);
+          critiqueResult = { quality: 0.5, legal_safety: 0.5, issues: ["critique_unavailable"], passed: true, thresholds: { quality: QUALITY_THRESHOLD, safety: SAFETY_THRESHOLD }, isHighRisk };
           break;
         }
+      }
+
+      // Phase 2 escalation: If high-risk category STILL fails after all retries,
+      // flag the response so the client can show a safety warning.
+      if (isHighRisk && critiqueResult && !critiqueResult.passed) {
+        console.warn(`[/api/chat] HIGH-RISK category "${practiceArea}" failed critique after ${MAX_CRITIQUE_RETRIES + 1} attempts — flagging for safety review`);
+        draftResult.result._safetyFlag = {
+          practiceArea,
+          quality: critiqueResult.quality,
+          legal_safety: critiqueResult.legal_safety,
+          issues: critiqueResult.issues,
+          message: "This response covers a high-risk legal area and could not be verified to our standard. Please consult a qualified lawyer for this matter.",
+        };
       }
     }
 
@@ -1024,13 +1053,17 @@ router.post("/api/chat", async (req, res) => {
     result: draftResult.result,
     draftModel: draftResult.model,
     draftProvider: draftResult.provider,
-    // Critique scores (V1 Phase 2 — split scoring)
+    // Critique scores (V1 Phase 2 — split scoring with category-specific thresholds)
     critique: critiqueResult ? {
       quality: critiqueResult.quality,
       legal_safety: critiqueResult.legal_safety,
       passed: critiqueResult.passed,
       issues: critiqueResult.issues,
+      thresholds: critiqueResult.thresholds || null,
+      isHighRisk: critiqueResult.isHighRisk || false,
     } : null,
+    // Safety flag for high-risk categories that failed critique (V1 Phase 2)
+    safetyFlag: draftResult.result?._safetyFlag || null,
     // Bug fix: forward providersBusy flag so client can render error state
     // instead of styling a fallback message as a confident legal answer
     providersBusy: draftResult.providersBusy || false,
