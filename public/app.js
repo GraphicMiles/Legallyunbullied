@@ -175,6 +175,9 @@ import {
   function inlineMd(text) {
     let t = escapeHtml(text);
     t = t.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    t = t.replace(/\*(.+?)\*/g, "<em>$1</em>");
+    t = t.replace(/\[(.+?)\]\(.+?\)/g, "$1"); // Strip markdown links, keep text
+    t = t.replace(/`(.+?)`/g, "<code>$1</code>");
     t = t.split(CURSOR_TOKEN).join('<span class="stream-cursor"></span>');
     return t;
   }
