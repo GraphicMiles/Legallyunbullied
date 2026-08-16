@@ -2794,28 +2794,18 @@ import {
       live.beuiStreaming.destroy();
       live.beuiStreaming = null;
     }
-    // Record thinking elapsed so the trace toggle shows correct time
-    // ALWAYS update — collapseTrace sets an early time before streaming,
-    // but finalizeAnswer runs after streaming completes (the real total time).
-    if (agentMsg.startedAt) {
-      agentMsg.thinkingElapsedMs = Date.now() - agentMsg.startedAt;
-    }
+
+    // NOTE: thinkingElapsedMs is frozen by collapseTrace() at the "thinking
+    // complete" moment (right before the response starts streaming). Do NOT
+    // recompute it here — finalizeAnswer runs AFTER streaming finishes, and
+    // overwriting it would inflate the number to include the typing/streaming
+    // time. The stored value must reflect only the thinking duration so the
+    // live display and reload/static rendering agree.
 
     saveState();
     renderHistory();
     updateComposerState();
     updatePlanLabel();
-
-    // Update the trace toggle with the correct final time
-    // (collapseTrace set an early time before streaming — this fixes it)
-    if (tokenMatch && live.refs && live.refs.toggle) {
-      const toggleEl = live.refs.toggle;
-      toggleEl.innerHTML = `
-        <i class="fa-solid fa-chevron-right trace__toggle-icon"></i>
-        <span>Thought for ${(agentMsg.thinkingElapsedMs / 1000).toFixed(1)}s</span>
-        <span class="trace__status" style="color: var(--color-text-faint);">${(agentMsg.steps || []).length} steps</span>
-      `;
-    }
 
     // Immediately sync final message state to server (critical for persistence)
     const activeConvo = getActiveConversation();
@@ -3353,6 +3343,12 @@ import {
   // While auth/server data is still loading, show a neutral loading state so a
   // server-backed conversation is never prematurely declared missing.
   function resolveUrl() {
+    // Never re-render while a pipeline is streaming. The live UI is being
+    // driven by runPipeline/streamAnswerSequence, and a re-render here would
+    // wipe the in-flight answer and mark the message stale/incomplete. This
+    // also prevents the no-Firebase auth fallback (3s) from clobbering an
+    // answer that's still streaming.
+    if (state.isAgentBusy) return;
     const urlId = getConvoIdFromUrl();
 
     if (!urlId) {
