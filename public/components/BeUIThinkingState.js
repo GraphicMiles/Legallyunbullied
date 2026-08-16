@@ -63,8 +63,10 @@ class BeUIThinkingState {
     //  - elapsedMs (fixed): final duration for a completed message
     this.startedAt = options.startedAt || null;
     this.elapsedMs = options.elapsedMs != null ? options.elapsedMs : null;
-    this.elapsedTimer = null;
-    
+    this.elapsedTimer = null;   // the 500ms tick interval (label refresh)
+    this.sequenceTimer = null;  // the stage-advance setTimeout chain
+    this.destroyed = false;
+
     this.render();
     if (!this.static) this.startSequence();
   }
@@ -79,14 +81,21 @@ class BeUIThinkingState {
   }
 
   startElapsedTick(label) {
+    if (this.destroyed) return; // never tick a destroyed component
     if (this.elapsedTimer) clearInterval(this.elapsedTimer);
     const currentVariant = () => VARIANTS[this.variant] || VARIANTS.Steps;
     this.elapsedTimer = setInterval(() => {
+      if (this.destroyed) {
+        clearInterval(this.elapsedTimer);
+        this.elapsedTimer = null;
+        return;
+      }
       label.textContent = this.doneLabel(currentVariant());
     }, 500);
   }
   
   render() {
+    if (this.destroyed) return; // never re-render after destroy
     if (this.elapsedTimer) {
       clearInterval(this.elapsedTimer);
       this.elapsedTimer = null;
@@ -363,8 +372,10 @@ class BeUIThinkingState {
   
   startSequence() {
     const advance = () => {
+      if (this.destroyed) return; // stop the chain once destroyed
       if (this.stage < STAGES.length - 1) {
-        setTimeout(() => {
+        this.sequenceTimer = setTimeout(() => {
+          if (this.destroyed) return; // a pending tick fired after destroy
           this.stage++;
           this.render();
           advance();
@@ -375,6 +386,16 @@ class BeUIThinkingState {
   }
   
   destroy() {
+    // Fully terminate: cancel the stage-advance setTimeout chain AND the
+    // 500ms label tick, flag as destroyed so any stray callback is a no-op,
+    // then remove the element. Previously the setTimeout chain survived,
+    // re-rendered into the still-mounted container, and started a new tick
+    // interval that never stopped — the "keeps counting forever" regression.
+    this.destroyed = true;
+    if (this.sequenceTimer) {
+      clearTimeout(this.sequenceTimer);
+      this.sequenceTimer = null;
+    }
     if (this.elapsedTimer) {
       clearInterval(this.elapsedTimer);
       this.elapsedTimer = null;
