@@ -489,12 +489,6 @@ import {
     return state.conversations.find((c) => c.id === state.activeId) || null;
   }
 
-  function isToday(ts) {
-    const d = new Date(ts);
-    const now = new Date();
-    return d.toDateString() === now.toDateString();
-  }
-
   function formatTime(ts) {
     return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }
@@ -797,9 +791,6 @@ import {
       .filter((c) => !query || c.title.toLowerCase().includes(query))
       .sort((a, b) => b.createdAt - a.createdAt);
 
-    const today = filtered.filter((c) => isToday(c.createdAt));
-    const earlier = filtered.filter((c) => !isToday(c.createdAt));
-
     el.historyList.innerHTML = "";
 
     if (!filtered.length) {
@@ -810,70 +801,51 @@ import {
       return;
     }
 
-    if (today.length) el.historyList.appendChild(buildHistoryGroup("Today", today));
-    if (earlier.length) el.historyList.appendChild(buildHistoryGroup("Earlier", earlier));
+    const list = document.createElement("ul");
+    filtered.forEach((c) => list.appendChild(buildHistoryRow(c)));
+    el.historyList.appendChild(list);
   }
 
-  function buildHistoryGroup(label, items) {
-    const group = document.createElement("div");
-    group.className = "history__group";
+  function buildHistoryRow(c) {
+    const li = document.createElement("li");
+    // Active highlight lives on the row so it spans the full list width.
+    li.className = "history__row" + (c.id === state.activeId ? " is-active" : "");
 
-    const labelEl = document.createElement("div");
-    labelEl.className = "history__label";
-    labelEl.textContent = label;
-    group.appendChild(labelEl);
+    const btn = document.createElement("button");
+    btn.className = "history__item";
+    btn.type = "button";
+    btn.dataset.id = c.id;
+    if (state.isAgentBusy) btn.disabled = true;
 
-    const list = document.createElement("ul");
-    items.forEach((c) => {
-      const li = document.createElement("li");
-      li.className = "history__row";
+    const titleSpan = document.createElement("span");
+    titleSpan.className = "history__item-title";
+    titleSpan.textContent = c.title;
+    btn.appendChild(titleSpan);
 
-      const btn = document.createElement("button");
-      btn.className = "history__item" + (c.id === state.activeId ? " is-active" : "");
-      btn.type = "button";
-      btn.dataset.id = c.id;
-      if (state.isAgentBusy) btn.disabled = true;
+    btn.addEventListener("click", () => selectConversation(c.id));
+    li.appendChild(btn);
 
-      const titleSpan = document.createElement("span");
-      titleSpan.className = "history__item-title";
-      titleSpan.textContent = c.title;
-      btn.appendChild(titleSpan);
-
-      const lastAgentMsg = [...c.messages].reverse().find((m) => m.role === "agent" && m.classification);
-      if (lastAgentMsg) {
-        const tag = document.createElement("span");
-        tag.className = "history__item-tag";
-        tag.textContent = lastAgentMsg.classification.practiceArea.split(" ")[0];
-        btn.appendChild(tag);
-      }
-
-      btn.addEventListener("click", () => selectConversation(c.id));
-      li.appendChild(btn);
-
-      const kebab = document.createElement("button");
-      kebab.type = "button";
-      kebab.className = "history__kebab";
-      kebab.setAttribute("aria-label", "Chat options");
-      kebab.innerHTML = '<i class="fa-solid fa-ellipsis-vertical"></i>';
-      if (state.isAgentBusy) kebab.disabled = true;
-      kebab.addEventListener("click", (e) => {
-        e.stopPropagation();
-        kebab.classList.add("is-open");
-        showPopover(
-          kebab,
-          [
-            { label: "Clear chat", icon: "fa-broom", onClick: () => confirmClearConversation(c.id) },
-            { label: "Delete chat", icon: "fa-trash", danger: true, onClick: () => confirmDeleteConversation(c.id) },
-          ],
-          { onClose: () => kebab.classList.remove("is-open") }
-        );
-      });
-      li.appendChild(kebab);
-
-      list.appendChild(li);
+    const kebab = document.createElement("button");
+    kebab.type = "button";
+    kebab.className = "history__kebab";
+    kebab.setAttribute("aria-label", "Chat options");
+    kebab.innerHTML = '<i class="fa-solid fa-ellipsis-vertical"></i>';
+    if (state.isAgentBusy) kebab.disabled = true;
+    kebab.addEventListener("click", (e) => {
+      e.stopPropagation();
+      kebab.classList.add("is-open");
+      showPopover(
+        kebab,
+        [
+          { label: "Clear chat", icon: "fa-broom", onClick: () => confirmClearConversation(c.id) },
+          { label: "Delete chat", icon: "fa-trash", danger: true, onClick: () => confirmDeleteConversation(c.id) },
+        ],
+        { onClose: () => kebab.classList.remove("is-open") }
+      );
     });
-    group.appendChild(list);
-    return group;
+    li.appendChild(kebab);
+
+    return li;
   }
 
   /* ------------------------------------------------------------------ */

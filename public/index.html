@@ -260,20 +260,40 @@
   .history {
     flex: 1;
     overflow-y: auto;
+    /* Full-bleed to the sidebar edges so the active-row highlight spans the
+       entire width of the list area, edge to edge. */
     margin: 0 calc(var(--space-4) * -1);
-    padding: 0 var(--space-4) var(--space-4);
+    padding: 0 0 var(--space-4);
     min-height: 0;
   }
 
-  .history__group + .history__group { margin-top: var(--space-4); }
-
-  .history__label {
+  /* "Recents" section heading — sits outside the scrollable list, stable.
+     No horizontal padding: the sidebar body's own padding aligns it with the
+     row titles (which start at --space-4 inside the full-bleed list). */
+  .history__heading {
+    flex-shrink: 0;
     font-size: var(--fs-xs);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--color-text-faint);
-    padding: var(--space-2) var(--space-2);
+    padding: var(--space-2) 0;
+  }
+
+  /* history row: title (flex) + kebab (fixed, far right).
+     The row — not a card — is the highlight unit. */
+  .history__row {
+    display: flex;
+    align-items: center;
+    border-radius: var(--radius-sm);
+  }
+  .history__row:hover {
+    background: var(--color-surface);
+  }
+  /* Active chat: subtle full-width rectangular highlight. */
+  .history__row.is-active,
+  .history__row.is-active:hover {
+    background: var(--color-accent-soft);
   }
 
   .history__item {
@@ -283,35 +303,17 @@
     flex: 1;
     min-width: 0;
     text-align: left;
-    padding: var(--space-2) var(--space-3);
-    border-radius: var(--radius-sm);
+    padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
     color: var(--color-text-muted);
     font-size: var(--fs-sm);
     cursor: pointer;
-    border: var(--border-width) solid transparent;
-    transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
-    position: relative;
+    background: transparent;
+    border: 0;
+    transition: color var(--dur-fast) var(--ease);
   }
-  .history__item:hover {
-    background: var(--color-surface);
-    color: var(--color-text);
-  }
-  .history__item.is-active {
-    background: var(--color-accent-soft);
-    color: var(--color-text);
-    border-color: var(--color-accent-border);
-  }
-  .history__item.is-active::before {
-    content: "";
-    position: absolute;
-    left: -1px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 3px;
-    height: 60%;
-    background: var(--color-accent);
-    border-radius: var(--radius-full);
-  }
+  .history__item:hover { color: var(--color-text); }
+  .history__row.is-active .history__item { color: var(--color-text); }
+
   .history__item-title {
     flex: 1;
     min-width: 0;
@@ -319,28 +321,14 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .history__item-tag {
-    flex-shrink: 0;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    color: var(--color-text-faint);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    padding: 1px 5px;
-  }
 
-  /* history row: item + kebab menu trigger */
-  .history__row {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-  }
+  /* Kebab menu trigger — fixed width, anchored to the far right of every row.
+     Its own click target; never triggers chat navigation. */
   .history__kebab {
     flex-shrink: 0;
-    width: 26px;
-    height: 26px;
+    width: 30px;
+    height: 30px;
+    margin-right: var(--space-3);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -349,7 +337,7 @@
     transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
   }
   .history__kebab:hover, .history__kebab.is-open {
-    background: var(--color-surface);
+    background: var(--color-surface-alt);
     color: var(--color-text);
   }
   .history__kebab i { font-size: 13px; }
@@ -401,7 +389,7 @@
   .history__empty {
     color: var(--color-text-faint);
     font-size: var(--fs-sm);
-    padding: var(--space-2) var(--space-3);
+    padding: var(--space-2) var(--space-4);
   }
 
   .sidebar__footer {
@@ -1718,6 +1706,8 @@
         <i class="fa-solid fa-magnifying-glass"></i>
         <input id="history-search" type="text" placeholder="Search your questions" autocomplete="off" />
       </label>
+
+      <div class="history__heading">Recents</div>
 
       <nav class="history" id="history-list"></nav>
     </div>
