@@ -393,6 +393,24 @@
     padding: var(--space-2) var(--space-4);
   }
 
+  /* "Load more" affordance for the paginated sidebar list. */
+  .history__load-more {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    background: transparent;
+    border: 0;
+    padding: var(--space-2) var(--space-4);
+    cursor: pointer;
+    transition: color var(--dur-fast) var(--ease);
+  }
+  .history__load-more:hover { color: var(--color-accent); }
+  .history__load-more:disabled { color: var(--color-text-faint); cursor: default; }
+
   .sidebar__footer {
     flex-shrink: 0;
     border-top: var(--border-width) solid var(--color-border-soft);

@@ -89,63 +89,104 @@ function toMillis(v) {
 router.get("/", async (req, res) => {
   try {
     const includeFull = req.query.full === "true";
-    const snapshot = await convoCollection(req.uid)
-      .orderBy("updatedAt", "desc")
-      .limit(100)
-      .get();
+    const q = (req.query.q || "").toString().trim().toLowerCase();
+    const limitRaw = parseInt(req.query.limit, 10);
+    const limit = Number.isFinite(limitRaw) ? Math.min(100, Math.max(1, limitRaw)) : 25;
+    const cursorId = (typeof req.query.cursor === "string" && req.query.cursor) || null;
 
-    const conversations = snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        title: data.title || "New question",
-        createdAt: toMillis(data.createdAt),
-        updatedAt: toMillis(data.updatedAt),
-      };
-    });
+    const buildQuery = () => convoCollection(req.uid).orderBy("updatedAt", "desc");
 
-    if (!includeFull) {
-      // Lightweight: just message counts (parallel chunks).
-      const CHUNK = 20;
-      for (let i = 0; i < conversations.length; i += CHUNK) {
-        const chunk = conversations.slice(i, i + CHUNK);
-        await Promise.all(chunk.map(async (convo) => {
-          try {
-            const msgSnapshot = await convoRef(req.uid, convo.id)
-              .collection("messages").count().get();
-            convo.messageCount = msgSnapshot.data().count;
-          } catch (err) {
-            console.warn(`[conversations] count failed for ${convo.id}:`, err.message);
-            convo.messageCount = 0;
+    // Items to return for this request: { id, data }
+    let items = [];
+    let hasMore = false;
+    let nextCursor = null;
+
+    if (q) {
+      // ── Search: complete results, independent of loaded pages ────────────
+      // Firestore can't do substring search, so scan the list internally (in
+      // pages) and filter titles server-side. Capped at MAX_SCAN for safety.
+      const SCAN_PAGE = 100;
+      const MAX_SCAN = 1000;
+      let afterDoc = null;
+      let exhausted = false;
+      while (items.length < MAX_SCAN && !exhausted) {
+        let pageQuery = buildQuery().limit(SCAN_PAGE);
+        if (afterDoc) pageQuery = pageQuery.startAfter(afterDoc);
+        const snap = await pageQuery.get();
+        for (const doc of snap.docs) {
+          const data = doc.data();
+          if ((data.title || "").toLowerCase().includes(q)) {
+            items.push({ id: doc.id, data });
+            if (items.length >= MAX_SCAN) break;
           }
-        }));
-      }
-      return res.json({ conversations });
-    }
-
-    // Full: fetch every conversation's messages in parallel chunks.
-    const CHUNK = 20;
-    for (let i = 0; i < conversations.length; i += CHUNK) {
-      const chunk = conversations.slice(i, i + CHUNK);
-      await Promise.all(chunk.map(async (convo) => {
-        try {
-          const msgSnapshot = await convoRef(req.uid, convo.id)
-            .collection("messages")
-            .orderBy("createdAt", "asc")
-            .get();
-          convo.messages = msgSnapshot.docs.map((d) => {
-            const msgData = d.data();
-            const { userId, ...rest } = msgData;
-            return { id: d.id, ...rest };
-          });
-        } catch (err) {
-          console.warn(`[conversations] GET full: failed to load messages for ${convo.id}:`, err.message);
-          convo.messages = [];
         }
-      }));
+        if (snap.docs.length < SCAN_PAGE) exhausted = true;
+        else afterDoc = snap.docs[snap.docs.length - 1];
+      }
+      // Search returns everything it found (no further paging needed).
+      hasMore = false;
+      nextCursor = null;
+    } else {
+      // ── List: keyset pagination (newest first) ───────────────────────────
+      let pageQuery = buildQuery().limit(limit + 1); // +1 to detect hasMore
+      if (cursorId) {
+        // Position after the cursor document. If it was deleted mid-scroll,
+        // fall back to the first page.
+        const cursorSnap = await convoRef(req.uid, cursorId).get();
+        if (cursorSnap.exists) pageQuery = pageQuery.startAfter(cursorSnap);
+      }
+      const snap = await pageQuery.get();
+      const pageDocs = snap.docs;
+      hasMore = pageDocs.length > limit;
+      const resultDocs = pageDocs.slice(0, limit);
+      items = resultDocs.map((d) => ({ id: d.id, data: d.data() }));
+      if (hasMore && resultDocs.length) nextCursor = resultDocs[resultDocs.length - 1].id;
     }
 
-    res.json({ conversations });
+    // Build conversation objects (summary or full messages), in parallel
+    // chunks with per-conversation tolerance so one bad read can't fail the
+    // whole page.
+    const conversations = [];
+    const CHUNK = 20;
+    for (let i = 0; i < items.length; i += CHUNK) {
+      const chunk = items.slice(i, i + CHUNK);
+      const built = await Promise.all(chunk.map(async ({ id, data }) => {
+        const base = {
+          id,
+          title: data.title || "New question",
+          createdAt: toMillis(data.createdAt),
+          updatedAt: toMillis(data.updatedAt),
+        };
+        if (includeFull) {
+          try {
+            const msgSnapshot = await convoRef(req.uid, id)
+              .collection("messages")
+              .orderBy("createdAt", "asc")
+              .get();
+            base.messages = msgSnapshot.docs.map((d) => {
+              const msgData = d.data();
+              const { userId, ...rest } = msgData;
+              return { id: d.id, ...rest };
+            });
+          } catch (err) {
+            console.warn(`[conversations] GET full: failed to load messages for ${id}:`, err.message);
+            base.messages = [];
+          }
+        } else {
+          try {
+            const countSnapshot = await convoRef(req.uid, id).collection("messages").count().get();
+            base.messageCount = countSnapshot.data().count;
+          } catch (err) {
+            console.warn(`[conversations] count failed for ${id}:`, err.message);
+            base.messageCount = 0;
+          }
+        }
+        return base;
+      }));
+      conversations.push(...built);
+    }
+
+    res.json({ conversations, hasMore, nextCursor });
   } catch (err) {
     console.error("[conversations] GET list failed:", err.message);
     res.status(500).json({ error: "fetch_failed", message: err.message });
