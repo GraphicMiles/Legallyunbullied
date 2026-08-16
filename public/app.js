@@ -1196,15 +1196,18 @@ import {
     body.className = "msg__body msg__body--agent-plain";
     wrap.appendChild(body);
 
-    if (msg.status !== "done" && msg.status !== "corpusEmpty" && msg.status !== "error" && msg.status !== "casual" && msg.status !== "stopped") {
-      // Never reached a terminal state (e.g. page reload mid-request).
-      // Resolve it honestly instead of fabricating an answer.
+    const TERMINAL_STATUSES = ["done", "corpusEmpty", "error", "casual", "stopped", "needsInput", "safetyAck", "providersBusy"];
+    if (!TERMINAL_STATUSES.includes(msg.status)) {
+      // Never reached a terminal state (interrupted mid-request). Resolve it
+      // honestly instead of fabricating an answer.
       finalizeStaleMessage(msg);
     }
 
-    // BUG FIX: Don't render the 5-step trace for casual messages.
-    // Casual replies don't go through the legal pipeline — the trace is irrelevant.
-    if (msg.status !== "casual") {
+    // Only render the step trace for statuses that actually had one live.
+    // Casual, HITL clarifying questions, safety approvals, and provider-busy
+    // fallbacks never showed a trace, so don't invent one on reload.
+    const SHOW_TRACE = ["done", "corpusEmpty", "error", "stopped", "incomplete"].includes(msg.status);
+    if (SHOW_TRACE) {
       // Render the SAME thinking component the live pipeline uses, in static
       // (finished) mode, so a reloaded/reopened chat looks identical to the
       // live "Thought for Xs" state — no separate bubble/card styling.
@@ -1232,26 +1235,40 @@ import {
       body.appendChild(buildCorpusEmptyEl(msg.corpusEmptyMessage || "No ingested legal sources match this yet.", msg.createdAt));
     } else if (msg.status === "error") {
       body.appendChild(buildErrorEl(msg.errorMessage || "Something went wrong."));
+    } else if (msg.status === "needsInput") {
+      // Completed clarifying question — re-render the (still answerable) card.
+      body.appendChild(buildNeedsInputCard(
+        msg.needsInputQuestion || "Can you clarify?",
+        msg.needsInputField,
+        (answer) => submitQuestion(answer)
+      ));
+    } else if (msg.status === "safetyAck") {
+      body.appendChild(buildSafetyApprovalStatic(msg));
+    } else if (msg.status === "providersBusy") {
+      body.appendChild(buildProvidersBusyStatic(msg));
     } else {
-      body.appendChild(buildCorpusEmptyEl("This question didn't finish processing (the page may have reloaded mid-request) — try asking it again.", msg.createdAt));
+      body.appendChild(buildIncompleteEl(msg.createdAt));
     }
 
     return wrap;
   }
 
   function finalizeStaleMessage(msg) {
-    // This message never finished (e.g. the page was reloaded mid-request).
-    // Don't fabricate an answer — say plainly that it didn't complete.
-    msg.result = null;
-    if (msg.steps) {
-      // BUG FIX: If the message has a completed result, the server DID finish
-      // — mark all steps "done" so the trace doesn't freeze mid-pipeline on reload.
-      // Only reset to "pending" if there's no result (truly interrupted).
-      if (msg.result) {
-        msg.steps.forEach((s) => { s.state = "done"; });
-      } else {
-        msg.steps.forEach((s) => { if (s.state !== "done") s.state = "pending"; });
+    // Safety net for messages that never reached a terminal state. First:
+    // if a completed result is already stored, NEVER clobber it — mark the
+    // message done and let the renderer show the saved answer. (Previously
+    // this nulled msg.result before checking it, destroying completed data.)
+    if (msg.result && (msg.result.lawMd || msg.result.actionsMd || (msg.result.sources && msg.result.sources.length))) {
+      msg.status = "done";
+      if (msg.steps) {
+        msg.steps.forEach((s) => { if (s.state !== "done") s.state = "done"; });
       }
+      return;
+    }
+
+    // Genuinely interrupted: mark incomplete without inventing an answer.
+    if (msg.steps) {
+      msg.steps.forEach((s) => { if (s.state !== "done") s.state = "pending"; });
     }
     msg.thinkingElapsedMs = msg.thinkingElapsedMs || 0;
     msg.status = "incomplete";
@@ -2024,6 +2041,14 @@ import {
           live.loadingState = null;
         }
 
+        // Persist a terminal status + the data needed to re-render this card
+        // on reload. Previously the status stayed "thinking", so the static
+        // renderer misread a COMPLETED exchange as "incomplete".
+        agentMsg.status = "safetyAck";
+        agentMsg.safetyAckQuestion = response.question || "";
+        agentMsg.safetyAckContext = response.context || null;
+        agentMsg.safetyAckToken = response.ackToken || null;
+
         renderSafetyApproval(agentMsg, response, token);
         finalizeAnswer(agentMsg, token);
         return;
@@ -2040,6 +2065,12 @@ import {
       // Get original question to send context with answer
       const originalQuestion = lastUserText(convo);
       
+      // Persist a terminal status + the question/field so the clarifying card
+      // survives reload (previously lost → "NOT SOURCED YET" on reload).
+      agentMsg.status = "needsInput";
+      agentMsg.needsInputQuestion = response.question || "";
+      agentMsg.needsInputField = response.field || "";
+
       // Show inline prompt
       renderNeedsInput(agentMsg, response, originalQuestion);
       finalizeAnswer(agentMsg, token);
@@ -2055,6 +2086,13 @@ import {
         live.loadingState.destroy();
         live.loadingState = null;
       }
+
+      // Persist a terminal status + the busy message so it re-renders on
+      // reload instead of being misread as incomplete.
+      agentMsg.status = "providersBusy";
+      agentMsg.providersBusyRetryAfter = response.retryAfter || 30;
+      agentMsg.providersBusyLawMd = response.result?.lawMd || "All legal reasoning providers are currently busy.";
+      agentMsg.providersBusyActionsMd = response.result?.actionsMd || "";
       
       renderProvidersBusy(agentMsg, response);
       finalizeAnswer(agentMsg, token);
@@ -2190,6 +2228,11 @@ import {
     }
 
     agentMsg.result = response.result;
+    // Persist the result IMMEDIATELY (before streaming) so that even a
+    // mid-stream reload has the completed answer stored — the static renderer
+    // then recovers it via finalizeStaleMessage's "has result" safety net
+    // instead of showing "incomplete".
+    saveState();
     const answerBlock = buildAnswerBlock(agentMsg, { stream: true });
     live.refs.body.appendChild(answerBlock);
     scrollChatToBottom();
@@ -2348,7 +2391,24 @@ import {
     }
     console.log('[renderNeedsInput] Rendering input prompt:', response.question);
     console.log('[renderNeedsInput] Original question:', originalQuestion);
-    
+
+    const wrap = buildNeedsInputCard(response.question, response.field, (answer) => {
+      console.log('[renderNeedsInput] User answered:', answer);
+      // With conversation history, server has context — just send the answer.
+      submitQuestion(answer);
+    });
+    live.refs.body.appendChild(wrap);
+    scrollChatToBottom();
+
+    // Focus input
+    const input = wrap.querySelector("input");
+    setTimeout(() => input && input.focus(), 100);
+  }
+
+  // Builds the clarifying-question card. Used both live (renderNeedsInput) and
+  // on static re-render after reload, so a completed HITL question is never
+  // lost or shown as "not sourced".
+  function buildNeedsInputCard(question, field, onAnswer) {
     const wrap = document.createElement("div");
     wrap.className = "needs-input";
     wrap.style.cssText = `
@@ -2358,26 +2418,26 @@ import {
       padding: 14px;
       margin: 12px 0;
     `;
-    
+
     const icon = document.createElement("div");
     icon.innerHTML = '<i class="fa-solid fa-circle-question" style="color: var(--color-accent, #f2b705); font-size: 18px;"></i>';
     icon.style.cssText = "margin-bottom: 8px;";
-    
-    const question = document.createElement("p");
-    question.textContent = response.question || "Can you clarify?";
-    question.style.cssText = `
+
+    const q = document.createElement("p");
+    q.textContent = question || "Can you clarify?";
+    q.style.cssText = `
       font-size: 14px;
       color: var(--color-text, #f5f5f2);
       margin: 0 0 12px 0;
       font-weight: 500;
     `;
-    
+
     const inputRow = document.createElement("div");
     inputRow.style.cssText = "display: flex; gap: 8px;";
-    
+
     const input = document.createElement("input");
     input.type = "text";
-    input.placeholder = response.field === "jurisdiction" ? "e.g., Lagos State" : "Your answer";
+    input.placeholder = field === "jurisdiction" ? "e.g., Lagos State" : "Your answer";
     input.style.cssText = `
       flex: 1;
       padding: 8px 12px;
@@ -2388,7 +2448,7 @@ import {
       font-size: 14px;
       outline: none;
     `;
-    
+
     const submitBtn = document.createElement("button");
     submitBtn.textContent = "Send";
     submitBtn.style.cssText = `
@@ -2400,33 +2460,24 @@ import {
       font-weight: 600;
       cursor: pointer;
     `;
-    
+
     submitBtn.addEventListener("click", () => {
       const answer = input.value.trim();
       if (!answer) return;
-      
-      console.log('[renderNeedsInput] User answered:', answer);
-      
-      // With conversation history, server has context — just send the answer
-      console.log('[renderNeedsInput] Sending answer:', answer);
-      submitQuestion(answer);
+      if (onAnswer) onAnswer(answer);
     });
-    
+
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") submitBtn.click();
     });
-    
+
     inputRow.appendChild(input);
     inputRow.appendChild(submitBtn);
     wrap.appendChild(icon);
-    wrap.appendChild(question);
+    wrap.appendChild(q);
     wrap.appendChild(inputRow);
-    
-    live.refs.body.appendChild(wrap);
-    scrollChatToBottom();
-    
-    // Focus input
-    setTimeout(() => input.focus(), 100);
+
+    return wrap;
   }
 
   // Phase 3: Safety acknowledgment UI — wired to HITL when high-risk answer fails critique
@@ -2607,6 +2658,145 @@ import {
         submitQuestion(lastQ);
       }
     }, retryAfter * 1000);
+  }
+
+  // ── Static re-render builders for HITL/busy states (reload path) ────────
+  // These mirror the live cards so a completed exchange re-renders identically
+  // on reload instead of being misread as "incomplete".
+
+  function buildSafetyApprovalStatic(msg) {
+    const wrap = document.createElement("div");
+    wrap.className = "safety-approval";
+    wrap.style.cssText = `
+      background: rgba(229, 72, 77, 0.08);
+      border: 1px solid rgba(229, 72, 77, 0.35);
+      border-radius: 10px;
+      padding: 16px;
+      margin: 12px 0;
+    `;
+    const message = (msg.safetyAckContext && msg.safetyAckContext.message) || msg.safetyAckQuestion || "This response could not be fully verified.";
+    wrap.innerHTML = `
+      <div style="display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px;">
+        <div style="flex-shrink:0; color: var(--color-danger, #e5484d); font-size: 20px; margin-top: 2px;">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div>
+          <div style="font-weight: 600; font-size: 14px; color: var(--color-danger, #e5484d); margin-bottom: 6px;">
+            High-risk legal area — review required
+          </div>
+          <div style="font-size: 13px; color: var(--color-text-muted, #9a9a94); line-height: 1.5;">
+            ${escapeHtml(message)}
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button class="safety-ack-cancel" style="
+          padding: 8px 16px; background: transparent;
+          border: 1px solid var(--color-border, #2a2a2a);
+          border-radius: 6px; color: var(--color-text-muted, #9a9a94);
+          font-size: 13px; cursor: pointer;
+        ">Dismiss</button>
+        <button class="safety-ack-confirm" style="
+          padding: 8px 16px; background: var(--color-danger, #e5484d);
+          border: none; border-radius: 6px; color: white;
+          font-size: 13px; font-weight: 600; cursor: pointer;
+        ">I understand, show me</button>
+      </div>
+    `;
+
+    wrap.querySelector(".safety-ack-cancel").addEventListener("click", () => {
+      wrap.style.opacity = "0.5";
+      wrap.querySelector(".safety-ack-confirm").disabled = true;
+      wrap.querySelector(".safety-ack-cancel").disabled = true;
+    });
+
+    wrap.querySelector(".safety-ack-confirm").addEventListener("click", async () => {
+      const confirmBtn = wrap.querySelector(".safety-ack-confirm");
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = "Loading...";
+      try {
+        const headers = await getAuthHeaders();
+        const res = await fetch("/api/chat/acknowledge", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ ackToken: msg.safetyAckToken, acknowledged: true }),
+        });
+        const data = await res.json();
+        if (data.acknowledged && data.result) {
+          msg.result = data.result;
+          msg.classification = data.classification;
+          msg.status = "done";
+          if (data.critique) msg.critique = data.critique;
+          saveState();
+          renderChat();
+        } else {
+          // Token expired after reload — honest fallback.
+          confirmBtn.textContent = "Expired — ask again";
+          confirmBtn.style.opacity = "0.5";
+        }
+      } catch (err) {
+        console.error("[safetyAck] Static confirm failed:", err);
+        confirmBtn.textContent = "Error — try again";
+        confirmBtn.disabled = false;
+      }
+    });
+
+    return wrap;
+  }
+
+  function buildProvidersBusyStatic(msg) {
+    const wrap = document.createElement("div");
+    wrap.className = "providers-busy";
+    wrap.style.cssText = `
+      background: var(--color-surface, #1a1a1a);
+      border: 1px solid var(--color-border, #2a2a2a);
+      border-radius: 10px;
+      padding: 14px;
+      margin: 12px 0;
+    `;
+    const retryAfter = msg.providersBusyRetryAfter || 30;
+    const lawMd = msg.providersBusyLawMd || "All legal reasoning providers are currently busy.";
+
+    const icon = document.createElement("div");
+    icon.innerHTML = '<i class="fa-solid fa-hourglass-half" style="color: var(--color-accent, #f2b705); font-size: 18px;"></i>';
+    icon.style.cssText = "margin-bottom: 8px;";
+
+    const title = document.createElement("p");
+    title.textContent = `Providers were busy — try again`;
+    title.style.cssText = `font-size: 14px; color: var(--color-text, #f5f5f2); margin: 0 0 8px 0; font-weight: 600;`;
+
+    const message = document.createElement("p");
+    message.textContent = lawMd;
+    message.style.cssText = `font-size: 13px; color: var(--color-text-muted, #9a9a94); margin: 0 0 8px 0; line-height: 1.5;`;
+
+    wrap.appendChild(icon);
+    wrap.appendChild(title);
+    wrap.appendChild(message);
+
+    if (msg.providersBusyActionsMd) {
+      const steps = document.createElement("p");
+      steps.innerHTML = msg.providersBusyActionsMd.replace(/\n/g, "<br>").replace(/^- /g, "• ");
+      steps.style.cssText = `font-size: 13px; color: var(--color-text, #f5f5f2); margin: 0;`;
+      wrap.appendChild(steps);
+    }
+
+    return wrap;
+  }
+
+  function buildIncompleteEl(createdAt) {
+    const wrap = document.createElement("div");
+    wrap.className = "answer";
+    wrap.innerHTML = `
+      <div class="answer-section">
+        <div class="answer-section__head">
+          <div class="answer-section__icon"><i class="fa-solid fa-circle-info"></i></div>
+          <span class="answer-section__title">Response incomplete</span>
+        </div>
+        <div class="answer-section__text"><p>This response didn't finish processing. You can try asking again.</p></div>
+      </div>
+      <div class="msg__meta"><span class="msg__meta-text">Legal information, not legal advice · ${formatTime(createdAt)}</span></div>
+    `;
+    return wrap;
   }
 
   function buildErrorEl(message) {
