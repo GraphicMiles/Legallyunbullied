@@ -1175,6 +1175,36 @@ import {
     wrap.className = "answer-block-plain";
     const r = msg.result;
 
+    // Phase 2 safety flag — warn user when high-risk answer couldn't be verified
+    if (r._safetyFlag) {
+      const banner = document.createElement("div");
+      banner.className = "safety-flag-banner";
+      banner.style.cssText = `
+        background: rgba(229, 72, 77, 0.12);
+        border: 1px solid rgba(229, 72, 77, 0.4);
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin-bottom: 16px;
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      `;
+      banner.innerHTML = `
+        <div style="flex-shrink:0; color: var(--color-danger, #e5484d); font-size: 18px; margin-top: 1px;">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div>
+          <div style="font-weight: 600; font-size: 13px; color: var(--color-danger, #e5484d); margin-bottom: 4px;">
+            High-risk legal area — please verify with a lawyer
+          </div>
+          <div style="font-size: 13px; color: var(--color-text-muted, #9a9a94); line-height: 1.5;">
+            ${escapeHtml(r._safetyFlag.message || "This response covers a sensitive legal area and could not be fully verified.")}
+          </div>
+        </div>
+      `;
+      wrap.appendChild(banner);
+    }
+
     // "What the law says" section - plain text
     const lawWrapper = document.createElement("div");
     lawWrapper.className = "answer-text-block";
