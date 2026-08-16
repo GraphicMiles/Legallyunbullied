@@ -1812,13 +1812,41 @@ import {
 
   // Confidence label must reflect EVIDENCE quality, not just writing quality.
   // evidence comes from the server's relevance/sufficiency gate.
+  // Self-doubt phrases that prove a citation is weak. If the answer's own text
+  // says a source "might be relevant" / "does not directly address", it must
+  // never be labeled High confidence — even for legacy stored messages.
+  const CLIENT_HEDGE_PATTERNS = [
+    "might be relevant", "may be relevant", "could be relevant", "potentially relevant",
+    "does not directly address", "do not directly address", "doesn't directly address",
+    "don't directly address", "not directly address", "does not specifically address",
+    "not directly related", "not directly applicable", "does not directly apply",
+    "primarily deals with", "for a more direct application",
+    "interpreted within that context",
+    "not quite the right provision", "isn't quite the right", "not the right provision",
+    "only defines", "based on the provided excerpts", "based on the excerpts provided",
+  ];
+
+  function responseHasHedging(r) {
+    if (!r) return false;
+    const text = ((r.lawMd || "") + " " + (r.actionsMd || "")).toLowerCase();
+    return CLIENT_HEDGE_PATTERNS.some((p) => text.includes(p));
+  }
+
   function confidenceFromEvidence(r) {
     const ev = r && r.evidence;
     if (!ev) {
-      // Legacy responses (pre-gate) — keep the old mapping.
+      // Legacy responses (pre-gate). Still apply the hedge rule uniformly.
+      if (responseHasHedging(r)) return { label: "Limited evidence", signal: 1 };
       return { label: r.escalate ? "High confidence" : "Good option", signal: r.escalate ? 3 : 2 };
     }
-    if (ev.sufficient === false) {
+    // Practical/procedural answer — no statute needed, so confidence means
+    // "clear practical guidance", not "legally sourced".
+    if (ev.noSourcing) {
+      return { label: "Practical guidance", signal: 2 };
+    }
+    // The server downgrades on hedging; also re-check locally for stored
+    // messages that predate the server-side check.
+    if (ev.sufficient === false || ev.hedged === true || responseHasHedging(r)) {
       return { label: "Limited evidence", signal: 1 };
     }
     if ((ev.sourceCount || 0) >= 2) {
@@ -1833,9 +1861,12 @@ import {
       const container = document.createElement("div");
 
       const conf = confidenceFromEvidence(r);
-      // Insufficient evidence forces the "consult a lawyer" recommendation,
-      // regardless of what the drafter said.
-      const escalate = r.escalate || (r.evidence && r.evidence.sufficient === false);
+      // Insufficient evidence — including a hedging response — forces the
+      // "consult a lawyer" recommendation, regardless of what the drafter said.
+      const escalate =
+        r.escalate ||
+        (r.evidence && (r.evidence.sufficient === false || r.evidence.hedged === true)) ||
+        responseHasHedging(r);
 
       const recommendation = new window.BeUIRecommendationCard(container, {
         options: [

@@ -64,6 +64,8 @@ First, determine if this is a legal question or casual conversation.
 
 CRITICAL RULE: A described INCIDENT always counts as a legal question, no matter how short, casual, or emotional the wording is. If the user describes something that happened to them — an assault ("someone slapped me", "I was beaten"), a theft ("someone stole my phone"), threats, an arrest, an eviction, being fired, a landlord dispute, a family/divorce issue, money owed, or any other real legal situation — "is_legal_question" MUST be true, and you MUST provide the full legal classification. Casual chat applies ONLY to greetings, thanks, identity questions, and clearly non-legal small talk (weather, jokes). When in doubt between casual and legal for a described event, classify it as LEGAL.
 
+PRACTICAL FOLLOW-UP RULE: A practical, procedural how-to question inside a legal conversation — e.g. "how do I note down the key facts", "how do I contact the police", "what should I bring to the station", "how do I find a lawyer" — is a legal-context question ("is_legal_question" true) but does NOT require statutory citations: set "needs_sourcing": false and still provide practice_area/jurisdiction/etc. Do NOT set needs_sourcing false for questions about what the law itself says or requires.
+
 If it's NOT a legal question, respond naturally based on the context:
 
 **For greetings** ("hi", "hello", "good morning", "hey", "sup"):
@@ -111,6 +113,7 @@ Provide:
 - "summary": 1-2 sentence summary of the legal situation
 - "keywords": 4-8 specific legal/factual terms likely in relevant statutes (procedural terms, timeframes, named concepts)
 - "key_issues": Array of 3-5 specific legal issues or questions that need to be addressed
+- "needs_sourcing": true/false — whether answering this question actually requires citing specific statutory provisions. Set FALSE for practical/procedural how-to questions that can be answered correctly WITHOUT a statute (e.g. "how do I note down key facts", "how do I contact the police", "what should I bring to the police station", "how do I find a lawyer"). Set TRUE when the answer depends on what a specific law says.
 - "complexity": ["Low", "Medium", "High"] — Low: straightforward single issue, Medium: multiple issues or interpretation needed, High: complex multi-party/constitutional/novel questions
 - "route": ["simple", "complex"] — simple: direct factual lookup that can be answered from a single statute lookup (e.g. "What is the minimum wage in Nigeria?", "What is the legal drinking age?"). complex: a described situation requiring investigation, multi-step analysis, or interpretation of how law applies to facts.
 - "reasoning_approach": Detailed 2-3 sentence description of how to systematically answer this question, including what legal framework to establish, how to apply it to the facts, and what remedies/guidance to provide
@@ -126,6 +129,7 @@ Example (use realistic values, don't copy):
   "urgency": "High",
   "summary": "Tenant facing potential illegal eviction after landlord changed locks without court order or proper notice.",
   "keywords": ["notice to quit", "seven days notice", "court order", "forcible entry", "possession", "magistrate court"],
+  "needs_sourcing": true,
   "key_issues": [
     "Whether landlord followed statutory notice requirements",
     "Legality of self-help eviction (changing locks)",
@@ -148,6 +152,7 @@ Example 2 (unclear jurisdiction — no state mentioned):
   "urgency": "High",
   "summary": "Landlord evicted tenant without notice.",
   "keywords": ["eviction", "notice", "tenant", "landlord"],
+  "needs_sourcing": true,
   "key_issues": ["Was notice given?", "Is eviction legal?"],
   "complexity": "Medium",
   "route": "complex",
@@ -336,6 +341,27 @@ async function assessRelevanceForClient(client, model, question, classification,
   ], { temperature: 0, max_tokens: 400, response_format: { type: "json_object" } });
 
   return completion.parsed;
+}
+
+// ── Hedge detection (citation-fit self-doubt) ─────────────────────────────
+// The draft's own phrasing is a hard signal about citation quality. If it says
+// a source "might be relevant", "does not directly address", etc., the answer
+// must not be presented as high confidence. High-precision patterns only.
+const HEDGE_PATTERNS = [
+  "might be relevant", "may be relevant", "could be relevant", "potentially relevant",
+  "does not directly address", "do not directly address", "doesn't directly address",
+  "don't directly address", "not directly address", "does not specifically address",
+  "not directly related", "not directly applicable", "does not directly apply",
+  "primarily deals with", "for a more direct application",
+  "interpreted within that context",
+  "not quite the right provision", "isn't quite the right", "not the right provision",
+  "only defines", "based on the provided excerpts", "based on the excerpts provided",
+];
+
+function detectHedging(result) {
+  if (!result) return [];
+  const text = ((result.lawMd || "") + " " + (result.actionsMd || "")).toLowerCase();
+  return HEDGE_PATTERNS.filter((p) => text.includes(p));
 }
 
 // ── Critique system prompt (V1 Phase 1+2) ──────────────────────────────
@@ -936,6 +962,68 @@ async function draftWithFallback(question, contextBlock, plan, classification, c
   };
 }
 
+// ── Procedural/practical answers (no statutory sourcing) ───────────────────
+// A practical how-to follow-up ("how do I note down key facts") must be
+// answered directly and helpfully WITHOUT being forced through the citation
+// pipeline. This prompt produces the same result shape but instructs the model
+// NOT to cite statutes — practical guidance is correct without them.
+const PROCEDURAL_SYSTEM_PROMPT = `You are Legally Unbullied, a warm, practical Nigerian legal-information assistant.
+
+The user asked a PRACTICAL, PROCEDURAL how-to question inside a legal conversation (for example how to take notes, contact the police, prepare documents, or find a lawyer). This is NOT a question about what the law says.
+
+Answer it directly with clear, concrete, actionable steps in plain Nigerian English. Be specific and genuinely useful.
+
+IMPORTANT:
+- Do NOT cite any statute, Act, or section — correct practical guidance does not require legal citations, and inventing or force-fitting citations is harmful.
+- "sources" MUST be an empty array [].
+- "escalate" is true only if the situation clearly needs a lawyer.
+
+Respond with ONLY a JSON object (no prose, no markdown fences):
+{
+  "lawMd": "Direct, plain-language guidance for this practical task (2-4 sentences).",
+  "actionsMd": "- Step 1: ...\\n- Step 2: ...\\n- Step 3: ...",
+  "sources": [],
+  "escalate": true/false,
+  "escalateReason": "...",
+  "followUps": ["Question 1?", "Question 2?"]
+}`;
+
+// Draft-tier provider fallback for procedural answers.
+async function answerProceduralWithFallback(question, classification, history) {
+  const providers = [];
+  const groqClient = getGroqClient();
+  const cerebrasClient = getCerebrasClient();
+  const geminiClient = getGeminiClient();
+  if (groqClient) providers.push(["groq", groqClient, DRAFT_MODEL]);
+  if (cerebrasClient) providers.push(["cerebras", cerebrasClient, CEREBRAS_DRAFT_MODEL]);
+  if (geminiClient) providers.push(["gemini", geminiClient, GEMINI_DRAFT_MODEL]);
+
+  let historyContext = "";
+  if (history && history.length > 0) {
+    historyContext = `\n\nPREVIOUS CONVERSATION CONTEXT:\n${history.map(m => `${m.role === "user" ? "User" : "Agent"}: ${m.content}`).join("\n")}`;
+  }
+
+  let lastErr = null;
+  for (const [name, client, model] of providers) {
+    try {
+      const completion = await callCompletion(client, model, [
+        { role: "system", content: PROCEDURAL_SYSTEM_PROMPT },
+        { role: "user", content: `${historyContext}\n\nUser: ${question}` },
+      ], { temperature: 0.3, max_tokens: 900 });
+      const parsed = completion.parsed;
+      if (parsed && (parsed.lawMd || parsed.actionsMd)) {
+        parsed.sources = [];
+        return { result: parsed, model, provider: name };
+      }
+      throw new Error("Procedural answer missing required fields");
+    } catch (err) {
+      lastErr = err;
+      console.warn(`[/api/chat] Procedural answer via ${model} failed: ${err.message}`);
+    }
+  }
+  throw new Error(`All procedural-answer providers failed: ${lastErr ? lastErr.message : "none configured"}`);
+}
+
 router.post("/api/chat", async (req, res) => {
   const question = (req.body && req.body.question || "").toString().trim();
   if (!question) {
@@ -1000,6 +1088,71 @@ router.post("/api/chat", async (req, res) => {
       casualReply: classification.casual_reply || "Hello! I'm here to help with Nigerian legal questions. Feel free to ask me anything about your rights, laws, or legal situations.",
       provider: classifyProvider,
     });
+  }
+
+  // Step 2a: Practical/procedural follow-up — answer directly, no citations.
+  // "How do I note down key facts" is correct without any statute, so skip the
+  // search/relevance/draft-with-excerpts pipeline entirely and give direct
+  // guidance. Never force-fit citations into a how-to answer.
+  if (classification.needs_sourcing === false) {
+    try {
+      const proc = await answerProceduralWithFallback(question, classification, history);
+      return res.json({
+        classification,
+        route: "simple",
+        plan: null,
+        result: proc.result,
+        draftModel: proc.model,
+        draftProvider: proc.provider,
+        critique: null,
+        evidence: {
+          sufficient: true,
+          relevanceScore: null,
+          sourceCount: 0,
+          retrievedFrom: [],
+          reason: "Practical/procedural question — no statute required.",
+          minSources: 0,
+          noSourcing: true,
+        },
+        providersBusy: false,
+        retryAfter: null,
+      });
+    } catch (err) {
+      console.warn("[/api/chat] Procedural answer failed, using static guidance:", err.message);
+      // Honest fallback: direct practical guidance with NO citations, never
+      // routed back into the citation pipeline.
+      return res.json({
+        classification,
+        route: "simple",
+        plan: null,
+        result: {
+          lawMd: "Here's straightforward guidance: write things down while they're fresh, keep it factual and specific, and keep a copy for yourself. If this relates to a legal or police matter, also note dates, names, and any documents.",
+          actionsMd:
+            "- Step 1: Write down the key facts (who, what, when, where) as soon as possible.\n" +
+            "- Step 2: Keep it factual — what you saw or heard, not your opinion.\n" +
+            "- Step 3: Save a dated copy (photo or written) for yourself.\n" +
+            "- Step 4: If it's for a legal or police matter, bring this record when you report or meet a lawyer.",
+          sources: [],
+          escalate: false,
+          escalateReason: "This is a practical task you can handle yourself.",
+          followUps: [],
+        },
+        draftModel: "fallback",
+        draftProvider: "procedural-fallback",
+        critique: null,
+        evidence: {
+          sufficient: true,
+          relevanceScore: null,
+          sourceCount: 0,
+          retrievedFrom: [],
+          reason: "Practical/procedural question — no statute required.",
+          minSources: 0,
+          noSourcing: true,
+        },
+        providersBusy: false,
+        retryAfter: null,
+      });
+    }
   }
 
   // Step 2b: HITL — if jurisdiction is unclear and the answer depends on state,
@@ -1318,6 +1471,21 @@ router.post("/api/chat", async (req, res) => {
     // Cache the result (only successful, non-busy responses)
     if (!draftResult.providersBusy && draftResult.result) {
       setCachedResult(cacheKey, draftResult);
+    }
+  }
+
+  // ── Hedge downgrade: if the draft's OWN text doubts whether its citations
+  // apply ("might be relevant", "does not directly address", ...), that is
+  // itself proof the citations are weak — confidence must NOT be High, even
+  // if the relevance gate (or its catch branch) said "sufficient".
+  if (evidence.sufficient && draftResult.result) {
+    const hedges = detectHedging(draftResult.result);
+    if (hedges.length > 0) {
+      evidence.sufficient = false;
+      evidence.hedged = true;
+      evidence.hedgeMatches = hedges;
+      evidence.reason = `Response hedges about citation fit: ${hedges.join("; ")}`;
+      console.warn(`[/api/chat] Hedging downgrade: ${hedges.join("; ")}`);
     }
   }
 
