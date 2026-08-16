@@ -47,9 +47,12 @@ function msgCollection(uid, convoId) {
   return convoRef(uid, convoId).collection("messages");
 }
 
-// ── GET /api/conversations — list summaries ────────────────────────────────
+// ── GET /api/conversations — list summaries or full conversations ──────────
+// ?full=true returns conversations with all messages inline (avoids N+1 queries)
+// Without ?full, returns summaries only (lightweight for sidebar)
 router.get("/", async (req, res) => {
   try {
+    const includeFull = req.query.full === "true";
     const snapshot = await convoCollection(req.uid)
       .orderBy("updatedAt", "desc")
       .limit(100)
@@ -58,17 +61,31 @@ router.get("/", async (req, res) => {
     const conversations = [];
     for (const doc of snapshot.docs) {
       const data = doc.data();
-      // Get message count for each conversation
-      const msgSnapshot = await convoRef(req.uid, doc.id).collection("messages").count().get();
-      const messageCount = msgSnapshot.data().count;
-
-      conversations.push({
+      const base = {
         id: doc.id,
         title: data.title || "New question",
         createdAt: data.createdAt?._seconds ? data.createdAt._seconds * 1000 : data.createdAt || Date.now(),
         updatedAt: data.updatedAt?._seconds ? data.updatedAt._seconds * 1000 : data.updatedAt || Date.now(),
-        messageCount,
-      });
+      };
+
+      if (includeFull) {
+        // Fetch all messages for this conversation inline
+        const msgSnapshot = await convoRef(req.uid, doc.id)
+          .collection("messages")
+          .orderBy("createdAt", "asc")
+          .get();
+        base.messages = msgSnapshot.docs.map(d => {
+          const msgData = d.data();
+          const { userId, ...rest } = msgData;
+          return { id: d.id, ...rest };
+        });
+      } else {
+        // Lightweight: just message count
+        const msgSnapshot = await convoRef(req.uid, doc.id).collection("messages").count().get();
+        base.messageCount = msgSnapshot.data().count;
+      }
+
+      conversations.push(base);
     }
 
     res.json({ conversations });
