@@ -7,9 +7,9 @@
 | Metric | Value |
 |---|---|
 | Total acts in PLAC 2004 compendium | 547 |
-| Ingested to Firestore | **545** (bulk) + 3 gap laws |
+| Ingested to Firestore | **545** (bulk) + 3 gap laws + 4 more coverage laws |
 | Remaining in staging queue | **2** (low-relevance, optional) |
-| Estimated total sections in Firestore | **14,119** (verified via count()) |
+| Estimated total sections in Firestore | **14,384** (verified via count()) |
 | Practice areas covered | 19/19 |
 
 The bulk ingestion is essentially complete. Only 2 low-relevance acts remain un-ingested:
@@ -64,6 +64,19 @@ The PLAC "2004 Laws of Nigeria" compendium covers federal Acts. Several importan
 | **Federal Competition and Consumer Protection Act (FCCPA) 2018** | consumer_rights | Defective goods, unfair trade practices | ✅ Ingested 2026-08-16 (168 sections, clean text from LawGlobal Hub) |
 
 > **Note on Recovery of Premises:** the freely available full-text copy of this uniform law is the Kogi State–issued edition (`KGSL 1 of 1991`), whose notice-to-quit provisions (weekly/monthly/quarterly/yearly periods and the 7-day notice of intention to recover possession) are identical to the federal 1945 Act that applies in the FCT. It is ingested under the name **"Recovery of Premises Law"** with jurisdiction **Federal** so Abuja/FCT tenancy questions retrieve it; if the verbatim federal Act text becomes available, it can be ingested alongside.
+
+### Additional Coverage Laws (2026-08-16, for diverse user questions)
+
+| Law | Practice Area | Sections | Covers |
+|---|---|---|---|
+| **Wills Act 1837** | family_law | 33 | Testate succession ("someone died — what happens to their property under a will") |
+| **Child Rights Act 2003** | family_law | 278 | Child custody, best-interest principle, child protection (replaces the truncated 99-section compendium copy) |
+| **Sale of Goods Act 1893** | contract | 53 | Buying/selling goods, defective goods, seller/buyer remedies |
+| **Trade Marks Act** (kept existing) | intellectual_property | 69 | Brand/logo protection ("someone stole my brand") |
+
+Source for all: LawGlobal Hub per-section text (clean; the site is missing a few sections — Wills s.2/s.12 and Sale of Goods s.4/s.40–48 — disclosed as a source limitation, the substantive core is present).
+
+> **Honest limitation:** intestate succession (dying *without* a will) and most torts (negligence, defamation damages) are governed by **state law / common law**, not federal statute — those remain out of the corpus's reach and are handled by the "insufficient evidence → consult a lawyer" path.
 
 ### Minor Gaps (may already be in corpus under different names)
 
