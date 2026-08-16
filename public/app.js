@@ -178,6 +178,9 @@ import {
     t = t.replace(/\*(.+?)\*/g, "<em>$1</em>");
     t = t.replace(/\[(.+?)\]\(.+?\)/g, "$1"); // Strip markdown links, keep text
     t = t.replace(/`(.+?)`/g, "<code>$1</code>");
+    // Bug fix: strip placeholder/example URLs that LLM may hallucinate
+    t = t.replace(/https?:\/\/(?:www\.)?example\.(?:com|org|net)[^\s)<>"']*/gi, "");
+    t = t.replace(/\bexample\.(?:com|org|net)\b/gi, "");
     t = t.split(CURSOR_TOKEN).join('<span class="stream-cursor"></span>');
     return t;
   }
@@ -913,6 +916,45 @@ import {
     wrap.appendChild(verdict);
     if (stream) verdict.style.display = "none";
 
+    // Follow-up suggestions
+    const followUps = document.createElement("div");
+    followUps.className = "answer-followups";
+    if (r.followUps && r.followUps.length > 0) {
+      const fuTitle = document.createElement("div");
+      fuTitle.style.cssText = "font-size: 11px; font-weight: 600; color: var(--color-text-faint, #6b6b66); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;";
+      fuTitle.textContent = "Related questions";
+      followUps.appendChild(fuTitle);
+      r.followUps.forEach((q) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.style.cssText = `
+          display: block; width: 100%; text-align: left;
+          padding: 8px 12px; margin-bottom: 4px;
+          background: var(--color-surface, #1a1a1a);
+          border: 1px solid var(--color-border, #2a2a2a);
+          border-radius: 8px; color: var(--color-text-muted, #9a9a94);
+          font-size: 13px; cursor: pointer; transition: background 0.15s;
+        `;
+        btn.textContent = q;
+        btn.addEventListener("mouseenter", () => { btn.style.background = "var(--color-border, #2a2a2a)"; });
+        btn.addEventListener("mouseleave", () => { btn.style.background = "var(--color-surface, #1a1a1a)"; });
+        btn.addEventListener("click", () => {
+          if (el.composerInput) { el.composerInput.value = q; el.composerInput.focus(); }
+          if (window.promptBar && window.promptBar.setValue) window.promptBar.setValue(q);
+        });
+        followUps.appendChild(btn);
+      });
+    }
+    wrap.appendChild(followUps);
+    if (stream) followUps.style.display = "none";
+
+    // Meta / disclaimer line
+    const meta = document.createElement("div");
+    meta.className = "msg__meta";
+    meta.innerHTML = `<span class="msg__meta-text">Legal information, not legal advice · ${formatTime(msg.createdAt)}</span>`;
+    wrap.appendChild(meta);
+    if (stream) meta.style.display = "none";
+
     // Approval Card (if agent needs user input)
     let approvalCard = null;
     if (r.approvalQuestions && r.approvalQuestions.length > 0 && window.BeUIApprovalCard) {
@@ -925,13 +967,29 @@ import {
       lawSection: { el: lawWrapper, textEl: lawTextEl, liveDot: null },
       actionsSection: { el: actionsWrapper, textEl: actionsTextEl, liveDot: null },
       verdict,
+      followUps,
+      meta,
       approvalCard
     };
     return wrap;
   }
 
+  // Bug fix: filter out placeholder/hallucinated sources (e.g. example.com)
+  const PLACEHOLDER_DOMAINS_RE = /example\.(com|org|net)|placeholder\.com|test\.com|domain\.com|sample\.com/i;
+  function isPlaceholderSource(src) {
+    if (!src) return true;
+    if (src.label && PLACEHOLDER_DOMAINS_RE.test(src.label)) return true;
+    if (src.url && PLACEHOLDER_DOMAINS_RE.test(src.url)) return true;
+    if (src.excerpt && PLACEHOLDER_DOMAINS_RE.test(src.excerpt)) return true;
+    return false;
+  }
+
   function appendContextCards(sectionEl, sources) {
     if (!sources || !sources.length) return;
+    // Filter out any placeholder/hallucinated sources
+    const validSources = sources.filter(s => !isPlaceholderSource(s));
+    if (!validSources.length) return;
+    sources = validSources;
     
     // Simple inline citation list - no card styling
     const list = document.createElement("div");
@@ -2003,13 +2061,13 @@ import {
                 setTimeout(() => {
                   if (token !== pipelineToken) return;
                   const stickBeforeFollowUps = isNearBottom();
-                  refs.followUps.style.display = "";
+                  if (refs.followUps) refs.followUps.style.display = "";
                   scrollChatToBottom(stickBeforeFollowUps);
 
                   setTimeout(() => {
                     if (token !== pipelineToken) return;
                     const stickBeforeMeta = isNearBottom();
-                    refs.meta.style.display = "";
+                    if (refs.meta) refs.meta.style.display = "";
                     scrollChatToBottom(stickBeforeMeta);
                     finalizeAnswer(agentMsg, token);
                   }, 200);
@@ -2037,6 +2095,29 @@ import {
     
     // Only count quota when the answer actually streamed (not casual / error / stopped)
     if (tokenMatch && wasStreaming) state.questionsUsedToday += 1;
+
+    // ── BUG FIX: properly clean up loading state, timer, and thinking elapsed ──
+    // Previously these were not cleaned up in the HITL (needsInput) and
+    // providersBusy paths, causing orphaned "Analyzing" timers to stay visible
+    // and the next pipeline's "Thought for X" to mismatch the live counter.
+    if (live.loadingState) {
+      live.loadingState.destroy();
+      live.loadingState = null;
+    }
+    clearInterval(live.timerId);
+    live.timerId = null;
+    if (live.thinkingComponent) {
+      live.thinkingComponent.destroy();
+      live.thinkingComponent = null;
+    }
+    if (live.beuiStreaming) {
+      live.beuiStreaming.destroy();
+      live.beuiStreaming = null;
+    }
+    // Record thinking elapsed so the trace toggle shows correct time
+    if (agentMsg.startedAt && !agentMsg.thinkingElapsedMs) {
+      agentMsg.thinkingElapsedMs = Date.now() - agentMsg.startedAt;
+    }
 
     saveState();
     renderHistory();
