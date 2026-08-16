@@ -323,6 +323,15 @@
     text-overflow: ellipsis;
   }
 
+  /* Unread-answer badge (finished in the background while the tab was closed). */
+  .history__unread-dot {
+    flex-shrink: 0;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--color-accent);
+  }
+
   /* Kebab menu trigger — fixed width, anchored to the far right of every row.
      Its own click target; never triggers chat navigation. */
   .history__kebab {
@@ -1904,7 +1913,7 @@
 <script src="components/BeUIPromptBar.js"></script>
 <script src="components/BeUIRecommendationCard.js"></script>
 <script type="module" src="enhanced-streaming.js"></script>
-  <script type="module" src="app.js?v=4.3.2"></script>
+  <script type="module" src="app.js?v=4.3.3"></script>
   
   <!-- ============================================================
        DEBUG PANEL LOGIC

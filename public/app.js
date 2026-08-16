@@ -840,7 +840,7 @@ import {
     return { hasResult: false };
   }
 
-  async function callChatApi(question, history) {
+  async function callChatApi(question, history, options = {}) {
     console.log('[callChatApi] Starting API call to /api/chat');
     
     // Add timeout to fetch call
@@ -849,10 +849,15 @@ import {
     
     try {
       const headers = await getAuthHeaders();
+      const body = { question, history: history || [] };
+      // Recoverable requests: tell the server which message to persist the
+      // result into, so an answer computed after the tab closed isn't lost.
+      if (options.conversationId) body.conversationId = options.conversationId;
+      if (options.messageId) body.messageId = options.messageId;
       const res = await fetch("/api/chat", {
         method: "POST",
         headers,
-        body: JSON.stringify({ question, history: history || [] }),
+        body: JSON.stringify(body),
         signal: controller.signal,
       });
       
@@ -1045,6 +1050,16 @@ import {
     titleSpan.className = "history__item-title";
     titleSpan.textContent = c.title;
     btn.appendChild(titleSpan);
+
+    // Unread badge: any agent message the user hasn't seen yet (e.g. an answer
+    // that finished in the background after they closed the tab).
+    const hasUnread = (c.messages || []).some((m) => m.role === "agent" && m.unread === true);
+    if (hasUnread) {
+      const dot = document.createElement("span");
+      dot.className = "history__unread-dot";
+      dot.setAttribute("aria-label", "Unread answer");
+      btn.appendChild(dot);
+    }
 
     btn.addEventListener("click", () => selectConversation(c.id));
     li.appendChild(btn);
@@ -1419,6 +1434,15 @@ import {
     const body = document.createElement("div");
     body.className = "msg__body msg__body--agent-plain";
     wrap.appendChild(body);
+
+    // A server job still in flight (recoverable request): show "still working"
+    // instead of misreporting it as incomplete, and poll once to pick up the
+    // result when it lands.
+    if (msg.pipelineStatus === "running") {
+      body.appendChild(buildRunningEl(msg.createdAt));
+      scheduleRunningPoll();
+      return wrap;
+    }
 
     const TERMINAL_STATUSES = ["done", "corpusEmpty", "error", "casual", "stopped", "needsInput", "safetyAck", "providersBusy"];
     if (!TERMINAL_STATUSES.includes(msg.status)) {
@@ -1985,6 +2009,7 @@ import {
 
     state.activeId = id;
     setUrlConvo(id);
+    markConversationRead(id);
     saveState();
     renderHistory();
     renderChat();
@@ -1995,6 +2020,23 @@ import {
     } else if (el.composerInput) {
       el.composerInput.value = "";
     }
+  }
+
+  // Clear the "unread" flag on a conversation's agent messages — the user has
+  // now seen them. Returns true if anything changed (so callers can re-render).
+  function markConversationRead(convoId) {
+    const convo = state.conversations.find((c) => c.id === convoId);
+    if (!convo) return false;
+    let changed = false;
+    for (const m of convo.messages) {
+      if (m.role === "agent" && m.unread) {
+        m.unread = false;
+        changed = true;
+        if (isServerMode()) syncMessageToServer(convoId, m);
+      }
+    }
+    if (changed) saveState();
+    return changed;
   }
 
   function ensureActiveConversation() {
@@ -2075,6 +2117,7 @@ import {
   /* ------------------------------------------------------------------ */
   function submitQuestion(text) {
     if (state.isAgentBusy) return;
+    _runningPolls = 0; // new pipeline → reset the bounded running-job poll budget
     ensureActiveConversation();
     const convo = getActiveConversation();
 
@@ -2265,7 +2308,10 @@ import {
           content: m.content || m.casualReply || (m.result && m.result.lawMd) || m.needsInputQuestion || "",
         }));
       
-      response = await callChatApi(question, recentMessages);
+      response = await callChatApi(question, recentMessages, {
+        conversationId: convo.id,
+        messageId: agentMsg.id,
+      });
       console.log('[runPipeline] API call completed successfully');
     } catch (err) {
       console.error('[runPipeline] API call failed:', err);
@@ -3091,6 +3137,51 @@ import {
     return wrap;
   }
 
+  function buildRunningEl(createdAt) {
+    const wrap = document.createElement("div");
+    wrap.className = "answer";
+    wrap.innerHTML = `
+      <div class="answer-section">
+        <div class="answer-section__head">
+          <div class="answer-section__icon"><i class="fa-solid fa-hourglass-half"></i></div>
+          <span class="answer-section__title">Still working on this</span>
+        </div>
+        <div class="answer-section__text"><p>The answer is still being prepared — it will appear here shortly.</p></div>
+      </div>
+      <div class="msg__meta"><span class="msg__meta-text">Legal information, not legal advice · ${formatTime(createdAt)}</span></div>
+    `;
+    return wrap;
+  }
+
+  // Poll a still-running server job a few times (bounded) so a reopen during
+  // processing picks up the finished result without the user reloading.
+  let _runningPollTimer = null;
+  let _runningPolls = 0;
+  const _runningPollCap = 4;
+  function scheduleRunningPoll() {
+    if (_runningPollTimer || _runningPolls >= _runningPollCap) return;
+    _runningPollTimer = setTimeout(async () => {
+      _runningPollTimer = null;
+      _runningPolls += 1;
+      if (!isServerMode()) return;
+      const activeId = state.activeId;
+      if (!activeId) return;
+      try {
+        const result = await fetchConversationById(activeId);
+        if (result.convo) {
+          const idx = state.conversations.findIndex((c) => c.id === activeId);
+          if (idx >= 0) state.conversations[idx] = result.convo;
+          else state.conversations.push(result.convo);
+          saveState();
+          renderHistory();
+          if (state.activeId === activeId) renderChat();
+        }
+      } catch (e) {
+        console.warn("[poll] Running-job poll failed:", e.message);
+      }
+    }, 8000);
+  }
+
   function buildErrorEl(message) {
     const wrap = document.createElement("div");
     wrap.className = "verdict verdict--error";
@@ -3296,6 +3387,10 @@ import {
     renderHistory();
     updateComposerState();
     updatePlanLabel();
+
+    // The user watched this answer live → it is NOT unread. Clear the flag so
+    // the server-persisted unread:true doesn't produce a spurious badge.
+    agentMsg.unread = false;
 
     // Immediately sync final message state to server (critical for persistence)
     const activeConvo = getActiveConversation();
@@ -3874,6 +3969,7 @@ import {
       if (convo) {
         _directFetchToken += 1; // cancel any in-flight direct fetch for another id
         state.activeId = convo.id; // use the persisted ID — never a new one
+        markConversationRead(convo.id);
         renderHistory();
         renderChat();
         updateClearChatButtonState();
@@ -3951,6 +4047,7 @@ import {
         state.conversations.push(result.convo);
       }
       state.activeId = urlId;
+      markConversationRead(urlId);
       saveState();
       renderHistory();
       renderChat();
