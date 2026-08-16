@@ -1,0 +1,313 @@
+1. Sale and agreement to sell
+(1) A contract of sale of goods is a contract whereby Sale and The seller transfers or agrees to transfer the property in goods agreement to the buyer for a money consideration, called the price, to sell.There may be a contract of sale between one part owner another.
+(2) A contract of sale may be absolute or conditional.
+(3) Where under a contract of sale the property in the goods is transferred from the seller to the buyer the contract is called a sale; but where the transfer of the property in the goods is to take place at a future time or subject to some condition thereafter to be fulfilled the contract is called anagreement to sell.
+(4) An agreement to sell becomes a sale when the time or the conditions are fulfilled subject to which the property in the goods is to be transferred.
+
+2. Capacity to buy and sell
+Capacity to buy and sell is regulated by the general law concerning capacity to contract, and to transfer and acquire property.
+Provided that where necessaries are sold and delivered to an infant, or minor, or to a person who by reason of mental incapacity or drunkenness is incompetent to contract, he must pay a reasonable price therefor.
+Necessaries in this section mean goods suitable to the condition in life of such infant or minor or other person, and to his actual requirements at the time of the sale and delivery.
+
+3. Contract of sale, how made
+Subject to the provisions of this Act and of any statute sale, how in that behalf, a contract of sale may be made in writing made. (either with or without seal), or by word of mouth, or partlyin writing and partly by word of mouth, or maybe implied from the conduct of the parties.
+Provided that nothing in this section shall affect the law relating to corporations.
+Editor 3
+
+5. Existing or future goods
+(1) The goods which form the subject of a contract future goods. of sale may be either existing goods, owned or possessed by the seller, or goods to be manufactured or acquired by the seller after the making of the contract of sale, in this Act called ” future goods.”
+(2) There may be a contract for the sale of goods, the acquisition of which by the seller depends upon a contingency which may or may not happen.
+(3) Where by a contract of sale the seller purports to effect a present sale of future goods, ‘the contract operates as an agreement to sell the goods.
+Editor 3
+
+6. Goods which have perished
+Where there is a contract for the sale of specific goods, and the goods without the knowledge of the seller have perished at the time when the contract is made, the contract is void.
+Editor 3
+
+7. Goods perishing before sale but after agreement to sell
+Where there is an agreement to sell specific goods, and subsequently the goods, without any fault on the part of the seller or buyer, perish before the risk passes to the buyer, the agreement is thereby avoided.
+Editor 3
+
+8. Ascertainment of price
+(1) The price in a contract of sale may be fixed by the contract, or may be left to be fixed in manner thereby agreed, or may be determined by the course of dealing between the parties.
+(2) Where the price is not determined in accordance with the foregoing provisions the buyer must pay a reasonable price. What is a reasonable price is a question of fact dependent on the circumstances of each particular case.
+Editor 3
+
+9. Agreement to sell at valuation
+(1) Where there is an agreement to sell goods on the Agreement terms that the price is to be fixed by the valuation of a third party, and such third party cannot or does not make such valuation, the agreement is avoided; provided that if the goods or any part thereof have been delivered to and appropriated by the buyer he must pay a reasonable price therefor.
+(2) Where such third party is prevented from making the valuation by the fault of the seller or buyer, the party not in fault may maintain an action for damages against the party in fault.
+Editor 3
+
+10. Stipulations as to time
+(1) Unless a different intention appears from the terms of the contract stipulations as to time of payment are not deemed to be of the essence of a contract of sale. Whether any other stipulation as to time is of the essence of the contract or not depends on the terms of the contract.
+(2) In a contract of sale “‘month ” means prima facie calendar month.
+Editor 3
+
+11. When condition to be treated as warranty
+(1) In England or Ireland—
+(a) Where a contract of sale is subject to any condition to be fulfilled by the seller, the buyer ‘may waive the condition, or may elect to treat the breach of such condition as a breach of warranty, and not as a ground for treating contract as repudiated:
+(b) Whether a stipulation in a contract of sale is a condition, the breach of which may give rise to a right to treat the contract as repudiated, or a warranty, the breach of which may give rise to a claim for damages but not to a right to reject the goods and treat the contract as repudiated, depends each case on the construction of the contract. A stipulation may be a condition, though called a warrantyin the contract:
+(c) Where a contract of sale is not severable, and the buyer has accepted the goods, or part thereof, or where the contract is for specific goods, the property in which has passed to the buyer, the breach of any condition to be fulfilled by the seller can only be treated as a breach of warranty, and not as a ground for rejecting the goods and treating the contract as repudiated, unless there be a term of the contract, express or implied, to that effect.
+(2) In Scotland, failure by the seller to perform any material part of a contract of sale is a breach of contract, which entitles the buyer either within a reasonable time after delivery to reject the goods and treat the contract as repudiated, or to retain the goods and treat the failure to perform such material part as a breach which may give rise to a claim for compensation or damages.
+(3) Nothing in this section shall affect the case of anycondition or warranty, fulfilment of which is excused by law by reason of impossibility or otherwise.
+Editor 3
+
+12. Implied undertaking as to title, &c
+In a contract of sale, unless the circumstances of thetaking as to contract are such as to show a different intention, there is—
+(1) An implied condition on the part of the seller that in the case of a sale he has a right to sell the goods, and that in the case of an agreement to sell he will have a right to sell the goods at the time when the property is to pass:
+(2) An implied warranty that the buyer shall have and enjoy quiet possession of the goods:
+(3) An implied warranty that the goods shall be free from any charge or encumbrance in favour of any third party, not declared or known to the buyer before or at the time when the contract is made.
+Editor 3
+
+13. Sale by description
+Where there is a contract for the sale of goods by description, there is an implied condition that the goods shall correspond with the description; and if the sale be by sample, as well as by description, it is not sufficient that the bulk of the goods corresponds with the sample if the goods do not also correspond with the description.
+Editor 3
+
+14. Implied conditions as to quality or fitness
+Subject to the provisions of this Act and of any statute in that behalf, there is no implied warranty or condition as to the quality or fitness for any particular purpose of goods supplied under a contract of sale, except as follows :
+(1) Where the buyer, expressly or by implication, makes fitness. known to the seller the particular purpose for which the goods are required, so as to show that the buyer relies on the seller’s skill or judgment, and the goods are of a description which it is in the course of the seller’s business to supply (whether he be the manufacturer or not), there is an implied condition that the goods shall be reasonably fit for such purpose, provided that in the case of a contract for the sale of a specified article under its patent or other trade name, there is no implied condition as to its fitness for any particular purpose:
+(2) Where goods are bought by description from a seller who deals in goods of that description (whether he be the manufacturer or not), there is an implied condition that the goods shall be of merchantable quality; provided that if the buyer has examined the goods, there shall be no implied condition as regards defects which such examination ought to have revealed:
+(3) An implied warranty or condition as to quality or fitness for a particular purpose may be annexed by the usage of trade:
+(4) An express warranty or condition does not negative a warranty or condition implied by this Act unless inconsistent therewith.
+Editor 3
+
+15. Sale by sample
+(1) A contract of sale is a contract for sale by sample Sale by where there is a term in the contract, express or implied, to samplethat effect.
+(2) In the case of a contract for sale by sample—
+(a) There is an implied condition that the bulk shall correspond with the sample in quality:
+(b) There is an implied condition that the buyer shall have a reasonable opportunity of comparing the bulk with the sample:
+(c) There is an implied condition that the goods shall be free from any defect, rendering them unmerchantable, which would not be apparent on reasonable examination of the sample.
+Editor 3
+
+16. Goods must be ascertained
+Where there is a contract for the sale of unascertained goods no property in the goods is transferred to the buyer unless and until the goods are ascertained.
+Editor 3
+
+17. Property passes when intended to pass
+(1) Where there is a contract for the sale of specific or ascertained goods the property in them is transferred to the buyer at such time as the parties to the contract intend it to be transferred.
+(2) For the purpose of ascertaining the intention of the parties regard shall be had to the terms of the contract, the conduct of the parties, and the circumstances of the case.
+Editor 3
+
+18. Rules for ascertaining intention
+Unless a different intention appears, the following are rules for ascertaining the intention of the parties as to the time at which the property in the goods is to pass to the buyer.
+Rule 1.—Where there is an unconditional contract for the sale of specific goods, in a deliverable state, the property in the goods passes to the buyer when the contract is made, and it is immaterial whether the time of payment or the time of delivery, or both, be postponed.
+Rule 2.—Where there is a contract for the sale of specific goods and the seller is bound to do something to the goods, for the purpose of putting them into a deliverable state, the property does not pass until such thing be done, and the buyer has notice thereof.
+Rule 3.—Where there is a contract for the sale of specific goods in a deliverable state, but the seller is bound to weigh, measure, test, or do some other act or thing with reference to the goods for the purpose of ascertaining the price, the property does not pass until such act or thing be done, and the buyer has notice thereof.
+Rule 4.—When goods are delivered to the buyer on approval or ” on sale or return ” or other similar terms the property therein passes to the. buyer : —
+(a) When he signifies his approval or accept- ance to the seller or does any other act adopting the transaction:
+(b) If he does not signify his approval or acceptance to the seller but retains the goods without giving notice of rejection, then, if a time has been fixed for the return of the goods, on the expiration of such time, and, if no time has beenfixed, on the expiration of a reasonable time, What is a reasonable time is a question of fact.
+Rule 5.—(1) Where there is a contract for the sale of unascertained or future goods by description, and goods of that description and in a deliverable state are unconditionally appropriated to the contract, either by the seller with the assent of the buyer, or by the buyer with the assent of the seller, the property in the goods thereupon passes to the buyer. Such assent may be express or implied, and may be given either before or after the appropriation is made.
+(2) Where, in pursuance of the contract, the seller delivers the goods to the buyer or to a carrier or other bailee or custodier (whether named by the buyer or not) for the purpose of transmission to the buyer, and does not reserve the right of disposal, he is deemed to have unconditionally appropriated the goods to the contract.
+Editor 3
+
+19. Reservation of right of disposal
+(1) Where there is a contract for the sale of specific goods or where goods are subsequently appropriated to the contract, the seller may, by the terms of the contract or appropriation, reserve the right of disposal of the goods until conditions are fulfilled. In such case, notwithstanding the delivery of the goods to the buyer, or to a carrier or other bailee or custodier for the purpose of transmission to the buyer, the property in the goods does not pass to the buyer until the conditions imposed by the seller are fulfilled.
+(2) Where goods are shipped, and by the bill of lading the goods are deliverable to the order of the seller or his agent, the seller is prima facie deemed to reserve the right of disposal.
+(3) Where the seller of goods draws on the buyer for the price, and transmits the bill of exchange and bill of lading to the buyer together to secure acceptance or payment of the bill of exchange, the buyer is bound to return the bill of lading if he does not honour the bill of exchange, and if he wrongfully retains the bill of lading the property in the goods does not pass to him.
+Editor 3
+
+20. Risk prima facie passes with property
+Unless otherwise agreed, the goods remain at the seller’s risk until the property therein is transferred to the buyer, but when the property therein is transferred to the buyer, the goods are at the buyer’s risk whether delivery has been made or not.
+Provided that where delivery has been delayed through the fault of either buyer or seller the goods are at the risk of the party in fault as regards any loss which might not have occurred but for such fault.
+Provided also that nothing in this section shall affect the duties or liabilities of either seller or buyer as a bailee or custodier of the goods of the other party.
+Editor 3
+
+21. Sale by person not the owner
+(1) Subject to the provisions of this Act, where goods are sold by a person who is not the owner thereof, and who does not sell them under the authority or with the consent of the owner, the buyer acquires no better title to the goods than the seller had, unless the owner of the goods is by his conduct precluded from denying the seller’s authority to sell.
+(2) Provided also that nothing in this Act shall affect—
+(a) The provisions of the Factors Acts, or any enact- ment enabling the apparent owner of goods to dis- pose of them as if he were the true owner thereof;
+(b) The validity of any contract of sale under any special common law or statutory power of sale or under the order of a court of competent jurisdiction.
+Editor 3
+
+22. Market overt
+(1) Where goods are sold in market overt, according to the usage of the market, the buyer acquires a good title to the goods, provided he buys them in good faith and without notice of any defect or want of title on the part of the seller.
+(2) Nothing in this section shall affect the law relating to the sale of horses.
+(3) The provisions of this section do not apply to Scotland.
+Editor 3
+
+23. Sale under voidable title
+When the seller of goods has a voidable title thereto, but his title has not been avoided at the time of the sale, the buyer acquires a good title to the goods, provided he buys them in good faith and without notice of the seller’s defect of title.
+Editor 3
+
+24. Revesting of property in stolen goods on conviction of offender
+(1) Where goods have been stolen and the offender is prosecuted to conviction, the property in the goods so stolen revests in the person who was the owner of the goods, or his personal representative, notwithstanding any intermediate dealing with them, whether by sale in market overt or otherwise.
+(2) Notwithstanding any enactment to the contrary, where goods have been obtained by fraud or other wrongful means not amounting to larceny, the property in such goods shallnot revest in the person who was the owner of the goods, his personal representative, by reason only of the conviction of the offender.
+(3) The provisions of this section do not apply to Scotland.
+Editor 3
+
+25. Seller or buyer in possession after sale
+(1) Where a person having sold goods continues or is in possession of the goods, or of the documents of title to the goods, the delivery or transfer by that person, or by a mercantile agent acting for him, of the goods or documents of title under any sale, pledge, or other disposition thereof, to any person receiving the same in good faith and without notice of the previous sale, shall have the same effect as if the person making the delivery or transfer were expressly authorised by the owner of the goods to make the same.
+(2) Where a person having bought or agreed to buy goods obtains, with the consent of the seller, possession of the goods or the documents of title to the goods, the delivery or transfer by that person, or by a mercantile agent acting for him, of the goods or documents of title, under any sale, pledge, or other disposition thereof, to any person receiving the samein good faith and without notice of any lien or other right of the original seller in respect of the goods, shall have the same effect as if the person making the delivery or transfer were a mercantile agent in possession of the goods or docu- ments of title with the consent of the owner.
+(3) In this section the term ” mercantile agent ” has thesame meaning as in the Factors Acts.
+Editor 3
+
+26. Effect of writs of execution
+(1) A writ of fieri facias or other writ of execution against goods shall bind the property in the goods of the execution debtor as from the time when the writ is delivered to the sheriff to be executed; and, for the better manifestation of such time, it shall be the duty of the sheriff, without fee, upon the receipt of any such writ to endorse upon the back thereof the hour, day, month, and year when hereceived the same. Provided that no such writ shall prejudice the title to such goods acquired by any person in good faith, and for valuable consideration, unless such person had at the time when he acquired his title notice that such writ or any other writ by virtue of which the goods of the execution debtor might be seized or attached had been delivered to and remained unexecuted in the hands of the sheriff.
+(2) In this section the term ” sheriff ” includes any officer charged with the enforcement of a writ of execution.
+(3) The provisions of this section do not apply to Scotland.
+Editor 3
+
+27. Duties of seller and buyer
+It is the duty of the seller to deliver the goods, and of the buyer to accept and pay for them, in accordance with the terms of the contract of sale.
+Editor 3
+
+28. Payment and delivery are concurrent conditions
+Unless otherwise agreed, delivery of the goods and payment of the price are concurrent conditions, that is to say, the seller must be ready and willing to give possession of the goods td the buyer in exchange for the price and the buyer must be ready and willing to pay the price in exchange for possession of the goods.
+Editor 3
+
+29. Rules as to delivery
+(1) Whether it is for the buyer to take possession of the goods or for the seller to send them to the buyer is a question depending in each case on the contract, express or implied, between the parties. Apart from any such contract, express or implied, the place of delivery is the seller’s place of business, if he have one, and if not, his residence: Provided that, if the contract be for the sale of specific goods, which to the knowledge of the parties when the contract is made are in some other place, then that place is the place of delivery.
+(2) Where under the contract of sale the seller is bound tosend the goods to the buyer, but no time for sending them is fixed, the seller is bound to send them within a reasonable time.
+(3) Where the goods at the time of sale are in the possession of a third person, there is no delivery by seller to buyer unless and until such third person acknowledges to the buyer that he holds the goods on his behalf; provided that nothing in this section shall affect the operation of the issue or transfer of any document of title to goods.
+(4) Demand or tender of delivery may be treated as ineffectual unless made at a reasonable hour. What is a reasonable hour is a question of fact.
+(5) Unless otherwise agreed, the expenses of and incidental to putting the goods into a deliverable state must be borne by the seller.
+Editor 3
+
+30. Delivery of wrong quantity
+(1) Where the seller delivers to the buyer a quantity of goods less than he contracted to sell, the buyer may reject them, but if the buyer accepts the goods so delivered he must pay for them at the contract rate.
+(2) Where the seller delivers to the buyer a quantity of goods larger than he contracted to sell, the buyer may accept the goods included in the contract and reject the rest, or he may reject the whole. If the buyer accepts the whole of thegoods so delivered he must pay for them at the contract rate.
+(3) Where the seller delivers to the buyer the goods he contracted to sell mixed with goods of a different description not included in the contract, the buyer may accept the goods which are in accordance with the contract and reject the rest, or he may reject the whole.
+(4) The provisions of this section are subject to any usage of trade, special agreement, or course of dealing between the parties.
+Editor 3
+
+31. Instalment deliveries
+(1) Unless otherwise agreed, the buyer of goods is not bound to accept delivery thereof by instalments.
+(2) Where there is a contract for the sale of goods to be delivered by stated instalments, which are to be separately paid for, and the seller makes defective deliveries in respect of one or more instalments, or the buyer neglects or refusesto take delivery of or pay for one or more instalments, it is a question in each case depending on the terms of the contract and the circumstances of the case, whether the breach of contract is a repudiation of the whole contract or whetherit is a severable breach giving rise to a claim for compensation but not to a right to treat the whole contract as repudiated.
+Editor 3
+
+32. Delivery to carrier
+(1) Where, in pursuance of a contract of sale, the seller is authorised or required to send the goods to the buyer, delivery of the goods to a carrier, whether named by the buyer or not, for the purpose of transmission to the buyer is prima facie deemed to be a delivery of the goods to the buyer.
+(2) Unless otherwise authorised by the buyer, the seller must make such contract with the carrier on behalf of the buyer as may be reasonable having regard to the nature Of the goods and the other circumstances of the case. If the seller omit so to do, and the goods are lost or damaged in course of transit, the buyer may decline to treat the delivery to the carrier as a delivery to himself, or may hold the seller responsible in damages.
+(3) Unless otherwise agreed, where goods are sent by the seller to the buyer by a route involving sea transit, under circumstances in which it is usual to insure, the seller must give such notice to the buyer as may enable him to insure them during their sea transit, and, if the seller fails to do so, the goods shall be deemed to be at his risk during such sea transit.
+Editor 3
+
+33. Risk where goods are delivered at distant place
+Where the seller of goods agrees to deliver them at his own risk at a place other than that where they are when sold, the buyer must, nevertheless, unless otherwise agreed, take any risk of deterioration in the goods necessarily incident to the course of transit.
+Editor 3
+
+34. Buyer’s right of examining the goods
+(1) Where goods are delivered to the buyer, which he has not previously examined, he is not deemed to have accepted them unless and until he has had a reasonable opportunity of examining them for the purpose of ascertaining whether they are in conformity with the contract.
+(2) Unless otherwise agreed, when the seller tenders delivery of goods to the buyer, he is bound, on request, to afford the buyer a reasonable opportunity of examining the goods for the purpose of ascertaining whether they are in conformity with the contract.
+Editor 3
+
+35. Acceptance
+The buyer is deemed to have accepted the goods when he intimates to the seller that he has accepted them, or when the goods have been delivered to him, and he does any act in relation to them which is inconsistent with the ownership of the seller, or when after the lapse of a reasonable time, he retains the goods without intimating to the seller that he has rejected them.
+Editor 3
+
+36. Contract of sale, how made
+Unless otherwise agreed, where goods are delivered to the buyer, and he refuses to accept them having the right so to do, he is not bound to return them to the seller, but it is sufficient if he intimates to the seller that he refuses to accept them.
+Editor 3
+
+37. Liability of buyer for neglecting or refusing deliveryof goods
+When the seller is ready and willing to deliver theg oods, and requests the buyer to take delivery, and the buyer does not within a reasonable time after such request take delivery of the goods, he is liable to the seller for any loss occasioned by his neglect or refusal to take delivery, and also for a reasonable charge for the care and custody of the goods: Provided that nothing in this section shall affect the rights of the seller where the neglect or refusal of the buyer to take delivery amounts to a repudiation of the contract.
+Editor 3
+
+38. Unpaid seller defined
+(1) The seller of goods is deemed to an ” unpaid seller ” within the meaning of this Act—
+(a) When the whole of the price has not been paid or tendered;
+(b) When a bill of exchange or other negotiable instru- ment has been received as conditional payment, and the condition on which it was received has not been fulfilled by reason of the dishonour of the instrument or otherwise.
+(2) In this Part of this Act the term ” seller ” includes any person who is in the position of a seller, as, for instance,an agent of the seller to whom the bill of lading has been indorsed, or a consignor or agent who has himself paid, or is directly responsible for, the price.
+Editor 3
+
+39. Unpaid seller’s rights
+(1) Subject to the provisions of this Act, and of any statute in that behalf, notwithstanding that the property in the goods may have passed to the buyer, the unpaid seller of goods, as such, has by implication of law—
+(a) A lien on the goods or right to retain them for the price while he is in possession of them;
+(b) In case of the insolvency of the buyer, a right of stopping the goods in transitu after he has parted with the possession of them;
+(c) A right of re-sale as limited by this Act.
+(2) Where the property in goods has not passed to the buyer, the unpaid seller has, in addition to his other remedies, a right of withholding delivery similar to and co-extensive with his rights of lien and stoppage in transitu where the property has passed to the buyer.
+Editor 3
+
+50. Damages for non-acceptance
+(1) Where the buyer wrongfully neglects or refuses to accept and pay for the goods, the seller may maintain an action against him for damages for non-acceptance.
+(2) The measure of damages is the estimated loss directly and naturally resulting, in the ordinary course of events, from the buyer’s breach of contract.
+(3) Where there is an available market for the goods in question the measure of damages is prima facie to be ascertained by the difference between the contract price and the market or current, price at the time or times when the goods ought to have been accepted or, if no time was fixed for acceptance, then at the time of the refusal to accept.
+Editor 3
+
+51. Damages for non-delivery
+(1) Where the seller wrongfully neglects or refuses to deliver the goods to the buyer, the buyer may maintain an action against the seller fordamages for non-delivery.
+(2) The measure of damages is the estimated loss directly and naturally resulting, in the ordinary course of events, from the seller’s breach of contract.
+(3) Where there is an available market for the goods in question the measure of damages is prima facie to be ascertained by the difference between the contract price and the market or current price of the goods at the time or timeswhen they ought to have been delivered, or, if no time was fixed, then at the time of the refusal to deliver.
+Editor 3
+
+52. Specific performance
+In any action for breach of contract to deliver specific or ascertained goods the court may, if it thinks fit, on the application of the plaintiff, by its judgment or decree direct that the contract shall be performed specifically, without giving the defendant the option of retaining the goods on payment of damages. The judgment or decree may be un- conditional, or upon such terms and conditions as to damages, payment of the price, and otherwise, as to the court may seem just, and the application by the plaintiff may be made at any time before judgment or decree. The provisions of this section shall be deemed to be supplementary to, and not in derogation of, the right of specific implement in Scotland.
+Editor 3
+
+53. Remedy for breach of warranty
+(1) Where there is a breach of warranty by the seller, or where the buyer elects, or is compelled, to treat any breach of a condition on the part of the seller as a breach of warranty, the buyer is not by reason only of such breach of warranty entitled to reject the goods; but he may
+(a) set up against the seller the breach of warranty indiminution or extinction of the price; or
+(b) maintain an action against the seller for damages forthe breach of warranty.
+(2) The measure of damages for breach of warranty is the estimated loss directly and naturally resulting, in the ordinary course of events, from the breach of warranty.
+(3) In the case of breach of warranty of quality such loss is prima facie the difference between the value of the goods at the time of delivery to the buyer and the value they would have had if they had answered to the warranty.
+(4) The fact that the buyer has set up the breach of warranty in diminution or extinction of the price does not prevent him from maintaining an action for the same breach of warranty if he has suffered further damage.
+(5) Nothing in this section shall prejudice or affect the buyer’s right of rejection in Scotland as declared by this Act.
+Editor 3
+
+54. Interest and special damages
+Nothing in this Act shall affect the right of the buyer or the seller to recover interest or special damages in any case where by law interest or special damages may be recoverable, or to recover money paid where the consideration for thepayment of it has failed.
+Editor 3
+
+55. Exclusion of implied terms and conditions
+Where any right, duty, or liability would arise under a contract of sale by implication of law, it may be negatived or varied by express agreement or by the course of dealing between the parties, or by usage, if the usage be such as to bind both parties to the contract.
+Editor 3
+
+56. Reasonable time a question of fact
+Where, by this Act, any reference is made to a reasonable time the question what is a reasonable time is a question of fact.
+Editor 3
+
+57. Rights and duties under Act enforceable by action
+Where any right, duty, or liability is declared by this Act, it may, unless otherwise by this Act provided, be enforced by action.
+Editor 3
+
+58. Existing or future goods
+In the case of a sale by auction—
+(1) Where goods are put up for sale by auction in lots, each lot is prima facie deemed to be the subject of a separate contract of sale:
+(2) A sale by auction is complete when the auctioneer announces its completion by the fall of the hammer, or in other customary manner. Until such announcement is made any bidder may retract his bid:
+(3) Where a sale by auction is not notified to be subject to a right to bid on behalf of the seller, it shall not be lawful for the seller to bid himself or to employ any person to bid at such sale, or for the auctioneer knowingly to take any bid from the seller or any such person: Any sale contravening this rule may be treated as fraudulent by the buyer:
+(4) A sale by auction may be notified to be subject to a reserve or upset price, and a right to bid may also be reserved expressly by or on behalf of the seller.
+Where a right to bid is expressly reserved, but not otherwise, the seller, or any one person on his behalf, may bid at the auction.
+Editor 3
+
+59. Payment into court in Scotland when breach of warranty alleged
+In Scotland where a buyer has elected to accept goods which he might have rejected, and to treat a breach of contract as only giving rise to a claim for damages, he may, in an action by the seller for the price, be required, in the discretion of the court before which the action depends, to consign or pay into court the price of the goods, or part thereof, or to give other reasonable security for the due payment thereof.
+Editor 3
+
+60. Repeals
+The enactments mentioned in the schedule to this Act are hereby repealed as from the commencement of this Act to the extent in that schedule mentioned.
+Provided that such repeal shall not affect anything done or suffered, or any right, title, or interest acquired or accrued before the commencement of this Act, or any legal proceeding or remedy in respect of any such thing, right, title or interest.
+Editor 3
+
+61. Savings
+(1) The rules in bankruptcy relating to contracts of sale shall continue to apply thereto, notwithstanding anything in this Act contained.
+(2) The rules of the common law, including the law merchant, save in so far as they are inconsistent with the express provisions of this Act, and in particular the rules relating to the law of principal and agent and the effect of fraud, misrepresentation, duress or coercion, mistake, or other invalidating cause, shall continue to apply to contracts for the sale of goods.
+(3) Nothing in this Act or in any repeal effected thereby shall affect the enactments relating to bills of sale, or any enactment relating to the sale of goods which is not expressly repealed by this Act.
+(4) The provisions of this Act relating to contracts of sale do not apply to any transaction in the form of a contract of sale which is intended to operate by way of mortgage, pledge, charge, or other security.
+(5) Nothing in this Act shall prejudice or affect the landlord’s right of hypothec or sequestration for rent in Scotland.
+Editor 3
+
+62. Interpretation of terms
+(1) In this Act, unless the context or subject matter otherwise requires,—
+“Action ” includes counterclaim and set off, and in Scotland condescendence and claim and compensation:
+“Bailee ” in Scotland includes custodier:
+“Buyer” means a person who buys or agrees to buy goods:
+“Contract of sale ” includes an agreement to sell as well as a sale:
+“Defendant ” includes in Scotland defender, respondent, and claimant in a multiplepoinding:
+“Delivery ” means voluntary transfer of possession from one person to another:of title to goods ” has the same meaning as it has in the Factors Acts:
+“Factors Acts ” mean the Factors Act, 1889, the Factors (Scotland) Act, 1890, and any enactment amending or substituted for the same:
+“Fault” means wrongful act or default:
+“Future goods ” means goods to be manufactured or acquired by the seller after the making of the contract of sale:
+“Goods “include all chattels personal other than things in action and money, and in Scotland all corporeal moveables except money. The term include emblements, industrial growing crops, and things attached to or forming part of the land which are agreed to be severed before sale or under the contract of sale:
+“Lien” in Scotland includes right of retention:
+“Plaintiff ” includes pursuer, complainer, claimant in a multiplepoinding and defendant or defender counterclaiming:
+“Property ” means the general property in goods, and not merely a special property:
+Membership Required You must be a member to access this content.
+View Membership Levels
+Editor 3
+
+63. Commencement
+This Act shall come into operation on the first day of January one thousand eight hundred and ninety-four.
+Editor 3
+
+64. Short title
+This Act may be cited as the Sale of Goods Act, 1893.
+Editor 3

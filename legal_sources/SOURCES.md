@@ -14,6 +14,11 @@ Every document here was downloaded from a named, checkable source — no scraped
 | Violence Against Persons (Prohibition) Act 2015 (VAPP) | 48 sections | ✅ Ingested 2026-08-16 — clean per-section text from lawglobalhub.com (official NAPTIP copy); criminal_rights, Federal |
 | Recovery of Premises Law | 31 sections | ✅ Ingested 2026-08-16 — uniform Recovery of Premises law text (Kogi-issued edition, substantively identical to the federal Act); tenancy, Federal |
 | Federal Competition and Consumer Protection Act 2018 (FCCPA) | 168 sections | ✅ Ingested 2026-08-16 — clean per-section text from lawglobalhub.com (official gazette is OCR-degraded); consumer_rights, Federal |
+| Wills Act 1837 | 33 sections | ✅ Ingested 2026-08-16 — lawglobalhub.com per-section text; family_law, Federal |
+| Child Rights Act 2003 | 278 sections | ✅ Ingested 2026-08-16 — lawglobalhub.com per-section text (replaced the truncated 99-section compendium copy); family_law, Federal |
+| Sale of Goods Act 1893 | 53 sections | ✅ Ingested 2026-08-16 — lawglobalhub.com per-section text (source missing s.4, s.40–48); contract, Federal |
+
+> Source limitation: lawglobalhub.com has no pages for Wills Act s.2/s.12 and Sale of Goods Act s.4/s.40–48 — those sections are absent rather than guessed.
 
 ### Why the bulk ingestion is incomplete right now
 
