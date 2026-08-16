@@ -2507,18 +2507,32 @@ import {
       live.pipelineLoading.destroy();
       live.pipelineLoading = null;
     }
+    // Freeze the thinking time NOW — this is the single source of truth for
+    // "Thought for X.Xs", and it must never include streaming time.
+    agentMsg.thinkingElapsedMs = Date.now() - agentMsg.startedAt;
+    agentMsg.traceOpen = false;
+    agentMsg.status = "streaming";
+
+    // Replace the live (ticking) thinking component with a FROZEN static one
+    // so the "Thought for X.Xs" header stays visible through streaming and
+    // matches the reload render exactly. It is deliberately NOT tracked in
+    // live.thinkingComponent, so finalizeAnswer won't destroy it.
     if (live.thinkingComponent) {
+      const container = live.thinkingComponent.container;
       live.thinkingComponent.destroy();
       live.thinkingComponent = null;
+      if (container && window.BeUIThinkingState) {
+        new window.BeUIThinkingState(container, {
+          variant: "Steps",
+          static: true,
+          elapsedMs: agentMsg.thinkingElapsedMs,
+        });
+      }
     }
     if (live.beuiStreaming) {
       live.beuiStreaming.destroy();
       live.beuiStreaming = null;
     }
-
-    agentMsg.thinkingElapsedMs = Date.now() - agentMsg.startedAt;
-    agentMsg.traceOpen = false;
-    agentMsg.status = "streaming";
 
     // BUG FIX: Ensure ALL steps are marked "done" when collapsing the trace.
     // This prevents the frozen-half-complete state if a step's setStepDone
@@ -3140,6 +3154,10 @@ import {
         if (token !== pipelineToken) return;
         const stickAfterLaw = isNearBottom();
         refs.lawSection.el.classList.remove("is-live");
+        // Replace the raw streamed text with the SAME markdown rendering the
+        // reload path uses, so the completed live message matches the static
+        // render (bullets, bold) instead of keeping the unformatted stream.
+        refs.lawSection.textEl.innerHTML = renderMarkdown(r.lawMd);
         appendContextCards(refs.lawSection.el, r.sources);
         scrollChatToBottom(stickAfterLaw);
 
@@ -3158,6 +3176,8 @@ import {
               if (token !== pipelineToken) return;
               const stickAfterActions = isNearBottom();
               refs.actionsSection.el.classList.remove("is-live");
+              // Match the reload render exactly (numbered steps → bullets).
+              refs.actionsSection.textEl.innerHTML = renderMarkdown(r.actionsMd);
               scrollChatToBottom(stickAfterActions);
 
               setTimeout(() => {
@@ -3218,10 +3238,12 @@ import {
       live.thinkingComponent.destroy();
       live.thinkingComponent = null;
     }
-    if (live.beuiStreaming) {
-      live.beuiStreaming.destroy();
-      live.beuiStreaming = null;
-    }
+    // A finished stream's content IS the final answer — do NOT destroy it.
+    // (destroy() removes the rendered text; destroying here is what made the
+    // "What you can do" steps vanish the instant the message completed.)
+    // Just drop the reference. In-progress cleanup is handled by
+    // stopGeneration() / finishWithError() for the abort paths.
+    live.beuiStreaming = null;
 
     // NOTE: thinkingElapsedMs is frozen by collapseTrace() at the "thinking
     // complete" moment (right before the response starts streaming). Do NOT
