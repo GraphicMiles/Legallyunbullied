@@ -65,6 +65,22 @@ function isValidConvoId(id) {
   );
 }
 
+// Normalize a stored timestamp to epoch milliseconds. Handles numbers
+// (epoch ms), ISO strings, Firestore Timestamp objects, and the raw REST
+// wire format ({ _seconds, _nanoseconds }).
+function toMillis(v) {
+  if (v == null) return 0;
+  if (typeof v === "number") return v;
+  if (typeof v === "string") {
+    const t = Date.parse(v);
+    return Number.isNaN(t) ? 0 : t;
+  }
+  if (v._seconds != null) return v._seconds * 1000;
+  if (typeof v.seconds === "number") return v.seconds * 1000;
+  if (typeof v.toMillis === "function") return v.toMillis();
+  return 0;
+}
+
 // ── GET /api/conversations — list summaries or full conversations ──────────
 // ?full=true returns conversations with all messages inline (avoids N+1 queries)
 // Without ?full, returns summaries only (lightweight for sidebar)
@@ -410,10 +426,7 @@ router.post("/cleanup", async (req, res) => {
         .collection("messages").count().get();
       if (msgCount.data().count === 0) {
         const data = doc.data();
-        const updatedAt = data.updatedAt?._seconds
-          ? data.updatedAt._seconds * 1000
-          : (data.updatedAt || 0);
-        empties.push({ ref: doc.ref, updatedAt });
+        empties.push({ ref: doc.ref, updatedAt: toMillis(data.updatedAt) });
       }
     }
 
