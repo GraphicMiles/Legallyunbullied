@@ -10,7 +10,10 @@ Every document here was downloaded from a named, checkable source — no scraped
 | Constitution of the FRN 1999 (as altered through 5th Alteration) | 315 | Ingested |
 | Bulk PLAC federal compendium — first tranche | ~7,177 (273 Acts) | Ingested |
 | Bulk PLAC federal compendium — remaining tranche | ~5,766 (≈269 Acts), fully fetched+cleaned+staged | **Blocked on Firestore daily quota — see below, not yet ingested** |
-| Cybercrimes (Prohibition, Prevention, etc.) Act 2015 | 39 sections, fully cleaned | **Blocked on Firestore daily quota — not yet ingested** |
+| Cybercrimes (Prohibition, Prevention, etc.) Act 2015 | 101 sections | ✅ Ingested (as "Cybercrimes (Prohibition, Prevention, etc.) Act 2015") |
+| Violence Against Persons (Prohibition) Act 2015 (VAPP) | 48 sections | ✅ Ingested 2026-08-16 — clean per-section text from lawglobalhub.com (official NAPTIP copy); criminal_rights, Federal |
+| Recovery of Premises Law | 31 sections | ✅ Ingested 2026-08-16 — uniform Recovery of Premises law text (Kogi-issued edition, substantively identical to the federal Act); tenancy, Federal |
+| Federal Competition and Consumer Protection Act 2018 (FCCPA) | 168 sections | ✅ Ingested 2026-08-16 — clean per-section text from lawglobalhub.com (official gazette is OCR-degraded); consumer_rights, Federal |
 
 ### Why the bulk ingestion is incomplete right now
 
