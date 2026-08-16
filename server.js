@@ -16,6 +16,7 @@ const path = require("path");
 const cors = require("cors");
 const rateLimit = require("express-rate-limit");
 const chatRoute = require("./server/chatRoute");
+const conversationRoute = require("./server/conversationRoute");
 const { requireAuth, optionalAuth } = require("./server/authMiddleware");
 
 const app = express();
@@ -141,6 +142,10 @@ app.post("/api/cache-invalidate", requireAuth, (req, res) => {
   console.log(`[cache] Invalidated by user: ${req.uid}`);
   res.json({ success: true, message: "Cache invalidated" });
 });
+
+// ── Conversation persistence API ──────────────────────────────────────────
+// Auth is applied inside the route module itself.
+app.use("/api/conversations", conversationRoute);
 
 // ── Chat API (auth required + stricter rate limit) ────────────────────────
 // Each /api/chat call invokes LLM providers (Groq/Gemini/etc.) which cost
