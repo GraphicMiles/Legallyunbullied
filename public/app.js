@@ -1306,14 +1306,8 @@ import {
     step._start = Date.now();
     updateStepEl(index, step);
     
-    // Update BeUIThinking component if available
-    if (live.thinkingComponent) {
-      live.thinkingComponent.addStep({
-        title: step.title,
-        detail: step.detail,
-        status: "is-active"
-      });
-    }
+    // BeUIThinkingState is self-contained - it animates on its own.
+    // No need to call addStep() - the component handles its own sequence.
   }
 
   function setStepDone(agentMsg, index) {
@@ -1323,15 +1317,7 @@ import {
     step.elapsedMs = Date.now() - (step._start || Date.now());
     updateStepEl(index, step);
     
-    // Update BeUIThinking component if available
-    if (live.thinkingComponent && live.thinkingComponent.data) {
-      // Mark the last added step as complete
-      const steps = live.thinkingComponent.data.steps;
-      if (steps && steps.length > 0) {
-        steps[steps.length - 1].status = "is-complete";
-        live.thinkingComponent.renderSteps();
-      }
-    }
+    // BeUIThinkingState is self-contained - no need to call renderSteps().
   }
 
   async function runPipeline(convo, agentMsg, token) {
@@ -1598,7 +1584,7 @@ import {
       live.pipelineLoading = null;
     }
     if (live.thinkingComponent) {
-      live.thinkingComponent.complete();
+      live.thinkingComponent.destroy();
       live.thinkingComponent = null;
     }
     if (live.beuiStreaming) {
@@ -1880,7 +1866,7 @@ import {
 
     // Handle BeUIThinking component
     if (live.thinkingComponent) {
-      live.thinkingComponent.setStatus("Error");
+      live.thinkingComponent.destroy();
       live.thinkingComponent = null;
     }
     // Handle BeUIStreamingText
@@ -2086,7 +2072,7 @@ import {
     
     // Stop thinking component if active
     if (live.thinkingComponent) {
-      live.thinkingComponent.setStatus("Stopped");
+      live.thinkingComponent.destroy();
       live.thinkingComponent = null;
     }
     // Stop BeUIStreamingText if active
