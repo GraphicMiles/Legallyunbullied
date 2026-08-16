@@ -281,19 +281,20 @@
   }
 
   /* history row: title (flex) + kebab (fixed, far right).
-     The row — not a card — is the highlight unit. */
+     The row — not a card — is the highlight unit. No rounded corners: the
+     highlight is a flat, full-width surface. */
   .history__row {
     display: flex;
     align-items: center;
-    border-radius: var(--radius-sm);
   }
   .history__row:hover {
     background: var(--color-surface);
   }
-  /* Active chat: subtle full-width rectangular highlight. */
+  /* Active chat: a flat, full-width light surface that reads as raised above
+     the dark sidebar background (neutral, not the accent tint). */
   .history__row.is-active,
   .history__row.is-active:hover {
-    background: var(--color-accent-soft);
+    background: var(--color-surface-alt);
   }
 
   .history__item {
