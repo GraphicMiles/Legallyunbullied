@@ -1555,27 +1555,49 @@ import {
     return card;
   }
 
+  // Confidence label must reflect EVIDENCE quality, not just writing quality.
+  // evidence comes from the server's relevance/sufficiency gate.
+  function confidenceFromEvidence(r) {
+    const ev = r && r.evidence;
+    if (!ev) {
+      // Legacy responses (pre-gate) — keep the old mapping.
+      return { label: r.escalate ? "High confidence" : "Good option", signal: r.escalate ? 3 : 2 };
+    }
+    if (ev.sufficient === false) {
+      return { label: "Limited evidence", signal: 1 };
+    }
+    if ((ev.sourceCount || 0) >= 2) {
+      return { label: "High confidence", signal: 3 };
+    }
+    return { label: "Based on limited sources", signal: 2 };
+  }
+
   function buildVerdictEl(r) {
     // Use BeUIRecommendationCard
     if (window.BeUIRecommendationCard) {
       const container = document.createElement("div");
-      
+
+      const conf = confidenceFromEvidence(r);
+      // Insufficient evidence forces the "consult a lawyer" recommendation,
+      // regardless of what the drafter said.
+      const escalate = r.escalate || (r.evidence && r.evidence.sufficient === false);
+
       const recommendation = new window.BeUIRecommendationCard(container, {
         options: [
           {
-            body: r.escalate 
+            body: escalate
               ? "This situation likely requires professional legal assistance. A lawyer can help you navigate the legal process and protect your rights."
               : "You can likely handle this yourself by following the steps outlined above. No lawyer needed for this situation.",
-            short: r.escalate ? "Consult a lawyer" : "Handle yourself",
-            signal: r.escalate ? 3 : 2,
-            tone: r.escalate ? "var(--color-accent)" : "var(--color-success)",
-            label: r.escalate ? "High confidence" : "Good option",
-            cta: r.escalate ? "Find lawyer" : "Got it",
-            ctaStyle: r.escalate ? "var(--color-accent)" : "var(--color-success)"
+            short: escalate ? "Consult a lawyer" : "Handle yourself",
+            signal: conf.signal,
+            tone: escalate ? "var(--color-accent)" : "var(--color-success)",
+            label: conf.label,
+            cta: escalate ? "Find lawyer" : "Got it",
+            ctaStyle: escalate ? "var(--color-accent)" : "var(--color-success)"
           }
         ]
       });
-      
+
       return container;
     }
     

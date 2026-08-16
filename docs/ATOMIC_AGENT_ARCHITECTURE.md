@@ -35,6 +35,14 @@ User Question
 │       │         Firestore legal_provisions collection            │
 │       │         ~8,200 sections across 545 Acts                 │
 │       │                                                        │
+│  2b. RELEVANCE GATE ─→ assessRelevanceWithFallback()            │
+│       │         "Do these provisions actually govern the        │
+│       │         situation?" (not just keyword overlap).         │
+│       │         Insufficient → findProvisionsBroad() re-search  │
+│       │         (adds the "general" bucket) → re-gate.          │
+│       │         Still insufficient → honest low-confidence      │
+│       │         "insufficient evidence" response + escalate.    │
+│       │                                                        │
 │  3. PLAN ─────→ planResponse() (complex route only)             │
 │       │         Decomposes question, maps provisions            │
 │       │                                                        │
@@ -51,11 +59,27 @@ User Question
 │       │         High-risk + still failing? → HITL              │
 │       │         Cache response → require user acknowledgment   │
 │       │                                                        │
-│  7. RESPOND ──→ return result + critique scores + safety flag  │
+│  7. RESPOND ──→ result + evidence + critique + safety flag      │
+│       │         evidence {sufficient, sourceCount, reason}      │
+│       │         drives the client's confidence label            │
 │                                                                  │
 │  CACHE: Identical questions cached 10 min (questionCache Map)   │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+### Relevance/Sufficiency Gate (retrieval-evidence check)
+
+The critique step only verifies *grounding* ("did the draft cite from the given
+excerpts?") and writing quality — a grounded-but-irrelevant answer used to pass.
+A dedicated relevance gate now runs **between search and draft**: it asks a
+classify-tier model whether each retrieved provision *substantively governs* the
+situation (not merely overlaps a keyword), drops irrelevant ones, and requires
+at least 2 directly-on-point provisions for a confident answer. Insufficient
+evidence triggers a broadened re-search (including the large `general` bucket
+where e.g. the Criminal Code lives) and, if still insufficient, returns an
+honest low-confidence "insufficient evidence" response with `escalate: true`.
+The resulting `evidence` object is returned to the client and persisted with the
+message, and it — not hardcoded text — drives the "High confidence" label.
 
 ## Key Design Decisions
 

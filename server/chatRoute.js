@@ -20,7 +20,7 @@ const { getClient: getGroqClient, CLASSIFY_MODEL, DRAFT_MODEL, DRAFT_MODEL_FALLB
 const { getClient: getGeminiClient, GEMINI_CLASSIFY_MODEL, GEMINI_DRAFT_MODEL, GEMINI_CHAT_MODEL } = require("./gemini");
 const { getClient: getOpenRouterClient, OPENROUTER_CLASSIFY_MODEL, OPENROUTER_DRAFT_MODEL, OPENROUTER_CHAT_MODEL } = require("./openrouter");
 const { getClient: getCerebrasClient, CEREBRAS_CLASSIFY_MODEL, CEREBRAS_DRAFT_MODEL, CEREBRAS_CHAT_MODEL } = require("./cerebras");
-const { findProvisions } = require("./legalCorpus");
+const { findProvisions, findProvisionsBroad } = require("./legalCorpus");
 const { PRACTICE_AREAS: PRACTICE_AREA_DEFS, PRACTICE_AREA_KEYS } = require("./practiceAreas");
 
 const PRACTICE_AREAS = PRACTICE_AREA_KEYS;
@@ -266,6 +266,74 @@ Respond with a structured JSON object:
 }
 
 Be thorough but concise. This plan will guide the final response to ensure it's comprehensive, accurate, and actionable.`;
+
+// ── Relevance/sufficiency gate (retrieval-evidence check) ─────────────────
+// Runs BETWEEN search and draft. The critique step only checks grounding
+// ("did the draft cite from the given excerpts?") and writing quality — a
+// grounded-but-irrelevant answer scores fine. This gate asks the one question
+// critique can't: "do these retrieved provisions actually govern the
+// situation described?" Weak/wrong sources are dropped here, insufficient
+// evidence triggers a broaden-and-re-search, and only genuinely relevant
+// provisions reach the drafter.
+const RELEVANCE_SYSTEM_PROMPT = `You are a legal retrieval relevance judge for a Nigerian legal-information assistant.
+
+You receive:
+- A user's legal question (and its classified practice area)
+- A numbered list of candidate statutory provisions retrieved from the corpus
+
+For EACH candidate provision, judge whether it SUBSTANTIVELY governs the situation described in the question — not merely contains an overlapping keyword. A provision that only defines a term used elsewhere, or that comes from an Act governing a different subject (e.g. a robbery/firearms Act for a plain assault question), is IRRELEVANT even if a keyword appears in its text.
+
+Rules:
+- relevant: the provision directly establishes the law for the act/right/remedy the user is asking about
+- irrelevant: keyword-only overlap, different subject matter, or a definition torn from its governing context
+- If the model's own explanation of a provision would naturally say "this is not quite the right provision, but..." — it is irrelevant.
+
+sufficient: true ONLY if at least 2 provisions directly govern the situation. A single tangential provision is NOT sufficient.
+
+Respond with ONLY a JSON object:
+{
+  "relevant": [<1-based numbers of relevant provisions>],
+  "irrelevant": [<1-based numbers of irrelevant provisions>],
+  "relevance_score": 0.0-1.0,
+  "sufficient": true/false,
+  "reason": "one sentence explaining the sufficiency decision"
+}`;
+
+async function assessRelevanceWithFallback(question, classification, provisions) {
+  const providers = [];
+  const groqClient = getGroqClient();
+  const cerebrasClient = getCerebrasClient();
+  const geminiClient = getGeminiClient();
+  if (groqClient) providers.push(["groq", groqClient, CLASSIFY_MODEL]);
+  if (cerebrasClient) providers.push(["cerebras", cerebrasClient, CEREBRAS_CLASSIFY_MODEL]);
+  if (geminiClient) providers.push(["gemini", geminiClient, GEMINI_CLASSIFY_MODEL]);
+
+  let lastErr = null;
+  for (const [name, client, model] of providers) {
+    try {
+      const parsed = await assessRelevanceForClient(client, model, question, classification, provisions);
+      return { ...parsed, provider: name };
+    } catch (err) {
+      lastErr = err;
+      console.warn(`[/api/chat] Relevance gate via ${model} failed: ${err.message}`);
+    }
+  }
+  throw new Error(`All relevance-gate providers failed: ${lastErr ? lastErr.message : "none configured"}`);
+}
+
+async function assessRelevanceForClient(client, model, question, classification, provisions) {
+  const candidateBlock = provisions.map((p, i) =>
+    `[${i + 1}] ${p.act}${p.section ? ", s." + p.section : ""}: ${(p.text || "").slice(0, 220)}`
+  ).join("\n");
+  const userMsg = `Practice area: ${classification.practice_area || "unknown"}\nQuestion: ${question}\n\nCandidate provisions:\n${candidateBlock}\n\nJudge relevance and sufficiency.`;
+
+  const completion = await callCompletion(client, model, [
+    { role: "system", content: RELEVANCE_SYSTEM_PROMPT },
+    { role: "user", content: userMsg },
+  ], { temperature: 0, max_tokens: 400, response_format: { type: "json_object" } });
+
+  return completion.parsed;
+}
 
 // ── Critique system prompt (V1 Phase 1+2) ──────────────────────────────
 // Runs after draft to score quality + legal_safety. If scores are too low,
@@ -962,22 +1030,152 @@ router.post("/api/chat", async (req, res) => {
     });
   }
 
+  // Route (declared here so the insufficient-evidence early returns can use it)
+  const route = classification.route || (classification.complexity === "Low" ? "simple" : "complex");
+  const isSimple = route === "simple";
+
+  // ── Relevance/sufficiency gate (between search and draft) ──────────────
+  // Rank the retrieved provisions by whether they actually govern the
+  // situation, not just overlap keywords. Insufficient evidence triggers a
+  // broaden-and-re-search; if it is still insufficient, return an honest
+  // low-confidence "insufficient evidence" response instead of dressing up a
+  // mismatched citation as a confident answer.
+  const MIN_SOURCES = 2; // at least 2 directly-on-point provisions required for a confident answer
+  const evidence = {
+    sufficient: false,
+    relevanceScore: null,
+    sourceCount: 0,
+    retrievedFrom: [classification.practice_area],
+    reason: "",
+    minSources: MIN_SOURCES,
+  };
+
+  let workingProvisions = provisions;
+
+  try {
+    const gate = await assessRelevanceWithFallback(question, classification, provisions);
+    const relevantIdx = new Set(
+      Array.isArray(gate.relevant) ? gate.relevant.map((n) => Number(n) - 1).filter((i) => i >= 0 && i < provisions.length) : []
+    );
+    const relevantProvisions = relevantIdx.size
+      ? provisions.filter((_, i) => relevantIdx.has(i))
+      : provisions; // if the gate returned nothing, don't silently drop everything
+
+    evidence.relevanceScore = typeof gate.relevance_score === "number" ? gate.relevance_score : null;
+    evidence.reason = gate.reason || "";
+    evidence.sourceCount = relevantProvisions.length;
+
+    const sufficient = gate.sufficient === true && relevantProvisions.length >= MIN_SOURCES;
+    if (sufficient) {
+      workingProvisions = relevantProvisions;
+      evidence.sufficient = true;
+      console.log(`[/api/chat] Relevance gate: ${relevantProvisions.length}/${provisions.length} provisions relevant — sufficient`);
+    } else {
+      console.log(`[/api/chat] Relevance gate: insufficient (${relevantProvisions.length} relevant of ${provisions.length}). Broadening search...`);
+      // Broaden into adjacent categories (e.g. the "general" bucket for the
+      // Criminal Code) and re-run the gate.
+      const broad = await findProvisionsBroad({
+        practiceArea: classification.practice_area,
+        jurisdiction: classification.jurisdiction,
+        keywords: classification.keywords || [],
+        minSources: MIN_SOURCES,
+      });
+      evidence.retrievedFrom = broad.categories || [classification.practice_area];
+
+      if (broad.provisions.length) {
+        const gate2 = await assessRelevanceWithFallback(question, classification, broad.provisions);
+        const relevantIdx2 = new Set(
+          Array.isArray(gate2.relevant) ? gate2.relevant.map((n) => Number(n) - 1).filter((i) => i >= 0 && i < broad.provisions.length) : []
+        );
+        const relevantProvisions2 = relevantIdx2.size
+          ? broad.provisions.filter((_, i) => relevantIdx2.has(i))
+          : broad.provisions;
+
+        evidence.relevanceScore = typeof gate2.relevance_score === "number" ? gate2.relevance_score : evidence.relevanceScore;
+        evidence.reason = gate2.reason || evidence.reason;
+        evidence.sourceCount = relevantProvisions2.length;
+
+        if (gate2.sufficient === true && relevantProvisions2.length >= MIN_SOURCES) {
+          workingProvisions = relevantProvisions2;
+          evidence.sufficient = true;
+          console.log(`[/api/chat] Broadened search: ${relevantProvisions2.length} relevant provisions — sufficient`);
+        } else {
+          console.log(`[/api/chat] Broadened search still insufficient (${relevantProvisions2.length} relevant). Returning insufficient-evidence response.`);
+          return res.json({
+            classification,
+            route,
+            plan: null,
+            result: {
+              lawMd:
+                `I found limited directly relevant Nigerian statutes for this specific situation in the available corpus. ` +
+                `The closest provisions I could retrieve don't clearly and directly govern what you described, so I'd rather be honest than present a weakly-matched citation as solid law. ` +
+                `This is exactly the kind of situation where a qualified lawyer can give you advice tailored to your facts.`,
+              actionsMd:
+                `- Step 1: Note down the key facts (dates, names, what happened) while they're fresh.\n` +
+                `- Step 2: Report the incident to the police if it involves threats, assault, or a crime.\n` +
+                `- Step 3: Consult a lawyer for advice specific to your situation — the right statute depends on details (state, parties, circumstances) the available sources don't fully pin down.`,
+              sources: [],
+              escalate: true,
+              escalateReason: "No directly applicable provision was found in the ingested corpus for this situation.",
+              followUps: [],
+              evidence,
+            },
+            critique: null,
+            evidence,
+            providersBusy: false,
+            retryAfter: null,
+          });
+        }
+      } else {
+        // Broadened search found nothing either — same honest outcome.
+        return res.json({
+          classification,
+          route,
+          plan: null,
+          result: {
+            lawMd:
+              `I couldn't find directly relevant Nigerian statutes for this specific situation in the available corpus. ` +
+              `Rather than guess, I recommend speaking to a qualified lawyer who can advise based on your exact circumstances.`,
+            actionsMd:
+              `- Step 1: Document the key facts while they're fresh.\n` +
+              `- Step 2: If a crime or urgent harm is involved, report it to the police.\n` +
+              `- Step 3: Consult a lawyer for tailored advice.`,
+            sources: [],
+            escalate: true,
+            escalateReason: "No directly applicable provision was found in the ingested corpus.",
+            followUps: [],
+            evidence,
+          },
+          critique: null,
+          evidence,
+          providersBusy: false,
+          retryAfter: null,
+        });
+      }
+    }
+  } catch (err) {
+    // Relevance gate unavailable — degrade gracefully: pass everything through
+    // so the user still gets an answer rather than an error.
+    console.warn("[/api/chat] Relevance gate failed, proceeding with all provisions:", err.message);
+    workingProvisions = provisions;
+    evidence.sourceCount = provisions.length;
+    evidence.sufficient = provisions.length >= MIN_SOURCES;
+    evidence.reason = "Relevance check unavailable — all retrieved provisions passed through.";
+    evidence.relevanceScore = null;
+  }
+
   const EXCERPT_CHAR_CAP = 700; // keep total context small enough to fit even the tighter fallback model's per-minute limit
-  const contextBlock = provisions
+  const contextBlock = workingProvisions
     .map((p) => {
       const text = p.text.length > EXCERPT_CHAR_CAP ? p.text.slice(0, EXCERPT_CHAR_CAP) + "\u2026" : p.text;
       return `[${p.act}${p.section ? ", s." + p.section : ""}]\\n${text}`;
     })
     .join("\n\n---\n\n");
 
-  // Step 4: Route — simple skips planning, complex plans + iterates
-  const route = classification.route || (classification.complexity === "Low" ? "simple" : "complex");
-  const isSimple = route === "simple";
-
   let planResult = { plan: null, provider: "skipped" };
   if (!isSimple) {
     try {
-      planResult = await planResponse(question, classification, provisions);
+      planResult = await planResponse(question, classification, workingProvisions);
       console.log(`[/api/chat] Planning completed via ${planResult.provider} (route=${route})`);
     } catch (err) {
       console.warn("[/api/chat] planning failed, continuing without plan:", err.message);
@@ -1027,7 +1225,7 @@ router.post("/api/chat", async (req, res) => {
       for (let attempt = 0; attempt <= MAX_CRITIQUE_RETRIES; attempt++) {
         try {
           critiqueResult = await critiqueWithFallback(
-            question, provisions, draftResult.result, classification
+            question, workingProvisions, draftResult.result, classification
           );
 
           // Override the critique's own "passed" with our category-specific thresholds
@@ -1099,6 +1297,10 @@ router.post("/api/chat", async (req, res) => {
     }
   }
 
+  // Attach evidence inside result too so it persists with the message and the
+  // client's confidence label can read it directly from agentMsg.result.
+  if (draftResult.result) draftResult.result.evidence = evidence;
+
   res.json({
     classification,
     route,
@@ -1106,6 +1308,9 @@ router.post("/api/chat", async (req, res) => {
     result: draftResult.result,
     draftModel: draftResult.model,
     draftProvider: draftResult.provider,
+    // Evidence quality from the relevance/sufficiency gate (V1 retrieval fix):
+    // the client uses this to label confidence instead of hardcoding it.
+    evidence,
     // Critique scores (V1 Phase 2 — split scoring with category-specific thresholds)
     critique: critiqueResult ? {
       quality: critiqueResult.quality,

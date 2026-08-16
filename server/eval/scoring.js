@@ -213,6 +213,55 @@ function scoreScenario(scenario, response) {
     dimensions.error_handled = response.error ? 1 : 0;
   }
 
+  // ── Retrieval-accuracy dimensions (added with the evidence gate) ──────
+  // Dimension 16: hedging/self-correction language is itself a signal of a
+  // bad citation. If the model's own text says "this isn't quite the right
+  // provision, but...", the citation was wrong — fail automatically.
+  if (!response.corpusEmpty && response.result) {
+    const hedgeText = ((response.result.lawMd || "") + " " + (response.result.actionsMd || "")).toLowerCase();
+    const HEDGE_PATTERNS = [
+      "primarily deals with",
+      "for a more direct application",
+      "interpreted within that context",
+      "not quite the right",
+      "isn't quite the right",
+      "not the right provision",
+      "not directly",
+    ];
+    const hedged = HEDGE_PATTERNS.filter((p) => hedgeText.includes(p));
+    dimensions.hedging_language = hedged.length === 0 ? 1 : 0;
+    if (hedged.length) dimensions.hedging_matches = hedged;
+  }
+
+  // Dimension 17: evidence sufficiency — a "High confidence" answer must be
+  // backed by enough retrieved, cross-checked sources; insufficient evidence
+  // must be flagged and escalated, not dressed up as confident.
+  const evidence = response.evidence || response.result?.evidence;
+  if (evidence) {
+    const minSources = evidence.minSources || 2;
+    const sufficient = evidence.sufficient === true;
+    const sourceCount = evidence.sourceCount || 0;
+    const escalated = response.result?.escalate === true;
+
+    if (sufficient && sourceCount >= minSources) {
+      dimensions.evidence_sufficiency = 1;
+    } else if (!sufficient && escalated) {
+      // Insufficient evidence, correctly flagged and routed to a lawyer.
+      dimensions.evidence_sufficiency = 1;
+    } else if (!sufficient && !escalated) {
+      dimensions.evidence_sufficiency = 0; // insufficient but presented confidently
+    } else {
+      dimensions.evidence_sufficiency = 0; // confident with too few sources
+    }
+    dimensions.evidence_source_count = sourceCount;
+  }
+
+  // Dimension 18: scenario-level minimum source count (retrieval scenarios)
+  if (expected.min_sources) {
+    const sourceCount = evidence ? evidence.sourceCount : 0;
+    dimensions.min_sources = sourceCount >= expected.min_sources ? 1 : 0;
+  }
+
   // Aggregate score
   const scoredDimensions = Object.values(dimensions);
   const avgScore = scoredDimensions.length > 0

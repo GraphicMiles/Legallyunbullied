@@ -454,6 +454,80 @@
         "critique_quality_min": 0.70
       },
       "notes": "Both quality and safety scores should pass. Safety checks citation validity and jurisdiction match."
+    },
+    {
+      "id": "retrieval-assault-slapped",
+      "category": "retrieval_accuracy",
+      "question": "Someone slapped me. Is that a crime? What can I do?",
+      "expected": {
+        "is_legal_question": true,
+        "practice_area": "criminal_offences",
+        "must_cite": ["Criminal Code"],
+        "must_not_cite": ["Robbery and Firearms"],
+        "escalate": false,
+        "actionable_min": 3,
+        "min_sources": 2
+      },
+      "notes": "RETRIEVAL: common assault is governed by the Criminal Code (or Penal Code in the north), NOT the Robbery and Firearms (Special Provisions) Act. The old bug cited Robbery and Firearms s.11 and even hedged about it."
+    },
+    {
+      "id": "retrieval-assault-punched",
+      "category": "retrieval_accuracy",
+      "question": "I was punched in the face by a stranger on the street in Abuja. What should I do?",
+      "expected": {
+        "is_legal_question": true,
+        "practice_area": "criminal_offences",
+        "must_cite": ["Criminal Code", "Penal Code"],
+        "must_not_cite": ["Robbery and Firearms"],
+        "escalate": false,
+        "actionable_min": 3,
+        "min_sources": 2
+      },
+      "notes": "RETRIEVAL: assault/battery belongs to general criminal law, not special-provisions acts."
+    },
+    {
+      "id": "retrieval-assault-threatened",
+      "category": "retrieval_accuracy",
+      "question": "My neighbor keeps threatening to beat me up. Is that against the law?",
+      "expected": {
+        "is_legal_question": true,
+        "practice_area": "criminal_offences",
+        "must_cite": ["Criminal Code"],
+        "must_not_cite": ["Robbery and Firearms"],
+        "escalate": false,
+        "actionable_min": 3,
+        "min_sources": 2
+      },
+      "notes": "RETRIEVAL: threats/assault are general criminal law."
+    },
+    {
+      "id": "retrieval-theft-phone-stolen",
+      "category": "retrieval_accuracy",
+      "question": "Someone stole my phone at a market in Lagos. What should I do?",
+      "expected": {
+        "is_legal_question": true,
+        "practice_area": "criminal_offences",
+        "must_cite": ["Criminal Code"],
+        "must_not_cite": ["Robbery and Firearms", "Armed Robbery"],
+        "escalate": false,
+        "actionable_min": 3,
+        "min_sources": 2
+      },
+      "notes": "RETRIEVAL: theft is in the Criminal Code, not the robbery/firearms special-provisions act."
+    },
+    {
+      "id": "retrieval-traffic-reckless-driving",
+      "category": "retrieval_accuracy",
+      "question": "I was hit by a reckless driver in Lagos. What are my rights?",
+      "expected": {
+        "is_legal_question": true,
+        "practice_area": "transport_traffic",
+        "must_cite": ["Road Traffic"],
+        "escalate": false,
+        "actionable_min": 3,
+        "min_sources": 2
+      },
+      "notes": "RETRIEVAL: traffic accident liability belongs to road-traffic law, not general criminal law."
     }
   ]
 }
