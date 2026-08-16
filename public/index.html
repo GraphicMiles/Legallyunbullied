@@ -1849,6 +1849,9 @@
           <button type="button" class="chat-status__home" id="chat-status-home">
             <i class="fa-solid fa-house"></i> Back to home
           </button>
+          <button type="button" class="chat-status__home" id="chat-status-signin" style="display: none;">
+            <i class="fa-solid fa-right-to-bracket"></i> Sign in
+          </button>
         </div>
 
         <div class="chat__messages" id="chat-messages"></div>
@@ -1936,13 +1939,24 @@
           this.addLog('info', args);
         };
         
-        // Capture unhandled errors
+        // Capture unhandled errors — prefer the Error object's full stack when
+        // available (same-origin scripts). Cross-origin scripts without CORS
+        // are sanitized by the browser to "Script error." with no location;
+        // capturing e.error.stack at least preserves full detail whenever the
+        // browser exposes it.
         window.addEventListener('error', (e) => {
-          this.addLog('error', [`Unhandled error: ${e.message} at ${e.filename}:${e.lineno}`]);
+          const err = e.error;
+          let detail;
+          if (err && err.stack) detail = err.stack;
+          else if (err && err.message) detail = `${err.message} at ${e.filename}:${e.lineno}:${e.colno}`;
+          else detail = `${e.message} at ${e.filename}:${e.lineno}`;
+          this.addLog('error', [`Unhandled error: ${detail}`]);
         });
         
         window.addEventListener('unhandledrejection', (e) => {
-          this.addLog('error', [`Unhandled promise rejection: ${e.reason}`]);
+          const r = e.reason;
+          const detail = r && r.stack ? r.stack : (r && r.message ? `${r.message}` : String(r));
+          this.addLog('error', [`Unhandled promise rejection: ${detail}`]);
         });
         
         // Capture fetch requests
