@@ -197,14 +197,15 @@ import {
         }
       }
 
-      // Replace local state with server data
-      if (fullConversations.length > 0) {
-        state.conversations = fullConversations;
-        saveState(); // persist to localStorage as cache
-        renderHistory();
-        renderChat();
-        console.log(`[server-sync] Loaded ${fullConversations.length} conversations from server`);
-      }
+      // Always replace local state with server data (even if empty).
+      // This makes Firestore the single source of truth when authenticated —
+      // deleted conversations stay deleted across reloads.
+      state.conversations = fullConversations;
+      state.activeId = null; // let URL routing decide what's active
+      saveState(); // persist to localStorage as write-behind cache
+      renderHistory();
+      renderChat();
+      console.log(`[server-sync] Loaded ${fullConversations.length} conversations from server`);
     } catch (err) {
       console.warn("[server-sync] loadFromServer failed:", err.message);
     }
@@ -399,7 +400,19 @@ import {
   /* Helpers                                                             */
   /* ------------------------------------------------------------------ */
   function uid() {
-    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    // UUID v4 — proper high-entropy IDs that can't be enumerated or guessed.
+    // Uses crypto.randomUUID() where available (all modern browsers + Node 19+),
+    // falls back to crypto.getRandomValues for older environments.
+    if (typeof crypto !== "undefined" && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    // Fallback: RFC 4122 v4 UUID from crypto.getRandomValues
+    const bytes = new Uint8Array(16);
+    (crypto || window.crypto || window.msCrypto).getRandomValues(bytes);
+    bytes[6] = (bytes[6] & 0x0f) | 0x40; // version 4
+    bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant 10
+    const hex = Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
+    return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
   }
 
   function escapeHtml(str) {
@@ -2908,22 +2921,13 @@ import {
         state.activeId = null;
         state.questionsUsedToday = 0;
         
+        // Clear URL hash — don't carry stale conversation IDs across auth changes
+        setUrlConvo(null);
+        
         // Load conversations for the new user
         loadState();
         
-        // BUG FIX: Don't auto-select first conversation.
-        // Check URL for explicit conversation ID, otherwise empty state.
-        const urlConvoId = getConvoIdFromUrl();
-        if (urlConvoId) {
-          const convo = state.conversations.find(c => c.id === urlConvoId);
-          if (convo) {
-            state.activeId = convo.id;
-          } else {
-            setUrlConvo(null); // clean up stale URL
-          }
-        }
-        
-        // Re-render everything
+        // Re-render everything (empty state — no conversation selected)
         renderHistory();
         renderChat();
         updateComposerState();
@@ -2933,10 +2937,10 @@ import {
         if (user) {
           // First migrate any existing localStorage conversations to server
           migrateToServer().then(() => {
-            // Then load fresh data from server
+            // Then load fresh data from server (authoritative — replaces localStorage)
             return loadFromServer();
           }).then(() => {
-            // Re-check URL after server data loaded
+            // After server data loaded, check URL for explicit conversation ID
             const urlId = getConvoIdFromUrl();
             if (urlId) {
               const c = state.conversations.find(cc => cc.id === urlId);
@@ -3086,6 +3090,9 @@ import {
     state.activeId = null;
     state.questionsUsedToday = 0;
     state.user = null;
+    
+    // Clear URL hash — don't leave stale conversation IDs after logout
+    setUrlConvo(null);
     
     // Clear any active pipeline
     if (live.loadingState) {
