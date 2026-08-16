@@ -49,21 +49,30 @@ class BeUIThinkingState {
   constructor(container, options = {}) {
     this.container = container;
     this.variant = options.variant || "Steps";
-    this.stage = 0;
+    this.static = options.static === true;
+    // Static mode renders the finished (collapsed) state immediately, with no
+    // animation — used when re-rendering a completed message on reload so it
+    // matches the live pipeline's look exactly.
+    this.stage = this.static ? STAGES.length - 1 : 0;
     this.manualExpanded = null;
     this.selectedTool = null;
     this.lineHeight = 0;
     this.element = null;
-    // Real elapsed-time source (epoch ms). When provided, the "done" label
-    // shows a live "Thought for X.Xs" instead of the hardcoded demo value.
+    // Real elapsed-time source. Two forms:
+    //  - startedAt (epoch ms): live "Thought for X.Xs" ticking during a run
+    //  - elapsedMs (fixed): final duration for a completed message
     this.startedAt = options.startedAt || null;
+    this.elapsedMs = options.elapsedMs != null ? options.elapsedMs : null;
     this.elapsedTimer = null;
     
     this.render();
-    this.startSequence();
+    if (!this.static) this.startSequence();
   }
 
   doneLabel(v) {
+    if (this.elapsedMs != null) {
+      return `Thought for ${(this.elapsedMs / 1000).toFixed(1)}s`;
+    }
     if (this.startedAt == null) return v.done;
     const secs = ((Date.now() - this.startedAt) / 1000).toFixed(1);
     return `Thought for ${secs}s`;
@@ -154,7 +163,7 @@ class BeUIThinkingState {
         animation: fade-in 350ms ease-out both;
       `;
       label.textContent = this.doneLabel(v);
-      if (this.startedAt != null) {
+      if (this.startedAt != null && this.elapsedMs == null) {
         this.startElapsedTick(label);
       }
     }
