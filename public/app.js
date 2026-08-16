@@ -745,7 +745,7 @@ import {
     const wrap = document.createElement("div");
     wrap.className = "msg msg--agent";
     wrap.dataset.msgId = msg.id;
-    // No avatar - plain text rendering
+    wrap.innerHTML = agentAvatarHtml();
 
     const body = document.createElement("div");
     body.className = "msg__body msg__body--agent-plain";
