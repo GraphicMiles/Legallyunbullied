@@ -546,6 +546,50 @@
         "is_legal_question": false
       },
       "notes": "DETERMINISM GUARD: 'slap on the wrist' is a metaphor for a mild reprimand, not an assault — must stay casual."
+    },
+    {
+      "id": "procedural-note-taking",
+      "category": "procedural",
+      "question": "How do I note down the key facts after witnessing something?",
+      "expected": {
+        "is_legal_question": true,
+        "needs_sourcing": false,
+        "escalate": false
+      },
+      "notes": "PROCEDURAL: practical how-to. Must NOT be routed through citation search — no sources, no high-confidence legal citations."
+    },
+    {
+      "id": "procedural-contact-police",
+      "category": "procedural",
+      "question": "How do I contact the police to report an incident?",
+      "expected": {
+        "is_legal_question": true,
+        "needs_sourcing": false,
+        "escalate": false
+      },
+      "notes": "PROCEDURAL: contacting authorities is practical, not statutory."
+    },
+    {
+      "id": "procedural-find-lawyer",
+      "category": "procedural",
+      "question": "How do I find a good lawyer in Lagos?",
+      "expected": {
+        "is_legal_question": true,
+        "needs_sourcing": false,
+        "escalate": false
+      },
+      "notes": "PROCEDURAL: finding a lawyer is practical guidance, not a statutory question."
+    },
+    {
+      "id": "procedural-bring-station",
+      "category": "procedural",
+      "question": "What should I bring with me to the police station?",
+      "expected": {
+        "is_legal_question": true,
+        "needs_sourcing": false,
+        "escalate": false
+      },
+      "notes": "PROCEDURAL: preparation checklist is practical, not statutory."
     }
   ]
 }

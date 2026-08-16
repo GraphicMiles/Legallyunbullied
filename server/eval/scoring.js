@@ -262,6 +262,35 @@ function scoreScenario(scenario, response) {
     dimensions.min_sources = sourceCount >= expected.min_sources ? 1 : 0;
   }
 
+  // Dimension 19: needs_sourcing — a practical/procedural question must NOT be
+  // routed through the citation pipeline (no sources, noSourcing flagged).
+  if (expected.needs_sourcing === false) {
+    const noSourcing = (response.evidence && response.evidence.noSourcing === true);
+    const sourceCount = (response.result && Array.isArray(response.result.sources)) ? response.result.sources.length : 0;
+    dimensions.needs_sourcing = (noSourcing && sourceCount === 0) ? 1 : (sourceCount === 0 ? 0.5 : 0);
+  }
+
+  // Dimension 20: hedge→confidence rule. If the response's own text hedges
+  // about citation fit, it must NOT be marked sufficient / high confidence.
+  if (response.result && response.result.lawMd !== undefined) {
+    const text = ((response.result.lawMd || "") + " " + (response.result.actionsMd || "")).toLowerCase();
+    const HEDGE = [
+      "might be relevant", "may be relevant", "could be relevant",
+      "does not directly address", "do not directly address", "not directly address",
+      "not directly related", "not directly applicable", "primarily deals with",
+      "for a more direct application", "interpreted within that context",
+      "not the right provision", "only defines", "based on the provided excerpts",
+    ];
+    const hedged = HEDGE.some((p) => text.includes(p));
+    if (!hedged) {
+      dimensions.hedge_confidence = 1;
+    } else {
+      const ev = response.evidence || response.result.evidence;
+      const sufficient = ev && ev.sufficient === true;
+      dimensions.hedge_confidence = sufficient ? 0 : 1;
+    }
+  }
+
   // Aggregate score
   const scoredDimensions = Object.values(dimensions);
   const avgScore = scoredDimensions.length > 0
