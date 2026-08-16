@@ -186,7 +186,7 @@ import {
       }
 
       // Map server conversations to local format with _synced flags
-      const fullConversations = data.conversations.map(detail => ({
+      const allConversations = data.conversations.map(detail => ({
         id: detail.id,
         title: detail.title || "New question",
         createdAt: detail.createdAt,
@@ -194,6 +194,28 @@ import {
         _synced: true,
         messages: (detail.messages || []).map(m => ({ ...m, _synced: true })),
       }));
+
+      // Client-side dedup safety net: remove duplicate empty conversations
+      // (conversations with same title and no messages — keep the newest)
+      const GENERIC_TITLES = new Set(["new question", "legal question", "immigration", "untitled"]);
+      const seen = new Map();
+      const fullConversations = [];
+      for (const c of allConversations) {
+        const hasMessages = c.messages.length > 0;
+        const normalizedTitle = c.title.trim().toLowerCase();
+        if (!hasMessages && GENERIC_TITLES.has(normalizedTitle)) {
+          continue; // skip generic empty conversations
+        }
+        if (!hasMessages && seen.has(normalizedTitle)) {
+          continue; // skip duplicate empty conversation
+        }
+        if (!hasMessages) seen.set(normalizedTitle, true);
+        fullConversations.push(c);
+      }
+      const removed = allConversations.length - fullConversations.length;
+      if (removed > 0) {
+        console.log(`[server-sync] Dedup: skipped ${removed} duplicate/generic empty conversations`);
+      }
 
       // Always replace local state with server data (even if empty).
       // This makes Firestore the single source of truth when authenticated —
@@ -213,7 +235,7 @@ import {
 
   // Sync local state to server (debounced — only one sync at a time)
   async function syncToServer() {
-    if (!isServerMode() || _syncInProgress) {
+    if (!isServerMode() || _syncInProgress || _isLoadingFromServer) {
       _syncQueued = true;
       return;
     }
@@ -223,13 +245,50 @@ import {
     try {
       const headers = await getServerAuthHeaders();
 
+      // Deduplicate: if multiple conversations have the same title and no messages,
+      // keep only the newest one. This cleans up duplicates from the sync loop bug.
+      const seen = new Map(); // title → index of newest
+      const toRemove = [];
+      for (let i = state.conversations.length - 1; i >= 0; i--) {
+        const c = state.conversations[i];
+        const key = (c.title || "New question").trim().toLowerCase();
+        const hasMessages = c.messages && c.messages.length > 0;
+        if (!hasMessages && seen.has(key)) {
+          toRemove.push(i); // duplicate with no messages — remove
+        } else if (!hasMessages) {
+          seen.set(key, i);
+        }
+      }
+      if (toRemove.length > 0) {
+        console.log(`[server-sync] Removing ${toRemove.length} duplicate empty conversations locally`);
+        for (const idx of toRemove) {
+          state.conversations.splice(idx, 1);
+        }
+      }
+
       for (const convo of state.conversations) {
         // Check if this convo has a _synced flag (already on server)
         if (convo._synced) continue;
 
-        // Create or update the conversation on server
+        // Before creating a new conversation on server, check if one with the
+        // same title already exists (from a previous sync). If so, adopt its ID.
         try {
-          // Try to create it first
+          const existingRes = await fetch("/api/conversations?full=false", { headers });
+          if (existingRes.ok) {
+            const existingData = await existingRes.json();
+            const match = (existingData.conversations || []).find(
+              ec => ec.title === (convo.title || "New question")
+            );
+            if (match) {
+              // Already exists on server — adopt the server ID and mark synced
+              convo.id = match.id;
+              convo._synced = true;
+              (convo.messages || []).forEach(m => { m._synced = true; });
+              continue;
+            }
+          }
+
+          // No match — create new conversation on server
           const createRes = await fetch("/api/conversations", {
             method: "POST",
             headers,
@@ -240,14 +299,6 @@ import {
           if (createRes.ok) {
             const created = await createRes.json();
             serverConvoId = created.id;
-          } else if (createRes.status === 409 || createRes.status === 400) {
-            // Already exists — update it
-            await fetch(`/api/conversations/${convo.id}`, {
-              method: "PUT",
-              headers,
-              body: JSON.stringify({ title: convo.title }),
-            });
-            serverConvoId = convo.id;
           } else {
             console.warn("[server-sync] Failed to create conversation:", createRes.status);
             continue;
@@ -293,7 +344,6 @@ import {
     } finally {
       _syncInProgress = false;
       if (_syncQueued) {
-        // Another save happened while we were syncing — run again
         setTimeout(() => syncToServer(), 500);
       }
     }
@@ -393,6 +443,28 @@ import {
       await fetch(`/api/conversations/${convoId}`, { method: "DELETE", headers });
     } catch (e) {
       console.warn(`[server-sync] Failed to delete conversation ${convoId}:`, e.message);
+    }
+  }
+
+  // One-time cleanup: delete duplicate empty conversations from the server
+  // Created by the sync loop bug — removes conversations with no messages
+  // and generic titles like "New question", "Legal question", "Immigration"
+  let _cleanupDone = false;
+  async function cleanupDuplicates() {
+    if (!isServerMode() || _cleanupDone) return;
+    _cleanupDone = true;
+    try {
+      const headers = await getServerAuthHeaders();
+      const res = await fetch("/api/conversations/cleanup", { method: "POST", headers });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.deleted > 0) {
+          console.log(`[server-sync] Cleaned up ${data.deleted} duplicate conversations`);
+        }
+      }
+    } catch (e) {
+      console.warn("[server-sync] Cleanup failed:", e.message);
+      _cleanupDone = false; // allow retry
     }
   }
 
@@ -2937,6 +3009,9 @@ import {
         if (user) {
           // First migrate any existing localStorage conversations to server
           migrateToServer().then(() => {
+            // Clean up duplicate empty conversations created by the sync loop bug
+            return cleanupDuplicates();
+          }).then(() => {
             // Then load fresh data from server (authoritative — replaces localStorage)
             return loadFromServer();
           }).then(() => {
