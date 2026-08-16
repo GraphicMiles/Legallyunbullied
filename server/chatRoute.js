@@ -24,6 +24,7 @@ const { findProvisions, findProvisionsBroad } = require("./legalCorpus");
 const { detectLegalIntent, buildFallbackClassification } = require("./legalIntent");
 const { PRACTICE_AREAS: PRACTICE_AREA_DEFS, PRACTICE_AREA_KEYS } = require("./practiceAreas");
 const { getFirestore } = require("./firebaseAdmin");
+const { recordJobStart, recordJobEnd } = require("./jobRunner");
 
 const PRACTICE_AREAS = PRACTICE_AREA_KEYS;
 
@@ -1046,7 +1047,22 @@ function serverPersistMessage(req, fields) {
     .catch((err) => console.warn("[chat] serverPersistMessage failed:", err.message));
 }
 
-router.post("/api/chat", async (req, res) => {
+async function runChatPipeline(req) {
+  // Fake response object: every terminal `res.json(...)`/`res.status(...)`
+  // in the original handler body now throws a sentinel we convert into a
+  // plain { status, body } result below. This lets the SAME pipeline run
+  // both inline (HTTP) and from the background worker, with zero duplicated
+  // logic. Genuine errors still propagate to the caller.
+  const res = {
+    _code: 200,
+    status(code) { this._code = code; return this; },
+    json(body) {
+      const e = new Error("chat-response");
+      e.__chatResponse = { status: this._code, body };
+      throw e;
+    },
+  };
+  try {
   const question = (req.body && req.body.question || "").toString().trim();
   if (!question) {
     return res.status(400).json({ error: "bad_request", message: '"question" is required.' });
@@ -1150,6 +1166,7 @@ router.post("/api/chat", async (req, res) => {
         retryAfter: null,
       });
     } catch (err) {
+      if (err && err.__chatResponse) throw err; // terminal response, not an error
       console.warn("[/api/chat] Procedural answer failed, using static guidance:", err.message);
       // Honest fallback: direct practical guidance with NO citations, never
       // routed back into the citation pipeline.
@@ -1374,6 +1391,7 @@ router.post("/api/chat", async (req, res) => {
       }
     }
   } catch (err) {
+    if (err && err.__chatResponse) throw err; // terminal response, not an error
     // Relevance gate unavailable — degrade gracefully: pass everything through
     // so the user still gets an answer rather than an error.
     console.warn("[/api/chat] Relevance gate failed, proceeding with all provisions:", err.message);
@@ -1598,6 +1616,32 @@ router.post("/api/chat", async (req, res) => {
     providersBusy: draftResult.providersBusy || false,
     retryAfter: draftResult.retryAfter || null,
   });
+
+  // Defensive fallback — every terminal path throws via res.json().
+  return { status: 200, body: {} };
+  } catch (err) {
+    if (err && err.__chatResponse) return err.__chatResponse;
+    throw err;
+  }
+}
+
+router.post("/api/chat", async (req, res) => {
+  // Durable job record (restart-and-complete): mark running before work.
+  recordJobStart(req);
+  let result;
+  try {
+    result = await runChatPipeline(req);
+  } catch (err) {
+    console.error("[/api/chat] unhandled pipeline error:", err && err.stack ? err.stack : err);
+    result = { status: 500, body: { error: "internal_error", message: "Something went wrong while processing your question." } };
+  }
+  recordJobEnd(req, result);
+  try {
+    res.status(result.status).json(result.body);
+  } catch (e) {
+    // Client disconnected before the response was written — the result has
+    // already been persisted server-side (recoverable requests).
+  }
 });
 
 
@@ -1922,5 +1966,7 @@ Examples:
 
   res.json({ title: null });
 });
+
+router.runChatPipeline = runChatPipeline;
 
 module.exports = router;
