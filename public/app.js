@@ -138,8 +138,11 @@ import {
       questionsUsedToday: state.questionsUsedToday,
     }));
     // Sync to server if authenticated (non-blocking)
-    // Skip sync during loadFromServer to prevent sync-during-load duplication loop
-    if (!_isLoadingFromServer) {
+    // Skip sync during:
+    // - Server load (prevents sync-during-load duplication loop)
+    // - Pipeline run (prevents unnecessary API calls while processing;
+    //   the message is synced explicitly in finalizeAnswer)
+    if (!_isLoadingFromServer && !state.isAgentBusy) {
       syncToServer();
     }
   }
