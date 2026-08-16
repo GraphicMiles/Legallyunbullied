@@ -203,6 +203,7 @@ import {
         createdAt: detail.createdAt,
         updatedAt: detail.updatedAt,
         _synced: true,
+        _serverTitle: detail.title || "New question",
         messages: (detail.messages || []).map(m => ({ ...m, _synced: true })),
       }));
 
@@ -235,42 +236,64 @@ import {
       const headers = await getServerAuthHeaders();
 
       for (const convo of state.conversations) {
-        // Check if this convo has a _synced flag (already on server)
-        if (convo._synced) continue;
-
-        // Create new conversation on server
         try {
-          // Canonical identity: send the local ID so the server persists the
-          // conversation under that exact document ID. The server only mints
-          // a new ID when none was provided — never for a conversation that
-          // already has one.
-          const createRes = await fetch("/api/conversations", {
-            method: "POST",
-            headers,
-            body: JSON.stringify({ id: convo.id, title: convo.title || "New question" }),
-          });
+          // Ensure the conversation exists on the server under its canonical ID.
+          if (!convo._synced) {
+            // Canonical identity: send the local ID so the server persists the
+            // conversation under that exact document ID. The server only mints
+            // a new ID when none was provided — never for a conversation that
+            // already has one.
+            const createRes = await fetch("/api/conversations", {
+              method: "POST",
+              headers,
+              body: JSON.stringify({ id: convo.id, title: convo.title || "New question" }),
+            });
 
-          let serverConvoId;
-          if (createRes.ok) {
-            const created = await createRes.json();
-            serverConvoId = created.id;
-          } else {
-            console.warn("[server-sync] Failed to create conversation:", createRes.status);
-            continue;
+            let serverConvoId;
+            if (createRes.ok) {
+              const created = await createRes.json();
+              serverConvoId = created.id;
+            } else {
+              console.warn("[server-sync] Failed to create conversation:", createRes.status);
+              continue;
+            }
+
+            // Defensive only: with the server honoring the client ID this is a
+            // no-op. If it ever fires, keep the URL in sync with the new ID.
+            if (serverConvoId !== convo.id) {
+              const oldId = convo.id;
+              convo.id = serverConvoId;
+              if (state.activeId === oldId) {
+                state.activeId = serverConvoId;
+                setUrlConvo(serverConvoId);
+              }
+            }
+
+            convo._synced = true;
+            convo._serverTitle = convo.title || "New question";
           }
 
-          // Defensive only: with the server honoring the client ID this is a
-          // no-op. If it ever fires, keep the URL in sync with the new ID.
-          if (serverConvoId !== convo.id) {
-            const oldId = convo.id;
-            convo.id = serverConvoId;
-            if (state.activeId === oldId) {
-              state.activeId = serverConvoId;
-              setUrlConvo(serverConvoId);
+          // Sync the title if it changed since it was last known on the server.
+          // Titles are derived from the first message, so they can change after
+          // the conversation was first created (this was never synced before).
+          if (convo._serverTitle !== convo.title) {
+            try {
+              const titleRes = await fetch(`/api/conversations/${convo.id}`, {
+                method: "PUT",
+                headers,
+                body: JSON.stringify({ title: convo.title || "New question" }),
+              });
+              if (titleRes.ok) convo._serverTitle = convo.title;
+            } catch (e) {
+              console.warn(`[server-sync] Failed to sync title for ${convo.id}:`, e.message);
             }
           }
 
-          // Sync all messages
+          // Sync any messages not yet persisted. This MUST run even for
+          // conversations already marked _synced — otherwise messages added
+          // after the conversation was first created (e.g. after the user
+          // clicked New Chat) never reach the server, and only the agent's
+          // reply (synced explicitly in finalizeAnswer) survives a reload.
           for (const msg of convo.messages) {
             if (msg._synced) continue;
             try {
@@ -284,8 +307,6 @@ import {
               console.warn(`[server-sync] Failed to sync message ${msg.id}:`, e.message);
             }
           }
-
-          convo._synced = true;
         } catch (e) {
           console.warn(`[server-sync] Failed to sync conversation ${convo.id}:`, e.message);
         }
@@ -758,6 +779,19 @@ import {
   /* Sidebar / history                                                   */
   /* ------------------------------------------------------------------ */
   function renderHistory() {
+    // Don't flash a stale localStorage cache while the authoritative server
+    // data is still loading (or before auth has resolved). Show a loading
+    // placeholder instead of old/duplicate conversations from the write-behind
+    // cache, which are replaced moments later by the server list.
+    if (_serverLoadPending || (!_authSettled && window.firebaseAuth)) {
+      el.historyList.innerHTML = "";
+      const loading = document.createElement("div");
+      loading.className = "history__empty";
+      loading.textContent = "Loading…";
+      el.historyList.appendChild(loading);
+      return;
+    }
+
     const query = (el.historySearch.value || "").trim().toLowerCase();
     const filtered = state.conversations
       .filter((c) => !query || c.title.toLowerCase().includes(query))
@@ -3346,6 +3380,11 @@ import {
     // The URL is the source of truth for what to open. Never clear it
     // preemptively and never auto-create a conversation from the base URL.
     state.activeId = null;
+    // No Firebase = anonymous/localStorage only, so no server data is coming
+    // and we can render history immediately. When Firebase exists, wait for
+    // the auth callback (renderHistory shows a loading placeholder instead of
+    // a stale cache that would otherwise flash).
+    if (!window.firebaseAuth) _authSettled = true;
     resolveUrl();
     renderHistory();
     initAuth();       // auth first — more critical than composer
