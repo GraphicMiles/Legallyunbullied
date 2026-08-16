@@ -1048,7 +1048,8 @@ router.post("/api/chat", async (req, res) => {
   // Build conversation context for classify and draft
   let conversationContext = "";
   if (history && history.length > 0) {
-    const recent = history.slice(-6);
+    // Safety cap mirrors the client's 18-message window (no extra trimming).
+    const recent = history.slice(-18);
     conversationContext = recent.map(msg => {
       const role = msg.role === "user" ? "User" : "Agent";
       return `${role}: ${msg.content}`;
