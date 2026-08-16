@@ -2250,11 +2250,20 @@ import {
     let response;
     let requestError = null;
     try {
-      // Build conversation history — last 6 messages (3 user + 3 agent pairs)
+      // Build conversation history — last 18 messages (~9 exchanges) so an
+      // early clarifying answer (e.g. an HITL jurisdiction reply) is retained.
+      // Agent turns must carry REAL content: legal replies store their answer
+      // in result.lawMd (agent messages have no `.content` field), casual
+      // replies in casualReply, and HITL clarifying questions in
+      // needsInputQuestion. (Previously agent legal replies mapped to "" —
+      // the window existed but the agent's own answers weren't in it.)
       const recentMessages = convo.messages
-        .filter(m => m.role === "user" || m.status === "done" || m.status === "casual")
-        .slice(-6)
-        .map(m => ({ role: m.role, content: m.content || m.casualReply || "" }));
+        .filter(m => m.role === "user" || m.status === "done" || m.status === "casual" || m.status === "needsInput")
+        .slice(-18)
+        .map(m => ({
+          role: m.role,
+          content: m.content || m.casualReply || (m.result && m.result.lawMd) || m.needsInputQuestion || "",
+        }));
       
       response = await callChatApi(question, recentMessages);
       console.log('[runPipeline] API call completed successfully');
