@@ -905,6 +905,48 @@
 
   .msg--agent .msg__body { max-width: min(620px, 88%); }
 
+  /* Plain agent message body - no background/border */
+  .msg__body--agent-plain {
+    background: transparent;
+    border: none;
+    padding: 0;
+  }
+
+  /* Plain answer block - no card styling */
+  .answer-block-plain {
+    background: transparent;
+    padding: 0;
+    margin-top: 8px;
+  }
+
+  .answer-text-block {
+    font-size: var(--fs-base);
+    line-height: 1.6;
+    color: var(--color-text);
+  }
+
+  .answer-section-title {
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  /* Plain casual reply */
+  .casual-reply-plain {
+    background: transparent;
+    padding: 0;
+    font-size: var(--fs-base);
+    line-height: 1.6;
+    color: var(--color-text);
+  }
+
+  .casual-reply-plain p {
+    margin: 0;
+  }
+
   /* --- thinking / reasoning trace --- */
   .trace {
     display: inline-flex;

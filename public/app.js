@@ -207,7 +207,7 @@ import {
   /* Streaming engine — reveals markdown text over time, re-parsing the
      accumulated substring each frame so formatting appears live.        */
   /* ------------------------------------------------------------------ */
-  function streamText(container, fullText, { cps = 240, token, onDone } = {}) {
+  function streamText(container, fullText, { cps = 200, token, onDone } = {}) {
     const start = performance.now();
     const total = fullText.length;
     let lastScroll = 0;
@@ -745,10 +745,10 @@ import {
     const wrap = document.createElement("div");
     wrap.className = "msg msg--agent";
     wrap.dataset.msgId = msg.id;
-    wrap.innerHTML = agentAvatarHtml();
+    // No avatar - plain text rendering
 
     const body = document.createElement("div");
-    body.className = "msg__body";
+    body.className = "msg__body msg__body--agent-plain";
     wrap.appendChild(body);
 
     if (msg.status !== "done" && msg.status !== "corpusEmpty" && msg.status !== "error" && msg.status !== "casual" && msg.status !== "stopped") {
@@ -869,48 +869,41 @@ import {
   /* ------------------------------------------------------------------ */
   function buildAnswerBlock(msg, { stream }) {
     const wrap = document.createElement("div");
-    wrap.className = "answer";
+    wrap.className = "answer-block-plain";
     const r = msg.result;
 
-    // "What the law says" section
-    const lawSection = document.createElement("div");
-    lawSection.className = "answer-section";
-    lawSection.innerHTML = `
-      <div class="answer-section__head">
-        <div class="answer-section__icon">${ICONS.bolt}</div>
-        <span class="answer-section__title">What the law says</span>
-        <span class="answer-section__live-dot" style="display:none;"></span>
-      </div>
-      <div class="answer-section__text"></div>
-    `;
-    wrap.appendChild(lawSection);
-    const lawTextEl = lawSection.querySelector(".answer-section__text");
-    const lawLiveDot = lawSection.querySelector(".answer-section__live-dot");
+    // "What the law says" section - plain text
+    const lawWrapper = document.createElement("div");
+    lawWrapper.className = "answer-text-block";
+    const lawTitle = document.createElement("div");
+    lawTitle.className = "answer-section-title";
+    lawTitle.textContent = "What the law says";
+    lawWrapper.appendChild(lawTitle);
+    const lawTextEl = document.createElement("div");
+    lawWrapper.appendChild(lawTextEl);
+    wrap.appendChild(lawWrapper);
     
     if (stream) {
-      lawTextEl.innerHTML = "";
+      // Empty container for streaming
     } else {
       lawTextEl.innerHTML = renderMarkdown(r.lawMd);
-      appendContextCards(lawSection, r.sources);
+      appendContextCards(wrap, r.sources);
     }
 
-    // "What you can do" section
-    const actionsSection = document.createElement("div");
-    actionsSection.className = "answer-section";
-    actionsSection.innerHTML = `
-      <div class="answer-section__head">
-        <div class="answer-section__icon">${ICONS.list}</div>
-        <span class="answer-section__title">What you can do</span>
-        <span class="answer-section__live-dot" style="display:none;"></span>
-      </div>
-      <div class="answer-section__text"></div>
-    `;
-    wrap.appendChild(actionsSection);
-    const actionsTextEl = actionsSection.querySelector(".answer-section__text");
-    const actionsLiveDot = actionsSection.querySelector(".answer-section__live-dot");
+    // "What you can do" section - plain text
+    const actionsWrapper = document.createElement("div");
+    actionsWrapper.className = "answer-text-block";
+    actionsWrapper.style.marginTop = "16px";
+    const actionsTitle = document.createElement("div");
+    actionsTitle.className = "answer-section-title";
+    actionsTitle.textContent = "What you can do";
+    actionsWrapper.appendChild(actionsTitle);
+    const actionsTextEl = document.createElement("div");
+    actionsWrapper.appendChild(actionsTextEl);
+    wrap.appendChild(actionsWrapper);
     
     if (stream) {
-      actionsSection.style.display = "none";
+      actionsWrapper.style.display = "none";
     } else {
       actionsTextEl.innerHTML = renderMarkdown(r.actionsMd);
     }
@@ -929,8 +922,8 @@ import {
     }
 
     wrap._refs = { 
-      lawSection: { el: lawSection, textEl: lawTextEl, liveDot: lawLiveDot },
-      actionsSection: { el: actionsSection, textEl: actionsTextEl, liveDot: actionsLiveDot },
+      lawSection: { el: lawWrapper, textEl: lawTextEl, liveDot: null },
+      actionsSection: { el: actionsWrapper, textEl: actionsTextEl, liveDot: null },
       verdict,
       approvalCard
     };
@@ -1661,7 +1654,7 @@ import {
 
   function buildCasualReplyEl(replyText) {
     const wrap = document.createElement("div");
-    wrap.className = "casual-reply";
+    wrap.className = "casual-reply-plain";
     wrap.innerHTML = `<p>${inlineMd(replyText)}</p>`;
     return wrap;
   }
@@ -1706,7 +1699,7 @@ import {
     
     // Stream the casual reply text
     streamText(textContainer, replyText, {
-      cps: 300,
+      cps: 200,
       token: token,
       onDone: () => {
         if (token === pipelineToken) {
@@ -1975,14 +1968,12 @@ import {
     const refs = answerBlock._refs;
 
     refs.lawSection.el.classList.add("is-live");
-    refs.lawSection.liveDot.style.display = "inline-block";
 
     streamWithBeUI(refs.lawSection.textEl, r.lawMd, {
       onDone: () => {
         if (token !== pipelineToken) return;
         const stickAfterLaw = isNearBottom();
         refs.lawSection.el.classList.remove("is-live");
-        refs.lawSection.liveDot.style.display = "none";
         appendContextCards(refs.lawSection.el, r.sources);
         scrollChatToBottom(stickAfterLaw);
 
@@ -1994,7 +1985,6 @@ import {
           const stickBeforeActions = isNearBottom();
           refs.actionsSection.el.style.display = "";
           refs.actionsSection.el.classList.add("is-live");
-          refs.actionsSection.liveDot.style.display = "inline-block";
           scrollChatToBottom(stickBeforeActions);
 
           streamWithBeUI(refs.actionsSection.textEl, r.actionsMd, {
@@ -2002,7 +1992,6 @@ import {
               if (token !== pipelineToken) return;
               const stickAfterActions = isNearBottom();
               refs.actionsSection.el.classList.remove("is-live");
-              refs.actionsSection.liveDot.style.display = "none";
               scrollChatToBottom(stickAfterActions);
 
               setTimeout(() => {

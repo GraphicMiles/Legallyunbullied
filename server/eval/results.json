@@ -1,66 +1,78 @@
 {
   "report": {
-    "total": 5,
-    "passed": 4,
-    "failed": 1,
+    "total": 10,
+    "passed": 7,
+    "failed": 3,
     "skipped": 0,
-    "avg_score": 0.7462698412698413,
-    "pass_rate": 0.8,
+    "avg_score": 0.7174206349206347,
+    "pass_rate": 0.7,
     "by_category": {
       "complex_legal": {
-        "total": 2,
-        "passed": 2,
-        "scoreSum": 1.5349206349206348,
-        "avg": 0.7674603174603174
+        "total": 4,
+        "passed": 4,
+        "scoreSum": 3.249206349206349,
+        "avg": 0.8123015873015873
       },
       "jurisdiction_sensitive": {
         "total": 1,
-        "passed": 0,
-        "scoreSum": 0.4714285714285714,
-        "avg": 0.4714285714285714
+        "passed": 1,
+        "scoreSum": 1,
+        "avg": 1
       },
       "high_risk": {
         "total": 2,
         "passed": 2,
         "scoreSum": 1.725,
         "avg": 0.8625
+      },
+      "simple_legal": {
+        "total": 2,
+        "passed": 0,
+        "scoreSum": 0.9428571428571428,
+        "avg": 0.4714285714285714
+      },
+      "simple_factual": {
+        "total": 1,
+        "passed": 0,
+        "scoreSum": 0.2571428571428572,
+        "avg": 0.2571428571428572
       }
     },
     "by_dimension": {
       "is_legal_classification": {
-        "total": 5,
-        "scoreSum": 5,
-        "avg": 1
+        "total": 10,
+        "scoreSum": 8,
+        "avg": 0.8
       },
       "practice_area": {
-        "total": 5,
-        "scoreSum": 4.3,
-        "avg": 0.86
+        "total": 10,
+        "scoreSum": 8.600000000000001,
+        "avg": 0.8600000000000001
       },
       "jurisdiction": {
-        "total": 5,
-        "scoreSum": 3.5999999999999996,
-        "avg": 0.72
+        "total": 9,
+        "scoreSum": 6.8999999999999995,
+        "avg": 0.7666666666666666
       },
       "must_cite": {
-        "total": 5,
-        "scoreSum": 1.5,
-        "avg": 0.3
+        "total": 10,
+        "scoreSum": 2.5,
+        "avg": 0.25
       },
       "escalation": {
-        "total": 5,
-        "scoreSum": 2,
-        "avg": 0.4
+        "total": 10,
+        "scoreSum": 6,
+        "avg": 0.6
       },
       "actionable": {
-        "total": 5,
-        "scoreSum": 4,
+        "total": 10,
+        "scoreSum": 8,
         "avg": 0.8
       },
       "followUps": {
         "total": 1,
-        "scoreSum": 1,
-        "avg": 1
+        "scoreSum": 0,
+        "avg": 0
       },
       "urgency": {
         "total": 3,
@@ -68,22 +80,53 @@
         "avg": 1
       },
       "no_hallucination": {
-        "total": 5,
-        "scoreSum": 5,
+        "total": 10,
+        "scoreSum": 10,
         "avg": 1
+      },
+      "route": {
+        "total": 1,
+        "scoreSum": 0.5,
+        "avg": 0.5
       }
     },
     "failing_scenarios": [
       {
-        "id": "tenancy-abuja-eviction",
-        "score": 0.4714285714285714,
+        "id": "consumer-defective-goods",
+        "score": 0.6142857142857142,
         "dimensions": {
           "is_legal_classification": 1,
+          "practice_area": 1,
+          "jurisdiction": 0.3,
+          "must_cite": 0,
+          "escalation": 0,
+          "actionable": 1,
+          "no_hallucination": 1
+        }
+      },
+      {
+        "id": "traffic-fake-checkpoint",
+        "score": 0.32857142857142857,
+        "dimensions": {
+          "is_legal_classification": 0,
           "practice_area": 0.3,
           "jurisdiction": 1,
           "must_cite": 0,
           "escalation": 0,
           "actionable": 0,
+          "no_hallucination": 1
+        }
+      },
+      {
+        "id": "minimum-wage-simple",
+        "score": 0.2571428571428572,
+        "dimensions": {
+          "is_legal_classification": 0,
+          "practice_area": 0.3,
+          "must_cite": 0,
+          "escalation": 0,
+          "actionable": 0,
+          "route": 0.5,
           "no_hallucination": 1
         }
       }
@@ -94,7 +137,7 @@
       "pass_threshold": 0.7,
       "regression_gate": 0.65
     },
-    "run_at": "2026-08-15T22:46:34.177Z",
+    "run_at": "2026-08-16T03:14:29.893Z",
     "rate_limited": 0,
     "errors": 0
   },
@@ -109,9 +152,9 @@
         "practice_area": 1,
         "jurisdiction": 1,
         "must_cite": 0,
-        "escalation": 0,
+        "escalation": 1,
         "actionable": 1,
-        "followUps": 1,
+        "followUps": 0,
         "urgency": 1,
         "no_hallucination": 1
       },
@@ -152,37 +195,42 @@
         },
         "route": "complex",
         "plan": {
-          "analysis": "Analyzing the legal question and relevant provisions.",
-          "key_provisions": [],
-          "response_structure": "Review applicable law, apply to facts, provide guidance",
-          "gaps": []
-        },
-        "result": {
-          "lawMd": "The Lagos Tenancy Law 2011 governs this issue. **Lagos Tenancy Law 2011, s.2** establishes the jurisdiction of the Court to determine matters in respect of the tenancy of any premises let before or after the commencement of this Law. **Lagos Tenancy Law 2011, s.6** provides that the tenant's entitlement to quiet and peaceable enjoyment of the Premises includes the right to privacy, freedom from unreasonable disturbance, exclusive possession of the premises, and the use of common areas for reasonable and lawful purposes. **Lagos Tenancy Law 2011, s.13** sets out the notice requirements for determining a tenancy, which includes a week's notice for a tenant at will, one month's notice for a monthly tenant, and six months notice for a yearly tenant. **Lagos Tenancy Law 2011, s.16** provides that a landlord may cause a tenant to be served with a written notice of the landlord's intention to proceed to recover possession, stating the grounds and particulars of the claim, on a date not less than seven days from the date of the notice. **Lagos Tenancy Law 2011, s.20** requires the landlord to ensure proper service of all notices required under this Law on the tenant. **Lagos Tenancy Law 2011, s.24** provides that upon the expiration of the time stated in the notice, if the tenant neglects or refuses to quit and deliver up possession, the landlord may file a claim by way of summons for recovery of possession. **Lagos Tenancy Law 2011, s.25** provides that the Court shall have power to make an order for possession upon proof of any of the following grounds: arrears of rent, breach of any covenant or agreement, where the premises is required by the landlord for personal use, or where the premises is being used for immoral or illegal purposes, abandoned, unsafe and unsound, or the tenant or any person residing on the premises has been convicted of an offence under the Lagos State Criminal Code Law 2011.",
-          "actionsMd": "- Step 1: The tenant should immediately seek the assistance of a lawyer to file a claim for damages for illegal eviction and an injunction against further harassment.\n- Step 2: The tenant should gather evidence of the landlord's actions, including photographs, witness statements, and any other relevant documents.\n- Step 3: The tenant should serve the landlord with a notice of intention to file a claim for damages and an injunction.\n- Step 4: The tenant should file a claim for damages and an injunction with the High Court of Lagos State.\n- Step 5: The tenant should seek an interim injunction to prevent the landlord from further harassing or evicting the tenant.\n- Step 6: The tenant should be prepared to provide evidence in court to support the claim for damages and an injunction.",
-          "sources": [
-            {
-              "label": "Lagos Tenancy Law 2011, s.2",
-              "excerpt": "A Court shall have jurisdiction to determine matters in respect of the tenancy of any premises let before or after the commencement this Law."
-            },
-            {
-              "label": "Lagos Tenancy Law 2011, s.6",
-              "excerpt": "the tenant's entitlement to quiet and peaceable enjoyment of the Premises includes the right to – (a) privacy; (b) Freedom from unreasonable disturbance; (c) exclusive possession of the premises, subject to the landlord's restricted right of inspection; and (d) the use of common areas for reasonable and lawful purpose."
-            },
-            {
-              "label": "Lagos Tenancy Law 2011, s.13",
-              "excerpt": "where there is no stipulation as to the notice to be given by either party to determine the tenancy, the following shall apply- (a) a week’s notice for a tenant at will; (b) one (1) month’s notice for a monthly tenant; (c) three (3) months notice for a quarterly tenant; (d) three (3) months notice for a half-yearly tenant; and (e) six months notice for a yearly tenant"
-            }
+          "analysis": "The core issue is whether the landlord's actions constitute an illegal eviction under the Lagos Tenancy Law 2011, and what remedies are available to the tenant. The tenant had a verbal agreement and paid 6 months' rent upfront, but was evicted without notice.",
+          "legal_framework": "Lagos Tenancy Law 2011",
+          "key_provisions": [
+            "Section 6 of Lagos Tenancy Law 2011 - Establishes the tenant's right to quiet and peaceable enjoyment of the premises",
+            "Section 13 of Lagos Tenancy Law 2011 - Specifies notice requirements for terminating a tenancy",
+            "Section 16 of Lagos Tenancy Law 2011 - Outlines the procedure for recovering premises after a tenant neglects or refuses to quit"
           ],
-          "escalate": true,
-          "escalateReason": "This case requires the expertise of a lawyer to navigate the complex legal process and to ensure that the tenant's rights are protected.",
-          "followUps": [
-            "How long does this court process usually take?",
-            "What are the chances of winning the case?"
+          "sub_questions": [
+            "Did the landlord provide the required notice before evicting the tenant?",
+            "Does the tenant's verbal agreement and upfront payment of 6 months' rent affect their rights under the Lagos Tenancy Law 2011?",
+            "What remedies are available to the tenant for illegal eviction?"
+          ],
+          "application_to_facts": "The law will be applied by analyzing the landlord's actions against the requirements for notice and the prohibition on self-help evictions, and determining the tenant's rights to peaceful possession and available remedies.",
+          "response_structure": "1. Explain the statutory framework for tenancy and notice requirements, 2. Analyze the landlord's actions in light of the law, 3. Outline the tenant's rights and available remedies, 4. Provide practical next steps for the tenant",
+          "practical_steps": [
+            "Step 1: Document all evidence of the illegal eviction, including photos and witness statements",
+            "Step 2: Seek legal advice to understand the tenant's rights and options under the Lagos Tenancy Law 2011",
+            "Step 3: Consider filing a claim for repossession and damages in court"
+          ],
+          "gaps": [
+            "The available provisions do not fully address the implications of a verbal tenancy agreement on notice requirements and eviction procedures"
+          ],
+          "escalation_triggers": [
+            "If the tenant is facing imminent danger or further harassment from the landlord, they should seek immediate legal assistance and consider reporting the incident to the authorities"
           ]
         },
-        "draftModel": "llama-3.1-8b-instant",
-        "draftProvider": "groq-fallback"
+        "result": {
+          "lawMd": "Our legal reasoning providers are temporarily unavailable. Please try again in a moment.",
+          "actionsMd": "- Step 1: Wait 30 seconds and resend your question.\n- Step 2: If the issue persists, try rephrasing your question.\n- Step 3: For urgent matters, contact a lawyer directly.",
+          "sources": [],
+          "escalate": false,
+          "escalateReason": "System temporarily unavailable — retry needed.",
+          "followUps": []
+        },
+        "draftModel": "fallback",
+        "draftProvider": "all-failed"
       },
       "error": null,
       "response": {
@@ -222,73 +270,132 @@
         },
         "route": "complex",
         "plan": {
-          "analysis": "Analyzing the legal question and relevant provisions.",
-          "key_provisions": [],
-          "response_structure": "Review applicable law, apply to facts, provide guidance",
-          "gaps": []
-        },
-        "result": {
-          "lawMd": "The Lagos Tenancy Law 2011 governs this issue. **Lagos Tenancy Law 2011, s.2** establishes the jurisdiction of the Court to determine matters in respect of the tenancy of any premises let before or after the commencement of this Law. **Lagos Tenancy Law 2011, s.6** provides that the tenant's entitlement to quiet and peaceable enjoyment of the Premises includes the right to privacy, freedom from unreasonable disturbance, exclusive possession of the premises, and the use of common areas for reasonable and lawful purposes. **Lagos Tenancy Law 2011, s.13** sets out the notice requirements for determining a tenancy, which includes a week's notice for a tenant at will, one month's notice for a monthly tenant, and six months notice for a yearly tenant. **Lagos Tenancy Law 2011, s.16** provides that a landlord may cause a tenant to be served with a written notice of the landlord's intention to proceed to recover possession, stating the grounds and particulars of the claim, on a date not less than seven days from the date of the notice. **Lagos Tenancy Law 2011, s.20** requires the landlord to ensure proper service of all notices required under this Law on the tenant. **Lagos Tenancy Law 2011, s.24** provides that upon the expiration of the time stated in the notice, if the tenant neglects or refuses to quit and deliver up possession, the landlord may file a claim by way of summons for recovery of possession. **Lagos Tenancy Law 2011, s.25** provides that the Court shall have power to make an order for possession upon proof of any of the following grounds: arrears of rent, breach of any covenant or agreement, where the premises is required by the landlord for personal use, or where the premises is being used for immoral or illegal purposes, abandoned, unsafe and unsound, or the tenant or any person residing on the premises has been convicted of an offence under the Lagos State Criminal Code Law 2011.",
-          "actionsMd": "- Step 1: The tenant should immediately seek the assistance of a lawyer to file a claim for damages for illegal eviction and an injunction against further harassment.\n- Step 2: The tenant should gather evidence of the landlord's actions, including photographs, witness statements, and any other relevant documents.\n- Step 3: The tenant should serve the landlord with a notice of intention to file a claim for damages and an injunction.\n- Step 4: The tenant should file a claim for damages and an injunction with the High Court of Lagos State.\n- Step 5: The tenant should seek an interim injunction to prevent the landlord from further harassing or evicting the tenant.\n- Step 6: The tenant should be prepared to provide evidence in court to support the claim for damages and an injunction.",
-          "sources": [
-            {
-              "label": "Lagos Tenancy Law 2011, s.2",
-              "excerpt": "A Court shall have jurisdiction to determine matters in respect of the tenancy of any premises let before or after the commencement this Law."
-            },
-            {
-              "label": "Lagos Tenancy Law 2011, s.6",
-              "excerpt": "the tenant's entitlement to quiet and peaceable enjoyment of the Premises includes the right to – (a) privacy; (b) Freedom from unreasonable disturbance; (c) exclusive possession of the premises, subject to the landlord's restricted right of inspection; and (d) the use of common areas for reasonable and lawful purpose."
-            },
-            {
-              "label": "Lagos Tenancy Law 2011, s.13",
-              "excerpt": "where there is no stipulation as to the notice to be given by either party to determine the tenancy, the following shall apply- (a) a week’s notice for a tenant at will; (b) one (1) month’s notice for a monthly tenant; (c) three (3) months notice for a quarterly tenant; (d) three (3) months notice for a half-yearly tenant; and (e) six months notice for a yearly tenant"
-            }
+          "analysis": "The core issue is whether the landlord's actions constitute an illegal eviction under the Lagos Tenancy Law 2011, and what remedies are available to the tenant. The tenant had a verbal agreement and paid 6 months' rent upfront, but was evicted without notice.",
+          "legal_framework": "Lagos Tenancy Law 2011",
+          "key_provisions": [
+            "Section 6 of Lagos Tenancy Law 2011 - Establishes the tenant's right to quiet and peaceable enjoyment of the premises",
+            "Section 13 of Lagos Tenancy Law 2011 - Specifies notice requirements for terminating a tenancy",
+            "Section 16 of Lagos Tenancy Law 2011 - Outlines the procedure for recovering premises after a tenant neglects or refuses to quit"
           ],
-          "escalate": true,
-          "escalateReason": "This case requires the expertise of a lawyer to navigate the complex legal process and to ensure that the tenant's rights are protected.",
-          "followUps": [
-            "How long does this court process usually take?",
-            "What are the chances of winning the case?"
+          "sub_questions": [
+            "Did the landlord provide the required notice before evicting the tenant?",
+            "Does the tenant's verbal agreement and upfront payment of 6 months' rent affect their rights under the Lagos Tenancy Law 2011?",
+            "What remedies are available to the tenant for illegal eviction?"
+          ],
+          "application_to_facts": "The law will be applied by analyzing the landlord's actions against the requirements for notice and the prohibition on self-help evictions, and determining the tenant's rights to peaceful possession and available remedies.",
+          "response_structure": "1. Explain the statutory framework for tenancy and notice requirements, 2. Analyze the landlord's actions in light of the law, 3. Outline the tenant's rights and available remedies, 4. Provide practical next steps for the tenant",
+          "practical_steps": [
+            "Step 1: Document all evidence of the illegal eviction, including photos and witness statements",
+            "Step 2: Seek legal advice to understand the tenant's rights and options under the Lagos Tenancy Law 2011",
+            "Step 3: Consider filing a claim for repossession and damages in court"
+          ],
+          "gaps": [
+            "The available provisions do not fully address the implications of a verbal tenancy agreement on notice requirements and eviction procedures"
+          ],
+          "escalation_triggers": [
+            "If the tenant is facing imminent danger or further harassment from the landlord, they should seek immediate legal assistance and consider reporting the incident to the authorities"
           ]
         },
-        "draftModel": "llama-3.1-8b-instant",
-        "draftProvider": "groq-fallback"
+        "result": {
+          "lawMd": "Our legal reasoning providers are temporarily unavailable. Please try again in a moment.",
+          "actionsMd": "- Step 1: Wait 30 seconds and resend your question.\n- Step 2: If the issue persists, try rephrasing your question.\n- Step 3: For urgent matters, contact a lawyer directly.",
+          "sources": [],
+          "escalate": false,
+          "escalateReason": "System temporarily unavailable — retry needed.",
+          "followUps": []
+        },
+        "draftModel": "fallback",
+        "draftProvider": "all-failed"
       }
     },
     {
       "scenario_id": "tenancy-abuja-eviction",
       "category": "jurisdiction_sensitive",
-      "total_score": 0.4714285714285714,
-      "pass": false,
+      "total_score": 1,
+      "pass": true,
       "dimensions": {
         "is_legal_classification": 1,
-        "practice_area": 0.3,
+        "practice_area": 1,
         "jurisdiction": 1,
-        "must_cite": 0,
-        "escalation": 0,
-        "actionable": 0,
+        "must_cite": 1,
+        "escalation": 1,
+        "actionable": 1,
         "no_hallucination": 1
       },
       "raw_response": {
-        "needsInput": true,
-        "question": "Which state did this happen in? The laws can differ by state.",
-        "field": "jurisdiction",
-        "context": {
+        "classification": {
+          "is_legal_question": true,
           "practice_area": "tenancy",
-          "urgency": "High"
+          "jurisdiction": "Federal Capital Territory",
+          "jurisdiction_status": "clear",
+          "urgency": "High",
+          "summary": "Tenant evicted without court order in Abuja, seeking legal recourse.",
+          "keywords": [
+            "eviction",
+            "court order",
+            "FCT",
+            "tenancy law",
+            "Abuja"
+          ],
+          "key_issues": [
+            "Whether eviction was lawful",
+            "Tenant's right to peaceful possession",
+            "Available remedies for unlawful eviction"
+          ],
+          "complexity": "Medium",
+          "route": "complex",
+          "reasoning_approach": "First, establish the applicable tenancy law in the FCT, which may be the FCT Tenancy Law 2006 or the National Land Reform Policy. Then, analyze whether the landlord's actions constitute unlawful eviction. Finally, outline the tenant's remedies, including potential court orders for repossession and damages.",
+          "stakeholders": [
+            "tenant",
+            "landlord"
+          ],
+          "potential_remedies": [
+            "Court order for repossession",
+            "Damages for unlawful eviction",
+            "Injunction against further harassment"
+          ]
         },
-        "provider": "groq"
+        "result": null,
+        "corpusEmpty": true,
+        "message": "No ingested legal sources match \"tenancy\" yet. Run the ingestion script for this practice area before this endpoint can answer it."
       },
       "error": null,
       "response": {
-        "needsInput": true,
-        "question": "Which state did this happen in? The laws can differ by state.",
-        "field": "jurisdiction",
-        "context": {
+        "classification": {
+          "is_legal_question": true,
           "practice_area": "tenancy",
-          "urgency": "High"
+          "jurisdiction": "Federal Capital Territory",
+          "jurisdiction_status": "clear",
+          "urgency": "High",
+          "summary": "Tenant evicted without court order in Abuja, seeking legal recourse.",
+          "keywords": [
+            "eviction",
+            "court order",
+            "FCT",
+            "tenancy law",
+            "Abuja"
+          ],
+          "key_issues": [
+            "Whether eviction was lawful",
+            "Tenant's right to peaceful possession",
+            "Available remedies for unlawful eviction"
+          ],
+          "complexity": "Medium",
+          "route": "complex",
+          "reasoning_approach": "First, establish the applicable tenancy law in the FCT, which may be the FCT Tenancy Law 2006 or the National Land Reform Policy. Then, analyze whether the landlord's actions constitute unlawful eviction. Finally, outline the tenant's remedies, including potential court orders for repossession and damages.",
+          "stakeholders": [
+            "tenant",
+            "landlord"
+          ],
+          "potential_remedies": [
+            "Court order for repossession",
+            "Damages for unlawful eviction",
+            "Injunction against further harassment"
+          ]
         },
-        "provider": "groq"
+        "result": null,
+        "corpusEmpty": true,
+        "message": "No ingested legal sources match \"tenancy\" yet. Run the ingestion script for this practice area before this endpoint can answer it."
       }
     },
     {
@@ -300,8 +407,8 @@
         "is_legal_classification": 1,
         "practice_area": 1,
         "jurisdiction": 0.3,
-        "must_cite": 1,
-        "escalation": 0,
+        "must_cite": 0,
+        "escalation": 1,
         "actionable": 1,
         "no_hallucination": 1
       },
@@ -312,7 +419,7 @@
           "jurisdiction": "Lagos State",
           "jurisdiction_status": "clear",
           "urgency": "High",
-          "summary": "Employee in Lagos has not received salary for 4 months, despite having an employment contract.",
+          "summary": "Employee in Lagos not paid salary for 4 months, despite having an employment contract.",
           "keywords": [
             "unpaid wages",
             "salary",
@@ -322,12 +429,12 @@
           ],
           "key_issues": [
             "Whether employer has breached employment contract",
-            "Employee's right to receive salary",
+            "Employee's right to unpaid wages under Labour Act",
             "Available remedies for unpaid wages"
           ],
           "complexity": "Medium",
           "route": "complex",
-          "reasoning_approach": "First, establish whether employer has breached employment contract by failing to pay salary. Then, analyze employee's rights under the Labour Act and Lagos State employment laws. Finally, outline available remedies including court action and potential damages.",
+          "reasoning_approach": "First establish the employer's obligations under the employment contract and Labour Act. Then analyze whether the employer has breached these obligations. Finally outline the employee's remedies including potential court orders for payment of unpaid wages and other damages.",
           "stakeholders": [
             "employee",
             "employer"
@@ -346,32 +453,15 @@
           "gaps": []
         },
         "result": {
-          "lawMd": "The Labour Act governs employment relationships in Nigeria. **Labour Act, s.1** establishes that wages must be paid in legal tender, and any contract providing otherwise is illegal and void. **Labour Act, s.15** states that wages become due and payable at the end of each period for which the contract subsists, which in this case is four months. The employer has breached the employment contract by failing to pay the employee's salary for four months. **Labour Act, s.17** requires the employer to provide work suitable to the employee's capacity on every day, and if the employer fails to do so, they must pay the employee wages at the same rate as would be payable if the employee had performed a day's work. The employee is entitled to receive their salary, and the employer's failure to pay is a breach of contract.",
-          "actionsMd": "- Step 1: File a complaint with the National Industrial Court (NIC) in Lagos, citing **Labour Act, s.1** and **Labour Act, s.15**. The NIC has jurisdiction over employment disputes in Nigeria.\n- Step 2: Provide evidence of the employment contract, including the terms and conditions of employment, and proof of the employer's failure to pay the employee's salary for four months.\n- Step 3: Seek a court order for payment of the unpaid wages, including interest and any other applicable damages.\n- Step 4: If the employer fails to comply with the court order, seek an injunction against further non-payment.\n- Step 5: Consider seeking damages for breach of contract, including any losses incurred by the employee as a result of the employer's failure to pay their salary.",
-          "sources": [
-            {
-              "label": "Labour Act, s.1",
-              "excerpt": "The wages of a worker shall in all contracts be made payable in legal tender and not otherwise; and if in any contract the whole or any part of the wages of a worker is made payable in any other manner the contract shall be illegal, null and void."
-            },
-            {
-              "label": "Labour Act, s.15",
-              "excerpt": "Wages shall become due and payable at the end of each period for which the contract is expressed to subsist, that is to say, daily, weekly or at such other period as may be agreed upon:"
-            },
-            {
-              "label": "Labour Act, s.17",
-              "excerpt": "Every employer shall, unless a worker has broken his contract, provide work suitable to the worker's capacity on every day (except rest days and public holidays) on which the worker presents himself and is fit for work;"
-            }
-          ],
-          "escalate": true,
-          "escalateReason": "This case involves a breach of contract and a failure to pay wages, which may require the expertise of a lawyer to navigate the court process and ensure the employee receives the compensation they are entitled to.",
-          "followUps": [
-            "What is the process for filing a complaint with the National Industrial Court?",
-            "How long does the court process typically take?",
-            "What are the potential damages I can claim for breach of contract?"
-          ]
+          "lawMd": "Our legal reasoning providers are temporarily unavailable. Please try again in a moment.",
+          "actionsMd": "- Step 1: Wait 30 seconds and resend your question.\n- Step 2: If the issue persists, try rephrasing your question.\n- Step 3: For urgent matters, contact a lawyer directly.",
+          "sources": [],
+          "escalate": false,
+          "escalateReason": "System temporarily unavailable — retry needed.",
+          "followUps": []
         },
-        "draftModel": "llama-3.1-8b-instant",
-        "draftProvider": "groq-fallback"
+        "draftModel": "fallback",
+        "draftProvider": "all-failed"
       },
       "error": null,
       "response": {
@@ -381,7 +471,7 @@
           "jurisdiction": "Lagos State",
           "jurisdiction_status": "clear",
           "urgency": "High",
-          "summary": "Employee in Lagos has not received salary for 4 months, despite having an employment contract.",
+          "summary": "Employee in Lagos not paid salary for 4 months, despite having an employment contract.",
           "keywords": [
             "unpaid wages",
             "salary",
@@ -391,12 +481,12 @@
           ],
           "key_issues": [
             "Whether employer has breached employment contract",
-            "Employee's right to receive salary",
+            "Employee's right to unpaid wages under Labour Act",
             "Available remedies for unpaid wages"
           ],
           "complexity": "Medium",
           "route": "complex",
-          "reasoning_approach": "First, establish whether employer has breached employment contract by failing to pay salary. Then, analyze employee's rights under the Labour Act and Lagos State employment laws. Finally, outline available remedies including court action and potential damages.",
+          "reasoning_approach": "First establish the employer's obligations under the employment contract and Labour Act. Then analyze whether the employer has breached these obligations. Finally outline the employee's remedies including potential court orders for payment of unpaid wages and other damages.",
           "stakeholders": [
             "employee",
             "employer"
@@ -415,32 +505,15 @@
           "gaps": []
         },
         "result": {
-          "lawMd": "The Labour Act governs employment relationships in Nigeria. **Labour Act, s.1** establishes that wages must be paid in legal tender, and any contract providing otherwise is illegal and void. **Labour Act, s.15** states that wages become due and payable at the end of each period for which the contract subsists, which in this case is four months. The employer has breached the employment contract by failing to pay the employee's salary for four months. **Labour Act, s.17** requires the employer to provide work suitable to the employee's capacity on every day, and if the employer fails to do so, they must pay the employee wages at the same rate as would be payable if the employee had performed a day's work. The employee is entitled to receive their salary, and the employer's failure to pay is a breach of contract.",
-          "actionsMd": "- Step 1: File a complaint with the National Industrial Court (NIC) in Lagos, citing **Labour Act, s.1** and **Labour Act, s.15**. The NIC has jurisdiction over employment disputes in Nigeria.\n- Step 2: Provide evidence of the employment contract, including the terms and conditions of employment, and proof of the employer's failure to pay the employee's salary for four months.\n- Step 3: Seek a court order for payment of the unpaid wages, including interest and any other applicable damages.\n- Step 4: If the employer fails to comply with the court order, seek an injunction against further non-payment.\n- Step 5: Consider seeking damages for breach of contract, including any losses incurred by the employee as a result of the employer's failure to pay their salary.",
-          "sources": [
-            {
-              "label": "Labour Act, s.1",
-              "excerpt": "The wages of a worker shall in all contracts be made payable in legal tender and not otherwise; and if in any contract the whole or any part of the wages of a worker is made payable in any other manner the contract shall be illegal, null and void."
-            },
-            {
-              "label": "Labour Act, s.15",
-              "excerpt": "Wages shall become due and payable at the end of each period for which the contract is expressed to subsist, that is to say, daily, weekly or at such other period as may be agreed upon:"
-            },
-            {
-              "label": "Labour Act, s.17",
-              "excerpt": "Every employer shall, unless a worker has broken his contract, provide work suitable to the worker's capacity on every day (except rest days and public holidays) on which the worker presents himself and is fit for work;"
-            }
-          ],
-          "escalate": true,
-          "escalateReason": "This case involves a breach of contract and a failure to pay wages, which may require the expertise of a lawyer to navigate the court process and ensure the employee receives the compensation they are entitled to.",
-          "followUps": [
-            "What is the process for filing a complaint with the National Industrial Court?",
-            "How long does the court process typically take?",
-            "What are the potential damages I can claim for breach of contract?"
-          ]
+          "lawMd": "Our legal reasoning providers are temporarily unavailable. Please try again in a moment.",
+          "actionsMd": "- Step 1: Wait 30 seconds and resend your question.\n- Step 2: If the issue persists, try rephrasing your question.\n- Step 3: For urgent matters, contact a lawyer directly.",
+          "sources": [],
+          "escalate": false,
+          "escalateReason": "System temporarily unavailable — retry needed.",
+          "followUps": []
         },
-        "draftModel": "llama-3.1-8b-instant",
-        "draftProvider": "groq-fallback"
+        "draftModel": "fallback",
+        "draftProvider": "all-failed"
       }
     },
     {
@@ -499,8 +572,8 @@
           "gaps": []
         },
         "result": {
-          "lawMd": "The Administration of Criminal Justice Act 2015 governs this issue. According to **Administration of Criminal Justice Act 2015, s.3**, a suspect or defendant alleged or charged with committing an offence established by an Act of the National Assembly shall be arrested, investigated, inquired into, tried or dealt with according to the provisions of this Act, except otherwise provided under this Act. **Administration of Criminal Justice Act 2015, s.4** states that in making an arrest, the police officer or other persons making the arrest shall actually touch or confine the body of the suspect, unless there is a submission to the custody by word or action. **Criminal Procedure Act, s.3** and **Administration of Criminal Justice Act 2015, s.4** also state that the police officer or other person making the arrest shall inform the person arrested of the cause of the arrest and that the person arrested shall not be handcuffed, otherwise bound or be subjected to unnecessary restraint except by order of the court, a magistrate or justice of the peace or unless there is reasonable apprehension of violence or of an attempt to escape or unless the restraint is considered necessary for the safety of the person arrested.",
-          "actionsMd": "- Step 1: Demand to know the reason for your arrest and ensure that you are informed of the cause of the arrest.\n- Step 2: Request to be taken to a police station and ensure that you are not subjected to unnecessary restraint.\n- Step 3: If you are not taken to a police station, request to be taken to a magistrate or a court for further proceedings.\n- Step 4: If you are taken to a police station, request to be allowed to make a phone call to inform your family or friends about your arrest.\n- Step 5: If you are not allowed to make a phone call, request to be allowed to send a message to your family or friends about your arrest.\n- Step 6: If you are not allowed to send a message, request to be allowed to see a lawyer or a legal aid officer.",
+          "lawMd": "The Administration of Criminal Justice Act 2015 governs the arrest, investigation, and trial of suspects in Nigeria. **Administration of Criminal Justice Act 2015, s.3** states that a suspect or defendant alleged or charged with committing an offence established by an Act of the National Assembly shall be arrested, investigated, inquired into, tried or dealt with according to the provisions of this Act, except otherwise provided under this Act. **Administration of Criminal Justice Act 2015, s.4** requires that in making an arrest, the police officer or other persons making the arrest shall actually touch or confine the body of the suspect, unless there is a submission to the custody by word or action. **Criminal Procedure Act, s.3** states that in making an arrest, the police officer or other person making the same shall actually touch or confine the body of the person to be arrested, unless there be a submission to the custody by word or action. **Administration of Criminal Justice Act 2015, s.6** requires that the police officer or other persons making the arrest shall inform the suspect immediately of the reason for the arrest, except when the suspect is in the actual course of the commission of an offence or is pursued immediately after the commission of an offence or has escaped from lawful custody.",
+          "actionsMd": "- Step 1: Seek immediate release from custody by informing the police officer or other persons making the arrest of the unlawful nature of the arrest and the need to be taken to a police station.\n- Step 2: File a complaint with the police station or the State Criminal Investigation Department (CID) against the police officer or other persons making the arrest for unlawful arrest and detention.\n- Step 3: Seek the assistance of a legal practitioner to guide you through the process and ensure that your rights are protected.\n- Step 4: Consider filing a court action for damages against the police officer or other persons making the arrest for unlawful arrest and detention.\n- Step 5: Document all evidence of the unlawful arrest and detention, including witness statements and medical records, to support your claim for damages.",
           "sources": [
             {
               "label": "Administration of Criminal Justice Act 2015, s.3",
@@ -516,11 +589,10 @@
             }
           ],
           "escalate": true,
-          "escalateReason": "This situation requires the expertise of a lawyer to navigate the complex legal framework and ensure that your rights are protected.",
+          "escalateReason": "This situation requires the assistance of a legal practitioner to guide you through the process and ensure that your rights are protected. The police officer or other persons making the arrest may also require legal representation to defend themselves against your claims.",
           "followUps": [
-            "How long can I be detained at the police station?",
-            "Can I request to be released on bail?",
-            "What are my rights if I am charged with an offence?"
+            "What are the next steps to take after filing a complaint with the police station or the State CID?",
+            "How long does it take to process a court action for damages against the police officer or other persons making the arrest?"
           ]
         },
         "draftModel": "llama-3.1-8b-instant",
@@ -568,8 +640,8 @@
           "gaps": []
         },
         "result": {
-          "lawMd": "The Administration of Criminal Justice Act 2015 governs this issue. According to **Administration of Criminal Justice Act 2015, s.3**, a suspect or defendant alleged or charged with committing an offence established by an Act of the National Assembly shall be arrested, investigated, inquired into, tried or dealt with according to the provisions of this Act, except otherwise provided under this Act. **Administration of Criminal Justice Act 2015, s.4** states that in making an arrest, the police officer or other persons making the arrest shall actually touch or confine the body of the suspect, unless there is a submission to the custody by word or action. **Criminal Procedure Act, s.3** and **Administration of Criminal Justice Act 2015, s.4** also state that the police officer or other person making the arrest shall inform the person arrested of the cause of the arrest and that the person arrested shall not be handcuffed, otherwise bound or be subjected to unnecessary restraint except by order of the court, a magistrate or justice of the peace or unless there is reasonable apprehension of violence or of an attempt to escape or unless the restraint is considered necessary for the safety of the person arrested.",
-          "actionsMd": "- Step 1: Demand to know the reason for your arrest and ensure that you are informed of the cause of the arrest.\n- Step 2: Request to be taken to a police station and ensure that you are not subjected to unnecessary restraint.\n- Step 3: If you are not taken to a police station, request to be taken to a magistrate or a court for further proceedings.\n- Step 4: If you are taken to a police station, request to be allowed to make a phone call to inform your family or friends about your arrest.\n- Step 5: If you are not allowed to make a phone call, request to be allowed to send a message to your family or friends about your arrest.\n- Step 6: If you are not allowed to send a message, request to be allowed to see a lawyer or a legal aid officer.",
+          "lawMd": "The Administration of Criminal Justice Act 2015 governs the arrest, investigation, and trial of suspects in Nigeria. **Administration of Criminal Justice Act 2015, s.3** states that a suspect or defendant alleged or charged with committing an offence established by an Act of the National Assembly shall be arrested, investigated, inquired into, tried or dealt with according to the provisions of this Act, except otherwise provided under this Act. **Administration of Criminal Justice Act 2015, s.4** requires that in making an arrest, the police officer or other persons making the arrest shall actually touch or confine the body of the suspect, unless there is a submission to the custody by word or action. **Criminal Procedure Act, s.3** states that in making an arrest, the police officer or other person making the same shall actually touch or confine the body of the person to be arrested, unless there be a submission to the custody by word or action. **Administration of Criminal Justice Act 2015, s.6** requires that the police officer or other persons making the arrest shall inform the suspect immediately of the reason for the arrest, except when the suspect is in the actual course of the commission of an offence or is pursued immediately after the commission of an offence or has escaped from lawful custody.",
+          "actionsMd": "- Step 1: Seek immediate release from custody by informing the police officer or other persons making the arrest of the unlawful nature of the arrest and the need to be taken to a police station.\n- Step 2: File a complaint with the police station or the State Criminal Investigation Department (CID) against the police officer or other persons making the arrest for unlawful arrest and detention.\n- Step 3: Seek the assistance of a legal practitioner to guide you through the process and ensure that your rights are protected.\n- Step 4: Consider filing a court action for damages against the police officer or other persons making the arrest for unlawful arrest and detention.\n- Step 5: Document all evidence of the unlawful arrest and detention, including witness statements and medical records, to support your claim for damages.",
           "sources": [
             {
               "label": "Administration of Criminal Justice Act 2015, s.3",
@@ -585,11 +657,10 @@
             }
           ],
           "escalate": true,
-          "escalateReason": "This situation requires the expertise of a lawyer to navigate the complex legal framework and ensure that your rights are protected.",
+          "escalateReason": "This situation requires the assistance of a legal practitioner to guide you through the process and ensure that your rights are protected. The police officer or other persons making the arrest may also require legal representation to defend themselves against your claims.",
           "followUps": [
-            "How long can I be detained at the police station?",
-            "Can I request to be released on bail?",
-            "What are my rights if I am charged with an offence?"
+            "What are the next steps to take after filing a complaint with the police station or the State CID?",
+            "How long does it take to process a court action for damages against the police officer or other persons making the arrest?"
           ]
         },
         "draftModel": "llama-3.1-8b-instant",
@@ -618,7 +689,7 @@
           "jurisdiction": "Lagos State",
           "jurisdiction_status": "clear",
           "urgency": "Critical",
-          "summary": "Victim of domestic violence seeking protection from abusive husband in Lagos.",
+          "summary": "Victim of domestic violence seeking help and protection from abusive husband.",
           "keywords": [
             "domestic violence",
             "abuse",
@@ -627,21 +698,24 @@
             "Magistrates Court"
           ],
           "key_issues": [
-            "Available protection options for victims of domestic violence",
-            "Procedure for obtaining a restraining order",
-            "Potential consequences for the abuser"
+            "Immediate safety and protection from husband",
+            "Reporting domestic violence to authorities",
+            "Available legal remedies and support services"
           ],
           "complexity": "High",
           "route": "complex",
-          "reasoning_approach": "First, contact the Lagos State Domestic and Sexual Violence Agency for immediate support and guidance. Then, establish the legal framework under Lagos State Domestic and Sexual Violence Law 2007, particularly sections on protection orders and restraining orders. Finally, outline the potential consequences for the abuser, including arrest and prosecution.",
+          "reasoning_approach": "First, contact Lagos State Domestic and Sexual Violence Agency (DSVA) for immediate support and protection. Then, report the abuse to the police and obtain a police report. Next, seek a restraining order from the Magistrates Court to prevent further harassment. Finally, explore other legal remedies such as divorce and compensation.",
           "stakeholders": [
             "victim",
-            "abuser"
+            "husband",
+            "Lagos State DSVA",
+            "police"
           ],
           "potential_remedies": [
             "Restraining order",
-            "Police protection",
-            "Criminal prosecution of the abuser"
+            "Divorce",
+            "Compensation for physical and emotional harm",
+            "Protection order"
           ]
         },
         "route": "complex",
@@ -652,27 +726,28 @@
           "gaps": []
         },
         "result": {
-          "lawMd": "The Child's Right Act governs this issue, specifically **Child's Right Act, s.11**, which establishes the right to dignity of the child, including protection from physical, mental, or emotional injury, abuse, neglect, or maltreatment. **Child's Right Act, s.31** and **s.32** criminalize rape and other forms of sexual abuse and exploitation of children. However, these provisions can be applied to adult victims of domestic violence in Lagos State, as the Act aims to protect all individuals from abuse and exploitation. The law is clear on this: no person shall subject another to physical, mental, or emotional injury, abuse, neglect, or maltreatment.",
-          "actionsMd": "- Step 1: Immediately contact the Lagos State Domestic and Sexual Violence Response Team (DSVRT) at 08137933652 or [info@dsvrt.org](mailto:info@dsvrt.org) for support and guidance.\n- Step 2: Report the abuse to the police at the nearest police station and obtain a police report.\n- Step 3: Apply for a restraining order at the Lagos State High Court, Family Law Division, under the provisions of the Child's Right Act.\n- Step 4: Seek medical attention and document any injuries.\n- Step 5: Consider seeking counseling or therapy to cope with the trauma.",
+          "lawMd": "The Child's Right Act governs this issue. **Child's Right Act, s.11** establishes the right to dignity of the child, including protection from physical, mental, or emotional injury, abuse, neglect, or maltreatment. **Child's Right Act, s.31** and **s.32** prohibit unlawful sexual intercourse with a child and forms of sexual abuse and exploitation, respectively. These provisions apply to you as a victim of domestic violence and abuse.\n\n   The law is clear on this: your husband's actions constitute abuse and exploitation, and you have the right to protection and safety. **Child's Right Act, s.11** requires that you be treated with dignity and respect, and **Child's Right Act, s.31** and **s.32** make it an offence for anyone to engage in sexual abuse or exploitation of a child.\n\n   In your situation, you are entitled to protection from your husband's abuse. You can report the abuse to the authorities, including the Lagos State Domestic and Sexual Violence Agency (DSVA) and the police. The DSVA can provide you with support and assistance, including a protection order to keep you safe from your husband.\n\n   You can also apply for a restraining order to prevent your husband from contacting or approaching you. This can be done through the police or the DSVA. Additionally, you may be eligible for compensation for the physical and emotional harm you have suffered.\n\n   It is essential to note that the Child's Right Act does not specifically address adult victims of domestic violence. However, the provisions mentioned above can still be applied to your situation. You should seek legal advice from a lawyer to understand your rights and options fully.\n\n   The Lagos State Domestic and Sexual Violence Agency (DSVA) can provide you with support and assistance, including a protection order to keep you safe from your husband. You can contact them at [info@lagosdsva.org](mailto:info@lagosdsva.org) or 09055555555.\n\n   The police can also assist you in reporting the abuse and obtaining a restraining order. You can contact the Lagos State Police Command at 09055555555.\n\n   You should also consider seeking legal advice from a lawyer to understand your rights and options fully. A lawyer can help you navigate the legal process and ensure that your rights are protected.\n\n   In summary, the law is clear on this: you have the right to protection and safety from your husband's abuse. You can report the abuse to the authorities, apply for a restraining order, and seek compensation for the harm you have suffered. You should seek legal advice from a lawyer to understand your rights and options fully.",
+          "actionsMd": "- Step 1: Report the abuse to the Lagos State Domestic and Sexual Violence Agency (DSVA) and the police.\n- Step 2: Apply for a restraining order to prevent your husband from contacting or approaching you.\n- Step 3: Seek legal advice from a lawyer to understand your rights and options fully.\n- Step 4: Contact the DSVA at [info@lagosdsva.org](mailto:info@lagosdsva.org) or 09055555555 for support and assistance.\n- Step 5: Contact the Lagos State Police Command at 09055555555 for assistance in reporting the abuse and obtaining a restraining order.\n- Step 6: Consider seeking compensation for the physical and emotional harm you have suffered.",
           "sources": [
             {
               "label": "Child's Right Act, s.11",
-              "excerpt": "Every child is entitled to respect for the dignity of his person, and accordingly, no child shall be subjected to physical, mental or emotional injury, abuse, neglect or maltreatment, including sexual abuse."
+              "excerpt": "Every child is entitled to respect for the dignity of his person, and accordingly, no child shall be subjected to physical, mental or emotional injury, abuse, neglect or maltreatment."
             },
             {
               "label": "Child's Right Act, s.31",
-              "excerpt": "No person shall have sexual intercourse with a child."
+              "excerpt": "No person shall have sexual intercourse with a child. A person who contravenes this provision commits an offence of rape and is liable on conviction to imprisonment for life."
             },
             {
               "label": "Child's Right Act, s.32",
-              "excerpt": "A person who sexually abuses or sexually exploits a child in any manner not already mentioned under this Part of this Act commits an offence."
+              "excerpt": "A person who sexually abuses or sexually exploits a child in any manner not already mentioned under this Part of this Act commits an offence. A person who commits an offence under this section is liable on conviction to imprisonment for a term of fourteen years."
             }
           ],
           "escalate": true,
-          "escalateReason": "This situation requires immediate attention and support from a lawyer or a domestic violence expert to ensure the victim's safety and well-being.",
+          "escalateReason": "This situation requires immediate attention and action to ensure your safety and protection. A lawyer can provide you with guidance and support to navigate the legal process and ensure that your rights are protected.",
           "followUps": [
-            "How do I obtain a restraining order?",
-            "What are the potential consequences for my husband if he is convicted of domestic violence?"
+            "How long does the court process usually take?",
+            "What are the chances of getting a restraining order?",
+            "Can I get compensation for the physical and emotional harm I have suffered?"
           ]
         },
         "draftModel": "llama-3.1-8b-instant",
@@ -686,7 +761,7 @@
           "jurisdiction": "Lagos State",
           "jurisdiction_status": "clear",
           "urgency": "Critical",
-          "summary": "Victim of domestic violence seeking protection from abusive husband in Lagos.",
+          "summary": "Victim of domestic violence seeking help and protection from abusive husband.",
           "keywords": [
             "domestic violence",
             "abuse",
@@ -695,21 +770,24 @@
             "Magistrates Court"
           ],
           "key_issues": [
-            "Available protection options for victims of domestic violence",
-            "Procedure for obtaining a restraining order",
-            "Potential consequences for the abuser"
+            "Immediate safety and protection from husband",
+            "Reporting domestic violence to authorities",
+            "Available legal remedies and support services"
           ],
           "complexity": "High",
           "route": "complex",
-          "reasoning_approach": "First, contact the Lagos State Domestic and Sexual Violence Agency for immediate support and guidance. Then, establish the legal framework under Lagos State Domestic and Sexual Violence Law 2007, particularly sections on protection orders and restraining orders. Finally, outline the potential consequences for the abuser, including arrest and prosecution.",
+          "reasoning_approach": "First, contact Lagos State Domestic and Sexual Violence Agency (DSVA) for immediate support and protection. Then, report the abuse to the police and obtain a police report. Next, seek a restraining order from the Magistrates Court to prevent further harassment. Finally, explore other legal remedies such as divorce and compensation.",
           "stakeholders": [
             "victim",
-            "abuser"
+            "husband",
+            "Lagos State DSVA",
+            "police"
           ],
           "potential_remedies": [
             "Restraining order",
-            "Police protection",
-            "Criminal prosecution of the abuser"
+            "Divorce",
+            "Compensation for physical and emotional harm",
+            "Protection order"
           ]
         },
         "route": "complex",
@@ -720,31 +798,500 @@
           "gaps": []
         },
         "result": {
-          "lawMd": "The Child's Right Act governs this issue, specifically **Child's Right Act, s.11**, which establishes the right to dignity of the child, including protection from physical, mental, or emotional injury, abuse, neglect, or maltreatment. **Child's Right Act, s.31** and **s.32** criminalize rape and other forms of sexual abuse and exploitation of children. However, these provisions can be applied to adult victims of domestic violence in Lagos State, as the Act aims to protect all individuals from abuse and exploitation. The law is clear on this: no person shall subject another to physical, mental, or emotional injury, abuse, neglect, or maltreatment.",
-          "actionsMd": "- Step 1: Immediately contact the Lagos State Domestic and Sexual Violence Response Team (DSVRT) at 08137933652 or [info@dsvrt.org](mailto:info@dsvrt.org) for support and guidance.\n- Step 2: Report the abuse to the police at the nearest police station and obtain a police report.\n- Step 3: Apply for a restraining order at the Lagos State High Court, Family Law Division, under the provisions of the Child's Right Act.\n- Step 4: Seek medical attention and document any injuries.\n- Step 5: Consider seeking counseling or therapy to cope with the trauma.",
+          "lawMd": "The Child's Right Act governs this issue. **Child's Right Act, s.11** establishes the right to dignity of the child, including protection from physical, mental, or emotional injury, abuse, neglect, or maltreatment. **Child's Right Act, s.31** and **s.32** prohibit unlawful sexual intercourse with a child and forms of sexual abuse and exploitation, respectively. These provisions apply to you as a victim of domestic violence and abuse.\n\n   The law is clear on this: your husband's actions constitute abuse and exploitation, and you have the right to protection and safety. **Child's Right Act, s.11** requires that you be treated with dignity and respect, and **Child's Right Act, s.31** and **s.32** make it an offence for anyone to engage in sexual abuse or exploitation of a child.\n\n   In your situation, you are entitled to protection from your husband's abuse. You can report the abuse to the authorities, including the Lagos State Domestic and Sexual Violence Agency (DSVA) and the police. The DSVA can provide you with support and assistance, including a protection order to keep you safe from your husband.\n\n   You can also apply for a restraining order to prevent your husband from contacting or approaching you. This can be done through the police or the DSVA. Additionally, you may be eligible for compensation for the physical and emotional harm you have suffered.\n\n   It is essential to note that the Child's Right Act does not specifically address adult victims of domestic violence. However, the provisions mentioned above can still be applied to your situation. You should seek legal advice from a lawyer to understand your rights and options fully.\n\n   The Lagos State Domestic and Sexual Violence Agency (DSVA) can provide you with support and assistance, including a protection order to keep you safe from your husband. You can contact them at [info@lagosdsva.org](mailto:info@lagosdsva.org) or 09055555555.\n\n   The police can also assist you in reporting the abuse and obtaining a restraining order. You can contact the Lagos State Police Command at 09055555555.\n\n   You should also consider seeking legal advice from a lawyer to understand your rights and options fully. A lawyer can help you navigate the legal process and ensure that your rights are protected.\n\n   In summary, the law is clear on this: you have the right to protection and safety from your husband's abuse. You can report the abuse to the authorities, apply for a restraining order, and seek compensation for the harm you have suffered. You should seek legal advice from a lawyer to understand your rights and options fully.",
+          "actionsMd": "- Step 1: Report the abuse to the Lagos State Domestic and Sexual Violence Agency (DSVA) and the police.\n- Step 2: Apply for a restraining order to prevent your husband from contacting or approaching you.\n- Step 3: Seek legal advice from a lawyer to understand your rights and options fully.\n- Step 4: Contact the DSVA at [info@lagosdsva.org](mailto:info@lagosdsva.org) or 09055555555 for support and assistance.\n- Step 5: Contact the Lagos State Police Command at 09055555555 for assistance in reporting the abuse and obtaining a restraining order.\n- Step 6: Consider seeking compensation for the physical and emotional harm you have suffered.",
           "sources": [
             {
               "label": "Child's Right Act, s.11",
-              "excerpt": "Every child is entitled to respect for the dignity of his person, and accordingly, no child shall be subjected to physical, mental or emotional injury, abuse, neglect or maltreatment, including sexual abuse."
+              "excerpt": "Every child is entitled to respect for the dignity of his person, and accordingly, no child shall be subjected to physical, mental or emotional injury, abuse, neglect or maltreatment."
             },
             {
               "label": "Child's Right Act, s.31",
-              "excerpt": "No person shall have sexual intercourse with a child."
+              "excerpt": "No person shall have sexual intercourse with a child. A person who contravenes this provision commits an offence of rape and is liable on conviction to imprisonment for life."
             },
             {
               "label": "Child's Right Act, s.32",
-              "excerpt": "A person who sexually abuses or sexually exploits a child in any manner not already mentioned under this Part of this Act commits an offence."
+              "excerpt": "A person who sexually abuses or sexually exploits a child in any manner not already mentioned under this Part of this Act commits an offence. A person who commits an offence under this section is liable on conviction to imprisonment for a term of fourteen years."
             }
           ],
           "escalate": true,
-          "escalateReason": "This situation requires immediate attention and support from a lawyer or a domestic violence expert to ensure the victim's safety and well-being.",
+          "escalateReason": "This situation requires immediate attention and action to ensure your safety and protection. A lawyer can provide you with guidance and support to navigate the legal process and ensure that your rights are protected.",
           "followUps": [
-            "How do I obtain a restraining order?",
-            "What are the potential consequences for my husband if he is convicted of domestic violence?"
+            "How long does the court process usually take?",
+            "What are the chances of getting a restraining order?",
+            "Can I get compensation for the physical and emotional harm I have suffered?"
           ]
         },
         "draftModel": "llama-3.1-8b-instant",
         "draftProvider": "groq-fallback"
+      }
+    },
+    {
+      "scenario_id": "land-dispute-boundary",
+      "category": "complex_legal",
+      "total_score": 0.8571428571428571,
+      "pass": true,
+      "dimensions": {
+        "is_legal_classification": 1,
+        "practice_area": 1,
+        "jurisdiction": 1,
+        "must_cite": 1,
+        "escalation": 0,
+        "actionable": 1,
+        "no_hallucination": 1
+      },
+      "raw_response": {
+        "classification": {
+          "is_legal_question": true,
+          "practice_area": "land_property",
+          "jurisdiction": "Oyo State",
+          "jurisdiction_status": "clear",
+          "urgency": "Medium",
+          "summary": "Neighbor claiming part of land purchased by father in 1985, no documents provided.",
+          "keywords": [
+            "land ownership",
+            "Certificate of Occupancy",
+            "Land Use Act",
+            "Oyo State Land Law"
+          ],
+          "key_issues": [
+            "Whether neighbor has a legitimate claim to the land",
+            "Effect of lack of documents on land ownership",
+            "Available remedies to protect land ownership"
+          ],
+          "complexity": "Medium",
+          "route": "complex",
+          "reasoning_approach": "Establish the applicable law under Oyo State Land Law and the Land Use Act, particularly sections on land ownership, registration, and protection of land rights. Analyze the impact of the lack of documents on the neighbor's claim and the owner's rights. Finally, outline the available remedies to protect the land ownership, including potential court action.",
+          "stakeholders": [
+            "landowner",
+            "neighbor"
+          ],
+          "potential_remedies": [
+            "Court action to establish land ownership",
+            "Registration of land with Oyo State Lands Bureau",
+            "Obtaining a Certificate of Occupancy"
+          ]
+        },
+        "route": "complex",
+        "plan": {
+          "analysis": "Analyzing the legal question and relevant provisions.",
+          "key_provisions": [],
+          "response_structure": "Review applicable law, apply to facts, provide guidance",
+          "gaps": []
+        },
+        "result": {
+          "lawMd": "The Land Use Act (Validation of Certain Laws, etc.) Act, s.1 validates certain laws made between the commencement of the Land Use Act and 30th September 1979. The Land Use Act, s.5 empowers the Governor to grant statutory rights of occupancy, demand rental, and revise rental. The Land Use Act, s.9 requires the Governor to issue a certificate of occupancy when granting a statutory right of occupancy. The Land Use Act, s.10 implies conditions and provisions in a certificate of occupancy, including payment of rent and unexhausted improvements. The Land Use Act, s.15 grants the holder of a statutory right of occupancy the sole right to and absolute possession of all improvements on the land. The Land Use Act, s.17 allows the Governor to grant a statutory right of occupancy free of rent or at a reduced rent. The Land Use Act, s.18 states that acceptance of rent does not operate as a waiver of forfeiture. The Land Use Act, s.19 provides for the fixing of a penal rent when a holder of a certificate of occupancy breaches a covenant to develop or effect improvements on the land.",
+          "actionsMd": "- Step 1: Gather all relevant documents, including the original purchase deed of the land from your father in 1985, to establish your ownership.\n- Step 2: Register the land with the Oyo State Lands Bureau to ensure it is properly documented and protected.\n- Step 3: Obtain a Certificate of Occupancy from the Governor, which will provide evidence of your ownership and rights to the land.\n- Step 4: If your neighbor continues to claim part of your land, consider filing a court action to establish your ownership and rights to the land.\n- Step 5: If necessary, seek the assistance of a lawyer to guide you through the court process and ensure your rights are protected.",
+          "sources": [
+            {
+              "label": "Land Use Act, s.5",
+              "excerpt": "It shall be lawful for the Governor in respect of land, whether or not in an urban area to— (a) grant statutory rights of occupancy to any person for all purposes;"
+            },
+            {
+              "label": "Land Use Act, s.9",
+              "excerpt": "It shall be lawful for the Governor— (a) when granting a statutory right of occupancy to any person; or (b) when any person is in occupation of land under a customary right of occupancy and applies in the prescribed manner; or (c) when any person is entitled to a statutory right of occupancy, to issue a certificate under his hand in evidence of such right of occupancy."
+            },
+            {
+              "label": "Land Use Act, s.10",
+              "excerpt": "Every certificate of occupancy shall be deemed to contain provisions to the following effect— (a) that the holder binds himself to pay to the Governor the amount found to be payable in respect of any unexhausted improvements existing on the land at the date of his entering into occupation;"
+            },
+            {
+              "label": "Land Use Act, s.15",
+              "excerpt": "During the term of a statutory right of occupancy the holder— (a) shall have the sole right to and absolute possession of all the improvements on the land;"
+            },
+            {
+              "label": "Land Use Act, s.17",
+              "excerpt": "The Governor may grant a statutory right of occupancy free of rent or at a reduced rent in any case in which he is satisfied that it would be in the public interest to do so."
+            }
+          ],
+          "escalate": true,
+          "escalateReason": "This case may require the assistance of a lawyer to navigate the court process and ensure your rights are protected.",
+          "followUps": [
+            "How do I register the land with the Oyo State Lands Bureau?",
+            "What are the requirements for obtaining a Certificate of Occupancy?",
+            "What are the potential consequences of not obtaining a Certificate of Occupancy?"
+          ]
+        },
+        "draftModel": "llama-3.1-8b-instant",
+        "draftProvider": "groq-fallback"
+      },
+      "error": null,
+      "response": {
+        "classification": {
+          "is_legal_question": true,
+          "practice_area": "land_property",
+          "jurisdiction": "Oyo State",
+          "jurisdiction_status": "clear",
+          "urgency": "Medium",
+          "summary": "Neighbor claiming part of land purchased by father in 1985, no documents provided.",
+          "keywords": [
+            "land ownership",
+            "Certificate of Occupancy",
+            "Land Use Act",
+            "Oyo State Land Law"
+          ],
+          "key_issues": [
+            "Whether neighbor has a legitimate claim to the land",
+            "Effect of lack of documents on land ownership",
+            "Available remedies to protect land ownership"
+          ],
+          "complexity": "Medium",
+          "route": "complex",
+          "reasoning_approach": "Establish the applicable law under Oyo State Land Law and the Land Use Act, particularly sections on land ownership, registration, and protection of land rights. Analyze the impact of the lack of documents on the neighbor's claim and the owner's rights. Finally, outline the available remedies to protect the land ownership, including potential court action.",
+          "stakeholders": [
+            "landowner",
+            "neighbor"
+          ],
+          "potential_remedies": [
+            "Court action to establish land ownership",
+            "Registration of land with Oyo State Lands Bureau",
+            "Obtaining a Certificate of Occupancy"
+          ]
+        },
+        "route": "complex",
+        "plan": {
+          "analysis": "Analyzing the legal question and relevant provisions.",
+          "key_provisions": [],
+          "response_structure": "Review applicable law, apply to facts, provide guidance",
+          "gaps": []
+        },
+        "result": {
+          "lawMd": "The Land Use Act (Validation of Certain Laws, etc.) Act, s.1 validates certain laws made between the commencement of the Land Use Act and 30th September 1979. The Land Use Act, s.5 empowers the Governor to grant statutory rights of occupancy, demand rental, and revise rental. The Land Use Act, s.9 requires the Governor to issue a certificate of occupancy when granting a statutory right of occupancy. The Land Use Act, s.10 implies conditions and provisions in a certificate of occupancy, including payment of rent and unexhausted improvements. The Land Use Act, s.15 grants the holder of a statutory right of occupancy the sole right to and absolute possession of all improvements on the land. The Land Use Act, s.17 allows the Governor to grant a statutory right of occupancy free of rent or at a reduced rent. The Land Use Act, s.18 states that acceptance of rent does not operate as a waiver of forfeiture. The Land Use Act, s.19 provides for the fixing of a penal rent when a holder of a certificate of occupancy breaches a covenant to develop or effect improvements on the land.",
+          "actionsMd": "- Step 1: Gather all relevant documents, including the original purchase deed of the land from your father in 1985, to establish your ownership.\n- Step 2: Register the land with the Oyo State Lands Bureau to ensure it is properly documented and protected.\n- Step 3: Obtain a Certificate of Occupancy from the Governor, which will provide evidence of your ownership and rights to the land.\n- Step 4: If your neighbor continues to claim part of your land, consider filing a court action to establish your ownership and rights to the land.\n- Step 5: If necessary, seek the assistance of a lawyer to guide you through the court process and ensure your rights are protected.",
+          "sources": [
+            {
+              "label": "Land Use Act, s.5",
+              "excerpt": "It shall be lawful for the Governor in respect of land, whether or not in an urban area to— (a) grant statutory rights of occupancy to any person for all purposes;"
+            },
+            {
+              "label": "Land Use Act, s.9",
+              "excerpt": "It shall be lawful for the Governor— (a) when granting a statutory right of occupancy to any person; or (b) when any person is in occupation of land under a customary right of occupancy and applies in the prescribed manner; or (c) when any person is entitled to a statutory right of occupancy, to issue a certificate under his hand in evidence of such right of occupancy."
+            },
+            {
+              "label": "Land Use Act, s.10",
+              "excerpt": "Every certificate of occupancy shall be deemed to contain provisions to the following effect— (a) that the holder binds himself to pay to the Governor the amount found to be payable in respect of any unexhausted improvements existing on the land at the date of his entering into occupation;"
+            },
+            {
+              "label": "Land Use Act, s.15",
+              "excerpt": "During the term of a statutory right of occupancy the holder— (a) shall have the sole right to and absolute possession of all the improvements on the land;"
+            },
+            {
+              "label": "Land Use Act, s.17",
+              "excerpt": "The Governor may grant a statutory right of occupancy free of rent or at a reduced rent in any case in which he is satisfied that it would be in the public interest to do so."
+            }
+          ],
+          "escalate": true,
+          "escalateReason": "This case may require the assistance of a lawyer to navigate the court process and ensure your rights are protected.",
+          "followUps": [
+            "How do I register the land with the Oyo State Lands Bureau?",
+            "What are the requirements for obtaining a Certificate of Occupancy?",
+            "What are the potential consequences of not obtaining a Certificate of Occupancy?"
+          ]
+        },
+        "draftModel": "llama-3.1-8b-instant",
+        "draftProvider": "groq-fallback"
+      }
+    },
+    {
+      "scenario_id": "consumer-defective-goods",
+      "category": "simple_legal",
+      "total_score": 0.6142857142857142,
+      "pass": false,
+      "dimensions": {
+        "is_legal_classification": 1,
+        "practice_area": 1,
+        "jurisdiction": 0.3,
+        "must_cite": 0,
+        "escalation": 0,
+        "actionable": 1,
+        "no_hallucination": 1
+      },
+      "raw_response": {
+        "classification": {
+          "is_legal_question": true,
+          "practice_area": "consumer_rights",
+          "jurisdiction": "Lagos State",
+          "jurisdiction_status": "clear",
+          "urgency": "Medium",
+          "summary": "Consumer seeks refund for defective phone purchased from Lagos shop.",
+          "keywords": [
+            "consumer protection",
+            "defective goods",
+            "refund",
+            "Lagos State Consumer Protection Agency"
+          ],
+          "key_issues": [
+            "Whether seller is liable for defective goods",
+            "Consumer's right to refund or replacement",
+            "Procedure for filing complaint with Lagos State Consumer Protection Agency"
+          ],
+          "complexity": "Low",
+          "route": "simple",
+          "reasoning_approach": "Establish consumer rights under Lagos State Consumer Protection Agency Law 2015, particularly sections on liability for defective goods and procedure for filing complaints.",
+          "stakeholders": [
+            "consumer",
+            "seller"
+          ],
+          "potential_remedies": [
+            "Refund",
+            "Replacement",
+            "Compensation for losses"
+          ]
+        },
+        "route": "simple",
+        "plan": null,
+        "result": {
+          "lawMd": "The Consumer Protection Council Act governs consumer rights in Nigeria. **Consumer Protection Council Act, s.32** defines a 'consumer' as an individual who purchases, uses, maintains or disposes of products or services. This implies that you, as the buyer, are a consumer entitled to protection under this Act.\n\nThe Act also establishes the Consumer Protection Council, which is responsible for promoting and protecting consumer rights. **Consumer Protection Council Act, s.1** establishes the Council and its composition.\n\nIn the event of a defective product, the seller is liable. You are entitled to a refund or replacement, as per the Consumer Protection Council Act. **Consumer Protection Council Act, s.32** defines a 'product' as any goods or services offered for sale.\n\nTo file a complaint, you can contact the Lagos State Consumer Protection Agency. They will guide you through the process and ensure that your rights are protected.",
+          "actionsMd": "- Step 1: Contact the Lagos State Consumer Protection Agency to file a complaint against the seller.\n- Step 2: Provide evidence of the defective product, including receipts and proof of purchase.\n- Step 3: Cooperate with the Agency to resolve the issue.\n- Step 4: If the Agency finds in your favor, the seller must refund or replace the product.\n- Step 5: If the seller refuses to comply, you can escalate the matter to the Consumer Protection Council.",
+          "sources": [
+            {
+              "label": "Consumer Protection Council Act, s.1",
+              "excerpt": "Establishment and composition of the Consumer Protection Council, etc."
+            },
+            {
+              "label": "Consumer Protection Council Act, s.32",
+              "excerpt": "Interpretation of terms used in the Act."
+            },
+            {
+              "label": "Consumer Protection Council Act, s.33",
+              "excerpt": "Short title of the Act."
+            }
+          ],
+          "escalate": true,
+          "escalateReason": "If the seller refuses to comply with the Agency's decision, you may need to escalate the matter to the Consumer Protection Council for further action.",
+          "followUps": [
+            "How long does the complaint process typically take?",
+            "What are the potential consequences for the seller if they refuse to comply with the Agency's decision?"
+          ]
+        },
+        "draftModel": "llama-3.1-8b-instant",
+        "draftProvider": "groq-fallback"
+      },
+      "error": null,
+      "response": {
+        "classification": {
+          "is_legal_question": true,
+          "practice_area": "consumer_rights",
+          "jurisdiction": "Lagos State",
+          "jurisdiction_status": "clear",
+          "urgency": "Medium",
+          "summary": "Consumer seeks refund for defective phone purchased from Lagos shop.",
+          "keywords": [
+            "consumer protection",
+            "defective goods",
+            "refund",
+            "Lagos State Consumer Protection Agency"
+          ],
+          "key_issues": [
+            "Whether seller is liable for defective goods",
+            "Consumer's right to refund or replacement",
+            "Procedure for filing complaint with Lagos State Consumer Protection Agency"
+          ],
+          "complexity": "Low",
+          "route": "simple",
+          "reasoning_approach": "Establish consumer rights under Lagos State Consumer Protection Agency Law 2015, particularly sections on liability for defective goods and procedure for filing complaints.",
+          "stakeholders": [
+            "consumer",
+            "seller"
+          ],
+          "potential_remedies": [
+            "Refund",
+            "Replacement",
+            "Compensation for losses"
+          ]
+        },
+        "route": "simple",
+        "plan": null,
+        "result": {
+          "lawMd": "The Consumer Protection Council Act governs consumer rights in Nigeria. **Consumer Protection Council Act, s.32** defines a 'consumer' as an individual who purchases, uses, maintains or disposes of products or services. This implies that you, as the buyer, are a consumer entitled to protection under this Act.\n\nThe Act also establishes the Consumer Protection Council, which is responsible for promoting and protecting consumer rights. **Consumer Protection Council Act, s.1** establishes the Council and its composition.\n\nIn the event of a defective product, the seller is liable. You are entitled to a refund or replacement, as per the Consumer Protection Council Act. **Consumer Protection Council Act, s.32** defines a 'product' as any goods or services offered for sale.\n\nTo file a complaint, you can contact the Lagos State Consumer Protection Agency. They will guide you through the process and ensure that your rights are protected.",
+          "actionsMd": "- Step 1: Contact the Lagos State Consumer Protection Agency to file a complaint against the seller.\n- Step 2: Provide evidence of the defective product, including receipts and proof of purchase.\n- Step 3: Cooperate with the Agency to resolve the issue.\n- Step 4: If the Agency finds in your favor, the seller must refund or replace the product.\n- Step 5: If the seller refuses to comply, you can escalate the matter to the Consumer Protection Council.",
+          "sources": [
+            {
+              "label": "Consumer Protection Council Act, s.1",
+              "excerpt": "Establishment and composition of the Consumer Protection Council, etc."
+            },
+            {
+              "label": "Consumer Protection Council Act, s.32",
+              "excerpt": "Interpretation of terms used in the Act."
+            },
+            {
+              "label": "Consumer Protection Council Act, s.33",
+              "excerpt": "Short title of the Act."
+            }
+          ],
+          "escalate": true,
+          "escalateReason": "If the seller refuses to comply with the Agency's decision, you may need to escalate the matter to the Consumer Protection Council for further action.",
+          "followUps": [
+            "How long does the complaint process typically take?",
+            "What are the potential consequences for the seller if they refuse to comply with the Agency's decision?"
+          ]
+        },
+        "draftModel": "llama-3.1-8b-instant",
+        "draftProvider": "groq-fallback"
+      }
+    },
+    {
+      "scenario_id": "constitutional-free-speech",
+      "category": "complex_legal",
+      "total_score": 0.8571428571428571,
+      "pass": true,
+      "dimensions": {
+        "is_legal_classification": 1,
+        "practice_area": 1,
+        "jurisdiction": 1,
+        "must_cite": 0,
+        "escalation": 1,
+        "actionable": 1,
+        "no_hallucination": 1
+      },
+      "raw_response": {
+        "classification": {
+          "is_legal_question": true,
+          "practice_area": "constitutional_rights",
+          "jurisdiction": "Federal",
+          "jurisdiction_status": "clear",
+          "urgency": "Low",
+          "summary": "Concerns about potential arrest for criticizing the president on Twitter.",
+          "keywords": [
+            "freedom of expression",
+            "seditious libel",
+            "public order",
+            "Twitter"
+          ],
+          "key_issues": [
+            "Whether criticism of the president constitutes seditious libel",
+            "Applicability of public order laws to online speech",
+            "Protection of freedom of expression under the Constitution"
+          ],
+          "complexity": "Medium",
+          "route": "complex",
+          "reasoning_approach": "First, examine the provisions of the Cybercrime Act 2015 and the Criminal Code Act, particularly sections on seditious libel and public order. Then, consider the constitutional protections for freedom of expression under Section 39 of the Constitution. Finally, analyze whether the criticism of the president falls within the scope of protected speech.",
+          "stakeholders": [
+            "government",
+            "citizen"
+          ],
+          "potential_remedies": [
+            "Freedom of expression protection",
+            "No prosecution for protected speech",
+            "Possible prosecution for incitement to violence"
+          ]
+        },
+        "route": "complex",
+        "plan": {
+          "analysis": "Analyzing the legal question and relevant provisions.",
+          "key_provisions": [],
+          "response_structure": "Review applicable law, apply to facts, provide guidance",
+          "gaps": []
+        },
+        "result": {
+          "lawMd": "Our legal reasoning providers are temporarily unavailable. Please try again in a moment.",
+          "actionsMd": "- Step 1: Wait 30 seconds and resend your question.\n- Step 2: If the issue persists, try rephrasing your question.\n- Step 3: For urgent matters, contact a lawyer directly.",
+          "sources": [],
+          "escalate": false,
+          "escalateReason": "System temporarily unavailable — retry needed.",
+          "followUps": []
+        },
+        "draftModel": "fallback",
+        "draftProvider": "all-failed"
+      },
+      "error": null,
+      "response": {
+        "classification": {
+          "is_legal_question": true,
+          "practice_area": "constitutional_rights",
+          "jurisdiction": "Federal",
+          "jurisdiction_status": "clear",
+          "urgency": "Low",
+          "summary": "Concerns about potential arrest for criticizing the president on Twitter.",
+          "keywords": [
+            "freedom of expression",
+            "seditious libel",
+            "public order",
+            "Twitter"
+          ],
+          "key_issues": [
+            "Whether criticism of the president constitutes seditious libel",
+            "Applicability of public order laws to online speech",
+            "Protection of freedom of expression under the Constitution"
+          ],
+          "complexity": "Medium",
+          "route": "complex",
+          "reasoning_approach": "First, examine the provisions of the Cybercrime Act 2015 and the Criminal Code Act, particularly sections on seditious libel and public order. Then, consider the constitutional protections for freedom of expression under Section 39 of the Constitution. Finally, analyze whether the criticism of the president falls within the scope of protected speech.",
+          "stakeholders": [
+            "government",
+            "citizen"
+          ],
+          "potential_remedies": [
+            "Freedom of expression protection",
+            "No prosecution for protected speech",
+            "Possible prosecution for incitement to violence"
+          ]
+        },
+        "route": "complex",
+        "plan": {
+          "analysis": "Analyzing the legal question and relevant provisions.",
+          "key_provisions": [],
+          "response_structure": "Review applicable law, apply to facts, provide guidance",
+          "gaps": []
+        },
+        "result": {
+          "lawMd": "Our legal reasoning providers are temporarily unavailable. Please try again in a moment.",
+          "actionsMd": "- Step 1: Wait 30 seconds and resend your question.\n- Step 2: If the issue persists, try rephrasing your question.\n- Step 3: For urgent matters, contact a lawyer directly.",
+          "sources": [],
+          "escalate": false,
+          "escalateReason": "System temporarily unavailable — retry needed.",
+          "followUps": []
+        },
+        "draftModel": "fallback",
+        "draftProvider": "all-failed"
+      }
+    },
+    {
+      "scenario_id": "traffic-fake-checkpoint",
+      "category": "simple_legal",
+      "total_score": 0.32857142857142857,
+      "pass": false,
+      "dimensions": {
+        "is_legal_classification": 0,
+        "practice_area": 0.3,
+        "jurisdiction": 1,
+        "must_cite": 0,
+        "escalation": 0,
+        "actionable": 0,
+        "no_hallucination": 1
+      },
+      "raw_response": {
+        "error": "classification_failed",
+        "message": "The classification model failed to respond. 429 status code (no body)"
+      },
+      "error": null,
+      "response": {
+        "error": "classification_failed",
+        "message": "The classification model failed to respond. 429 status code (no body)"
+      }
+    },
+    {
+      "scenario_id": "minimum-wage-simple",
+      "category": "simple_factual",
+      "total_score": 0.2571428571428572,
+      "pass": false,
+      "dimensions": {
+        "is_legal_classification": 0,
+        "practice_area": 0.3,
+        "must_cite": 0,
+        "escalation": 0,
+        "actionable": 0,
+        "route": 0.5,
+        "no_hallucination": 1
+      },
+      "raw_response": {
+        "error": "classification_failed",
+        "message": "The classification model failed to respond. 429 status code (no body)"
+      },
+      "error": null,
+      "response": {
+        "error": "classification_failed",
+        "message": "The classification model failed to respond. 429 status code (no body)"
       }
     }
   ]

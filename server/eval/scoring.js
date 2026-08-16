@@ -45,19 +45,23 @@ function scoreScenario(scenario, response) {
 
   // Dimension 5: jurisdiction_unclear handling
   if (expected.jurisdiction_unclear) {
-    const result = response.result;
-    const lawMd = result?.lawMd || "";
-    const actionsMd = result?.actionsMd || "";
-    const combined = (lawMd + " " + actionsMd).toLowerCase();
-    const notes = (scenario.notes || "").toLowerCase();
-    const mentionsUncertainty =
-      combined.includes("state") ||
-      combined.includes("jurisdiction") ||
-      combined.includes("location") ||
-      combined.includes("not certain") ||
-      combined.includes("varies by") ||
-      combined.includes("depends on");
-    dimensions.jurisdiction_unclear = mentionsUncertainty ? 1 : 0.4;
+    // Give full credit if agent asks for clarification via needsInput
+    if (response.needsInput && response.field === "jurisdiction") {
+      dimensions.jurisdiction_unclear = 1;
+    } else {
+      const result = response.result;
+      const lawMd = result?.lawMd || "";
+      const actionsMd = result?.actionsMd || "";
+      const combined = (lawMd + " " + actionsMd).toLowerCase();
+      const mentionsUncertainty =
+        combined.includes("state") ||
+        combined.includes("jurisdiction") ||
+        combined.includes("location") ||
+        combined.includes("not certain") ||
+        combined.includes("varies by") ||
+        combined.includes("depends on");
+      dimensions.jurisdiction_unclear = mentionsUncertainty ? 1 : 0.4;
+    }
   }
 
   // Dimension 6: must_cite — does the response cite expected sources?
