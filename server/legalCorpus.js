@@ -196,8 +196,58 @@ async function findProvisions({ practiceArea, jurisdiction, keywords = [] }) {
   return result;
 }
 
-module.exports = { 
-  findProvisions, 
+/**
+ * Broadened retrieval for the relevance/sufficiency gate.
+ *
+ * findProvisions() only queries the single classified practice area. When that
+ * area yields too few candidates (e.g. a general assault question classified
+ * as "criminal_offences", whose corpus is mostly special-provisions Acts),
+ * the correct law (e.g. the Criminal Code) may sit in the large "general"
+ * bucket. This function queries the primary area first and, if it returns
+ * fewer than `minSources` provisions, additionally pulls keyword-filtered
+ * provisions from the "general" category and merges them (deduped by id,
+ * primary-first), so the relevance gate has a broad enough candidate pool to
+ * rank — instead of being forced to draft from a single weak match.
+ *
+ * @returns {Promise<{ provisions: Array, categories: string[] }>}
+ */
+async function findProvisionsBroad({ practiceArea, jurisdiction, keywords = [], minSources = 3 } = {}) {
+  const categories = [practiceArea];
+
+  let primary = [];
+  try {
+    primary = await findProvisions({ practiceArea, jurisdiction, keywords });
+  } catch (err) {
+    console.warn("[legalCorpus] broad: primary query failed:", err.message);
+    primary = [];
+  }
+
+  if (primary.length >= minSources) {
+    return { provisions: primary, categories };
+  }
+
+  // Broaden into the general bucket. "general" is huge (3500+ sections), so
+  // the keyword filter will apply inside findProvisions — exactly what we want
+  // here: keyword-relevant general law (e.g. Criminal Code sections containing
+  // "assault") rather than the entire bucket.
+  let general = [];
+  try {
+    general = await findProvisions({ practiceArea: "general", jurisdiction, keywords });
+  } catch (err) {
+    console.warn("[legalCorpus] broad: general query failed:", err.message);
+    general = [];
+  }
+
+  const seen = new Set(primary.map((p) => p.id));
+  const merged = primary.concat(general.filter((p) => !seen.has(p.id)));
+  if (general.length && !categories.includes("general")) categories.push("general");
+
+  return { provisions: merged.slice(0, MAX_FOR_MODEL), categories };
+}
+
+module.exports = {
+  findProvisions,
+  findProvisionsBroad,
   COLLECTION,
   invalidateCache,
   getCacheStats,
