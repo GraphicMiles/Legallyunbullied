@@ -1,10 +1,6 @@
 1. Objectives
 The objectives of this Act are to –(a) promote and maintain competitive markets in the Nigerian economy;(b) promote economic efficiency;
 (c) protect and promote the interests and welfare of consumers by providing consumers with wider variety of quality products at competitive prices;(d) prohibit restrictive or unfair business practices which prevent, restrict or distort competition or constitute an abuse of a dominant position of market power in Nigeria; and(e) contribute to the sustainable development of the Nigerian economy.
-Comment *
-Name *
-Email *
-Website
 
 2. Scope of application
 (1) Except as may be indicated otherwise, this Act applies to all undertakings and all commercial activities within, or having effect within, Nigeria.
@@ -12,10 +8,6 @@ Website
 (b) a body corporate in which a Government of the Federation or government of a State or a body corporate or agency of Government of the Federation or any State or Local Government has a controlling interest wheresuch a body corporate engages in economic activities; and(c) all commercial activities aimed at making profit and geared towards the satisfaction of demand from the public.
 (3) This Act shall apply to conduct outside Nigeria by-(a) a citizen of Nigeria or a person ordinarily resident in Nigeria;
 (b) a body corporate incorporated in Nigeria or carrying on business within Nigeria;(c) any person in relation to the supply or acquisition of goods or services by that person into or within Nigeria; or(d) any person in relation to the acquisition of shares or other assets outside Nigeria resulting in the change of control of a business, part of a business or any asset of a business, in Nigeria.
-Comment *
-Name *
-Email *
-Website
 
 3. Establishment of the Federal Competition and Consumer Protection Commission
 (1) There is established the Federal Competition and Consumer Protection Commission (in this Act referred to as “the Commission”).
@@ -24,29 +16,17 @@ Website
 (c) may acquire, hold and dispose of property, whether movable or immoveable.
 (4) The headquarters of the Commission shall be in the Federal Capital Territory, Abuja.
 (5) The Commission may establish other offices for the purpose of its business in any part of Nigeria, as the Commission may determine.
-Comment *
-Name *
-Email *
-Website
 
 4. Composition of the Commission
 (1) There is established for the Commission a Governing Board charged with the administration of the affairs of the Commission.
 (2) The Board consists of 8 Commissioners made up of-(a) a Chairman;
 (b) a Chief Executive who shall also be the Executive Vice-Chairman;(c) two Executive Commissioners; and(d) four non-executive Commissioners,
 (3) The Commission shall not be incapacitated from carrying out its powers or functions by virtue of any vacancy or defect in the appointment of the Executive Vice-Chairman or any of the Commissioners.
-Comment *
-Name *
-Email *
-Website
 
 5. Tenure of office
 (1) All Board Members, after the coming into force of this Act, shall be appointed by the President, in accordance with this Act, from the six geopolitical zones of Nigeria subject to confirmation by the Senate.
 (2) The Chairman and all Conm1issioners, except the Chief Executive and the Executive Commissioners, shall hold office on part-time basis.
 (3) Each Commissioner shall serve for a term of four years from the date of appointment at the expiration of which the President may renew his term for a further term of four years and no more.
-Comment *
-Name *
-Email *
-Website
 
 6. Resignation from the Commission
 (1) Commissioners shall be persons of recognised standing, qualification (minimum of a University Degree) and not less than 15 years experience in one or more of the following fields –(a) Finance or Accounting;(b) Law;(c) Consumer Affairs;(d) Competition or anti-trust matters;(e) Engineering or Information Technology;
@@ -54,17 +34,9 @@ Website
 (2) A person shall not be appointed or remain in office as a Commissioner if-(a) he is not a Nigerian citizen;(b) he is not ordinarily resident in Nigeria;(c) he is incapacitated by any physical illness;
 (d) he has been ce1tified to be of unsound mind;(e) he is an undischarged bankrupt;(f) he has been convicted in Nigeria or elsewhere of a criminal offence, being a misdemeanor or felony;
 (g) he has at any time been removed form an office of trust on account of misconduct; or(h) fails to comply with the reporting obligations regarding personal and family assets as required by the Commission’s Code of Conduct.
-Comment *
-Name *
-Email *
-Website
 
 7. Removal from office
 A Commissioner may resigns his office by giving three months written notice to the President through the Minister.
-Comment *
-Name *
-Email *
-Website
 
 8. Vacancies
 (1) A Commissioner may be suspended, or removed from office by the President if he-(a) is found to have been unqualified for appointment as a Commissioner pursuant to provision ofthis Act or in breach of conditions of his appointment;
@@ -74,10 +46,6 @@ Website
 (e) in the case of a person who possessed a professional qualification, he is disqualified or suspended from practising his profession in any part of the world by an order of a competent authority; or
 (f) is in a breach of the conflict of interest rules set out in the Second Schedule of this Act.
 (2) The exercise of the powers of the President under this section shall be subject to the approval of the Senate.
-Comment *
-Name *
-Email *
-Website
 
 9. Emoluments of Members of the Commission
 (1) There is a vacancy in the Board if a Commissioner –(a) dies;(b) is removed from office in accordance with this Act;
@@ -85,68 +53,36 @@ Website
 (2) A vacancy in the Board shall be filled by the appointment of another person to the vacant office by the President in accordance with this Act, as soon as is reasonably practicable after the occurrence of such vacancy.
 (3) In the instance of a vacancy on the Board that is created consequence upon death, removal or resignation of a Commissioner, any person so appointed shall hold office for the unexpired term of office of his predecessor. I
 (4) The provisions of subsection (3) shall not apply to the filling of vacancies in respect of Executive Commissioners whenever it is created.
-Comment *
-Name *
-Email *
-Website
 
 10. Administration of the Commission
 The Executive Vice-Chairman shall-(a) be the accounting officer and chief executive officer of the Commission;
 (b) ensure the day-to-day administration of the Commission; and(c) ensure the self-sufficiency of the Executive Vice-Chairman and the Commissioner.
-Comment *
-Name *
-Email *
-Website
 
 11. Proceedings of the Commission
 (1) Subject to the provisions of this Act and section 27 of the Interpretation Act, the Commission may make standing orders regulating its proceedings or those of any of its committees.
 (2) At any meeting of the Commission, the Executive Chairman shall preside and, in his absence, the Vice-Chairman or, in the absence of the Vice-Chairman, the Commissioners present shall appoint one of them to preside at that meeting.
 (3) Where the Commission desires to obtain the advice of any person on a particular matter, the Commission may arrange for such a person to consult or attend proceedings with the Commission for such period as it deems necessary, but a person who is in attendance by virtue of this sub-section is not entitled to vote at such proceedings.
-Comment *
-Name *
-Email *
-Website
 
 12. Quorum
 The quorum of the Commission shall be the Executive Chairman or the person presiding at the meeting and four other members of the Commission, and the quorum of any committee of the Commission shall be determined by the Commission.
-Comment *
-Name *
-Email *
-Website
 
 13. Validity of proceedings
 The validity of any proceeding of the Commission or committee set up under section 15 of this Act shall not be affected by –(a) a vacancy in the membership of the Commission or committee;
 (b) a defect in the appointment of a member of the Commission or committee; or
 (c) reason that a person not entitled to do so took part in the proceedings of the Commission or committee.
-Comment *
-Name *
-Email *
-Website
 
 14. Conflicts of interest
 Any member of the Commission or committee who has a personal interest in any contract, arrangement or matter to be considered by the Commission or committee shall disclose such interest to the Commission or committee and shall not vote on any question relating to the contract, arrangement or matter.
-Comment *
-Name *
-Email *
-Website
 
 15. Committees
 (1) The Commission may set up one or more committees to carry out, on behalf of the Commission, such functions as the Commission may determine.
 (2) A committee set up under subsection (1) of this section shall consist of such number of persons as the Commission may determine.
 (3) A decision of a committee shall be of no effect until it is confirmed by the Commission.
-Comment *
-Name *
-Email *
-Website
 
 16. The Seal of the Commission
 (1) The fixing of the seal of the Commission shall be authenticated by the signatures of the Executive Chairman or any person generally or specifically authorised by the Commission to act for that purpose.
 (2) Any contract or instrument, which if made or executed by a person not being a body corporate would not be required to be under seal, may be made or executed on behalf of the Commission by the Executive Chairman or any person generally or specifically authorised by the Commission to act for that purpose.
 (3) Any document purporting to be a document duly executed under the seal of the Commission shall be received in evidence and shall, unless the contrary is proved, be presumed to be so executed.
-Comment *
-Name *
-Email *
-Website
 
 17. Functions of the Commission
 The Commission shall –(a) be responsible for the administration and enforcement of the provisions of this Act and any other enactment with respect to competition and protection of consumers;
@@ -165,10 +101,6 @@ The Commission shall –(a) be responsible for the administration and enforcemen
 (n) publish, from time to time, list of goods and services whose consumption and sale have been banned, withdrawn, restricted or are not approved by the Federal Government or foreign governments;
 Membership Required You must be a member to access this content.
 View Membership Levels
-Comment *
-Name *
-Email *
-Website
 
 18. Powers of the Commission
 (1) The Commission shall have powers to –(a) establish specialised Departments and Units as are considered necessary for the effective and efficientdischarge of its functions under this Act,
@@ -183,47 +115,27 @@ Website
 (f) prohibit the discrimination or preferences in prices or other related matters;(g) require the publication of transparent price lists; and(h) do such other things as it considers necessary for the effective performance of its functions under this Act.
 ( 4) The Commission shall have power to –(a) summon and examine witnesses;(b) call for and examine documents;
 (c) administer oaths;(d) require that any document submitted to it be verified by affidavit;(e) require the furnishing of returns or information as it may require within such period as it may specify by notice; and(f) adjourn any investigation or inquiry from time to time.
-Comment *
-Name *
-Email *
-Website
 
 19. Secretary to the Commission
 (1) The Executive Vice-Chairman shall be-(a) the Chief Executive Officer of the Commission;(b) primarily responsible for the execution of the policies and decisions of the Board and for theday-to-day management and supervision of the activities of the Commission; and
 (c) a person possessing sound knowledge of and ability in the organisation and management ofcompetition and or consumer protection matters and shall hold office for a term of four years which may be renewed for another term and no more.
 (2) The Executive Commissioners shall be persons possessing sound knowledge of and ability in the organisation and management of regulatory matters with respect to competitive and consumer protection matters and shall hold office for a term of four years which may be renewed for another term and no more.
 (3) The Secretary shall be responsible for keeping the corporate records of the Commission and discharging such other duties as the Executive Vice-Chairman or the Commission may assign.
-Comment *
-Name *
-Email *
-Website
 
 20. Other staff of the Commission
 (1) The Commission may appoint such other staff as it may deem necessary to assist the Commission in the performance of its functions under this Act.
 (2) Notwithstanding anything contained in any other law in force in Nigeria, a legal practitioner employed in or by the Commission in any capacity, may represent the Commission, as counsel, who appears, draws papers, pleadings or documents, or perform~ any act in connection with proceedings pending or prospective before a court, or a quasi-judicial body, or any other body, board, committee, commission or officer constituted or appointed by law or having authority to take evidence in or settle or determine controversies in the exercise of the judicial power of the Federation or any subdivision thereof.
 (3) The terms and conditions of service, including remuneration, allowances and other benefits of the employees of the Commission, shall be as determined by the Commission.
 (4) The Commission shall pay to persons employed by it such remuneration, including allowances, as the Commission may determine, after consultation with the National Salaries and Wages Commission in line with the guiding principles contained in section 9 (2) of this Act.
-Comment *
-Name *
-Email *
-Website
 
 21. Staff regulations
 (1) The Commission may, subject to the provisions of this Act, make staff regulations relating generally to the conditions of service of the employees of the Commission and such regulations may provide for –
 (a) the appointment, promotion and disciplinary control, including dismissal of employees of the Commission; and
 (b) appeals by employees of the Commission against dismissal or other disciplinary measures and until such regulations are made, any instrument relating to the conditions of service of officers in the Public Service of the Federation shall be applicable.
 (2) Staff regulations made under subsection (1) shall have effect upon publication in the Federal Government Gazette or such other medium as the Commission may determine as will enable the regulations to be brought to the notice of all affected persons.
-Comment *
-Name *
-Email *
-Website
 
 22. Pension and gratuity
 Service in the Commission shall be approved service for the purposes of pensions and accordingly, the officers, staff or employees of the Commission are entitled to pensions and other retirement benefits in accordance with the provisions of the Pension Reform Act.
-Comment *
-Name *
-Email *
-Website
 
 23. Fund of the Commission
 (1) The Commission shall establish and maintain a fund (in this Act referred to as “the Fund”).
@@ -234,10 +146,6 @@ Website
 (3) The Fund shall be managed in accordance with the rules made by the Commission and without prejudice to the generality of the power to make rules under this Act, the rules shall in particular contain provisions-
 (a) specifying the manner in which the assets or the Fund of the Commission are to be held;(b) regulating the making of payments into and out of the Fund; and
 (c) requiring the keeping of proper accounts and records for the Fund in such form as may be specified in the rules.
-Comment *
-Name *
-Email *
-Website
 
 24. Expenditures of the Commission
 (1) The Commission shall apply the proceeds of the Fund to-(a) the cost of administration of the Commission; and
@@ -245,37 +153,21 @@ Website
 (c) the payment for all consultancies, contracts, including mobilisation, fluctuations, variations, legal fees and cost on contract administration as may be permissible under applicable laws;
 (e) the payment for all purchases; and(f) undertake such other activities as are connected with all or any of the functions of the Commission under this Act.
 (2) Any excess of the Commission’s revenue for any year over the approved expenditure for that year shall be remitted to the Consolidated Revenue Fund of the Federation.
-Comment *
-Name *
-Email *
-Website
 
 25. Annual estimates and expenditure
 (1) The Commission shall, not later than 30th September in each financial year, prepare and present to the National Assembly through the President for approval, a statement of estimated income and expenditure for the following financial year.
 (2) Notwithstanding the provision of subsection (1), the Commission may also, in each financial year, submit supplementary or adjusted statements of estimated income and expenditure to the National Assembly through the President for approval.
 (3) The Commission shall prepare and submit to the President through the Minister, and to the National Assembly, not later than 30th June in each year, a report in such form as the Minister may direct on the activities of the Commission during the immediate preceding year, and shall include in the report, a copy of the audited accounts of the Commission for that year and the auditors’ report on the account.
-Comment *
-Name *
-Email *
-Website
 
 26. Annual reports
 (1) The Commission may, with the consent of, or in accordance with the general authority given by the Minister of Finance, borrow such sums of money as the Commission may require in the exercise of its functions under this Act or its subsidiary legislation.
 (2) The Commission may accept gifts or grants of money or aids or other property from national, bilateral and multi-lateral organisations and upon such terms and conditions, if any, as may be agreed upon between the donor and the Commission provided that such gifts are not inconsistent with the objectives and functions of the Commission under this Act.
-Comment *
-Name *
-Email *
-Website
 
 27. Enforcement powers of the Commission
 (1) The Commission may, for the purpose of ascertaining whether any undertaking has engaged, is engaging or is likely to engage in conduct constituting or likely to constitute a contravention of this Act, require an authorised officer to –(a) enter and search any premises; and(b) inspect and remove from the premises any article, document or extract in the possession or under the control of any person.
 (2) Except as otherwise directed by the Commission, an officer authorised by the Commission shall only exercise the powers conferred by subsection (1) with a warrant issued under section 28 of this Act.
 (3) The Commission shall, if there are grounds to believe that a violation, civil or criminal, of the provisions of this Act or regulations made under this Act, was, is being or will be committed, take any interim measure, including authorising an authorised officer to exercise powers contained in subsection (1) pending the issuance of a warrant to that effect.
 (4) In the circumstance described in subsection (3), the Executive Vice-Chairman shall depose to an affidavit verifying these facts before interim measures can be taken.
-Comment *
-Name *
-Email *
-Website
 
 28. Issuance of warrant
 (1) Where a Judge is satisfied on the information on oath that there is reasonable ground for believing that any undertaking has engaged or is engaging or likely to engage in conduct constituting or likely to constitute the contravention of this Act, the Judge may issue a warrant permitting an authorised officer to exercise the powers conferred by section 27 (1) of this Act in relation to any premises specified in the warrant.
@@ -283,10 +175,6 @@ Website
 (3) A warrant issued under subsection (1) shall specify a time-limit beyond which articles or documents removed shall not be detained.
 (4) The occupier or person in charge of any premises entered pursuant to this section shall provide the authorised officer with all reasonable facilities and assistance for the effective discharge of the officer’s duty under this section.
 (5) A person who obstructs or impedes an authorised officer in the performance of his duties under this section commits an offence in accordance with the relevant laws and liable on conviction to imprisonment for a term not exceeding two years or to a fine not exceeding NS,OOO,OOO or to both fine and imprisonment.
-Comment *
-Name *
-Email *
-Website
 
 29. Powers conferred by warrant
 (1) A warrant issued under section 28 (1) of this Act shall authorise the person named in the warrant to request any police officer or public official to provide assistance to the person named in the warrant in the execution of the warrant.
@@ -296,10 +184,6 @@ Website
 (e) where necessary, to make copies of documents or extracts from documents, that the person executing the warrant believes on reasonable grounds may be relevant; and(f) where necessary, to require a person to reproduce or assist any person executing the warrant to reproduce, in usable form, information recorded or stored in a document or retrieval system.
 (4) A police officer or public officer assisting the person executing the warrant also has the powers stated in subsection (3) (c), (d) and (e) of this section.
 (5) A warrant shall be executed in accordance with such conditions as may be specified in the warrant when it is issued.
-Comment *
-Name *
-Email *
-Website
 
 30. Duties of a person executing a warrant
 (1) A person executing a warrant shall-(a) be in possession of the warrant at the time of its execution;(b) produce it on initial entry and, if requested, at any subsequent time; and
@@ -311,17 +195,9 @@ Website
 (b) shall, within seven days of the search –(i) deliver a schedule to the owner or occupier,(ii) leave a schedule in a prominent position at the place searched, or(iii) send a schedule by registered mail to the owner or occupier of the place searched.
 (5) Every schedule prepared under subsection (3) or (4) shall state-(a) the documents, articles and things that were removed;(b) the location from which they were removed; and(c) the location where they are being held.
 (6) The Commission, or any person authorised by the Commission for that purpose, may inspect and make copies of any document or extract from such document, obtained pursuant to a warrant.
-Comment *
-Name *
-Email *
-Website
 
 31. Duties of occupiers
 The occupier or person in charge of the place that an authorised officer, under a warrant, enters for the purpose of a search shall provide that authorised officer with all reasonable facilities and cooperation in executing the warrant.
-Comment *
-Name *
-Email *
-Website
 
 32. Request for information or documents
 (1) Where the Commission considers it necessary, desirable or expedient for the purpose of carrying out its functions under this Act, the Commission may, by notice in writing served on any person, require that person to –
@@ -330,20 +206,12 @@ Website
 (c) appear before the Commission at a time and place specified in the notice to give evidence, either orally or in writing and produce any document or class of documents specified in the notice.
 (2) The Commission shall obtain such information as it considers necessary to assist it in its investigations or inquiries and where it considers appropriate, shall examine and obtain verification of documents submitted to it.
 (3) Where the information provided in subsection ( 1) is not furnished to the satisfaction of the Commission, the Commission may make findings on the basis of information available to it.
-Comment *
-Name *
-Email *
-Website
 
 33. Summons to attend and give evidence or to produce documents
 (1) A summons to attend and give evidence or to produce documents before the Commission issued under the hand of the Secretary or any member of the Commission shall be served on the person concerned.
 (2) Hearings of the Commission shall take place in public, but the Commission may, whenever the circumstances warrant, particularly in order to preserve the business secrets of the undertaking concerned, conduct hearing in camera.
 (3) A person who, without sufficient cause, fails or refuses to-(a) appear before the Commission in compliance with a summons, or(b) produce a document which the person is required by such summons to produce, commits an offence and is liable on conviction to imprisonment for a term not exceeding three years or a fine not exceeding N20,000,000.00 or both the fine and imprisonment.
 (4) A person who wilfully obstructs or interrupts the proceedings of the Commission commits an offence and is liable on conviction to imprisonment for a term not exceeding three years or a fine not exceeding N20,000,000.00 or both the fine and imprisonment. ·
-Comment *
-Name *
-Email *
-Website
 
 34. Procedures for handling of evidence by the Commission
 (1) For the purpose of carrying out its functions and powers under this Act, the Commission may receive in evidence any statement, document, information or matter that may, in its opinion, assist it in dealing effectively with the matter before it, whether or not such evidence is otherwise admissible in a court of law.
@@ -353,51 +221,27 @@ Website
 (5) Where a person has appeared as a witness before the Commission pursuant to a notice issued in that behalf or has given evidence before the Commission, whether pursuant to a notice or not, the Commission may, if it deems fit, order any sum to be paid to that witness on account of his travelling expenses.
 (6) The Commission shall ensure that business secrets of all parties concerned in investigation conducted by it are adequately protected during all stages of an investigation or inquiry.
 (7) The Commission may hear orally any person who, in its opinion, will be affected by an investigation or inquiry being carried out by it.
-Comment *
-Name *
-Email *
-Website
 
 35. Prohibition of disclosure of information, documents
 (1) Subject to the provisions of subsection (2), the Commission may by order prohibit the publication or communication of any information, document or evidence which is furnished, given or tendered to, or obtained by the Commission in connection with its operations.
 (2) An order made by the Commission under subsection (1) may be expressed to have effect for such period as is specified in the order, which shall not be less than two years, but the order shall not have effect where that order was made in connection with an investigation or inquiry conducted by the Commission, after the conclusion of that investigation or inquiry.
 (3) A person who, contrary to an order made by the Commission under subsection (1), publishes or communicates any information, document or evidence commits an offence and is liable on conviction to a fine not exceeding N1,000,000.00 in the case of an individual and N50,000,000.00 in the case of a body corporate.
-Comment *
-Name *
-Email *
-Website
 
 36. Destruction of records
 A person who destroys any record which may be required by the Commission for the performance of any of its functions under this Act, with intent to mislead the Commission or to prevent or impede any investigation or inquiry under this Act, commits an offence and is liable on conviction to a term of imprisonment for three years or a fine not exceeding N50,000,000.00 or both the fine and imprisonment.
-Comment *
-Name *
-Email *
-Website
 
 37. Discontinuance of inquiry or investigation
 (1) Where the Commission, at any stage of an investigation or inquiry under this Act, is of the opinion that the matter being investigated or subject to inquiry does not justify further investigation or inquiry, the Commission may discontinue the investigation or inquiry.
 (2) Where the Commission discontinues an investigation or inquiry, it shall, within 14 days thereafter, give written notice to the parties concerned in the investigation or inquiry, stating the reasons for discontinuing the investigation or inquiry.
-Comment *
-Name *
-Email *
-Website
 
 38. Appeals
 (1) Subject to regulations made by the Commission, appeals from any decision of the Commission shall lie to the Tribunal established under section 39 of this Act.
 (2) The Commission shall adopt regulations specifying all relevant procedures and requirements in relation to appeals under subsection (1) of this section.
-Comment *
-Name *
-Email *
-Website
 
 39. Establishment of the Competition and Consumer Protection Tribunal
 (1) There is established under this Act, the Competition and Consumer Protection Tribunal (in this Act referred to as “the Tribunal”).
 (2) The Tribunal shall adjudicate over conducts prohibited under this Act and exercise the jurisdiction, powers and authority conferred on it under this Act or any other enactment.
 (3) The Tribunal shall keep records of its proceedings and have jurisdiction throughout the Federation.
-Comment *
-Name *
-Email *
-Website
 
 40. Composition of the Tribunal
 (1) The Tribunal shall consist of-(a) a chairman, who shall be a legal practitioner with 10 years post call and cognate experience in the field of competition, consumer protection or commercial and industrial law ;and
@@ -405,17 +249,9 @@ Website
 (ii) commerce and industry,(iii) public affairs,(iv) economics,
 (v) finance, or(vi) business administration or management.
 (2) The Chairman and other members of the Tribunal shall be appointed by the President subject to confirmation by the Senate.
-Comment *
-Name *
-Email *
-Website
 
 41. Tenure of office
 A member of the Tribunal shall hold office for a term of five years and no more from the date of assumption of office or upon the attainment of 70 years of age.
-Comment *
-Name *
-Email *
-Website
 
 42. Disqualification from membership of the Tribunal
 A person is not qualified to serve on the Tribunal if the person is-(a) an un-discharged bankrupt;
@@ -423,10 +259,6 @@ A person is not qualified to serve on the Tribunal if the person is-(a) an un-di
 (c) a convicted felon under the laws of Nigeria;
 (d) found guilty of serious misconduct incapacitating the person from carrying out the functions of the office; or
 (e) found to have been engaging in any activity that may undermine the integrity of the Tribunal.
-Comment *
-Name *
-Email *
-Website
 
 43. Resignation and removal
 (1) A member of the Tribunal may, by a written notice, addressed to the Minister, resign from office, provided that the member shall, unless permitted by the Minister to relinquish office sooner, continue to hold office until the expiry of three months from the date of receipt of the notice conveying the resignation or until a person duly appointed as a successor assumes office or until the expiry of the term of office, whichever is earlier.
@@ -434,34 +266,18 @@ Website
 (b) on grounds of incapacity on account of ill health; or
 (c) for failure to satisfy the requirements of section 42 of this Act.
 (3) Any exercise of the powers of the President under this section shall be based on the recommendation of the National Judicial Council.
-Comment *
-Name *
-Email *
-Website
 
 44. Filling of vacancies
 Where for reason other than temporary absence, any vacancy occurs m the Tribunal, a successor shall be appointed in accordance with the provisions of section 40 (2) of this Act to fill the vacancy.
-Comment *
-Name *
-Email *
-Website
 
 45. Registrar of the Tribunal
 The Tribunal shall appoint a Registrar who shall be a person qualified to serve as the Registrar of a High Court, and shall-
 (a) subject to the general control of the Commission, be responsible for keeping records of the proceedings of the Tribunal;
 (b) be the head of the Registry and responsible for-(i) the day-to-day administration of the Tribunal, and(ii) the direction and control of all other employees of the Tribunal.
-Comment *
-Name *
-Email *
-Website
 
 46. Other staff of the Tribunal
 (1) The Tribunal shall appoint such other employees as it deems necessary for the efficient performance of the functions of the Tribunal and the remuneration of persons so employed shall be determined by the National Salaries, Incomes and Wages Commission.
 (2) Employment in the Tribunal shall be subject to the provisions of the Pension Reform Act and officers and employees of the Tribunal are entitled to pensions and other retirement benefits as are prescribed under the Pension Reform Act.
-Comment *
-Name *
-Email *
-Website
 
 47. Jurisdiction of the Tribunal
 (1) The Tribunal shall have power to- (a) hear appeals from or review any decision of the Commission taken in the course of the implementation of any of the provisions of this Act as may be referred to it;
@@ -469,10 +285,6 @@ Website
 (c) issue such orders as may be required of it under this Act; and
 (d) make any ruling or such other orders as may be necessary or incidental to the performance of its functions under this Act.
 (2) Notwithstanding the provisions of subsection (1) (b), all appeals or request for review of the exercise of the power of any sector of specific authority shall first be heard and determined by the Commission before such appeals can lie before or be determined by the Tribunal.
-Comment *
-Name *
-Email *
-Website
 
 48. Management ofthe work of the Tribunal
 (1) The Chairman of the Tribunal shall be responsible for the management and assignment of cases before the Tribunal to the other members of the Tribunal.
@@ -485,29 +297,17 @@ Website
 (6) The decision of a Panel on a matter referred to it shall be in writing and include reasons for that decision.
 (7) The Tribunal may extend or reduce a period prescribed for the taking or doing of any action required to be done under this Part.
 (8) A decision of a Panel contemplated in subsection (6) or of a majority of the members of a Panel shall be the decision of the Tribunal.
-Comment *
-Name *
-Email *
-Website
 
 49. Disclosure of interest by members of a panel
 (1) A member of the Tribunal is not entitled to sit on a Panel if, during the hearing, it appears to the Tribunal that the matter concerns a financial or other interest of that member.
 (2) A member affected by the provision of subsection (1) shall –
 (a) immediately and fully disclose the fact and nature of the interest to the Chairman and to the presiding member at that hearing; and(b) withdraw from any further involvement in that hearing.
-Comment *
-Name *
-Email *
-Website
 
 50. Procedural Rules of the Tribunal
 (1) The Tribunal may make rules regulating its procedures.
 (2) The Tribunal shall, for the purpose of discharging its duty under this Act, have power to- (a) summon and enforce the attendance of any person, including the power to examine a person under oath;(b) require the discovery and production of documents;
 (c) call for and examine witnesses under oath;(d) receive evidence on affidavits; and
 (e) do anything which, in the opinion of the Tribunal, is deemed necessary to issue a final and reasoned decision on the merit of the matter before it.
-Comment *
-Name *
-Email *
-Website
 
 51. Powers of the Tribunal to impose penalties
 (1) The Tribunal may impose administrative penalties only for-(a) a prohibited practice under this Act; or(b) the contravention of, or failure to comply with, an interim order of the Tribunal.
@@ -515,58 +315,30 @@ Website
 (3) When determining an appropriate penalty under subsection (1), the Tribunal shall consider –(a) the nature, duration, gravity and extent of the contravention;(b) any loss or damage suffered as a result of the contravention;(c) the behaviour of the defaulting party;
 (d) the market circumstances in which the contravention tookplace;(e) the level of profit derived from the contravention;(f) the degree to which the defaulting party has co-operated with the Commission and the Tribunal; or
 (g) whether the defaulting party has previously been found to be in contravention of any of the provisions of this Act.
-Comment *
-Name *
-Email *
-Website
 
 52. Powers of the Tribunal to order sale of assets
 (1) The Tribunal may make an order directing any undertaking to sell any portion or all of its shares, interest or assets if the practice prohibited under this Act –(a) cannot adequately be remedied under any other provision of this Act; or
 (b) is substantially a repeat by that undertaking of conduct previously found by the Tribunal to be a prohibited practice.
 (2) An order made under subsection (1) may provide for time-frame for compliance and any other term that the Tribunal considers appropriate, having regard to the commercial interests of the parties concerned.
-Comment *
-Name *
-Email *
-Website
 
 53. Access to records of the Tribunal
 The Tribunal shall provide the parties to the proceedings before it and other members of the public reasonable access to the record of its proceedings, subject to any requirement to protect confidential information as required under the provisions of this Act and regulations made under this Act or any other enactment.
-Comment *
-Name *
-Email *
-Website
 
 54. Registration and enforcement of the decisions of the Tribunal
 An order, ruling, award or judgment of the Tribunal shall be-(a) binding on the pmiies before the Tribunal; and
 (b) registered with the Federal High Court for the purpose of enforcement only.
-Comment *
-Name *
-Email *
-Website
 
 55. Judicial review by the Court of Appeal
 (1) Any party to a proceeding who is not satisfied with a ruling, award or judgment of the Tribunal may appeal to the Court of Appeal upon giving notice in writing to the Secretary to the Tribunal within 30 days after the date onwhich the mling, award or judgment was given.
 (2) A notice of appeal filed pursuant to subsection (1) shall set out all the grounds on which the review is sought.
 (3) Upon the receipt of a notice of appeal under subsections (1) and (2), the Secretary to the Tribunal shall cause the notice to be given to the Chief Registrar of the Court of Appeal along with the record of proceedings and exhibits tendered at the hearing before the Tribunal.
-Comment *
-Name *
-Email *
-Website
 
 56. Right to legal representation
 (1) Any party to a proceeding before the Tribunal may either appear in person or authorise one or more legal practitioners or any of its officers to represent the party before the Tribunal.
 (2) Where a party or its representative is unable for good cause to attend a hearing before the Tribunal, the Tribunal may adjourn the hearing for such reasonable time as it deems fit, or admit the matter to be made by some other person or by way of a written address.
-Comment *
-Name *
-Email *
-Website
 
 57. Payment of allowances and other conditions of employment of the members of the Tribunal
 The Chairman and other members of the Tribunal shall be paid such allowances, emoluments and benefits as the Federal Government may approve.
-Comment *
-Name *
-Email *
-Website
 
 58. Funding of the Tribunal
 (1) The Tribunal shall establish and maintain a fund, which shall be applied towards the performance of its functions under this Act.
@@ -574,66 +346,38 @@ Website
 (b) fees collected for services rendered by the Tribunal under this Act, and such other sums of money as may be provided by the Federal Government for the Tribunal.
 (3) The Tribunal shall, at the end of each financial year, submit its budget for the following year to the Minister.
 (4) The Minister shall ensure that adequate budgetary provision is made for the payment of emoluments and allowances of members and staff of the Tribunal including all other expenditures of the Tribunal for the efficient discharge of the duties and responsibilities of the Tribunal under this Act.
-Comment *
-Name *
-Email *
-Website
 
 59. Prohibition of agreements in restraint of competition
 (1) Any agreement among undertakings or a decision of an association of undertakings that has the purpose of actual or likely effect of preventing, restricting or distorting competition in any market is unlawful and, subject to section 61 of this Act, void and of no legal effect.
 (2) The prohibited acts under subsection (1) include, in particular –(a) directly or indirectly fixing a purchase or selling price of goods or services, subject to section 1 07 of this Act;(b) dividing markets by allocating customers, suppliers, territories or specific types of goods or services;
 (c) limiting or controlling production or distribution of any goods or services, markets,! technical development orinvestment, subject to section 108 of this Act;(d) engaging in collusive tendering, subject to section 109 of this Act; or
 (e) making the conclusion of an agreement subject to acceptance by the other parties of supplementary obligations which, by their nature or according to commercial usage, have no connection with the subject of such agreement.
-Comment *
-Name *
-Email *
-Website
 
 60. Agreements authorised by the Commission
 The provision of section 59 of this Act shall not apply to an agreement among Agreements authorised undertakings, or a decision of an association of undertakings, or a category of by the Commission agreements or decisions of associations of undertakings, the entry into which is authorised by the Commission, provided that the Commission is satisfied that the agreement or decision –
 (a) contributes to the improvement, of production or distribution of goods, services or the promotion of technical or economic progress, while allowing consumers a fair share of the resulting benefit;
 (b) imposes on the undertakings concerned only such restrictions as are indispensable to the attainn1ent of theobjectives referred to in paragraph (a) of this section; and
 (c) does not afford the undertakings concerned the possibility of eliminating competition in respect of a substantial part of the goods or services concerned.
-Comment *
-Name *
-Email *
-Website
 
 61. Prohibition of agreements containing exclusionary provisions
 An undertaking or association of undertakings shall not request another undertaking or association of undertakings to refuse to sell or purchase any goods or services with the intention of harming certain undertakings.
-Comment *
-Name *
-Email *
-Website
 
 62. Agreements by suppliers
 (1) No two or more unde1iakings shall enter into any agreement whereby they undertake to –
 (a) withhold supplies of goods or services from dealers (whether parties to the agreement or not) who resell or have resold any goods or services in breach of any condition as to the price at which those goods or services may be resold; or
 (b) refuse to supply goods or services to the dealers referred to in paragraph (a) except on terms and conditions that are less favourable than those applicable to other dealers carrying on business in similar circumstances.
 (2) No two or more undertakings shall enter into, or carry out, any agreement authorising the recovery of penalties, however described, by or on behalf of the parties to the agreement from dealers who resell or have resold goods or services in breach of any condition described in paragraph (a).
-Comment *
-Name *
-Email *
-Website
 
 63. Prohibition of minimum resale price maintenance
 (1) Any term or condition of an agreement for the sale of any goods or services is void to the extent that it purports to establish minimum prices to be charged on the resale of the goods or services in Nigeria.
 (2) Subject to the provisions of subsections (3) and (4), no undertaking or its agent shall-(a) include in an agreement for the sale of goods or services, a term or condition which is void under this Act; or(b) notify dealers or otherwise publish on or in relation to any goods or services, price stated or calculated to be understood as the minimum price which may be charged on the resale of the goods or services in Nigeria.
 (3) The provisions of subsection (2) (a) do not affect the enforceability of an agreement except in respect of the term or condition which is void under this Act.
 (4) Nothing in this section shall be construed as precluding an undertaking or association, or person acting on the undertaking’s behalf, from notifying the dealers or otherwise publishing prices recommended as appropriate for the resale of goods or services supplied or to be supplied by that undertaking.
-Comment *
-Name *
-Email *
-Website
 
 64. Patented products
 (1) The provisions of section 63 of this Act shall apply to patented goods, including goods made by a patented process.
 (2) Notice of any term or condition which is void under section 63 of this Act, or which would be so void if included in an agreement relating to the sale of patented goods, is of no effect for the purpose of limiting the right of a dealer to dispose of those goods without infringement of the patent.
 (3) Nothing contained in this Act or this section shall affect the validity, as between the parties to an agreement and their successors, of any term or condition of-(a) a licence granted by the proprietor of a patent or a licensee under any such licence; or(b) any assignment of a patent so far as it regulates the price at which goods produced or processed by the licensee or assignee may be sold by him.
-Comment *
-Name *
-Email *
-Website
 
 65. Maintenance of minimum resale prices
 (1) No undertaking shall withhold supplies of any goods or services from a dealer seeking to obtain them for resale on the ground that the dealer –
@@ -641,10 +385,6 @@ Website
 (2) In this section, “the resale price”, in relation to a sale of any description, means the price-(a) notified to the dealer or otherwise pubiished by or on behalf of a supplier of the goods or services in question, whether lawfully or not, as the price or minimum price which is to be charged on or is recommended as appropriate for a sale of that description; or
 (b) prescribed or purporting to be prescribed for that purpose by an agreement between the dealer and any supplier.
 (3) Where, under this section, it would be unlawful for an undertaking to withhold supplies of goods or services, it is also unlawful for the undertaking to cause or procure any other undertaking to do so.
-Comment *
-Name *
-Email *
-Website
 
 66. Withholding of products from a dealer by a supplier
 (1) For the purposes of this Part, an undertaking shall be treated as withholding goods or services from a dealer if-(a) the undertaking refuses to supply those goods or services to the order of the dealer;
@@ -655,19 +395,11 @@ Website
 ( 4) The matters referred to in subsection (3) are –(a) supplies of goods or services were withheld from a dealer;(b) during a period ending immediately before the supplies were so withheld, the undertaking was doing business with the dealer or was supplying goods or services of the same description to other dealers carrying on business in similar circumstances; and
 (c) the dealer, to the undertaking’s knowledge, had within the preceding six months, acted as described in subsection (1) of this Act or had indicated its intention to act in relation to the goods or services in question.
 (5) The provisions of subsections (3) and (4) shall not apply where the proof that goods or services were withheld consists only of evidence of requirements imposed by the undertaking in respect of the time at which or the form in which payment was to be made for goods or services supplied or to be supplied.
-Comment *
-Name *
-Email *
-Website
 
 67. Complaints to and issuance of notice by the Commission of restrictive agreements
 (1) Where the Commission determines that an agreement or decision contravenes the provisions of this Act, it shall serve an order on the parties concerned stating the reasons for its decision and requiring the parties to cease their anticompetition practices.
 (2) Any person who has suffered a loss as a result of any restrictive agreement or decision may make a complaint to the Commission and the Commission may, if it is satisfied that the circumstances of the case so warrant, exercise any of the powers granted to it under this Act as it deems fit, including making interim orders mandating the cessation of the restrictive agreement pending the conclusion of investigation.
 (3) Any person who may have suffered loss as a result of this agreements or not satisfied with the decision of the Commission may apply to the Tribunal for review.
-Comment *
-Name *
-Email *
-Website
 
 68. Exceptions
 (1) Nothing in this Act prohibits-(a) combinations or activities of employees for the reasonable protection of employees;(b) arrangements for collective bargaining on behalf of employers and employees for the purpose of fixingminimum terms and conditions of employment;
@@ -679,10 +411,6 @@ Website
 (3) For the purposes of subsection (2), the Commission shall, from time to time, publish a list of professional bodies to whom the subsection applies.
 (4) Any privilege or exemption granted by the Commission under subsection (1) shall be consistent with the provisions of this Act.
 (5) The Commission shall, as it considers appropriate, develop and publish procedural rules to be applied to group inquiries.
-Comment *
-Name *
-Email *
-Website
 
 69. Offences and penalties under this Part
 (1) An undertaking that makes or enters into an agreement or decision declared unlawful under this Part commits an offence and is liable on conviction where the undertaking is-
@@ -692,28 +420,16 @@ Website
 (3) An undertaking that fails to obey an order served by the Commission under subsection (1) of section 67 (1) of this Act commits an offence and where the undertaking is-
 (a) a natural person, it is liable on conviction to imprisonment for a term not exceeding three years, or to payment of a fine not exceeding NSO,OOO,OOO.OO or both the fine and imprisonment; or(b) a body corporate, it is liable on conviction to a fine not exceeding 10% of its turnover in the preceding business year.
 (4) Where the offence is committed by a body corporate, each director of the body corporate shall be liable to be proceeded against and on conviction dealt with as specified in subsection (1) (a).
-Comment *
-Name *
-Email *
-Website
 
 70. Dominant position and abuse of dominant position in the relevant market
 (1) For the purpose of this Act, an undertaking is considered to be in a dominant position if it is able to act without taking account of the reaction of its customers, consumers or competitors.
 (2) A dominant position in a relevant market exists where an undertaking enjoys a position of economic strength enabling it to prevent effective competition being maintained on the relevant market and having the power to behave to an appreciable extent independently of its competitors, customers and ultimatelyconsumers.
 (3) The Commission shall publish the size of market share that may constitute dominant position in particular markets.
-Comment *
-Name *
-Email *
-Website
 
 71. Criteria for identifying the relevant market
 For the purpose of delineating the relevant market under this Act, the criteria that shall be taken into account include the –(a) geographical boundaries that identify groups of sellers and buyers of goods or services within which competition is likely to be restrained;
 (b) goods or services which are regarded as interchangeable or substitutable by the consumer by reason of theircharacteristics, prices and the intended use; and
 (c) suppliers to which consumers may turn to in the short term, if the abuse of dominance leads to a significant increase in price or to other detrimental effect upon the consumer.
-Comment *
-Name *
-Email *
-Website
 
 72. Abuse of a dominant position prohibited
 (1) Subject to the provisions of subsection (3), any abuse by one or more undertakings of a dominant position in a market is prohibited.
@@ -731,84 +447,44 @@ Website
 (4) An undertaking may be considered as abusing its dominant position with regard to subsection (3) (c) of this section if the Commission is satisfied that its activities –(a) have the effect of unreasonably lessening competition in a market; and(b) impede the transfer or dissemination oftechnology.
 Membership Required You must be a member to access this content.
 View Membership Levels
-Comment *
-Name *
-Email *
-Website
 
 73. Consequences of abuse of a dominant position
 (1) Where the Commission finds that an undertaking has abused or is abusing its dominant position in a market, the Commission shall prepare a report indicating the practices that constitutes the abuse and shall-
 (a) notify the undertaking of its findings accompanied by a copy of the report; and(b) direct the undertaking to immediately cease the abusive practice.
 (2) The provisions of this section shall not apply to exclusive dealing arrangements or market restrictions between or among affiliated or interconnected undertakings.
 (3) An undertaking that abuses its dominant position in a market commits an offence under this Act and is liable on conviction to a fine of not less than 10% of its turnover in the preceding business year or such higher percentage as the court may determine under the circumstances of the particular case.
-Comment *
-Name *
-Email *
-Website
 
 74. Penalties for failure to comply with a cease order
 (1) An undertaking that fails to cease an abusive practice after receiving an order of the Commission to that effect commits an offence and is liable on conviction to a fine not exceeding 10% of its turnover in the preceding business year or to such higher percentage as the court may determine given the circumstances ofthe particular case.
 (2) Any director of an undertaking that commits an offence under subsection (1) is liable on conviction to imprisonment for a term not exceeding three years, or to payment of a fine not exceeding N50,000,000.00 or to both the fine and imprisonment.
-Comment *
-Name *
-Email *
-Website
 
 75. Suspension of punishment
 Where upon receipt of the directive under section 73 (1) (b) of this Act, the undertaking or undertakings concerned submits or submit to the Commission the measures it or they propose to take to cease the abusive practice and a timetable for giving effect to the measures, and the Commission is satisfied as to the measures, the Commission may decide not to proceed with the institution of action that leads to the penalties prescribed in section 74 of this Act against the undertaking or undertakings.
-Comment *
-Name *
-Email *
-Website
 
 76. Power of the Commission to investigate a monopoly situation
 Where it appears to the Commission that there are grounds for believing that a monopoly situation may exist in relation to the production or distribution of goods or services of any description, or in relation to exports of goods or services of any description from Nigeria, it shall cause an investigation to be held into a particular sector of the economy or into a particular type of agreements across various sectors to determine the extent of the situation in relation to the market.
-Comment *
-Name *
-Email *
-Website
 
 77. Determination of a monopoly situation by the Commission
 For the purposes of this Part, a monopoly situation shall be taken to exist in relation to the-
 (a) supply of goods or services of any description; or
 (b) import and export of goods and services of any description from Nigeria, to the extent it has an effect on competition in a market in Nigeria, as may be prescribed in regulations made by the Commission.
-Comment *
-Name *
-Email *
-Website
 
 78. General powers of the Commission to obtain information
 When conducting a monopoly investigation under section 77 of this Act, the Commission may –
 (a) exercise any of its powers, as contained under section 30 of this Act; and
 (b) require any person or body corporate to furnish the Commission with such inforn1ation as the Commission may consider necessary for the purposes of conducting such investigation.
-Comment *
-Name *
-Email *
-Website
 
 79. Supplementary provisions as to the requirement to furnish information
 Any power conferred on the Commission under this Act to require a person or body corporate to furnish information shall be exercisable by notice in writing served on that person or body corporate.
-Comment *
-Name *
-Email *
-Website
 
 80. Penalties for refusal to furnish information to the Commission
 (1) A person or body corporate who refuses or willfully neglects to furnish to the Commission information required under this Act commits an offence and is liable on conviction to a fine not exceeding N10,000,000.00.
 (2) A person who furnishes information or makes a statement required by the Commission under this Act knowing that such statement is false in any material respect or recklessly makes a statement which is false in any material way, commits an offence and is liable on conviction to imprisonment for a term not exceeding two years or to a fine not exceeding N2,000,000.00 or to both the fine and imprisonment.
-Comment *
-Name *
-Email *
-Website
 
 81. Order for monopoly investigation
 An order for a mon’)poly investigation under section 76 of this Act shall-(a) specify the description of goods or services to which the order relates;
 (b) state whether it relates to supply, import or export of goods and services; and
 (c) specify the part of Nigeria. in respect of which the investigation is to be limited where it is to be limited to a part of Nigeria.
-Comment *
-Name *
-Email *
-Website
 
 82. Request for a monopoly investigation
 (1) Any person or body corporate may make a request for a monopoly investigation to the Commission.
@@ -817,17 +493,9 @@ Website
 ( 4) In responding to a request or referral referred to in subsections (1) and (2), the Commission may limit its report to –(a) whether a monopoly situation exists in relation to the matters set out in the request or reference;
 (b) where a monopoly situation is determined to exist, which of the provisions of this Act is applicable;(c) the undertaking or undertakings m whose favour the monopoly situation exists;(d) the acts taken by way of anti-competition practices or otherwise by the undertaking or undertakings concerned to exploit or maintain the monopoly situation or to further an anti-competitive practice; and
 (e) any act or omission on the part of the undertaking or undertakings concerned attributable to the existence of the monopoly situation and, if so, by what manner it is so attributable.
-Comment *
-Name *
-Email *
-Website
 
 83. Notification of a request for a monopoly investigation
 Where the Commission gives a direction under this Act with respect to a request for or a referral of a monopoly investigation, the Commission shall notify all relevant parties in writing and shall place a notice of such direction on the website of the Commission
-Comment *
-Name *
-Email *
-Website
 
 84. Report on a monopoly investigation
 (1) The Commission shall furnish to the Tribunal reports on completed monopoly investigations at such times or intervals as may be agreed from time to time between the Tribunal and the Commission.
@@ -837,19 +505,11 @@ Website
 (b) may, if it deems fit, include in its report on a monopoly investigation recommendations in support of the actions to be taken.
 (5) The phrase “action to be taken” in subsection (4) (a) and (b) means the action to be taken by –(a) the Minister or any other Minister of the Government of the Federation or any department or agency of Government where the resulting adverse effects affects the sphere of responsibility or the statutory function of any Minister or of any of the departments or agencies of Government; or
 (b) the undertaking or undertakings in whose favour the monopoly situation in question exists.
-Comment *
-Name *
-Email *
-Website
 
 85. Timeframe for a report on a monopoly investigation
 (1) Upon the commencement of a monopoly investigation under this Part, the Commission shall specify a period ·within which the Commission is to report on the monopoly investigation.
 (2) Where a report of the Commission is not made before the end of the period specified by the Commission under subsection (1) or if one or more extended periods allowed for making the report under subsection (3) is not met before the end of that extended period or of the last of those extended periods, as the case may be, the investigation shall cease to have effect and no action or, if action has already been taken, no further action shall be taken in relation to that investigation.
 (3) Where a monopoly investigation cuts across the sphere of responsibilities of more than one Minister and the period of reporting on an investigation has already been extended once or more than once under any direction issued under this subsection, a joint directive of all the Ministers concerned may be issued allowing the Commission such extended period to report on the reference as may be specified in the direction.
-Comment *
-Name *
-Email *
-Website
 
 86. Powers of the Tribunal in relation to a report on a monopoly investigation
 (1) The provisions of this section shall have effect where a report of the Commission on a monopoly investigation is referred to the Tribunal with the conclusions of the Commission that-(a) a monopoly situation exists and that facts found by the Commission in its investigations operate or may be expected to operate, against the public interest; and
@@ -863,10 +523,6 @@ Website
 (5) In determining whether or not and to what extent or in what manner to exercise any of the powers referred to in subsection (2), the Tribunal shall take into account the objectives of this Act.
 (6) Where a report made under subsection (1) specifies that the undertaking in whose favour the monopoly situation exists is a body corporate fulfilling the following conditions-(a) that the affairs of the body corporate are managed by its members, and(b) that by virtue of any enactment, those members are appointed by a supervising Minister of that body corporate, the Tribunal shall, if requested, receive representations from the Minister who appointed members of that body corporate and shall consider such representations before making any orders or exercising any powers.
 (7) In relation to any such undertaking as is mentioned in subsection (6) the powers exercisable under subsection (2) shall not include the powers specified in subsection (3 )(e).
-Comment *
-Name *
-Email *
-Website
 
 87. General provisions relating to orders made under this Part
 (1) The provisions of this section shall apply to an order made under section 86 of this Act.
@@ -878,10 +534,6 @@ Website
 (a) take such steps within its competence as may be specified or described in the direction for the purpose of carrying out, or securing compliance with the order; or(b) do or refrain from doing anything so specified or described which the person, body corporate or association may be required by the order to do or refrain from doing, and may authorise the Minister in charge of the person, body corporate or association to vary or revoke any directives so given.
 (7) Prior to making any order under section 87 of this Act, the Tribunal shall publish, in such manner as it deems appropriate, a notice –(a) stating its intention to make the order;(b) indicating the nature of the provisions to be embodied in the order; and
 (c) requesting any person, body corporate or association whose interest is likely to be affected by the order and who is desirous of making representations in respect of the order to do so in writing within 30 days from the date of publication of the notice for consideration by the Tribunal.
-Comment *
-Name *
-Email *
-Website
 
 88. Declaration of price regulations
 (1) For the purpose of regulating and facilitating competition only, the President Declaration of price may, from time to time, by order published in the Federal Gazette, declare that regulations the prices for goods or services specified in the order shall be controlled in accordance with the provisions of this Act.
@@ -892,10 +544,6 @@ Website
 (4) An order made under subsection (1) shall identify the goods or services to which it pertains by-(a) a description of the goods or services;(b) a description of the kind or class of the goods or services;(c) a description of the market to which the goods or services belong; and
 (d) the specification of the sector of the economy affected or likely to be affected.
 (5) Any order made under subsection (1) shall specify the date on which it shall expire.
-Comment *
-Name *
-Email *
-Website
 
 89. Commission to report to the President on price regulation
 (1) The President may, by notice in writing, require the Commission to report by such date as the President shall specify in the notice, on the need to amend, vary or revoke an order made under section 88 of this Act.
@@ -903,10 +551,6 @@ Website
 (b) the Commission shall not submit a report to the President until it has given a reasonable opportunity to interested persons to furnish their views in accordance with the requirement of paragraph (a) (ii).
 (3) The Commission may at its discretion recommend to the President to amend, vary or revoke an order made under section 88 of this Act.
 (4) The President shall cause a copy of every report submitted by the Commission under this section to be published in such manner as it considers appropriate.
-Comment *
-Name *
-Email *
-Website
 
 90. Regulated goods or services to be supplied in accordance with authorised prices
 (1) For the purpose of this Part, “regulated goods” or “regulated services” means goods or services in respect of which there is, for the time being in force, an order made under section 88 of this Act.
@@ -916,18 +560,10 @@ Website
 (5) A person who violates any of the provisions of this Part commits an offence and is liable on conviction to a fine not exceeding N50,000,000.00.
 (6) A body corporate that violates any of the provisions of this Part commits an offence and is liable on conviction to a fine not exceeding 10% of the turnover of the body corporate in the business year preceding the date of thecommission of the offence.
 (7) Each director of the body corporate referred to in subsection ( 6) shall be liable to be proceeded against and on conviction dealt with as specified in subsection (5).
-Comment *
-Name *
-Email *
-Website
 
 91. Retention of accounting and costing records by suppliers or distributors
 (1) Any undertaking that supplies or distributes regulated goods or services shall retain all accounting and costing records on the regulated goods or services as the Commission may specify either in relation to suppliers or distributors of those goods or services generally or in relation to a particular supplier or distributor ofthe goods or services.
 (2) Any undertaking that supplies or distributes regulated goods or services shall retain the records referred to in subsection (1) for a period of three years from the date of the revocation or expiry of the order in respect of the regulated goods or services to which they relate.
-Comment *
-Name *
-Email *
-Website
 
 92. Merger defined
 (1) For the purposes of this Act-(a) a merger occurs when one or more undertakings directly or indirectly acquire or establish direct or indirect control over the whole or part of the business of another undertaking; and
@@ -940,20 +576,12 @@ Website
 (3) For the purposes of subsection (1), an undertaking shall not be deemed to exercise control over the business of another undertaking where –(a) credit institutions or other financial institutions or insurance companies, the normal activities of which include transactions and dealing in securities for their own account or for the account of others, hold on a temporary basis securities which they have acquired in an undertaking with a view to reselling them, provided that they do not exercise voting rights in respect of those securities with a view to determining the competitive behaviour of that undertaking or provided that they exercise such voting rights only with a view to preparing the disposal of all or part of that undertaking or of its assets or the disposal of those securities and that any such disposal takes place within one year of the date of acquisition; that period may be extended by the Commission on request where such institutions or companies can show that the disposal was not reasonably possible withinthe period set; or
 (b) control is acquired by an office-holder according to the laws of the Federation relating to liquidation, winding up, insolvency, cessation of payments, compositions or analogous proceedings.
 (4) For the purposes of this Act –(a) a “small merger” means a merger with a value at or below the threshold stipulated by the Commission by regulations; and(b) a “large merger” means a merger with a value above the threshold stipulated by the Commission by regulations.
-Comment *
-Name *
-Email *
-Website
 
 93. Commission to approve mergers
 (1) Subject to the notification threshold to be determined from time to time as set out in this Part, a proposed merger shall not be implemented unless it has first been notified to and approved by the Commission.
 (2) The Commission shall, by regulations, determine –(a) a threshold of annual turnover for the purposes of determining the categories of mergers contemplated under section 92 (4) of this Act; and(b) a method for the calculation of annual turnover to be applied in relation to the threshold determined under paragraph (a).
 (3) Prior to making a determination contemplated in subsection (2), the Commission shall publish, in the Federal Gazette, a notice-(a) setting out the proposed threshold and method of calculation for purposes of this section; and(b) inviting written submissions on that proposal.
 (4) Within 60 days after publishing a notice as required under subsection (3), the Commission shall publish, in the Federal Gazette, a notice setting out-(a) the threshold and method of calculation for the purposes of this section; and(b) the effective date of the threshold.
-Comment *
-Name *
-Email *
-Website
 
 94. Consideration by the Commission of effect of a merger on competition
 (1) When considering a merger or a proposed merger, the Commission shall-(a) determine whether or not the merger is likely to substantially prevent or lessen competition, by assessing the factors set out in subsection (2);
@@ -965,10 +593,6 @@ Website
 (3) Where it appears that a merger or proposed merger is likely to substantially prevent or lessen competition, the Commission shall determine –(a) whether or not the merger or proposed merger is likely to result in any technological efficiency or other procompetitive advantage which will be greater than, and offset, the effects of any prevention or lessening ofcompetition, while allowing consumers a fair share of the resulting benefit; and
 (b) whether the merger or proposed merger can or cannot be justified on substantial public interest grounds by assessing the factors set out in subsection (4).
 (4) When determining vvhether a merger or proposed merger can or cannot be justified on grounds of public interest, the Commission shall consider the effect that the merger or proposed merger will have on –(a) a particular industrial sector or region;(b) employment;(c) the ability of national industries to compete in international markets; and(d) the ability of small and medium scale enterprises to become competitive.
-Comment *
-Name *
-Email *
-Website
 
 95. Notification requirements for a small merger
 (1) A party to a small merger-(a) is not required to notify the Commission of that merger unless the Commission requires it to do so in accordance with the provision of subsection (3); and
@@ -983,10 +607,6 @@ Website
 (7) Where, upon the expiry of the 20 business days provided for in subsection ( 6), the Commission has not issued the extension notice referred to in subsection (6) (a) or, upon the expiry of an extension period referred to in that subsection, the Commission has not issued a report referred to in subsection ( 6) (b), the merger shall be deemed to have been approved.
 (8) The Commission shall-(a) publish a notice of any decision it makes pursuant to this section in the Federal Government Gazette; and
 (b) issue written reasons for the decision if-(i) it prohibits or conditionally approves a merger, or(ii) requested to do so by a party to a merger.
-Comment *
-Name *
-Email *
-Website
 
 96. Notification of a large merger
 (1) A party to a large merger shall notify the Commission of the merger in the prescribed manner and form.
@@ -996,10 +616,6 @@ Website
 (5) Any action undertaken by any party in violation of the provisions of subsection (4) is void.
 (6) The Commission may exercise any of the powers available to it under this Act to render void any violation of the provisions of subsection (3).
 (7) An undertaking that violates the provision of subsection (4) . commits an offence and is liable on conviction to a fine not exceeding 10% of turnover of the undertaking in the business year preceding the date of the commission of the offence or to such other percentage as the court may determine having regard to the circumstances of the case.
-Comment *
-Name *
-Email *
-Website
 
 97. Power of the Commission to extend the period of consideration of a larger merger
 (1) Within 60 business days after the parties to a large merger have fulfilled all notification requirements referred to in section 96 of this Act, the Commission-(a) may extend the period in which it has to consider the proposed merger to 120 business days and Issue an extension notice to all parties to the merger; or
@@ -1007,64 +623,32 @@ Website
 (2) Where upon the expiry of the 60 business day period provided for in subsection ( 1 ), the Commission has not issued an extension notice as provided for in that subsection or, upon the expiry of an extension period contemplated in subsection (1) (a), the Commission has not issued a report referred to in subsection (1) (b), the merger shall be regarded as having been approved, subject to the provision of section 99 of this Act.
 (3) Subject to the provisions of this Part, the Commission shall-(a) give to the parties applying for approval of a large merger its decision and cause a notice of the decision to be published in at least two national newspapers; and
 (b) issue written reasons for its decision where-(i) it prohibits or conditionally approves the merger, or(ii) it is requested to do so by a party to the merger.
-Comment *
-Name *
-Email *
-Website
 
 98. Investigation of a proposed merger
 The Commission may direct any of its officers to investigate a merger, and may require any person or undertaking to provide information in respect of the merger.
-Comment *
-Name *
-Email *
-Website
 
 99. Revocation of merger approval
 (1) The Commission may revoke its own decision to approve or conditionally approve a small or large merger if-(a) the decision was based on incorrect information for which a party to the merger is responsible;(b) the approval was obtained by deceit;(c) the parties fail to implement the merger within 12 months after the approval was granted; or(d) an undertaking concerned has breached an obligation attached to the decision of the Commission approving the merger.
 (2) Where the Commission revokes its decision approving a merger under subsection (1), it may prohibit that merger even though any time limit set out under the relevant provision of this Part may have elapsed and the merger was approved on account of the failure of the Commission to reach a decision within the period prescribed under this Act.
-Comment *
-Name *
-Email *
-Website
 
 100. Powers of the Minister
 (1) The Minister is entitled to make representations on any public interest ground indicated in section 94 (4) to the Commission with respect to any merger which is under consideration by the Commission.
 (2) Subject to the overriding objectives of this Act, the Commission shall have special regard to the representations made by the Minister on and public interest grounds indicated in section 94 ( 4) in arriving at the decision on a merger notification.
 (3) Further to the provisions of subsections (1) and (2), the Minister may participate as an observer in any merger proceeding before the Commission in the prescribed manner.
-Comment *
-Name *
-Email *
-Website
 
 101. Power to hear persons in merger proceedings
 (1) In making a determination in respect of a merger notification, the Commission may hear any person, other than parties to the merger, who, in the opinion of the Commission, is able to assist in making a determination or the merger notification.
 (2) Before making a determination in relation to a merger or a proposed merger, the Commission may decide to hold a hearing publicly or in private and shall appoint a date, time and place for holding the hearing and give notice of the date, time, and place so appointed and of the matters to be considered at the hearing to the persons entitled to be present at the hearing.
-Comment *
-Name *
-Email *
-Website
 
 102. Provisions of documentations on proposed merger to the Commission
 (1) Any undertaking making a merger notification shall furnish to the Commission such documents and information as may be required in the consideration of the merger or proposed merger to enable the Commission exercise their functions under this Act.
 (2) Any undertaking that has given notice in respect of a merger or proposed merger may, at any time by notice in writing to the Commission, advise the Commission that it does not wish to proceed with the implementation of the merger and the Commission shall not give a decision on the notification.
-Comment *
-Name *
-Email *
-Website
 
 103. Appeals
 A person aggrieved by the Commission’s decision under this Part may file an application for review before the Tribunal and where the decision relates to a decision of the Tribunal, to the Court of Appeal.
-Comment *
-Name *
-Email *
-Website
 
 104. Supremacy of the Federal Competition and Consumer Protection Act
 Notwithstanding the provisions of any other law but subject to the provisions of the Constitution of the Federal Republic of Nigeria, in all matters relating to competition and consumer protection, the provisions of this Act shall override the provisions of any other law.
-Comment *
-Name *
-Email *
-Website
 
 105. Designation of regulated industries
 (1) The operation by an undertaking in an industry subject to the authority of a regulatory agency set up by an Act of the National Assembly or the Laws of a State is sufficient to make such an undertaking a member of a regulated industry for the purpose of this Act.
@@ -1077,18 +661,10 @@ Website
 (c) preserve the coordinating and leadership role of the Commission in relation to the exercise of the concurrentpower as envisaged under this Act.(d) provide for the exchange of information and the protection of confidential information, and(e) be published in the Federal Government Gazette.
 (7) Where the negotiations contemplated by subsections (4) and (5) are inconclusive, the areas of disagreement shall be referred to the Attorney-General and Minister of Justice in the case of a large merger, for advise onpublic interest grounds.
 (8) In resolving the areas of disagreement as provided in (7), the Attorney-General of the Federation and Minister of Justice shall take into account the advice of the Tribunal.
-Comment *
-Name *
-Email *
-Website
 
 106. Exemption of regulated industries
 (1) Whenever it is alleged that a prov1s1on of this Act has been contravened by an undertaking acting or operating within any regulated industry designated under section 105 of this Act, the undertaking against whom such allegation is made must demonstrate that the conduct in question was ordered or required by a regulatory agency possessing jurisdiction over that regulated industry.
 (2) Where the undertaking against whom an allegation referred to in subsection (1) is made demonstrates that the conduct in question was ordered or required by a regulatory agency possessing jurisdiction over the regulated industry, the Commission may, subject to the agreement referred to in section 105, proceed with the issuance of a cease-and-desist order prohibiting the undertaking concerned from further violations of the provisions of this Act.
-Comment *
-Name *
-Email *
-Website
 
 107. Price-fixing
 (1) An undertaking shall not directly or indirectly –(a) by agreement, threat, promise or any other means, attempt to influence or conspire to influence upward or discourage the reduction of, the price at which any other undertaking supplies, offers to supply or advertises any goods or services; or(b) refuse to supply goods or services to or otherwise discriminate against any undertaking because of the pricing policy of that undertaking.
@@ -1097,10 +673,6 @@ Website
 (4) An undertaking that violates any of the provisions of this section commits an offence and –(a) where the undertaking is a natural person, is liable on conviction to imprisonment for a term not exceeding three years or to payment of a fine not exceeding N10,000,000.00 or to both the fine and imprisonment;
 (b) where the undertaking is a body corporate, is liable on conviction to a fine not exceeding 10% of its turnover in the preceding business year; and
 (c) in the case of a corporate body referred to in paragraph (b), each director of the body corporate is liable to be proceeded against and on conviction dealt with as specified in paragraph (a).
-Comment *
-Name *
-Email *
-Website
 
 108. Conspiracy
 (1) An undertaking shall not conspire, combine, agree or arrange with another undertaking to –(a) limit unduly the facilities for transporting, producing, manufacturing, storing or dealing in or supplying any goods or services;
@@ -1110,10 +682,6 @@ Website
 (2) Nothing in subsection (1) applies to a conspiracy, combination, agreement or arrangement which relates only to a service and to standards of competence and integrity that are reasonably necessary for the protection of the public-(a) in the practice of a trade or profession relating to the service; or(b) in the collection and dissemination of information relating to the service.
 (3) An undertaking that violates any provision of this section commits an offence and where the undertaking is-(a) a natural person, is liable on conviction to imprisonment for a term not exceeding three years, or to payment of a fine not exceeding W10,000,000.00 or to both fine and imprisonment;
 (b) a body corporate, is liable on conviction to a fine not exceeding 10% of its turnover in the preceding business year; and(c) a body corporate referred to in paragraph (b), each director of the body corporate is liable to be proceeded against and on conviction dealt with as specified in paragraph (a).
-Comment *
-Name *
-Email *
-Website
 
 109. Bid-rigging
 (1) Subject to subsection (2), no two or more undertakings shall enter into an agreement whereby –(a) one or more of them agree not to submit a bid in response to a call or request for bids or tenders; or
@@ -1122,46 +690,26 @@ Website
 (3) An undertaking that violates any provision of this section commits an offence and where the undertaking is –
 (a) a natural person, is liable on conviction to imprisonment for a term not exceeding three years, or to payment of a fine not exceeding N10,000,000.00 or to both fine and imprisonment;
 (b) a body corporate, is liable on conviction to a fine not exceeding 10% of its turnover in the preceding business year; and(c) a body corporate referred to in paragraph (b), each director of the body corporate is liable to be proceeded against and on conviction dealt with as specified in paragraph (a).
-Comment *
-Name *
-Email *
-Website
 
 110. Obstmction of investigation or inquiry
 Any person, who, in any manner, impedes, prevents or obstructs any investigation or inquiry by the Commission under this Act commits an offence and is liable, on summary conviction, to imprisonment for a term of not less than two years or to a fine of not less than N2,000,000.00 or to both the fine and imprisonment.
-Comment *
-Name *
-Email *
-Website
 
 111. Offence against records
 (1) An undertaking that –(a) refuses to produce any document or supply any information when required to do so by the Commission under this Act,(b) destroys or alters any document or causes a document to be destroyed or altered, or(d) intentionally withholds the production of a document within his possession or control, commits an offence under this Act.
 (2) An undertaking that commits an offence under subsection (1), where the undertaking is a –(a) natural person, is liable on conviction to imprisonment for a term not exceeding three years, or to payment of a fine not exceeding N10,000,000.00 or to both the fine and imprisonment;
 (b) body corporate, is liable on conviction to a fine not exceeding 10% of its turnover in the preceding business year; and
 (c) body corporate referred to in paragraph (b), each director of the body corporate is liable to be proceeded against and on conviction dealt with as specified in paragraph (a).
-Comment *
-Name *
-Email *
-Website
 
 112. Giving of false or misleading information
 An undertaking that gives to the Commission or an authorised officer of the Commission, any information which the undertaking knows to be false or misleading commits an offence and where the undertaking is a –
 (a) natural person, is liable on conviction to imprisonment for a term not exceeding two years, or to payment of a fine not exceeding N10,000,000.00 or to both the fine and imprisonment;
 (b) body corporate, is liable on conviction to a fine not exceeding 10% of its turnover in the preceding businessyear; and
 (e) body corporate referred to in paragraph (b), each director of the body corporate is liable to be proceeded against and on conviction dealt with as specified in paragraph (a).
-Comment *
-Name *
-Email *
-Website
 
 113. Failure to attend or give evidence
 (1) A person who has been required to appear before the Commission and –(a) without reasonable excuse, refuses or fails to appear, or
 (b) refuses to take an oath or to make an affirmation as a witness or to answer a question put to him,commits an offence and is liable on summary conviction to imprisonment for a term not exceeding three years, or to a fine not exceeding Nl0,000,000.00 or to both fine and imprisonment.
 (2) The Commission may prosecute or refer violations of criminal offences created under this Act to the office of the Attorney-General of the Federation and Minister for Justice for prosecution and imprisonment.
-Comment *
-Name *
-Email *
-Website
 
 114. Right to information in plain and understandable language
 (1) The producer of a notice, document or visual representation that is required under this Act or any other law, to be produced, provided or displayed to a consumer must produce, provide or display that notice, document or visual representation –
@@ -1169,36 +717,20 @@ Website
 (2) For the purposes of this Act, a notice, document or visual representation is in plain language if it is reasonable to conclude that an ordinary consumer of the class of persons for whom the notice, document or visual representation is intended, with average literacy skills and minimal experience as a consumer of the relevant goods or services, could be expected to understand the content, significance, and import of the notice, document or visual representation without undue effort, having regard to –
 (a) the context, comprehensiveness and consistency of the notice, document or visual representation;(b) the organisation, form and style of the notice, document or visual representation;(c) the vocabulary, usage and sentence structure of the notice, document or visual representation; and(d) the use of any illustrations, examples, headings or other aids to reading and understanding.
 (3) The Commission may publish guidelines on methods for assessing whether a notice, document or visual representation satisfies the requirements of subsections (1) and (2).
-Comment *
-Name *
-Email *
-Website
 
 115. Disclosure of price of goods or services
 (1) An undertaking shall not display any goods or services for sale without adequately displaying to the consumer a price of those goods or services.
 (2) For the purposes of this subsection, a price is adequately displayed to a consumer if, in relation to any particular goods or services, a written indication of the price, expressed in the currency of the Federal Republic ofNigeria, is annexed or affixed to, written, printed, stamped or located upon, or otherwise applied to the goods or services or to any band, ticket, covering, label, package, reel, shelf, or other thing used in connection with the goods or services, or on which the goods or services are mounted for display or exposed for sale, or published in relation to the goods or services in a catalogue, brochure, newspaper, circular or similar publication available tothe consumer, or to the public generally.
 (3) An undertaking shall not require a consumer to pay a price for any goods or services higher than the displayed price for those goods or services, or if more than one price is concmTently displayed, higher than the lower or lowest of the prices so displayed.
-Comment *
-Name *
-Email *
-Website
 
 116. Product labeling and trade descriptions
 (1) For the purposes of this section, a trade description is applied to goods if it is –(a) applied to the goods, or to any covering, label or reel in or on which the goods are packaged, or attached to the goods;
 (b) displayed together with, or in proximity to, the goods in a manner that is likely to lead to the belief that the goods are designated or described by that description; or(c) is contained in any sign, advertisement, catalogue, brochure, circular, wine list, invoice, business letter, business paper, or other commercial communication on the basis of which a consumer may request or order the goods.
 (2) An undertaking shall not knowingly apply to any goods a trade description that is likely to mislead consumers as to any matter implied or expressed in that trade description or alter, deface, cover, remove or obscure a tradedescription or trade mark applied to any goods in a manner calculated to mislead consumers.
 (3) An undertaking shall not supply, offer to supply or display any goods if the undertaking knows, reasonably could determine, or has reason to suspect, that-(a) a trade description applied to those goods is likely to mislead consumers as to any matter implied or expressed in that trade description; or(b) a trade description or trade mark applied to those goods has been altered.
-Comment *
-Name *
-Email *
-Website
 
 117. Disclosure of reconditioned or second-hand goods
 An undertaking that offers or agrees to supply, or supplies, any goods that have been used or are second-hand or have been re-conditioned, re-built or re-made, must apply a conspicuous notice to those goods stating clearly that they have been used or are second-hand or have been re-conditioned, re-built or re-made.
-Comment *
-Name *
-Email *
-Website
 
 118. Sales records
 Except where it is impracticable to do so, an undertaking shall provide a written record of each transaction to any consumer to whom goods or services are sold or supplied, and include in that record at least-(a) the undertaking’s full name, or registered business name;
@@ -1210,19 +742,11 @@ Except where it is impracticable to do so, an undertaking shall provide a writte
 (g) the total price of the transaction, before any applicable taxes;
 (h) the amount of any applicable taxes; and
 (i) the total price of the transaction, including any applicable taxes.
-Comment *
-Name *
-Email *
-Website
 
 119. Consumer’s right to select suppliers
 An undertaking shall not require, as a condition of offering to supply or supplying any goods or services, or as a condition of entering into an agreement or transaction, that a consumer shall –(a) purchase any other particular goods or services from that undertaking,
 (b) enter into an additional agreement or transaction with the same undertaking or a designated third party, or
 (c) agree to purchase any particular goods or services from a designated third party, unless the undertaking candemonstrate that the convenience to the consumer in having those goods or services bundled outweighs the limitation of the consumer’s right to choice, or that the bundling of those goods or services results in economic benefit for the consumer.
-Comment *
-Name *
-Email *
-Website
 
 120. Consumer’s right to cancel advance reservation, booking or order
 (1) A consumer shall have the right to cancel any advance booking, reservation or order for any goods or services, subject to a reasonable charge for cancellation of the order or reservation by the supplier or service provider.
@@ -1230,29 +754,17 @@ Website
 (a) the nature of the goods or serv1ces that were reserved, booked or ordered;(b) the length of notice of cancellation provided by the consumer;(c) the reasonable potential for the supplier or service provider, acting diligently, to find an alternative consumer between the time of receiving the cancellation notice, and the time of the cancelled reservation, booking or order; and
 (d) the general practice of the relevant industry.
 (3) A supplier or service provider may not impose any cancellation fee in respect of a booking, reservation or order if the consumer is unable to honour the booking, reservation or order because of the death or hospitalisation of the person for whom, or for whose benefit the booking, reservation or order was made.
-Comment *
-Name *
-Email *
-Website
 
 121. Consumer’s right to choose or examine goods
 (1) Notwithstanding any statement or notice to the contrary, a consumer or potential consumer is not responsible for any loss or damage to any goods displayed by a supplier, unless the loss or damage results from action by the consumer amounting to gross negligence or recklessness, malicious behaviour or criminal conduct.
 (2) Where goods are displayed in or sold from open stock, a consumer has the right to select or reject any particular item from that stock before completing the transaction.
 (3) Where a consumer has agreed to purchase goods solely on the basis of a description or sample, or both provided by the supplier, the goods delivered to the consumer shall in all material respects and characteristics, correspond to that which an ordinary alert consumer would have been entitled to expect based on the description, or on a reasonable examination of the sample, as the case may be.
 (4) Where the supply of goods is by sample, as well as by description, it is not sufficient that any of the goods correspond with the sample, if the goods do not also correspond with the description.
-Comment *
-Name *
-Email *
-Website
 
 122. Consumer’s right to return goods
 In addition to the consumer’s right to return unsafe or defective goods under any law or enactment, the consumer may return goods to the supplier and receive a full refund of any consideration paid for those goods, if the supplier has delivered –
 (a) goods intended to satisfy a particular purpose communicated to the supplier and within a reasonable time after delivery to the consumer, the goods have been found to be unsuitable for that particular purpose; or
 (b) goods that the consumer did not have an opportunity to examine before delivery, and the consumer has rejected delivery of the goods within a reasonable time after delivery to the consumer for the reason that the goods do not correspond with description, sample or that they are not of the type and quality reasonably contemplated in the sales agreement.
-Comment *
-Name *
-Email *
-Website
 
 123. General standards for the marketing of goods and services
 (1) A producer, importer, distributor, retailer, trader or service provider shall not, in pursuance of trade and for the purpose of promoting or marketing, directly or indirectly, goods or services make any representation to a consmner –
@@ -1266,37 +778,21 @@ Website
 (c) expressed on a display in the place where the goods or services are sold;(d) made in the course of selling goods or serv1ces to the ultimate consumer; or(e) contained in or on anything that is sold, sent, delivered, transmitted or in any other manner made available to a member of the public.
 (3) Where the undertaking referred to in subsection (2) is outside Nigeria, the representation shall be deemed to be made –(a) in a case described in subsection (2) (a), (b) or (e), by the undertaking that imported the goods or services; and
 (b) in the case described in subsection (2) (c), by the undertaking that imported the display into Nigeria.
-Comment *
-Name *
-Email *
-Website
 
 124. Right to fair dealings
 (1) An undertaking or any person acting on its behalf shall not use physical force, coercion, undue influence or pressure, harassment, unfair tactics or any other similar conduct against any person in connection with –(a) marketing of any goods or services;(b) supply of goods or services to a consumer;
 (c) negotiation, conclusion, execution or enforcement of an agreement to supply any goods or services to a consumer;(d) demand for, or collection of, payment for goods or services by a consumer; or(e) the conduct of a legitimate business transaction.
 (2) In addition to any conduct contemplated in subsection (1), an undertaking or any person acting on its behalf shall not knowingly to take advantage of the fact that a potential consumer was substantially unable to protect the consumer’s own interests because of physical or mental disability, illiteracy, ignorance, inability to understand the language of an agreement, or any other similar factor.
-Comment *
-Name *
-Email *
-Website
 
 125. False, misleading or deceptive representations
 (1) Where in the marketing of any goods or services an undertaking or any person acting on its behalf by words or conduct-(a) directly or indirectly expresses or implies a false, misleading or deceptive representation concerning a material fact to a consumer or prospective consumer, or
 (b) fails to correct an apparent misapprehension on the part of a consumer or prospective consumer, amounting to a false, misleading or deceptive representation or permit or require any other person to do so, the undertaking is liable for damages to any person damaged, and shall be ordered to make monetary restitution.
 (2) A person acting on behalf of a supplier of any goods or services shall not –(a) falsely represent that the person has any sponsorship, approval or affiliation, or(b) engage in any conduct that the supplier is prohibited from engaging in under subsection (1).
-Comment *
-Name *
-Email *
-Website
 
 126. Representation test and publication testimonials
 (1) An undertaking shall not, for the purpose of promoting, directly or indirectly, the supply or use of any goods or services or any business interest, make a representation to the public that a test as to the performance, efficacy or length of life of the goods or services has been made by any person or publish a testimonial with respect to the products, unless it can establish the matters specified in subsection (2).
 (2) The matters referred to in subsection (1) are-(a) that the representation or testimonial was previously made or published by the person by whom the test was made or the testimonial was given, as the case may be; or
 (b) that before the representation or testimonial was made or published, it was approved and permission to make or publish it was given in writing by the person who made the test or gave the testimonial, as the case may be, and it accords with the representation or testimonial previously made, published or approved.
-Comment *
-Name *
-Email *
-Website
 
 127. Unfair, unreasonable or unjust contract terms
 (1) An undertaking shall not-(a) offer to supply, supply, or enter into an agreement to supply, any goods or services at a price that is manifestly unfair, unreasonable or unjust, or on terms that are unfair, unreasonable or unjust;
@@ -1304,19 +800,11 @@ Website
 (c) require a consumer, or other person to whom any goods or services are supplied at the direction of the consumer, to waive any rights, assume any obligation, or waive any liability of the undertaking, on terms that are unfair, unreasonable or unjust, or impose any term as a condition of entering into a transaction.
 (2) Without limiting the generality of the provision of subsection (1 ), a transaction or agreement, a term or condition of a transaction or agreement, or a notice to which a term or condition is purportedly subject, is unfair, unreasonable or unjust if-(a) it is excessively one-sided in favour of any person other than the consumer or other person to whom goods or services are to be supplied;
 (b) the terms of the transaction or agreement are so adverse to the consumer as to be inequitable;(c) the consumer relied upon a false, misleading or deceptive representation or a statement of opinion provided by or on behalf of the undertaking that supplied the goods or services concerned, to the detriment of the consumer; or(d) the fact, nature and effect of that term, condition or notice was not drawn to the attention of the consumer.
-Comment *
-Name *
-Email *
-Website
 
 128. Notice required for certain terms and conditions
 (1) Any notice to consumers or potential consumers, or provision of a consumer agreement, which purports to-(a) limit in any way the risk or liability of an undertaking supplying goods or services or any other person,(b) constitute an assumption of risk or liability by the consumer,
 (c) impose an obligation on the consumer to indemnify an undertaking supplying goods or services or any other person for any cause, or(d) be an acknowledgement of any fact by the consumer, shall be drawn to the attention of the consumer m aconspicuous manner and form that is likely to attract the attention of an ordinarily alert consumer having regard to the circumstances.
 (2) Before the consumer enters into the transaction, or is required or expected to offer consideration for the transaction or agreement, the consumer shall be given adequate opportunity in the circumstances to receive and comprehend the provision or notice.
-Comment *
-Name *
-Email *
-Website
 
 129. Prohibited transactions, agreements, terms or conditions
 (1) An undertaking shall not make a transaction or agreement subject to any term or condition if –
@@ -1327,53 +815,29 @@ Website
 (d) it falsely expresses an a:::knowledgment by the consumer that before an agreement was made, no representations or warranties were made in connection with the agreement by the undertaking or a person acting on behalf of the undertaking or the consumer has received goods or services,or a document that is required by this Act to be delivered to the consumer; and
 (e) it expresses an agreement by the consumer to-(i) deposit with the undertaking, or with any other person at the direction of the undertaking, an identity document, credit or debit card, bank account or automatic teller machine access card, or any similar identifyingdocument or device, and(ii) provide a personal identification code or number to be used to access an account.
 (2) A purported transaction or agreement, provision, term or condition of a transaction or agreement, or notice to which a transaction or agreement is purported to be subject, is void to the extent that it contravenes the provisions of this section.
-Comment *
-Name *
-Email *
-Website
 
 130. Rights pertaining to the quality and safety of goods and services
 (1) When an undertaking agrees to perform any service for or on behalf of a consumer, the consumer has a right to –(a) the timely performance and completion of those services, and timely notice of any unavoidable delay in theperformance of the services;(b) performance of the services in a manner and quality that reasonable persons are generally entitled to expect;
 (c) the use, delivery or installation of goods that are free of defects and of a quality that persons are generally entitled to expect, if the goods are required for the performance of the services; and(d) the return of any property or control over any property of the consumer in at least as good a condition as it was when the consumer made it available to the undertaking for the purpose of performing the services, having regard to the circumstances of the supply, and any specific criteria or conditions agreed between the undertaking and the consumer before or during the performance of the services.
 (2) Where an undertaking fails to perform a service to the standards contemplated in subsection (1 ), the consumer may require the undertaking to either-(a) remedy any defect in the quality of the services performed or goods supplied; or(b) refund to the consumer a reasonable portion of the price paid for the services performed and goods supplied, having regard to the extent of the failure.
-Comment *
-Name *
-Email *
-Website
 
 131. Consumers’ rights to safe, good quality goods
 (1) Every consumer has a right to receive goods that –(a) are reasonably suitable for the purposes for which they are generally intended;(b) are of good quality, m good working order and free of defects;
 (c) will be useable and durable for a reasonable period of time, having regard to the use to which they would normally be put and to all the surrounding circumstances of their supply; and(d) comply with any applicable standards set by industry sector regulators.
 (2) In addition to the right set out in subsection (1), if a consumer has specifically informed an undertaking of the particular purpose for which the consumer wishes to acquire any goods, or the use to which the consumer intends to apply those goods, and the undertaking ordinarily offers to supply such goods or acts in a manner consistent with being knowledgeable about the use of those goods, the consumer has a right to expect that the goods are reasonably suitable for the specific purpose that the consumer has indicated.
-Comment *
-Name *
-Email *
-Website
 
 132. Implied warranty of quality
 (1) In any transaction or agreement pertaining to the supply of goods to a consumer, there is an implied warranty that the goods shall comply with the requirements and standards contemplated in section 131 (1) and (2) of this Act.
 (2) Within three months after the delivery of any goods to a consumer, the consumer may return the goods to the undertaking that supplied those goods, without penalty and at the undertaking’s risk and expense, if the goods fail to satisfy the requirements and standards contemplated in section 131 (1) of this Act and the undertaking shall either repair or replace the failed, unsafe or defective goods or refund to the consumer the price paid by the consumer for the goods.
-Comment *
-Name *
-Email *
-Website
 
 133. Safety monitoring and recall
 (1) The Commission shall promote the development, adoption and application of industry-wide codes of practice providing for effective and efficient systems to –
 (a) receive notice of consumer complaints or reports of product failures, defects or hazards; the return of any goods because of a failure, defect or hazard personal injury, illness or damage to property caused wholly or partially as a result of a product failure, defect or hazard and other indication of failure, defect or hazard;(b) monitor the sources of information contemplated in paragraph (a), and analyse the information received with the object of detecting or identifying any previously undetected or unrecognised potential risk to the public from the use of or exposure to those goods;
 (c) conduct investigations into the nature, causes, extent and degree of the risk to the public;(d) notify consumers of the nature, causes, extent and degree of the risk pertaining to those goods; and(e) if particular goods are unsafe, recall those goods for repair, replacement or refund.
 (2) Where the Commission has reasonable grounds to believe that any goods may be unsafe, or that there is a potential risk to the public from the continued use of or exposure to the goods, and the undertaking that produced, distributed or imported those goods has not taken any step required by an applicable code contemplated in subsection (1 ), the Commission, by written notice, may require that undertaking to recall the goods on any term required by the Commission.
-Comment *
-Name *
-Email *
-Website
 
 134. Duty to label goods properly
 A manufacturer, importer or distributor of goods shall label or describe the goods in a manner that will be easily traceable to the manufacturer, importer or distributor.
-Comment *
-Name *
-Email *
-Website
 
 135. Duty to withdraw hazardous goods from the market
 (1) Upon becoming aware of any unforeseen hazard arising from the use of goods already placed on the market, the manufacturer or distributor of such goods shall notify the general public immediately of such risk or danger and cause such goods to be withdrawn from the market.
@@ -1381,10 +845,6 @@ Website
 (a) where the undertaking is a natural person, is liable on conviction to imprisonment for a term not exceeding three years or to payment of a fine not exceeding N10,000,000.00 or to both the fine and imprisonment; and(b) where the undertaking is a body corporate, is liable on conviction to a fine not exceeding 1 0% of its turnover in the preceding business year;
 (3) In the case of a body corporate referred to in subsection (2) (b), each director of the body corporate is liable to be proceeded against and on conviction dealt with as specified in subsection (2) (a).
 (4) Where a consumer suffers loss or injury by the violation of any person of provisions of section 13 4 of this Act or subsection (1), the consumer shall have a right to be awarded compensation by the Commission.
-Comment *
-Name *
-Email *
-Website
 
 136. Liability for defective goods
 (1) Where a damage is caused wholly or partly by defective goods or the supply of a service, the undertaking that supplied the goods or service is liable for the damage.
@@ -1392,102 +852,54 @@ Website
 (3) An unde1iaking that supplied the defective goods or service is liable whether or not the user or consumer bought the goods or service from or entered into any contractual agreement with the undertaking.
 (4) A person affected by the defective goods or services has the right to sue under this section.
 (5) The liability of any undertaking under this section shall not be excluded or restricted.
-Comment *
-Name *
-Email *
-Website
 
 137. Liability arising from sale or supply of goods not to be excluded
 (1) In the case of goods of a type ordinarily supplied for private use or consumption, where loss or damage arises from the goods proving defective while in consumer use or results from the negligence of an undertaking concerned in the manufacture or distribution of the goods, liability for the loss or damage cannot be excluded or restricted by reference to any contract term or notice contained in or operating by reference to a guarantee of the goods.
 (2) For the purpose of this section-(a) goods are to be regarded as “in consumer use” when a person is using them or has them in his possession for use, otherwise than exclusively for the purposes of a business; and
 (b) anything in writing is a guarantee if it contains or purports to contain some promise or assurance (however worded or presented) that defects will be made good by complete or partial replacement, or by repair, monetary compensation or otherwise.
-Comment *
-Name *
-Email *
-Website
 
 138. Liability for breach of implied obligations by law
 (1) Liability for breach of the obligations arising from a seller’s implied undertaking as to title not be excluded or restricted by reference to any contract term.
 (2) As against a person dealing as a consumer, liability for breach of the obligations arising from seller’s implied undertakings as to conformity of goods with description or sample, or as to their quality or fitness for a particular purpose, shall not be excluded or restricted by reference to any contract term.
 (3) As against a person dealing otherwise than as a consumer, the liability specified in subsection (2) may be excluded or restricted by reference to a contract term only if the term satisfies the requirement of reasonableness.
-Comment *
-Name *
-Email *
-Website
 
 139. Miscellaneous contracts under which goods pass
 (1) Where the possession or ownership of goods pass under or in pursuance of a contract, subsections (2), (3) and (4) apply as regards the effect, if any, to be given to contract terms excluding or restricting liability for breach of obligation arising by implication of law from the nature of the contract.
 (2) As against a person dealing as a consumer, liability in respect of the goods’ correspondence with description or sample or quality or fitness for any particular purpose shall not be excluded or restricted by reference to any contract term.
 (3) As against a person dealing otherwise than as a consumer, liability may be excluded or restricted by reference to a contract term only if the term satisfies the requirement of reasonableness.
 (4) Liability in respect of-(a) the right to transfer ownership of the goods or give possession, or(b) the assurance of quiet possession to a person taking goods pursuant to a contract, shall not be excluded or restricted by reference to any contract term, except if the term satisfies the requirement of reasonableness.
-Comment *
-Name *
-Email *
-Website
 
 140. Liability for misrepresentation
 Where a contract contains a term which excludes or restricts any liability to which a part of a contract may be the subject by reason of any misrepresentation made before the contract was made, or any remedy available to another party to the contract by reason of such a misrepresentation, that term shall have no effect.
-Comment *
-Name *
-Email *
-Website
 
 141. Evasion by means of secondary contract
 (1) A person is not bound by any contract term prejudicing or taking away the person’s rights arising under, or in connection with, the performance of another contract, so far as those rights extend to the enforcement of another’s liability which this Act prevents that other from excluding or restricting.
 (2) This Act prevents –(a) the exclusion or restriction of any liability;(b) making any liability or its enforcement subject to restrictive or onerous conditions;
 (c) excluding or restricting any right or remedy in respect of the liability or subjecting a person to any prejudice inconsequence of the person pursuing any such right or remedy; and(d) excluding or restricting rules of evidence or procedure.
 (3) An agreement in writing to submit present or future differences to arbitration is not to be treated under this Act as excluding or restricting any liability.
-Comment *
-Name *
-Email *
-Website
 
 142. Supply of services
 (1) A contract is a contract for the supply of a service for the purposes of this Act whether or not goods are also transferred or to be transferred, or bailed or to be bailed by way of hire, under the contract and whatever is the nature of the consideration for which the service is to be carried out.
 (2) For the purpose of this Act, a contract for apprenticeship is not a contract for the supply of a service.
 (3) In a contract for the supply of a service where the supplier is acting in the course of a business, there is an implied term that the supplier will carry out the service with reasonable care and skill.
-Comment *
-Name *
-Email *
-Website
 
 143. Implied term about time for execution of contract
 Where under a contract for the supply of a service by a supplier acting in the course of a business, the time for the service to be carried out is not fixed by the contract, left to be fixed in a manner agreed by the contract or determined by the course of dealing between the parties, it is implied that the supplier will carry out the service within a reasonable time.
-Comment *
-Name *
-Email *
-Website
 
 144. Exclusion of implied terms
 (1) Where a right, duty or liability would arise under a contract for the supply of a service, it may be negated or varied by express agreement or by the course of dealing between the parties or by such usage as binds both parties to the contract provided that an express term does not negate a term implied by this section unless it is inconsistent with it.
 (2) A supplier of service shall not, while dealing with a consumer, exclude or restrict its liability for breach of any term implied under sections 142 (3) and 143 of this Act.
 (3) Nothing in this section shall prejudice any rule of law which imposes on the supplier a duty stricter than that imposed by section 143 of this Act.
-Comment *
-Name *
-Email *
-Website
 
 145. Onus of proof
 Where it is alleged that goods or services are defective, the onus of proof shall lie on the undertaking that supplied the goods or services.
-Comment *
-Name *
-Email *
-Website
 
 146. Enforcement of rights by a consumer
 (1) A consumer may seek to enforce any right under this Act, a transaction or agreement, or otherwise resolve any dispute with an undertaking that supplied the goods or services to the consumer by-(a) referring the matter directly to the undertaking that supplied the goods or services;(b) referring the matter to the applicable industry sector regulator with jurisdiction, if the undertaking is subject to the jurisdiction of the regulator; or(c) filing a complaint directly with the Commission.
 (2) Notwithstanding the provisions of subsection (1), an aggrieved consumer can directly approach a court with appropriate jurisdiction to seek redress.
-Comment *
-Name *
-Email *
-Website
 
 147. Conclusion by industry sector regulator
 Where an industry sector regulator concludes that there is no reasonable probability of the parties resolving their dispute through the process provided for in the relevant industry code, the industry sector regulator may terminate the process by notice to the parties and the party who referred the matter to the industry sector regulator may then file a complaint with the Commission.
-Comment *
-Name *
-Email *
-Website
 
 148. Enforcement of rights by the Commission
 (1) A consumer shall file a complaint with the Commission in the prescribed manner and form, alleging that an undertaking has acted in a manner inconsistent with the provisions of this Act.
@@ -1496,19 +908,11 @@ Website
 (c) direct an inspector to investigate the complaint as quickly as practicable.
 (4) At any time during investigation, the Commission may designate one or more persons to assist the inspector conducting the investigation.
 (5) After receiving a report of an investigation into a complaint, the Commission shall-(a) issue a notice of non-referral to the complainant in the prescribed form;(b) make an order; or(c) issue a compliance notice.
-Comment *
-Name *
-Email *
-Website
 
 149. Consent order
 (1) Where a matter has been investigated by the Commission, and the Commission and the respondent agree on the proposed terms of an appropriate order, the agreed terms shall be made on the order of the Commission.
 (2) The Commission may, if it deems fit, register the order in a court of competent jurisdiction and the court, without hearing any evidence, may confirm that agreement as a consent order.
 (3) An order of the Commission or a consent order confirmed pursuant to the provision of this section may include an award of damages to the complainant.
-Comment *
-Name *
-Email *
-Website
 
 150. Compliance notice
 (1) The Commission may issue a compliance notice in the prescribed form to an undertaking or association of undertakings whom the Commission on reasonable grounds believes has engaged in prohibited conduct, provided that before issuing a notice to a member of a regulated industry, the Commission shall consult the industry sector regulator that issued a licence to that regulated entity.
@@ -1516,10 +920,6 @@ Website
 (c) details of the nature and extent of the non-compliance;(d) steps that are required to be taken and the period within which those steps shall be taken; and(e) the penalty that may be imposed under this Act if those steps are not taken.
 (3) A compliance notice issued pursuant under this section remains in force until it is set aside by a court, or until the Commission issues a compliance certificate upon being satisfied that there has been sufficient compliance with the compliance notice.
 (4) If an undertaking or association of undertakings to whom a compliance notice has been issued fails to comply with the notice, the Commission shall –(a) shut down or close any premises from which the notice continues to be breached until the breach or non-compliance is remedied;(b) impose the appropriate administrative fine; or(c) refer the matter to a court of competent jurisdiction for prosecution.
-Comment *
-Name *
-Email *
-Website
 
 151. Redress by civil society groups
 (1) The Commission may collaborate with, facilitate, or otherwise support any of the following activities carried out by a consumer protection group –(a) consumer advice and education activities and publications;(b) research, market monitoring, surveillance and reporting;(c) promotion of consumers’ rights and advocacy of consumers’ interests;
@@ -1528,44 +928,24 @@ Website
 (3) In addition to any other authority set out in this Act, an accredited consumer protection group may direct a generally stated concern or complaint to the Commission in respect of any matter within the purpose of this Act.
 (4) The Commission may accredit a consumer protection group if that group –(a) functions predominantly to promote or represent the interests of all or a specific category of consumers generally;(b) is committed to achieving the purposes of this Act; and(c) engages in, or makes a realistic proposal to engage in, actions to promote and advance the consumers’ interests.
 (5) The Commission may impose reasonable conditions for the accreditation of a consumer protection group to provide the objectives of this Act and shall monitor the effectiveness of any such accredited consumer protection group and may reasonably require any accredited consumer protection group to provide information necessary for monitoring purposes.
-Comment *
-Name *
-Email *
-Website
 
 152. Redress by the court
 Where upon an investigation by the Commission of a complaint by a consumer, it is proved that –(a) the consumer’s right has been violated, or
 (b) a wrong has been committed by the way of trade,’ provision of services, supply of information or advertisement thereby causing injury or loss to the consumer, the consumer shall in addition to the redress which the Commission may impose, have a right of civil action for compensation or restitution in a court of competent jurisdiction.
-Comment *
-Name *
-Email *
-Website
 
 153. Power to obtain satisfactory written assurance
 (1) Where it appears to the Commission that an undertaking has in the course of business persisted in a course of conduct which is detrimental to the interests of consumers, the Commission shall use its best endeavors to obtain from the undertaking concerned a satisfactory written assurance that it will refrain from a continuation of that course of conduct.
 (2) Where the Commission is unable to obtain from the undertaking in question the assurance referred to in subsection (1), or if that undertaking has given such assurance and it appears to the Commission or the States office that the undertaking has failed to observe the assurance, the Commission shall cause proceedings to be commenced against such undertaking in a court of competent jurisdiction to refrain the undertaking from continuing that course of conduct.
 (3) The Commission may order a temporary closure of any premises or facilities reasonably believed to be carrying on in a manner detrimental to the interest of consumers until the Commission is satisfied otherwise or pending the commencement of action.
-Comment *
-Name *
-Email *
-Website
 
 154. Compensation order
 (1) A court by or before which an undertaking is convicted of an offence under this Act may, in addition to dealing with such undertaking in any other way, make an order requiring the undertaking to pay compensation for any personal injury, loss or damage resulting from that offence of such amount as it may deem fit or as assessed by competent professional authority.
 (2) In determining whether to make a compensation order against any undertaking, and in determining the amount to be paid by any undertaking under such an order, the court shall have regard to the means of the undertaking if they appear or are known to the court.
-Comment *
-Name *
-Email *
-Website
 
 155. Contravention of consumer rights
 Except where otherwise provided for in this Act, any person who contravenes any consumer right commits an offence under this Act and –(a) in the case of a natural person, is liable on conviction to imprisonment for a term not exceeding five years, or to payment of fine not exceeding NIO,OOO,OOO.OO or to both the fine and imprisonment;
 (b) in the case of a body corporate, is liable on conviction to a fine of not less than NlOO,OOO,OOO.OO or 10% of its turnover in the preceding business year, whichever is higher; and
 (c) in the case of a body corporate referred to in paragraph (b) of this section, each director of the body corporate is liable to be proceeded against and dealt with as specified in paragraph (a).
-Comment *
-Name *
-Email *
-Website
 
 156. Limitation of suits against the Commission and the Tribunal
 (1) Subject to the provisions of this Act, the provisions of the Public Officers Protection Act applies in relation to any suit instituted against any member or employee of the Commission or the Tribunal.
@@ -1573,48 +953,28 @@ Website
 (a) it is commenced within three months next after the act, neglect or default complained of; or(b) in the case of a continuation of damage or injury, within six months next after the damage or injury ceases.
 (3) A suit shall not be commenced against any member of the Commission, the Secretary or any other officer or employee of the Commission or the Chairman, members, staff, officers or employees of the Tribunal before theexpiration of a period of 30 days after a written notice of intention to commence suit shall have been served upon the Commission or Tribunal by the intending plaintiff, or the agent or other lawful representative of the plaintiff.
 (4) The notice referred to in subsection (3) shall clearly state, the –(a) cause of action;(b) particulars of the claim;(c) name and address of the intending plaintiff; and(d) relief sought by the plaintiff
-Comment *
-Name *
-Email *
-Website
 
 157. Issuance of Notices by or on behalf of Commission
 (1) Any notice given by the Commission under, or for the purpose of, this Act shall be-(a) given in writing, under, the seal of the Commission signed by the Executive Chairman, or by one or more of the members of the Commission, or by any person purporting to act under the direction of the Commission; and
 (b) served in accordance with section 158 of this Act on the person or persons primarily concerned or on any person or persons deemed by the Commission to represent the person or persons primarily concerned.
 (2) All documents purporting to be signed by or on behalf of the Commission or to be sealed with the seal of the Commission shall, in all courts and in all proceedings under this Act, be deemed to have been so signed or sealed with due authority unless the contrary is established.
-Comment *
-Name *
-Email *
-Website
 
 158. Service of notices
 (1) Any notice or other document required or authorised to be served on or given to any person for the purpose of this Act may be served or given by delivering it to that person, or by leaving it at that person’s usual or last known place of residence or business or at the address specified by that person in any notice, application, or other document made, given or tendered to the Commission under this Act, or by posting it by registered mail to the person at that place of residence or business or at that address.
 (2) Where any notice or other document is sent to a person by registered mail, then, unless the contrary is shown, it shall be deemed to have been delivered to the person when it would have been delivered in the ordinary course of posting a mail, unless the contrary is established.
 (3) In proving the delivery contemplated under subsection (2), it shall be sufficient to prove that there is return post office slip showing actual delivery.
 (4) Where, for any purpose under this Act, a notice or document is required to be served on an undertaking, the notice or document may be served on the secretary, executive officer, manager, or other officer holding a similarposition in the undertaking and for the purpose of this Act, service on an association or body shall, unless otherwise directed by the Commission, be deemed to be service on all persons or undertakings who are members of the association or body or who are represented on the association or body by those members.
-Comment *
-Name *
-Email *
-Website
 
 159. Offences under this Part
 (1) Subject to the provisions of this Act, a person shall not-(a) without reasonable excuse, refuse or fail to comply with a notice issued under sections 157 and 158 of this Act;(b) in purported compliance with such a notice, furnish information, or produce a document, or give evidence,knowing it to be false or misleading; or(c) resist, obstruct, or delay an employee of the Commission acting pursuant to a warrant issued under section 30 (3) of this Act.
 (2) A person shall not attempt to deceive or knowingly mislead the Commission in relation to any matter before it.
 (3) A person, having been required to appear before the Commission pursuant to the provision of section 29 (2) of this Act, shall not, without reasonable excuse, refuse –(a) or fail to appear before the Commission to give evidence;(b) to take an oath or make an affirmation as a witness; or(c) to produce to the Commission any book or document that is required to be produced by the Commission.
 (4) Subject to the provision of subsection (3), a person who violates any of the provisions of this section commits an offence and is liable on summary conviction-(a) in the case of a natural person, to a fine not exceeding N1,000,000.00 or to a term of imprisonment not exceeding three months, or to both the fine and imprisonment; and(b) in the case of a body corporate, to a fine not exceeding N10,000,000.00.
-Comment *
-Name *
-Email *
-Website
 
 160. Decisions of the Commission to be in writing
 (1) Any finding or decision given by the Commission under or for the purpose of this Act shall be sufficiently given in writing under the seal of the Commission or if signed by one or more members of the Commission or by an officer or employee of the Commission authorised for that purpose.
 (2) A copy of a finding or decision of the Commission, certified to be a true copy by an officer or employee of the Commission authorised in that behalf to certify copies of determinations or decisions of the Commission shall bereceived in all courts as evidence of the determination or decision.
 (3) A document purporting to be a copy of a determination or decision of the Commission and certified to be a true copy in accordance with subsection (2), unless the contrary is established, shall be deemed to be a copy and to be so certified.
-Comment *
-Name *
-Email *
-Website
 
 161. Delegation by the Commission
 (1) The Commission may delegate any of its powers subject to such conditions and restrictions as it may deem fit, and the delegation may be made either generally or in relation to any particular matter or class of matters.
@@ -1623,10 +983,6 @@ Website
 (4) Any person purporting to act pursuant to any delegation under this section shall be presumed to be acting in accordance with the terms of the delegation, in the absence of proof to the contrary.
 (5) Delegation of any power or function under this section shall not prevent the exercise of that power or performance of that function by the Commission.
 (6) Until it is revoked or amended, every delegation shall continue in force according to its terms.
-Comment *
-Name *
-Email *
-Website
 
 162. Civil or criminal proceedings in respect of any action of the Commission
 (1) No proceedings, civil or criminal, shall lie against the Commission for anything it may do or fail to do in the course of the performance or intended performance of its functions, unless it is shown that the Commission acted without reasonable care or in bad faith.
@@ -1634,10 +990,6 @@ Website
 (3) A person shall not be excused from-(a) complying with any requirement to furnish information, produce documents, or give evidence under this Act;(b) appearing before the Commission;(c) answering any question or producing any document, on the ground that to do so might tend to incriminate that person or another person.
 (4) Except as may be required under any law, rule or regulation, no court or person is entitled to require any member of the Commission, or any officer or employee of the Commission or any other person present at any meeting of the Commission, to divulge or communicate any information furnished or obtained, documents produced, obtained or tendered, or evidence given, in connection with the functions of the Commission.
 (5) Anything said, or information furnished, or document produced or tendered, or evidence given by any person to the Commission shall be privileged in the same manner as if that statement, information, document, or evidence were made, furnished, produced, or given in proceedings in a court.
-Comment *
-Name *
-Email *
-Website
 
 163. Power to make regulations
 (1) The Commission may make regulations and issue guidelines and notices for the effective implementation and operation of the provisions of this Act, and in particular, prescribing –(a) the procedures to be followed under this Act with regard to applications, notices to and proceedings of the Commission;
@@ -1645,17 +997,9 @@ Website
 (d) how information required can be obtained or accessed to confidential information.
 (2) The regulations, guidelines and notices referred to in subsection (1) may include procedural and enforcement rules, and regulations or guidelines –(a) for the application of Part VIII of this Act prohibiting restrictive agreements;(b) for the application of Part IX of this Act prohibiting abuse of a dominant position;(c) on monopoly investigation under Part X of this Act;
 (d) on the assessment of Mergers under Part XII of this Act;(e) on the consumer protection regulation under Parts XV-XVII of this Act;(f) on market definition;(g) on leniency programme; and(h) any other regulation, guideline and notice as may be needed for the implementation of this Act.
-Comment *
-Name *
-Email *
-Website
 
 164. Application of other enactments
 The provisions of any other enactment, including the Investment and Securities Act, regulations or subsidiary laws in force relating to or connected with the subject matter of this Act shall be read with such modifications as are necessary to bring them in conformity with the provisions of this Act.
-Comment *
-Name *
-Email *
-Website
 
 165. Repeals and savings
 (1) The Consumer Protection Council Act, Cap. C25, Laws of the Federation of Nigeria, 2004, sections 118, 119, 120, 121, 122, 123, 124, 125, 126, 127 and 128 of the Investments and Securities Act, Cap. 124, Laws of the Federation of Nigeria, 2004 are repealed.
@@ -1667,17 +1011,9 @@ Website
 (7) Any proceeding or course of action pending or existing before the commencement of this Act against the Consumer Protection Council under the repealed Act in respect of any right, interest, obligation or liability of theConsumer Protection Council under the repealed Act may be continued, or as the case may require, be commenced and the determination of any court of law or other authority or person may be enforced by or against the Commission established by this Act to the same extent that such course of action or determination might have continued, or enforced by or against the Consumer Protection Council under the repealed Act.
 (8) Any regulation, order, bye-law or notice made or issued or deemed to be made or issued by, or for the purposes, of the Consumer Protection Council under the repealed Act existing before the commencement of this Act shall be deemed to have been made or issued by or for the purposes of the Commission established under this Act and shall continue in force until revoked or amended, subject to such modifications as may be applicable to the Commission established under this Act.
 (9) As from the commencement of this Act, any disciplinary proceeding pending or existing against any staff or employee of the Consumer Protection Council shall be continued and completed by the Commission established under this Act.
-Comment *
-Name *
-Email *
-Website
 
 166. Transitional provisions
 The provisions of this Act shall have effect with respect to matters arising from the transfer by this section to the Commission of the property of the Council before this Act, and with respect to the other matters mentioned in the Second Schedule to this Act.
-Comment *
-Name *
-Email *
-Website
 
 167. Interpretation
 (1) In this Act-“acquiring undertaking” means an undertaking that –(a) as a result of a merger within the meaning of section 93 of this Act would directly or indirectly acquire, or establish, direct or indirect control over the whole or part of the business of another undertaking; or
@@ -1696,14 +1032,6 @@ Website
 “Government of the Federation” means the Federal, States and any of the Local Governments of the Federation;“judge” means Judge of the Court of Appeal;“members of the Commission” means the Executive Chairman and the Commissioners of the Commission;“merger” means a transaction falling under the definition of section 93 of this Act;
 Membership Required You must be a member to access this content.
 View Membership Levels
-Comment *
-Name *
-Email *
-Website
 
 168. Citation
 This Act may be cited as the Federal Competition and Consumer Protection Act, 2018.
-Comment *
-Name *
-Email *
-Website
