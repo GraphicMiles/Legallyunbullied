@@ -54,12 +54,34 @@ class BeUIThinkingState {
     this.selectedTool = null;
     this.lineHeight = 0;
     this.element = null;
+    // Real elapsed-time source (epoch ms). When provided, the "done" label
+    // shows a live "Thought for X.Xs" instead of the hardcoded demo value.
+    this.startedAt = options.startedAt || null;
+    this.elapsedTimer = null;
     
     this.render();
     this.startSequence();
   }
+
+  doneLabel(v) {
+    if (this.startedAt == null) return v.done;
+    const secs = ((Date.now() - this.startedAt) / 1000).toFixed(1);
+    return `Thought for ${secs}s`;
+  }
+
+  startElapsedTick(label) {
+    if (this.elapsedTimer) clearInterval(this.elapsedTimer);
+    const currentVariant = () => VARIANTS[this.variant] || VARIANTS.Steps;
+    this.elapsedTimer = setInterval(() => {
+      label.textContent = this.doneLabel(currentVariant());
+    }, 500);
+  }
   
   render() {
+    if (this.elapsedTimer) {
+      clearInterval(this.elapsedTimer);
+      this.elapsedTimer = null;
+    }
     const v = VARIANTS[this.variant] || VARIANTS.Steps;
     const autoExpanded = this.stage >= 1 && this.stage < 4;
     const expanded = this.manualExpanded !== null ? this.manualExpanded : autoExpanded;
@@ -131,7 +153,10 @@ class BeUIThinkingState {
         color: var(--color-text-muted);
         animation: fade-in 350ms ease-out both;
       `;
-      label.textContent = v.done;
+      label.textContent = this.doneLabel(v);
+      if (this.startedAt != null) {
+        this.startElapsedTick(label);
+      }
     }
     
     // Chevron
@@ -341,6 +366,10 @@ class BeUIThinkingState {
   }
   
   destroy() {
+    if (this.elapsedTimer) {
+      clearInterval(this.elapsedTimer);
+      this.elapsedTimer = null;
+    }
     if (this.element && this.element.parentNode) {
       this.element.parentNode.removeChild(this.element);
     }

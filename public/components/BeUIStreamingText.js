@@ -19,6 +19,7 @@ class BeUIStreamingText {
       ...options
     };
     
+    this.citations = this.options.citations !== false;
     this.tokens = this.tokenize(this.options.text);
     this.count = 0;
     this.sourcesOpen = false;
@@ -33,15 +34,17 @@ class BeUIStreamingText {
   }
   
   tokenize(text) {
-    // Split text into words and add citation markers every 15 words
+    // Split text into words. Citation chips are only injected when enabled
+    // (citations !== false) — the legal app passes citations:false because its
+    // citations are inline bold text + a separate Sources list, and injecting
+    // demo chips would fabricate placeholder domains like "example.com".
     const words = text.split(' ');
     const tokens = [];
     
     words.forEach((word, i) => {
       tokens.push({ text: word + ' ', type: 'word' });
       
-      // Add citation after every 15th word (for demo)
-      if ((i + 1) % 15 === 0 && i < words.length - 1) {
+      if (this.citations && (i + 1) % 15 === 0 && i < words.length - 1) {
         tokens.push({ type: 'citation' });
       }
     });
@@ -345,41 +348,45 @@ class BeUIStreamingText {
           span.textContent = token.text;
           this.paragraph.appendChild(span);
         } else if (token.type === 'citation') {
-          // Add citation chip
-          const source = this.options.sources[0] || { name: 'Source', domain: 'example.com', href: '#' };
-          const chip = document.createElement('a');
-          chip.href = source.href;
-          chip.target = '_blank';
-          chip.rel = 'noreferrer';
-          chip.style.cssText = `
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            height: 18px;
-            padding: 0 6px;
-            margin: 0 2px;
-            background: var(--color-surface, #161616);
-            border: 1px solid var(--color-border, #2a2a2a);
-            border-radius: 5px;
-            font-family: var(--font-mono, monospace);
-            font-size: 10.5px;
-            color: var(--color-text-muted, #9a9a94);
-            text-decoration: none;
-            vertical-align: middle;
-            transform: translateY(-1px);
-            animation: pop-in 250ms cubic-bezier(0.23, 1, 0.32, 1) both;
-            transition: background-color 150ms;
-          `;
-          chip.innerHTML = `<span>${source.domain}</span>`;
-          chip.addEventListener('mouseenter', () => {
-            chip.style.backgroundColor = 'var(--color-surface-alt, #1c1c1c)';
-            chip.style.color = 'var(--color-text, #f5f5f2)';
-          });
-          chip.addEventListener('mouseleave', () => {
-            chip.style.backgroundColor = 'var(--color-surface, #161616)';
-            chip.style.color = 'var(--color-text-muted, #9a9a94)';
-          });
-          this.paragraph.appendChild(chip);
+          // Add citation chip — only when a real source is provided. Never
+          // fabricate a placeholder domain (the old fallback rendered
+          // "example.com", which leaked into the legal answer stream).
+          const source = this.options.sources && this.options.sources[0];
+          if (source && source.domain) {
+            const chip = document.createElement('a');
+            chip.href = source.href;
+            chip.target = '_blank';
+            chip.rel = 'noreferrer';
+            chip.style.cssText = `
+              display: inline-flex;
+              align-items: center;
+              gap: 4px;
+              height: 18px;
+              padding: 0 6px;
+              margin: 0 2px;
+              background: var(--color-surface, #161616);
+              border: 1px solid var(--color-border, #2a2a2a);
+              border-radius: 5px;
+              font-family: var(--font-mono, monospace);
+              font-size: 10.5px;
+              color: var(--color-text-muted, #9a9a94);
+              text-decoration: none;
+              vertical-align: middle;
+              transform: translateY(-1px);
+              animation: pop-in 250ms cubic-bezier(0.23, 1, 0.32, 1) both;
+              transition: background-color 150ms;
+            `;
+            chip.innerHTML = `<span>${source.domain}</span>`;
+            chip.addEventListener('mouseenter', () => {
+              chip.style.backgroundColor = 'var(--color-surface-alt, #1c1c1c)';
+              chip.style.color = 'var(--color-text, #f5f5f2)';
+            });
+            chip.addEventListener('mouseleave', () => {
+              chip.style.backgroundColor = 'var(--color-surface, #161616)';
+              chip.style.color = 'var(--color-text-muted, #9a9a94)';
+            });
+            this.paragraph.appendChild(chip);
+          }
         }
         
         this.count++;
