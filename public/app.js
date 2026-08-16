@@ -163,11 +163,37 @@ import {
   let _authSettled = false;         // true once onAuthStateChanged has fired (or no-Firebase fallback elapsed)
   let _serverLoadPending = false;   // true while an authenticated server load is in flight
 
+  // Sidebar list pagination + server-side search (Part 2).
+  const LIST_PAGE_SIZE = 25;         // conversations per page
+  let _listHasMore = false;          // another page exists on the server
+  let _listCursor = null;            // keyset cursor (last item id)
+  let _listLoadingMore = false;      // a "load more" request is in flight
+  let _searchResults = [];           // server search results (title summaries)
+  let _searchLoading = false;        // a search request is in flight
+  let _searchToken = 0;              // invalidates stale debounced searches
+  let _searchDebounce = null;        // debounce timer for the search box
+
   // Direct-chat-URL resolution (single-chat fetch). Guards against duplicate
   // concurrent fetches and stale results when the user navigates quickly.
   let _directFetchToken = 0;
   let _directFetchPending = false;
   let _directFetchUrlId = null;
+
+  // Map a server conversation detail into the local message format.
+  function mapServerConvo(detail) {
+    return {
+      id: detail.id,
+      title: detail.title || "New question",
+      createdAt: normMs(detail.createdAt),
+      updatedAt: normMs(detail.updatedAt),
+      _synced: true,
+      _serverTitle: detail.title || "New question",
+      messages: (detail.messages || []).map((m) => {
+        const { userId, ...rest } = m;
+        return { id: m.id, ...rest, _synced: true };
+      }),
+    };
+  }
 
   // Normalize a stored timestamp to epoch ms (mirrors the server's toMillis)
   // so direct single-chat fetches sort/display correctly regardless of how
@@ -202,7 +228,8 @@ import {
   // Fetch all conversations from server and merge into local state.
   // Retries transient failures (5xx, rate limits, network errors) with a short
   // backoff so a single upstream hiccup or deploy race doesn't leave the user
-  // with an empty sidebar until the next reload.
+  // with an empty sidebar until the next reload. Loads the FIRST page only;
+  // older conversations are paged in via loadMoreConversations().
   async function loadFromServer() {
     if (!isServerMode()) return;
     _isLoadingFromServer = true;
@@ -215,7 +242,7 @@ import {
       for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
         let res;
         try {
-          res = await fetch("/api/conversations?full=true", { headers });
+          res = await fetch(`/api/conversations?full=true&limit=${LIST_PAGE_SIZE}`, { headers });
         } catch (err) {
           // Network error — retry, then give up.
           if (attempt === MAX_ATTEMPTS) {
@@ -249,31 +276,78 @@ import {
         return;
       }
 
-      // Map server conversations to local format with _synced flags
-      const allConversations = data.conversations.map(detail => ({
-        id: detail.id,
-        title: detail.title || "New question",
-        createdAt: detail.createdAt,
-        updatedAt: detail.updatedAt,
-        _synced: true,
-        _serverTitle: detail.title || "New question",
-        messages: (detail.messages || []).map(m => ({ ...m, _synced: true })),
-      }));
-
-      // Always replace local state with server data (even if empty).
-      // This makes Firestore the single source of truth when authenticated —
-      // deleted conversations stay deleted across reloads. Loading is a pure
-      // read: it must never create, drop, or re-ID any conversation, so every
-      // conversation keeps the exact ID it was persisted under.
+      // First page REPLACES local state (server is authoritative).
+      const allConversations = data.conversations.map(mapServerConvo);
       state.conversations = allConversations;
+      _listHasMore = data.hasMore === true;
+      _listCursor = data.nextCursor || null;
       state.activeId = null; // let URL routing decide what's active
       saveState(); // persist to localStorage as write-behind cache (won't trigger syncToServer because _isLoadingFromServer is true)
-      console.log(`[server-sync] Loaded ${allConversations.length} conversations from server`);
+      console.log(`[server-sync] Loaded ${allConversations.length} conversations from server (hasMore=${_listHasMore})`);
     } catch (err) {
       console.warn("[server-sync] loadFromServer failed:", err.message);
     } finally {
       _isLoadingFromServer = false;
     }
+  }
+
+  // Fetch the next page of older conversations and APPEND it (never replace).
+  async function loadMoreConversations() {
+    if (!isServerMode() || _listLoadingMore || !_listHasMore) return;
+    _listLoadingMore = true;
+    renderHistory(); // reflect the loading state on the button
+    try {
+      const headers = await getServerAuthHeaders();
+      const res = await fetch(
+        `/api/conversations?full=true&limit=${LIST_PAGE_SIZE}&cursor=${encodeURIComponent(_listCursor)}`,
+        { headers }
+      );
+      if (!res.ok) {
+        console.warn("[server-sync] loadMore failed:", res.status);
+        return;
+      }
+      const data = await res.json();
+      const more = (data.conversations || []).map(mapServerConvo);
+
+      // Append, deduping by id (never duplicate a conversation).
+      const seen = new Set(state.conversations.map((c) => c.id));
+      for (const c of more) {
+        if (!seen.has(c.id)) {
+          state.conversations.push(c);
+          seen.add(c.id);
+        }
+      }
+      _listHasMore = data.hasMore === true;
+      _listCursor = data.nextCursor || null;
+      saveState();
+    } catch (err) {
+      console.warn("[server-sync] loadMoreConversations failed:", err.message);
+    } finally {
+      _listLoadingMore = false;
+      renderHistory();
+    }
+  }
+
+  // Search across ALL of the user's conversations on the server (complete
+  // results regardless of how many pages the sidebar has loaded). Anonymous
+  // (no Firebase) users get a client-side filter instead.
+  async function searchConversations(q) {
+    if (!isServerMode()) {
+      return state.conversations.filter((c) =>
+        (c.title || "").toLowerCase().includes(q.toLowerCase())
+      );
+    }
+    const headers = await getServerAuthHeaders();
+    const res = await fetch(`/api/conversations?q=${encodeURIComponent(q)}&full=false`, { headers });
+    if (!res.ok) throw new Error(`Search failed (${res.status})`);
+    const data = await res.json();
+    return (data.conversations || []).map((d) => ({
+      id: d.id,
+      title: d.title || "New question",
+      createdAt: normMs(d.createdAt),
+      updatedAt: normMs(d.updatedAt),
+      _searchOnly: true,
+    }));
   }
 
   // Fetch ONE conversation by its canonical ID — the authoritative path for
@@ -870,23 +944,90 @@ import {
     }
 
     const query = (el.historySearch.value || "").trim().toLowerCase();
-    const filtered = state.conversations
-      .filter((c) => !query || c.title.toLowerCase().includes(query))
-      .sort((a, b) => b.createdAt - a.createdAt);
-
     el.historyList.innerHTML = "";
 
-    if (!filtered.length) {
+    // ── Search mode: render server search results (complete, not page-bound) ─
+    if (query) {
+      if (_searchLoading) {
+        const loading = document.createElement("div");
+        loading.className = "history__empty";
+        loading.textContent = "Searching…";
+        el.historyList.appendChild(loading);
+        return;
+      }
+      if (!_searchResults.length) {
+        const empty = document.createElement("div");
+        empty.className = "history__empty";
+        empty.textContent = "No matches.";
+        el.historyList.appendChild(empty);
+        return;
+      }
+      const list = document.createElement("ul");
+      _searchResults.forEach((c) => list.appendChild(buildHistoryRow(c)));
+      el.historyList.appendChild(list);
+      return;
+    }
+
+    // ── Normal mode: loaded pages, newest first ────────────────────────────
+    const sorted = [...state.conversations].sort(
+      (a, b) => (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt)
+    );
+
+    if (!sorted.length) {
       const empty = document.createElement("div");
       empty.className = "history__empty";
-      empty.textContent = query ? "No matches." : "No questions yet.";
+      empty.textContent = "No questions yet.";
       el.historyList.appendChild(empty);
       return;
     }
 
     const list = document.createElement("ul");
-    filtered.forEach((c) => list.appendChild(buildHistoryRow(c)));
+    sorted.forEach((c) => list.appendChild(buildHistoryRow(c)));
     el.historyList.appendChild(list);
+
+    // ── Load more (older conversations) ────────────────────────────────────
+    if (_listHasMore || _listLoadingMore) {
+      const moreBtn = document.createElement("button");
+      moreBtn.type = "button";
+      moreBtn.className = "history__load-more";
+      moreBtn.textContent = _listLoadingMore ? "Loading…" : "Load more";
+      moreBtn.disabled = _listLoadingMore;
+      moreBtn.addEventListener("click", loadMoreConversations);
+      el.historyList.appendChild(moreBtn);
+    }
+  }
+
+  // Debounced search-box input. Clears results immediately when empty;
+  // otherwise searches all conversations server-side.
+  function onSearchInput() {
+    const q = (el.historySearch.value || "").trim();
+    clearTimeout(_searchDebounce);
+    if (!q) {
+      _searchToken += 1;
+      _searchResults = [];
+      _searchLoading = false;
+      renderHistory();
+      return;
+    }
+    _searchLoading = true;
+    renderHistory();
+    _searchDebounce = setTimeout(() => {
+      const token = ++_searchToken;
+      searchConversations(q)
+        .then((results) => {
+          if (token !== _searchToken) return; // superseded by newer input
+          _searchResults = results;
+          _searchLoading = false;
+          renderHistory();
+        })
+        .catch((err) => {
+          if (token !== _searchToken) return;
+          console.warn("[search] Search failed:", err.message);
+          _searchResults = [];
+          _searchLoading = false;
+          renderHistory();
+        });
+    }, 300);
   }
 
   function buildHistoryRow(c) {
@@ -1019,7 +1160,9 @@ import {
   /* Clear / delete conversations                                        */
   /* ------------------------------------------------------------------ */
   function confirmClearConversation(id) {
-    const convo = state.conversations.find((c) => c.id === id);
+    const convo =
+      state.conversations.find((c) => c.id === id) ||
+      _searchResults.find((c) => c.id === id);
     if (!convo) return;
     showConfirm({
       text: `Clear all messages in "${truncate(convo.title, 44)}"? This can't be undone.`,
@@ -1030,7 +1173,19 @@ import {
 
   function clearConversationMessages(id) {
     const convo = state.conversations.find((c) => c.id === id);
-    if (!convo) return;
+    if (!convo) {
+      // Not loaded locally (e.g. a search result). Clear on the server; the
+      // next load/refresh reflects it. Nothing to re-render locally.
+      if (isServerMode()) {
+        getServerAuthHeaders().then((headers) =>
+          fetch(`/api/conversations/${encodeURIComponent(id)}/messages`, {
+            method: "DELETE",
+            headers,
+          }).catch(() => {})
+        );
+      }
+      return;
+    }
     convo.messages = [];
     convo.title = "New question";
     saveState();
@@ -1121,7 +1276,23 @@ import {
 
   function deleteConversationById(id) {
     const idx = state.conversations.findIndex((c) => c.id === id);
-    if (idx === -1) return;
+    if (idx === -1) {
+      // Not in the loaded pages (e.g. a search result). Delete on the server,
+      // drop it from any search results, and reset the view if it was active.
+      deleteConversationOnServer(id);
+      _searchResults = _searchResults.filter((c) => c.id !== id);
+      if (state.activeId === id || getConvoIdFromUrl() === id) {
+        state.activeId = null;
+        setUrlConvo(null);
+        renderHistory();
+        renderChat();
+        updateClearChatButtonState();
+      } else {
+        renderHistory();
+      }
+      return;
+    }
+
     state.conversations.splice(idx, 1);
     if (state.activeId === id) {
       // BUG FIX: don't auto-select another conversation — show empty landing state
@@ -1747,6 +1918,7 @@ import {
       id: uid(),
       title: "New question",
       createdAt: Date.now(),
+      updatedAt: Date.now(),
       messages: [],
     };
     state.conversations.unshift(convo);
@@ -1768,6 +1940,18 @@ import {
 
   function selectConversation(id) {
     if (state.isAgentBusy) return;
+
+    const existing = state.conversations.find((c) => c.id === id);
+    if (!existing) {
+      // Not loaded yet (e.g. a server search result beyond the loaded pages).
+      // Navigate to the URL; resolveUrl() will fetch it via the single-chat
+      // endpoint and merge it into state.
+      setUrlConvo(id);
+      resolveUrl();
+      closeMobileSidebar();
+      return;
+    }
+
     state.activeId = id;
     setUrlConvo(id);
     saveState();
@@ -1865,6 +2049,7 @@ import {
 
     const userMsg = { id: uid(), role: "user", content: text, createdAt: Date.now() };
     convo.messages.push(userMsg);
+    convo.updatedAt = Date.now(); // keep the sidebar ordering stable for local chats
 
     if (convo.messages.filter((m) => m.role === "user").length === 1) {
       // Set an initial title from context, then try to generate a smarter one
@@ -3236,7 +3421,7 @@ import {
   el.menuToggle.addEventListener("click", openMobileSidebar);
   el.sidebarClose.addEventListener("click", closeMobileSidebar);
   el.scrim.addEventListener("click", closeMobileSidebar);
-  el.historySearch.addEventListener("input", renderHistory);
+  el.historySearch.addEventListener("input", onSearchInput);
   el.upgradeBtn.addEventListener("click", () => {
     alert("Upgrade flow: ₦1,999/year subscription — hook up Paystack checkout here.");
   });

@@ -98,7 +98,7 @@ async function main() {
       const page = await signedInPage(browser);
       let listCalls = 0;
       let singleCalls = 0;
-      await page.route("**/api/conversations?full=true", (r) => {
+      await page.route("**/api/conversations?full=*", (r) => {
         listCalls += 1;
         // List contains a DIFFERENT chat, not the target.
         r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ conversations: [chatDetail("other-chat", "Some other chat")] }) });
@@ -130,7 +130,7 @@ async function main() {
     // ── 2. Foreign chat (different owner) → 404 → "Chat not found" ────────
     await check("foreign chat URL returns 404 → 'Chat not found' (no content)", async () => {
       const page = await signedInPage(browser);
-      await page.route("**/api/conversations?full=true", (r) =>
+      await page.route("**/api/conversations?full=*", (r) =>
         r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ conversations: [] }) }));
       await page.route("**/api/conversations/foreign-chat", (r) =>
         r.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ error: "not_found", message: "Conversation not found." }) }));
@@ -156,7 +156,7 @@ async function main() {
       let singleCalls = 0;
       // Non-retryable failure on the bulk list (401) so loadFromServer gives up
       // immediately — the direct URL must not depend on it.
-      await page.route("**/api/conversations?full=true", (r) =>
+      await page.route("**/api/conversations?full=*", (r) =>
         r.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ error: "unauthorized" }) }));
       await page.route("**/api/conversations/chat-target", (r) => {
         singleCalls += 1;
@@ -176,7 +176,7 @@ async function main() {
       const page = await signedInPage(browser);
       let listCalls = 0;
       let singleCalls = 0;
-      await page.route("**/api/conversations?full=true", (r) => {
+      await page.route("**/api/conversations?full=*", (r) => {
         listCalls += 1;
         r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
           conversations: [

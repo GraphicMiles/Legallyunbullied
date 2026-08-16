@@ -131,7 +131,7 @@ async function main() {
       const page = await setupPage(browser, { signedOut: false });
       await page.route("**/api/conversations/migrate", (r) => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, idMap: {}, migrated: 0, skipped: 0 }) }));
       await page.route("**/api/conversations/cleanup", (r) => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, deleted: 0 }) }));
-      await page.route("**/api/conversations?full=true", (r) => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ conversations: [] }) }));
+      await page.route("**/api/conversations?full=*", (r) => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ conversations: [] }) }));
       // Single-chat endpoint → 404 for a missing/foreign chat.
       await page.route("**/api/conversations/unknown-id-123", (r) => r.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ error: "not_found", message: "Conversation not found." }) }));
       await page.goto(`${BASE}/#chat/unknown-id-123`, { waitUntil: "load" });
@@ -148,7 +148,7 @@ async function main() {
       const page = await setupPage(browser, { signedOut: false, seed: [{ id: "chat-known", title: "My chat", createdAt: 1, updatedAt: 1, messages: [] }] });
       await page.route("**/api/conversations/migrate", (r) => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, idMap: {}, migrated: 0, skipped: 0 }) }));
       await page.route("**/api/conversations/cleanup", (r) => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, deleted: 0 }) }));
-      await page.route("**/api/conversations?full=true", (r) => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ conversations: [{ id: "chat-known", title: "My chat", createdAt: 1, updatedAt: 1, messages: [] }] }) }));
+      await page.route("**/api/conversations?full=*", (r) => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ conversations: [{ id: "chat-known", title: "My chat", createdAt: 1, updatedAt: 1, messages: [] }] }) }));
       await page.goto(`${BASE}/#chat/chat-known`, { waitUntil: "load" });
       await page.waitForFunction(() => document.querySelector(".history__row.is-active"), null, { timeout: 8000 });
       const active = await page.evaluate(() => document.querySelector(".history__row.is-active .history__item")?.dataset.id || null);

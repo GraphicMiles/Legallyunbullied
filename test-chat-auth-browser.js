@@ -109,7 +109,7 @@ async function main() {
         migrateCalls += 1;
         route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, idMap: {}, migrated: 0, skipped: 0 }) });
       });
-      await page.route("**/api/conversations?full=true", (route) => {
+      await page.route("**/api/conversations?full=*", (route) => {
         route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
           conversations: [
             { id: "server-chat-1", title: "Server chat", createdAt: 1000, updatedAt: 2000, messages: [] },
@@ -144,7 +144,7 @@ async function main() {
       await page.route("**/api/conversations/migrate", (route) => {
         route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, idMap: {}, migrated: 0, skipped: 0 }) });
       });
-      await page.route("**/api/conversations?full=true", (route) => {
+      await page.route("**/api/conversations?full=*", (route) => {
         route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ conversations: [] }) });
       });
       await page.route("**/api/conversations", (route) => {
@@ -190,7 +190,7 @@ async function main() {
           success: true, idMap: { "legacy-123": "legacy-123" }, migrated: 1, skipped: 0,
         }) });
       });
-      await page.route("**/api/conversations?full=true", (route) => {
+      await page.route("**/api/conversations?full=*", (route) => {
         route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
           conversations: [{ id: "legacy-123", title: "Legacy chat", createdAt: 1000, updatedAt: 1000, messages: legacyConvo.messages }],
         }) });
@@ -222,7 +222,7 @@ async function main() {
       await page.route("**/api/conversations/cleanup", (route) => {
         route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, deleted: 0 }) });
       });
-      await page.route("**/api/conversations?full=true", (route) => {
+      await page.route("**/api/conversations?full=*", (route) => {
         route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ conversations: [] }) });
       });
       await page.route("**/api/conversations", (route) => {
@@ -258,7 +258,7 @@ async function main() {
         order.push("cleanup");
         route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, deleted: 3 }) });
       });
-      await page.route("**/api/conversations?full=true", (route) => {
+      await page.route("**/api/conversations?full=*", (route) => {
         order.push("load");
         route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
           conversations: [{ id: "kept-chat", title: "Kept", createdAt: 1, updatedAt: 1, messages: [{ id: "m1", role: "user", content: "hi", createdAt: 1 }] }],
@@ -292,7 +292,7 @@ async function main() {
       await page.route("**/api/conversations/cleanup", (route) => {
         route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, deleted: 0 }) });
       });
-      await page.route("**/api/conversations?full=true", (route) => {
+      await page.route("**/api/conversations?full=*", (route) => {
         route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ conversations: [] }) });
       });
       // Message upserts (must be registered before the generic conversation route)
@@ -360,7 +360,7 @@ async function main() {
         route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, deleted: 19 }) });
       });
       // Delay the server response so we can observe the in-flight state.
-      await page.route("**/api/conversations?full=true", async (route) => {
+      await page.route("**/api/conversations?full=*", async (route) => {
         await new Promise((r) => setTimeout(r, 1200));
         route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
           conversations: [{ id: "real-1", title: "Real chat", createdAt: 2000, updatedAt: 2000, messages: [] }],
@@ -397,7 +397,7 @@ async function main() {
       await page.route("**/api/conversations/cleanup", (route) => {
         route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, deleted: 0 }) });
       });
-      await page.route("**/api/conversations?full=true", (route) => {
+      await page.route("**/api/conversations?full=*", (route) => {
         fullRequests += 1;
         if (fullRequests === 1) {
           // First attempt: simulate the upstream 502 seen in the wild.
