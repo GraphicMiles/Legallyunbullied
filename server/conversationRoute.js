@@ -323,4 +323,60 @@ router.post("/migrate", async (req, res) => {
   }
 });
 
+// ── POST /api/conversations/cleanup — delete duplicate empty conversations ──
+// Removes conversations with no messages and generic titles ("New question",
+// "Legal question", etc.) that were created by the sync loop bug.
+// Keeps conversations that have messages or meaningful titles.
+router.post("/cleanup", async (req, res) => {
+  try {
+    const snapshot = await convoCollection(req.uid).get();
+    const GENERIC_TITLES = new Set([
+      "new question", "legal question", "immigration", "Untitled",
+    ]);
+
+    const toDelete = [];
+    const seen = new Map(); // normalized title → doc ref (keep newest)
+
+    for (const doc of snapshot.docs) {
+      const data = doc.data();
+      const title = (data.title || "").trim().toLowerCase();
+      const isGeneric = GENERIC_TITLES.has(title);
+
+      // Count messages
+      const msgCount = await convoRef(req.uid, doc.id)
+        .collection("messages").count().get();
+      const count = msgCount.data().count;
+
+      if (count === 0 && isGeneric) {
+        toDelete.push(doc.ref);
+      } else if (count === 0 && seen.has(title)) {
+        // Duplicate empty conversation — delete older one
+        toDelete.push(seen.get(title));
+        seen.set(title, doc.ref);
+      } else if (count === 0) {
+        seen.set(title, doc.ref);
+      }
+      // Conversations with messages are always kept
+    }
+
+    if (toDelete.length === 0) {
+      return res.json({ success: true, deleted: 0, message: "Nothing to clean up" });
+    }
+
+    // Delete in batches of 400 (Firestore limit is 500)
+    for (let i = 0; i < toDelete.length; i += 400) {
+      const batch = db().batch();
+      const chunk = toDelete.slice(i, i + 400);
+      chunk.forEach(ref => batch.delete(ref));
+      await batch.commit();
+    }
+
+    console.log(`[conversations] Cleanup: deleted ${toDelete.length} duplicate/empty conversations for user ${req.uid}`);
+    res.json({ success: true, deleted: toDelete.length });
+  } catch (err) {
+    console.error("[conversations] Cleanup failed:", err.message);
+    res.status(500).json({ error: "cleanup_failed", message: err.message });
+  }
+});
+
 module.exports = router;
