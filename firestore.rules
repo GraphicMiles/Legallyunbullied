@@ -3,56 +3,89 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper function to check if user is authenticated
+    // ── Helper functions ──────────────────────────────────────────────────
     function isSignedIn() {
       return request.auth != null;
     }
     
-    // Helper function to check if user owns the document
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
-    
-    // Legal provisions collection (public read, admin write)
-    match /legal_provisions/{document=**} {
-      // Anyone can read legal provisions (they're public law)
-      allow read: if true;
-      
-      // Only admins can write (ingestion scripts use admin SDK)
-      allow write: if false;
+
+    // Maximum document size (1MB is Firestore's hard limit; we use 500KB as safety margin)
+    function isReasonableSize() {
+      return request.resource.size() < 524288; // 512KB
+    }
+
+    // Validate message fields
+    function isValidMessage() {
+      let data = request.resource.data;
+      return data.keys().hasOnly([
+        'role', 'content', 'casualReply', 'status', 'createdAt',
+        'thinkingElapsedMs', 'traceOpen', 'classification', 'steps',
+        'result', 'plan', 'corpusEmptyMessage', 'errorMessage', 'userId'
+      ])
+      && data.role is string
+      && data.status is string
+      && data.status in ['done', 'casual', 'error', 'stopped', 'corpusEmpty', 'incomplete', 'thinking', 'streaming'];
     }
     
-    // User conversations (private to user)
+    // ── Legal provisions (public read, admin-only write) ──────────────────
+    match /legal_provisions/{document=**} {
+      allow read: if true;
+      allow write: if false; // ingestion uses Admin SDK (bypasses rules)
+    }
+    
+    // ── User conversations (private to user) ──────────────────────────────
     match /users/{userId}/conversations/{conversationId} {
-      // User can read their own conversations
       allow read: if isOwner(userId);
       
-      // User can create/update/delete their own conversations
       allow create: if isOwner(userId) 
-                    && request.resource.data.userId == userId;
-      allow update: if isOwner(userId)
                     && request.resource.data.userId == userId
-                    && resource.data.userId == userId;
+                    && isReasonableSize()
+                    && request.resource.data.keys().hasOnly([
+                      'userId', 'title', 'createdAt', 'updatedAt'
+                    ]);
+      
+      allow update: if isOwner(userId)
+                    && resource.data.userId == userId
+                    && request.resource.data.userId == userId
+                    && isReasonableSize();
+      
       allow delete: if isOwner(userId);
+
+      // ── Messages subcollection ────────────────────────────────────────
+      match /messages/{messageId} {
+        allow read: if isOwner(userId);
+        
+        allow create: if isOwner(userId)
+                      && request.resource.data.userId == userId
+                      && isReasonableSize()
+                      && isValidMessage();
+        
+        allow update: if isOwner(userId)
+                      && resource.data.userId == userId
+                      && request.resource.data.userId == userId
+                      && isReasonableSize();
+        
+        allow delete: if isOwner(userId);
+      }
     }
     
-    // User settings (private to user)
+    // ── User settings (private to user) ──────────────────────────────────
     match /users/{userId}/settings/{document=**} {
       allow read, write: if isOwner(userId);
     }
     
-    // User feedback (private to user, admin can read)
+    // ── User feedback (immutable record) ─────────────────────────────────
     match /users/{userId}/feedback/{feedbackId} {
-      // User can create and read their own feedback
       allow create: if isOwner(userId)
                     && request.resource.data.userId == userId;
       allow read: if isOwner(userId);
-      
-      // User can't update or delete feedback (immutable record)
       allow update, delete: if false;
     }
     
-    // Deny all other access by default
+    // ── Deny all other access ────────────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;
     }
