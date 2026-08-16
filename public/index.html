@@ -1351,18 +1351,21 @@
   .verdict--error .verdict__icon { background: rgba(229,72,77,0.18); color: var(--color-danger); }
   .verdict--error .verdict__title { color: var(--color-danger); }
 
-  /* Casual reply — simple, warm, unobtrusive */
+  /* Casual reply — plain inline text, NO bubble/card styling.
+     Rendered differently from legal responses (which use .answer-block-plain).
+     Casual = warm inline text directly beside the shield avatar. */
   .casual-reply {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    padding: var(--space-4) var(--space-5);
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 4px 0 !important;
   }
   .casual-reply p {
     font-size: var(--fs-base);
     color: var(--color-text);
     line-height: 1.6;
     margin: 0;
+    background: transparent !important;
   }
 
   .verdict__icon i { font-size: 11px; }
@@ -1833,7 +1836,7 @@
 <script src="components/BeUIPromptBar.js"></script>
 <script src="components/BeUIRecommendationCard.js"></script>
 <script type="module" src="enhanced-streaming.js"></script>
-  <script type="module" src="app.js?v=2.0.6"></script>
+  <script type="module" src="app.js?v=2.0.7"></script>
   
   <!-- ============================================================
        DEBUG PANEL LOGIC
