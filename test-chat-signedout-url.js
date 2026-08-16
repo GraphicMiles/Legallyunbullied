@@ -132,6 +132,8 @@ async function main() {
       await page.route("**/api/conversations/migrate", (r) => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, idMap: {}, migrated: 0, skipped: 0 }) }));
       await page.route("**/api/conversations/cleanup", (r) => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, deleted: 0 }) }));
       await page.route("**/api/conversations?full=true", (r) => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ conversations: [] }) }));
+      // Single-chat endpoint → 404 for a missing/foreign chat.
+      await page.route("**/api/conversations/unknown-id-123", (r) => r.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ error: "not_found", message: "Conversation not found." }) }));
       await page.goto(`${BASE}/#chat/unknown-id-123`, { waitUntil: "load" });
       await page.waitForFunction(
         () => document.getElementById("chat-status-title").textContent === "Chat not found",

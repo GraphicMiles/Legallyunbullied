@@ -54,6 +54,7 @@ import {
     chatStatusSubtitle: document.getElementById("chat-status-subtitle"),
     chatStatusHome: document.getElementById("chat-status-home"),
     chatStatusSignin: document.getElementById("chat-status-signin"),
+    chatStatusRetry: document.getElementById("chat-status-retry"),
     conversationTitle: document.getElementById("conversation-title"),
     classificationBadges: document.getElementById("classification-badges"),
     composerForm: document.getElementById("composer-form") || document.getElementById("prompt-bar-container"),
@@ -162,6 +163,27 @@ import {
   let _authSettled = false;         // true once onAuthStateChanged has fired (or no-Firebase fallback elapsed)
   let _serverLoadPending = false;   // true while an authenticated server load is in flight
 
+  // Direct-chat-URL resolution (single-chat fetch). Guards against duplicate
+  // concurrent fetches and stale results when the user navigates quickly.
+  let _directFetchToken = 0;
+  let _directFetchPending = false;
+  let _directFetchUrlId = null;
+
+  // Normalize a stored timestamp to epoch ms (mirrors the server's toMillis)
+  // so direct single-chat fetches sort/display correctly regardless of how
+  // Firestore serializes the field (number, ISO string, or Timestamp shape).
+  function normMs(v) {
+    if (v == null) return Date.now();
+    if (typeof v === "number") return v;
+    if (typeof v === "string") {
+      const t = Date.parse(v);
+      return Number.isNaN(t) ? Date.now() : t;
+    }
+    if (v._seconds != null) return v._seconds * 1000;
+    if (typeof v.seconds === "number") return v.seconds * 1000;
+    return Date.now();
+  }
+
   function isServerMode() {
     return !!(window.firebaseAuth && window.firebaseAuth.currentUser);
   }
@@ -252,6 +274,36 @@ import {
     } finally {
       _isLoadingFromServer = false;
     }
+  }
+
+  // Fetch ONE conversation by its canonical ID — the authoritative path for
+  // direct chat URLs. Ownership is verified server-side (404 for a missing or
+  // foreign chat), so a signed-in user gets the correct answer regardless of
+  // the bulk list (which is capped at 100 and can be slow or unavailable).
+  async function fetchConversationById(id) {
+    const headers = await getServerAuthHeaders();
+    let res;
+    try {
+      res = await fetch(`/api/conversations/${encodeURIComponent(id)}`, { headers });
+    } catch (err) {
+      throw new Error(`Network error loading chat: ${err.message}`);
+    }
+    if (res.status === 404) return { notFound: true };
+    if (!res.ok) throw new Error(`Failed to load chat (${res.status})`);
+    const detail = await res.json();
+    const convo = {
+      id: detail.id,
+      title: detail.title || "New question",
+      createdAt: normMs(detail.createdAt),
+      updatedAt: normMs(detail.updatedAt),
+      _synced: true,
+      _serverTitle: detail.title || "New question",
+      messages: (detail.messages || []).map((m) => {
+        const { userId, ...rest } = m;
+        return { id: m.id, ...rest, _synced: true };
+      }),
+    };
+    return { convo };
   }
 
   // Sync local state to server (debounced — only one sync at a time)
@@ -3180,6 +3232,7 @@ import {
   if (el.chatStatusSignin) el.chatStatusSignin.addEventListener("click", () => {
     if (window.firebaseAuth) openAuthModal();
   });
+  if (el.chatStatusRetry) el.chatStatusRetry.addEventListener("click", resolveUrl);
   el.menuToggle.addEventListener("click", openMobileSidebar);
   el.sidebarClose.addEventListener("click", closeMobileSidebar);
   el.scrim.addEventListener("click", closeMobileSidebar);
@@ -3547,6 +3600,7 @@ import {
     const urlId = getConvoIdFromUrl();
 
     if (!urlId) {
+      _directFetchToken += 1; // invalidate any in-flight direct fetch
       state.activeId = null;
       renderHistory();
       renderChat();
@@ -3554,8 +3608,12 @@ import {
       return;
     }
 
+    // Fast path: the chat is already loaded (server list or write-behind
+    // cache). It was ownership-verified when it was fetched, so open it
+    // directly without a redundant network call.
     const convo = state.conversations.find((c) => c.id === urlId);
     if (convo) {
+      _directFetchToken += 1; // cancel any in-flight direct fetch for another id
       state.activeId = convo.id; // use the persisted ID — never a new one
       renderHistory();
       renderChat();
@@ -3579,6 +3637,7 @@ import {
     // would be the wrong explanation.)
     const signedOut = !!(window.firebaseAuth && !window.firebaseAuth.currentUser);
     if (signedOut) {
+      _directFetchToken += 1;
       showChatStatus(
         "Sign in to view this chat",
         "This chat is saved to an account. Sign in first so we can check whether it's yours.",
@@ -3588,11 +3647,67 @@ import {
       return;
     }
 
+    // Signed in, auth settled, server load finished, chat NOT in the loaded
+    // list. Fetch it directly by ID — authoritative and independent of the
+    // bulk list (works identically whether the user has 5 or 5,000 chats).
+    if (isServerMode()) {
+      if (_directFetchPending && _directFetchUrlId === urlId) {
+        renderLoadingChat();
+        renderHistory();
+        return;
+      }
+      const token = ++_directFetchToken;
+      _directFetchPending = true;
+      _directFetchUrlId = urlId;
+      renderLoadingChat();
+      renderHistory();
+      resolveDirectChat(urlId, token).finally(() => {
+        if (token === _directFetchToken) {
+          _directFetchPending = false;
+          _directFetchUrlId = null;
+        }
+      });
+      return;
+    }
+
+    // No Firebase (anonymous, local-only): there is nothing server-side to
+    // fetch, so this ID genuinely isn't available to this visitor.
     renderNotFound();
     renderHistory(); // resolve the sidebar instead of leaving it on "Loading…"
   }
 
-  function showChatStatus(title, subtitle, { showHome = false, showSignIn = false } = {}) {
+  // Resolve a direct chat URL via the single-chat endpoint and merge the
+  // result into local state (never generating a new ID).
+  async function resolveDirectChat(urlId, token) {
+    try {
+      const result = await fetchConversationById(urlId);
+      if (token !== _directFetchToken) return; // superseded by newer navigation
+      if (result.notFound) {
+        renderNotFound();
+        renderHistory();
+        return;
+      }
+      if (!state.conversations.some((c) => c.id === urlId)) {
+        state.conversations.push(result.convo);
+      }
+      state.activeId = urlId;
+      saveState();
+      renderHistory();
+      renderChat();
+      updateClearChatButtonState();
+    } catch (err) {
+      if (token !== _directFetchToken) return;
+      console.warn("[server-sync] Direct chat fetch failed:", err.message);
+      showChatStatus(
+        "Couldn't load this chat",
+        "Something went wrong while loading it. Please try again.",
+        { showRetry: true }
+      );
+      renderHistory();
+    }
+  }
+
+  function showChatStatus(title, subtitle, { showHome = false, showSignIn = false, showRetry = false } = {}) {
     const status = el.chatStatus;
     if (!status) return;
     el.emptyState.style.display = "none";
@@ -3601,6 +3716,7 @@ import {
     el.chatStatusSubtitle.textContent = subtitle || "";
     el.chatStatusHome.style.display = showHome ? "inline-flex" : "none";
     if (el.chatStatusSignin) el.chatStatusSignin.style.display = showSignIn ? "inline-flex" : "none";
+    if (el.chatStatusRetry) el.chatStatusRetry.style.display = showRetry ? "inline-flex" : "none";
     status.hidden = false;
     updateClearChatButtonState();
   }
@@ -3618,6 +3734,7 @@ import {
   }
 
   function goHome() {
+    _directFetchToken += 1; // cancel any in-flight direct fetch
     setUrlConvo(null);
     state.activeId = null;
     renderHistory();

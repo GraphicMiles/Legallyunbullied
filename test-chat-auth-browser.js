@@ -151,6 +151,10 @@ async function main() {
         if (route.request().method() === "POST") createdPosts += 1;
         route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ conversations: [] }) });
       });
+      // The single-chat endpoint (direct URL resolution) → 404 for a missing chat.
+      await page.route("**/api/conversations/missing-id", (route) => {
+        route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ error: "not_found", message: "Conversation not found." }) });
+      });
 
       await page.goto(`${BASE}/#chat/missing-id`, { waitUntil: "load" });
       await page.waitForFunction(
