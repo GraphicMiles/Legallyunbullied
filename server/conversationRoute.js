@@ -118,7 +118,7 @@ router.get("/:id", async (req, res) => {
 
     // Verify ownership
     if (data.userId !== req.uid) {
-      return res.status(403).json({ error: "forbidden", message: "You don't have access to this conversation." });
+      return res.status(404).json({ error: "not_found", message: "Conversation not found." });
     }
 
     // Fetch all messages ordered by creation time
@@ -156,7 +156,7 @@ router.put("/:id", async (req, res) => {
 
     const data = doc.data();
     if (data.userId !== req.uid) {
-      return res.status(403).json({ error: "forbidden" });
+      return res.status(404).json({ error: "not_found", message: "Conversation not found." });
     }
 
     const updates = { updatedAt: Date.now() };
@@ -182,7 +182,7 @@ router.delete("/:id", async (req, res) => {
 
     const data = doc.data();
     if (data.userId !== req.uid) {
-      return res.status(403).json({ error: "forbidden" });
+      return res.status(404).json({ error: "not_found", message: "Conversation not found." });
     }
 
     // Delete all messages first (subcollection), then the conversation doc
@@ -207,7 +207,7 @@ router.put("/:id/messages/:msgId", async (req, res) => {
       return res.status(404).json({ error: "not_found", message: "Conversation not found." });
     }
     if (convoDoc.data().userId !== req.uid) {
-      return res.status(403).json({ error: "forbidden" });
+      return res.status(404).json({ error: "not_found", message: "Conversation not found." });
     }
 
     const messageData = req.body;
@@ -234,7 +234,7 @@ router.delete("/:id/messages", async (req, res) => {
       return res.status(404).json({ error: "not_found" });
     }
     if (convoDoc.data().userId !== req.uid) {
-      return res.status(403).json({ error: "forbidden" });
+      return res.status(404).json({ error: "not_found", message: "Conversation not found." });
     }
 
     const msgSnapshot = await msgCollection(req.uid, req.params.id).get();
