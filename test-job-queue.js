@@ -266,6 +266,92 @@ async function main() {
     assert.strictEqual(tracker.max, 1, `pipeline runs must not overlap (observed max concurrency ${tracker.max})`);
   });
 
+  await check("resume from checkpoints skips the already-completed steps (no LLM calls)", async () => {
+    mockDb = makeMockDb();
+    require.cache[firebaseAdminPath].exports.getFirestore = () => mockDb.db;
+    jobRunner.__reset();
+
+    // A job that crashed AFTER classify + retrieval + draft/critique all
+    // completed: it carries full checkpoints.
+    let llmCalls = 0;
+    fakeClient = {
+      chat: { completions: { create: async () => { llmCalls++; throw new Error("LLM must not be called during full resume"); } } },
+    };
+    const checkpoints = {
+      classification: { classification: LEGAL_CLASSIFY, classifyProvider: "groq" },
+      retrieval: {
+        workingProvisions: [
+          { id: "p1", act: "Criminal Code Act", section: "252", text: "assault is a crime...", jurisdiction: "Federal" },
+          { id: "p2", act: "Criminal Code Act", section: "253", text: "punishment for assault...", jurisdiction: "Federal" },
+        ],
+        evidence: { sufficient: true, relevanceScore: 0.9, sourceCount: 2, retrievedFrom: ["criminal_offences"], reason: "on point", minSources: 2 },
+      },
+      draftAndCritique: {
+        planResult: { plan: null, provider: "skipped" },
+        draftResult: {
+          result: { lawMd: "Under section 252, assault is a crime.", actionsMd: "- Step 1: Report it\n- Step 2: Consult a lawyer", sources: [{ label: "Criminal Code Act, s.252", excerpt: "..." }], escalate: false, escalateReason: "", followUps: [] },
+          model: "draft-model",
+          provider: "groq",
+        },
+        critiqueResult: { quality: 0.85, legal_safety: 0.85, issues: [], passed: true, thresholds: { quality: 0.6, safety: 0.7 }, isHighRisk: true },
+      },
+    };
+    await mockDb.db.collection("background_jobs").doc("resume1").set({
+      uid: "u1", conversationId: "c1", messageId: "m-resume", question: "Someone slapped me", history: [], status: "queued", checkpoints,
+    });
+    await jobRunner.sweepOnce();
+    await waitFor(() => jobDoc("resume1") && jobDoc("resume1").status === "done");
+
+    assert.strictEqual(llmCalls, 0, `resume must skip classify/gate/draft/critique (made ${llmCalls} LLM calls)`);
+    const msg = messageDoc("c1", "m-resume");
+    assert.ok(msg && msg.status === "done", "message must be persisted done");
+    assert.strictEqual(msg.result.lawMd, "Under section 252, assault is a crime.", "the stored draft result must be delivered");
+    // The job keeps its checkpoints (no regression to them).
+    assert.ok(jobDoc("resume1").checkpoints.draftAndCritique, "checkpoints preserved");
+  });
+
+  await check("resume from classification+retrieval only re-runs plan+draft (not classify/gate)", async () => {
+    mockDb = makeMockDb();
+    require.cache[firebaseAdminPath].exports.getFirestore = () => mockDb.db;
+    jobRunner.__reset();
+
+    let classifyCalls = 0;
+    let draftCalls = 0;
+    fakeClient = {
+      chat: { completions: { create: async ({ messages }) => {
+        const sys = (messages && messages[0] && messages[0].content) || "";
+        const json = (o) => ({ choices: [{ message: { content: JSON.stringify(o) } }] });
+        if (sys.includes("determine if this is a legal question or casual")) { classifyCalls++; return json(LEGAL_CLASSIFY); }
+        if (sys.includes("legal retrieval relevance judge")) { throw new Error("gate must not run on resume"); }
+        if (sys.includes("quality reviewer")) { return json({ quality: 0.85, legal_safety: 0.85, issues: [], passed: true }); }
+        draftCalls++;
+        return json(DRAFT);
+      } } },
+    };
+    const checkpoints = {
+      classification: { classification: LEGAL_CLASSIFY, classifyProvider: "groq" },
+      retrieval: {
+        workingProvisions: [
+          { id: "p1", act: "Criminal Code Act", section: "252", text: "assault is a crime...", jurisdiction: "Federal" },
+          { id: "p2", act: "Criminal Code Act", section: "253", text: "punishment for assault...", jurisdiction: "Federal" },
+        ],
+        evidence: { sufficient: true, relevanceScore: 0.9, sourceCount: 2, retrievedFrom: ["criminal_offences"], reason: "on point", minSources: 2 },
+      },
+    };
+    // A previous test cached the identical question; clear it so this test
+    // actually exercises the draft path rather than a cache hit.
+    chatRoute.__testing.clearQuestionCache();
+    await mockDb.db.collection("background_jobs").doc("resume2").set({
+      uid: "u1", conversationId: "c1", messageId: "m-resume2", question: "Someone slapped me", history: [], status: "queued", checkpoints,
+    });
+    await jobRunner.sweepOnce();
+    await waitFor(() => jobDoc("resume2") && jobDoc("resume2").status === "done");
+
+    assert.strictEqual(classifyCalls, 0, "classify must be skipped on resume");
+    assert.strictEqual(draftCalls, 1, "draft must be re-run (it was not checkpointed)");
+    assert.ok(messageDoc("c1", "m-resume2") && messageDoc("c1", "m-resume2").status === "done");
+  });
+
   console.log(failures === 0 ? "\nALL JOB-QUEUE TESTS PASSED" : `\n${failures} TEST(S) FAILED`);
   process.exit(failures === 0 ? 0 : 1);
 }
