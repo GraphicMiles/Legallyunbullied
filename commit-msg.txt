@@ -1,0 +1,28 @@
+Fix casual misclassification (deterministic legal-intent gate) + unify trace rendering
+
+Issue 1 - same input sometimes routed to casual chat:
+- New server/legalIntent.js: deterministic legal-intent detector. Hard
+  multi-word incident patterns (slapped me, punched in the face, stole my,
+  police arrested me, my landlord evicted me, I was fired, ...) with
+  per-rule idiom guards so casual phrasing (hit me up, it beats me, shot me
+  a message, slap on the wrist) is NOT forced to the legal path; broad soft
+  signals (landlord/employer/contract/...) force legal only when 2+ appear.
+- classifyWithFallback accepts forceLegal: when the gate fires it appends a
+  SYSTEM OVERRIDE telling the classifier the message MUST be legal (full
+  classification), and the route enforces a backstop - if the classifier
+  still says casual, buildFallbackClassification produces a valid legal
+  classification (correct practice area, safe jurisdiction defaults).
+  Applied to both /api/chat and /api/chat/stream.
+- CLASSIFY_SYSTEM_PROMPT hardened: a described incident is always legal,
+  casual applies only to greetings/thanks/identity/clearly non-legal chat.
+- Eval: added casual-guard scenarios (hit me up, slap on the wrist).
+
+Issue 2 - 'Thought for Xs' trace rendered differently on reload:
+- renderAgentMessageStatic now mounts the SAME BeUIThinkingState component
+  the live pipeline uses (static mode), so a reloaded/reopened chat matches
+  the live look exactly - no legacy .trace bubble/card.
+- BeUIThinkingState gained static + elapsedMs options: static renders the
+  finished collapsed state without animation; elapsedMs shows the stored
+  duration instead of computing from a stale startedAt.
+
+Added test-legal-intent.js and test-chat-trace-reload.js.

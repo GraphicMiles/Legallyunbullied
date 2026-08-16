@@ -1205,7 +1205,21 @@ import {
     // BUG FIX: Don't render the 5-step trace for casual messages.
     // Casual replies don't go through the legal pipeline — the trace is irrelevant.
     if (msg.status !== "casual") {
-      body.appendChild(buildTraceElStatic(msg));
+      // Render the SAME thinking component the live pipeline uses, in static
+      // (finished) mode, so a reloaded/reopened chat looks identical to the
+      // live "Thought for Xs" state — no separate bubble/card styling.
+      if (window.BeUIThinkingState) {
+        const traceContainer = document.createElement("div");
+        new window.BeUIThinkingState(traceContainer, {
+          variant: "Steps",
+          static: true,
+          elapsedMs: msg.thinkingElapsedMs || 0,
+        });
+        body.appendChild(traceContainer);
+      } else {
+        // Fallback if the component failed to load (legacy trace UI).
+        body.appendChild(buildTraceElStatic(msg));
+      }
     }
 
     if (msg.status === "done" && msg.result) {

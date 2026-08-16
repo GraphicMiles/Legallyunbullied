@@ -528,6 +528,24 @@
         "min_sources": 2
       },
       "notes": "RETRIEVAL: traffic accident liability belongs to road-traffic law, not general criminal law."
+    },
+    {
+      "id": "casual-hit-me-up",
+      "category": "casual",
+      "question": "hit me up later when you're free",
+      "expected": {
+        "is_legal_question": false
+      },
+      "notes": "DETERMINISM GUARD: 'hit me up' is casual slang, not a legal incident — the deterministic legal-intent gate must NOT force this to the legal pipeline."
+    },
+    {
+      "id": "casual-slap-on-wrist",
+      "category": "casual",
+      "question": "my boss gave me a slap on the wrist for being late",
+      "expected": {
+        "is_legal_question": false
+      },
+      "notes": "DETERMINISM GUARD: 'slap on the wrist' is a metaphor for a mild reprimand, not an assault — must stay casual."
     }
   ]
 }

@@ -21,6 +21,7 @@ const { getClient: getGeminiClient, GEMINI_CLASSIFY_MODEL, GEMINI_DRAFT_MODEL, G
 const { getClient: getOpenRouterClient, OPENROUTER_CLASSIFY_MODEL, OPENROUTER_DRAFT_MODEL, OPENROUTER_CHAT_MODEL } = require("./openrouter");
 const { getClient: getCerebrasClient, CEREBRAS_CLASSIFY_MODEL, CEREBRAS_DRAFT_MODEL, CEREBRAS_CHAT_MODEL } = require("./cerebras");
 const { findProvisions, findProvisionsBroad } = require("./legalCorpus");
+const { detectLegalIntent, buildFallbackClassification } = require("./legalIntent");
 const { PRACTICE_AREAS: PRACTICE_AREA_DEFS, PRACTICE_AREA_KEYS } = require("./practiceAreas");
 
 const PRACTICE_AREAS = PRACTICE_AREA_KEYS;
@@ -60,6 +61,8 @@ const PRACTICE_AREA_BULLETS = PRACTICE_AREA_DEFS.map((p) => `- "${p.key}": ${p.d
 const CLASSIFY_SYSTEM_PROMPT = `You are Legally Unbullied, a smart Nigerian legal assistant with personality. You're knowledgeable, warm, and speak like a well-educated Nigerian friend — not a robot.
 
 First, determine if this is a legal question or casual conversation.
+
+CRITICAL RULE: A described INCIDENT always counts as a legal question, no matter how short, casual, or emotional the wording is. If the user describes something that happened to them — an assault ("someone slapped me", "I was beaten"), a theft ("someone stole my phone"), threats, an arrest, an eviction, being fired, a landlord dispute, a family/divorce issue, money owed, or any other real legal situation — "is_legal_question" MUST be true, and you MUST provide the full legal classification. Casual chat applies ONLY to greetings, thanks, identity questions, and clearly non-legal small talk (weather, jokes). When in doubt between casual and legal for a described event, classify it as LEGAL.
 
 If it's NOT a legal question, respond naturally based on the context:
 
@@ -601,11 +604,20 @@ function withTimeout(promise, ms, operation = "operation") {
   ]);
 }
 
-async function classifyWithFallback(question, conversationContext) {
+async function classifyWithFallback(question, conversationContext, options = {}) {
   const groqClient = getGroqClient();
   const openRouterClient = getOpenRouterClient();
   const cerebrasClient = getCerebrasClient();
   const geminiClient = getGeminiClient();
+
+  // Deterministic legal-intent backstop: when the raw message describes an
+  // incident/legal matter, the classifier is explicitly told it MUST produce
+  // a legal classification — this prevents a short, emotional message from
+  // being misfiled as casual chat across provider fallbacks.
+  const forceLegalNote = options.forceLegal
+    ? `\n\n[SYSTEM OVERRIDE — DO NOT IGNORE]: This message describes a real incident or legal matter. "is_legal_question" MUST be true. Do NOT classify it as casual chat. Provide the full legal classification (practice_area, jurisdiction, jurisdiction_status, urgency, summary, keywords, key_issues, complexity, route, reasoning_approach, stakeholders, potential_remedies).`
+    : "";
+  const userContent = (conversationContext ? `${conversationContext}\n\nUser: ${question}` : question) + forceLegalNote;
 
   // Try Groq first (fastest, already working for casual chat)
   if (groqClient) {
@@ -615,7 +627,7 @@ async function classifyWithFallback(question, conversationContext) {
         CLASSIFY_MODEL,
         [
           { role: "system", content: CLASSIFY_SYSTEM_PROMPT },
-          { role: "user", content: conversationContext ? `${conversationContext}\n\nUser: ${question}` : question },
+          { role: "user", content: userContent },
         ],
         { temperature: 0, max_tokens: 2000, response_format: { type: "json_object" } }
       );
@@ -633,7 +645,7 @@ async function classifyWithFallback(question, conversationContext) {
         OPENROUTER_CLASSIFY_MODEL,
         [
           { role: "system", content: CLASSIFY_SYSTEM_PROMPT },
-          { role: "user", content: conversationContext ? `${conversationContext}\n\nUser: ${question}` : question },
+          { role: "user", content: userContent },
         ],
         { temperature: 0, max_tokens: 2000, response_format: { type: "json_object" } }
       );
@@ -651,7 +663,7 @@ async function classifyWithFallback(question, conversationContext) {
         CEREBRAS_CLASSIFY_MODEL,
         [
           { role: "system", content: CLASSIFY_SYSTEM_PROMPT },
-          { role: "user", content: conversationContext ? `${conversationContext}\n\nUser: ${question}` : question },
+          { role: "user", content: userContent },
         ],
         { temperature: 0, max_tokens: 2000, response_format: { type: "json_object" } }
       );
@@ -669,7 +681,7 @@ async function classifyWithFallback(question, conversationContext) {
         GEMINI_CLASSIFY_MODEL,
         [
           { role: "system", content: CLASSIFY_SYSTEM_PROMPT },
-          { role: "user", content: conversationContext ? `${conversationContext}\n\nUser: ${question}` : question },
+          { role: "user", content: userContent },
         ],
         { temperature: 0, max_tokens: 2000, response_format: { type: "json_object" } }
       );
@@ -956,9 +968,13 @@ router.post("/api/chat", async (req, res) => {
   }
 
   // Step 1: Classify (and detect casual chat)
+  // Deterministic legal-intent gate: if the raw message describes an incident
+  // or legal matter, steer the classifier toward a legal classification and
+  // enforce it as a backstop below.
+  const forcedLegal = detectLegalIntent(question).legal;
   let classifyResult;
   try {
-    classifyResult = await classifyWithFallback(question, conversationContext);
+    classifyResult = await classifyWithFallback(question, conversationContext, { forceLegal: forcedLegal });
   } catch (err) {
     console.error("[/api/chat] classification failed:", err.status || "", err.message);
     return res.status(502).json({
@@ -967,7 +983,15 @@ router.post("/api/chat", async (req, res) => {
     });
   }
 
-  const { classification, provider: classifyProvider } = classifyResult;
+  let { classification, provider: classifyProvider } = classifyResult;
+
+  // Backstop: if the deterministic gate fired but the classifier still said
+  // "casual", override with a valid legal classification. A described assault
+  // must never fall through to a casual/empathy-only reply.
+  if (forcedLegal && classification.is_legal_question === false) {
+    console.warn("[/api/chat] Classifier said casual but deterministic gate detected a legal incident — forcing legal path");
+    classification = buildFallbackClassification(question);
+  }
 
   // Step 2: If casual chat, return early with a friendly response
   if (classification.is_legal_question === false) {
@@ -1452,9 +1476,16 @@ router.get("/api/chat/stream", async (req, res) => {
 
     // ── Step 1: Classify ──
     emit({ event: "classify_start" });
-    const classifyResult = await classifyWithFallback(question);
+    const forcedLegal = detectLegalIntent(question).legal;
+    const classifyResult = await classifyWithFallback(question, "", { forceLegal: forcedLegal });
     if (cancelled) return res.end();
-    const classification = classifyResult.classification;
+    let classification = classifyResult.classification;
+
+    // Deterministic backstop — a described incident must not become casual.
+    if (forcedLegal && classification.is_legal_question === false) {
+      console.warn("[/api/chat/stream] Classifier said casual but deterministic gate detected a legal incident — forcing legal path");
+      classification = buildFallbackClassification(question);
+    }
 
     emit({
       event: "classify_done",

@@ -27,6 +27,9 @@ User Question
 │                     AGENT PIPELINE                               │
 │                                                                  │
 │  1. CLASSIFY ──→ practice_area, jurisdiction, urgency, route    │
+│       │         (deterministic legal-intent pre-gate: a         │
+│       │          described incident can never be classified     │
+│       │          as casual chat)                                │
 │       │                                                        │
 │       ├── casual? → return casual_reply (no pipeline)           │
 │       ├── unclear jurisdiction? → return needsInput (HITL)      │
