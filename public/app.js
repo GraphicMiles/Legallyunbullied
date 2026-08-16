@@ -3153,33 +3153,55 @@ import {
     return wrap;
   }
 
-  // Poll a still-running server job a few times (bounded) so a reopen during
-  // processing picks up the finished result without the user reloading.
+  // Poll a still-running server job until it reaches a terminal state (or the
+  // budget runs out) so a reopen during processing picks up the finished
+  // result without the user reloading. The budget is generous enough to cover
+  // the worst recovery path (~5 min stale sweep + a full re-run), and it
+  // resets whenever the user opens a different conversation.
   let _runningPollTimer = null;
   let _runningPolls = 0;
-  const _runningPollCap = 4;
+  let _runningPollForConvo = null;
+  const _runningPollCap = 90;      // 90 × 8s ≈ 12 minutes
+  const _runningPollIntervalMs = 8000;
+
+  function hasRunningMessage(convoId) {
+    const convo = state.conversations.find((c) => c.id === convoId);
+    return !!(convo && convo.messages.some((m) => m.role === "agent" && m.pipelineStatus === "running"));
+  }
+
   function scheduleRunningPoll() {
     if (_runningPollTimer || _runningPolls >= _runningPollCap) return;
+    const convoId = state.activeId;
+    if (!convoId) return;
+    if (_runningPollForConvo !== convoId) {
+      _runningPollForConvo = convoId;
+      _runningPolls = 0; // opening a different chat resets the budget
+    }
     _runningPollTimer = setTimeout(async () => {
       _runningPollTimer = null;
       _runningPolls += 1;
       if (!isServerMode()) return;
-      const activeId = state.activeId;
-      if (!activeId) return;
+      if (!hasRunningMessage(convoId)) return; // resolved elsewhere — stop polling
       try {
-        const result = await fetchConversationById(activeId);
+        const result = await fetchConversationById(convoId);
         if (result.convo) {
-          const idx = state.conversations.findIndex((c) => c.id === activeId);
+          const idx = state.conversations.findIndex((c) => c.id === convoId);
           if (idx >= 0) state.conversations[idx] = result.convo;
           else state.conversations.push(result.convo);
+          if (state.activeId === convoId) {
+            // The user is watching this chat — a just-resolved answer is not unread.
+            markConversationRead(convoId);
+            renderChat();
+          }
           saveState();
           renderHistory();
-          if (state.activeId === activeId) renderChat();
+          if (hasRunningMessage(convoId)) scheduleRunningPoll(); // keep going
         }
       } catch (e) {
         console.warn("[poll] Running-job poll failed:", e.message);
+        if (hasRunningMessage(convoId)) scheduleRunningPoll(); // transient error — retry (capped)
       }
-    }, 8000);
+    }, _runningPollIntervalMs);
   }
 
   function buildErrorEl(message) {

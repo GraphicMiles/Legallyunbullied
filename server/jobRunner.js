@@ -89,7 +89,7 @@ function recordJobEnd(req, result) {
 
 // ── Worker ─────────────────────────────────────────────────────────────────
 async function runJob(job) {
-  const { jobId, uid, conversationId, messageId, question, history } = job;
+  const { jobId, uid, conversationId, messageId, question, history, checkpoints } = job;
   const d = db();
   if (d) {
     await d.collection("background_jobs").doc(jobId).set({ status: "running", startedAt: Date.now() }, { merge: true })
@@ -98,7 +98,25 @@ async function runJob(job) {
 
   // Lazy require avoids a load-order cycle (chatRoute requires jobRunner).
   const chatRoute = require("./chatRoute");
-  const fakeReq = { uid, body: { question, history: history || [], conversationId, messageId } };
+  const fakeReq = {
+    uid,
+    body: { question, history: history || [], conversationId, messageId },
+    // Checkpoint resume: pass saved step outputs and a callback that persists
+    // new ones, so a re-run continues from the last completed step.
+    checkpoints: checkpoints || {},
+    saveCheckpoint: async (field, value) => {
+      const dd = db();
+      if (!dd) return;
+      try {
+        const snap = await dd.collection("background_jobs").doc(jobId).get();
+        const existing = (snap.exists && snap.data() && snap.data().checkpoints) || {};
+        existing[field] = value;
+        await dd.collection("background_jobs").doc(jobId).set({ checkpoints: existing }, { merge: true });
+      } catch (err) {
+        console.warn("[jobs] saveCheckpoint failed:", err.message);
+      }
+    },
+  };
 
   let result;
   try {
@@ -172,6 +190,7 @@ async function sweepOnce() {
           messageId: data.messageId,
           question: data.question,
           history: data.history || [],
+          checkpoints: data.checkpoints || {},
         });
         added++;
       }
