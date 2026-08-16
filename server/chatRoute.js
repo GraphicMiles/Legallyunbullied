@@ -267,6 +267,136 @@ Respond with a structured JSON object:
 
 Be thorough but concise. This plan will guide the final response to ensure it's comprehensive, accurate, and actionable.`;
 
+// ── Critique system prompt (V1 Phase 1+2) ──────────────────────────────
+// Runs after draft to score quality + legal_safety. If scores are too low,
+// the draft is retried with critique feedback (max 2 iterations).
+const CRITIQUE_SYSTEM_PROMPT = `You are a legal response quality reviewer for a Nigerian legal-information assistant.
+
+You receive:
+- The user's original question
+- The statute excerpts the drafter was given
+- The draft response produced
+
+Score the response on two dimensions (0.0 to 1.0):
+
+**quality** (0.0–1.0): Is the response well-structured, clear, comprehensive, and actionable?
+- 0.8+: Clear structure, covers the key legal points, gives actionable steps, cites provisions
+- 0.5–0.7: Partially answers the question, missing some structure or detail
+- Below 0.5: Confusing, incomplete, or largely off-topic
+
+**legal_safety** (0.0–1.0): Is the response legally safe and properly grounded?
+- 0.8+: Only cites provisions from the given excerpts, includes disclaimer, correct escalation call
+- 0.5–0.7: Mostly grounded but may cite provisions not in excerpts, or miss the disclaimer
+- Below 0.5: Hallucinates laws, gives dangerous advice, or presents as binding legal advice
+
+Critical failures (legal_safety below 0.4):
+- Citing Acts/sections NOT in the provided excerpts
+- Presenting information as binding legal advice
+- Missing the "not legal advice" framing for high-stakes topics
+- Encouraging illegal activity
+
+Respond with ONLY a JSON object:
+{
+  "quality": 0.0-1.0,
+  "legal_safety": 0.0-1.0,
+  "issues": ["brief list of specific problems found"],
+  "passed": true/false
+}
+
+"passed" is true only if BOTH quality >= 0.6 AND legal_safety >= 0.6.`;
+
+async function critiqueDraft(client, model, question, provisions, draft) {
+  const provisionSummary = (provisions || []).slice(0, 8).map(p =>
+    `[${p.act}${p.section ? ", s." + p.section : ""}]: ${p.text.slice(0, 150)}...`
+  ).join("\n");
+
+  const userMsg = `Question: ${question}
+
+Statute excerpts the drafter was given:
+${provisionSummary}
+
+Draft response to review:
+---
+Law: ${(draft.lawMd || "").slice(0, 1500)}
+Actions: ${(draft.actionsMd || "").slice(0, 800)}
+Escalate: ${draft.escalate}
+Sources: ${JSON.stringify((draft.sources || []).slice(0, 4))}
+---
+
+Review this response.`;
+
+  const completion = await callCompletion(client, model, [
+    { role: "system", content: CRITIQUE_SYSTEM_PROMPT },
+    { role: "user", content: userMsg },
+  ], { response_format: { type: "json_object" }, max_tokens: 500, temperature: 0.1 });
+
+  const parsed = completion.parsed;
+  return {
+    quality: typeof parsed.quality === "number" ? parsed.quality : 0.5,
+    legal_safety: typeof parsed.legal_safety === "number" ? parsed.legal_safety : 0.5,
+    issues: Array.isArray(parsed.issues) ? parsed.issues : [],
+    passed: parsed.passed === true,
+  };
+}
+
+// Critique with provider fallback — uses fast small models (8b class) for low latency
+async function critiqueWithFallback(question, provisions, draft, classification) {
+  const providers = [];
+  const groqClient = getGroqClient();
+  const cerebrasClient = getCerebrasClient();
+  const geminiClient = getGeminiClient();
+
+  // Use classify-tier models (fast, cheap) for critique — doesn't need heavy reasoning
+  if (groqClient) providers.push([groqClient, CLASSIFY_MODEL]);
+  if (cerebrasClient) providers.push([cerebrasClient, CEREBRAS_CLASSIFY_MODEL]);
+  if (geminiClient) providers.push([geminiClient, GEMINI_CLASSIFY_MODEL]);
+
+  if (providers.length === 0) {
+    throw new Error("No LLM provider available for critique");
+  }
+
+  for (const [client, model] of providers) {
+    try {
+      return await critiqueDraft(client, model, question, provisions, draft);
+    } catch (err) {
+      console.warn(`[/api/chat] Critique via ${model} failed: ${err.message}`);
+      continue; // try next provider
+    }
+  }
+
+  throw new Error("All critique providers failed");
+}
+
+// ── Question-level cache (V1 Phase 11) ──────────────────────────────────
+// Caches full pipeline results for identical questions to avoid re-running
+// the classify→search→draft→critique chain for repeated queries.
+const questionCache = new Map();
+const QUESTION_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+const QUESTION_CACHE_MAX = 200;
+
+function getCacheKey(question, jurisdiction) {
+  return `${(jurisdiction || "any").toLowerCase()}::${question.toLowerCase().trim().slice(0, 200)}`;
+}
+
+function getCachedResult(key) {
+  const entry = questionCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > QUESTION_CACHE_TTL) {
+    questionCache.delete(key);
+    return null;
+  }
+  return entry.data;
+}
+
+function setCachedResult(key, data) {
+  if (questionCache.size >= QUESTION_CACHE_MAX) {
+    // Evict oldest
+    const oldest = questionCache.keys().next().value;
+    questionCache.delete(oldest);
+  }
+  questionCache.set(key, { data, timestamp: Date.now() });
+}
+
 async function planResponse(question, classification, provisions) {
   const groqClient = getGroqClient();
   const geminiClient = getGeminiClient();
@@ -826,16 +956,65 @@ router.post("/api/chat", async (req, res) => {
     console.log(`[/api/chat] Simple route — skipping planning (route=${route})`);
   }
 
-  // Step 5: Draft with fallback chain (plan is null for simple route)
+  // Step 5: Check question cache before running draft (V1 Phase 11)
+  const cacheKey = getCacheKey(question, classification.jurisdiction);
+  const cached = getCachedResult(cacheKey);
   let draftResult;
-  try {
-    draftResult = await draftWithFallback(question, contextBlock, planResult.plan, classification, history);
-  } catch (err) {
-    console.error("[/api/chat] drafting failed:", err.status || "", err.message);
-    return res.status(502).json({
-      error: "drafting_failed",
-      message: "The drafting model failed to respond. " + (err.message || ""),
-    });
+  let critiqueResult = null;
+
+  if (cached && !cached.providersBusy) {
+    console.log(`[/api/chat] Cache HIT for question (key: ${cacheKey.slice(0, 50)})`);
+    draftResult = cached;
+  } else {
+    // Step 5a: Draft with fallback chain (plan is null for simple route)
+    try {
+      draftResult = await draftWithFallback(question, contextBlock, planResult.plan, classification, history);
+    } catch (err) {
+      console.error("[/api/chat] drafting failed:", err.status || "", err.message);
+      return res.status(502).json({
+        error: "drafting_failed",
+        message: "The drafting model failed to respond. " + (err.message || ""),
+      });
+    }
+
+    // Step 6: Critique + iteration loop (V1 Phase 1+2)
+    // Skip critique for providersBusy responses (they're fallback errors, not real answers)
+    if (!draftResult.providersBusy && draftResult.result) {
+      const MAX_CRITIQUE_RETRIES = 2;
+      const CRITIQUE_QUALITY_THRESHOLD = 0.6;
+      const CRITIQUE_SAFETY_THRESHOLD = 0.6;
+
+      for (let attempt = 0; attempt <= MAX_CRITIQUE_RETRIES; attempt++) {
+        try {
+          critiqueResult = await critiqueWithFallback(
+            question, provisions, draftResult.result, classification
+          );
+          console.log(`[/api/chat] Critique attempt ${attempt + 1}: quality=${critiqueResult.quality.toFixed(2)}, safety=${critiqueResult.legal_safety.toFixed(2)}, passed=${critiqueResult.passed}`);
+
+          if (critiqueResult.passed || attempt === MAX_CRITIQUE_RETRIES) {
+            break; // Pass or out of retries — keep this draft
+          }
+
+          // Critique failed — retry draft with feedback
+          console.log(`[/api/chat] Critique failed, re-drafting with feedback: ${critiqueResult.issues.join("; ").slice(0, 100)}`);
+          const feedbackContext = `\n\nIMPORTANT FEEDBACK FROM PREVIOUS DRAFT REVIEW:\nThe previous draft had these issues: ${critiqueResult.issues.join("; ")}\nPlease fix these problems in your new response.`;
+
+          draftResult = await draftWithFallback(
+            question, contextBlock + feedbackContext, planResult.plan, classification, history
+          );
+        } catch (err) {
+          // Critique failed entirely — don't block the response, just use the draft
+          console.warn(`[/api/chat] Critique attempt ${attempt + 1} failed: ${err.message}`);
+          critiqueResult = { quality: 0.5, legal_safety: 0.5, issues: ["critique_unavailable"], passed: true };
+          break;
+        }
+      }
+    }
+
+    // Cache the result (only successful, non-busy responses)
+    if (!draftResult.providersBusy && draftResult.result) {
+      setCachedResult(cacheKey, draftResult);
+    }
   }
 
   res.json({
@@ -845,6 +1024,13 @@ router.post("/api/chat", async (req, res) => {
     result: draftResult.result,
     draftModel: draftResult.model,
     draftProvider: draftResult.provider,
+    // Critique scores (V1 Phase 2 — split scoring)
+    critique: critiqueResult ? {
+      quality: critiqueResult.quality,
+      legal_safety: critiqueResult.legal_safety,
+      passed: critiqueResult.passed,
+      issues: critiqueResult.issues,
+    } : null,
     // Bug fix: forward providersBusy flag so client can render error state
     // instead of styling a fallback message as a confident legal answer
     providersBusy: draftResult.providersBusy || false,
