@@ -135,6 +135,264 @@ import {
       activeId: state.activeId,
       questionsUsedToday: state.questionsUsedToday,
     }));
+    // Sync to server if authenticated (non-blocking)
+    syncToServer();
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Server sync — mirrors localStorage to Firestore when authenticated   */
+  /* ------------------------------------------------------------------ */
+  let _syncQueued = false;
+  let _syncInProgress = false;
+  let _migrationDone = false;
+
+  function isServerMode() {
+    return !!(window.firebaseAuth && window.firebaseAuth.currentUser);
+  }
+
+  async function getServerAuthHeaders() {
+    const headers = { "Content-Type": "application/json" };
+    try {
+      if (window.firebaseAuth && window.firebaseAuth.currentUser) {
+        const token = await getIdToken(window.firebaseAuth.currentUser);
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+      }
+    } catch (e) { /* ignore */ }
+    return headers;
+  }
+
+  // Fetch all conversations from server and merge into local state
+  async function loadFromServer() {
+    if (!isServerMode()) return;
+    try {
+      const headers = await getServerAuthHeaders();
+      const res = await fetch("/api/conversations", { headers });
+      if (!res.ok) {
+        console.warn("[server-sync] Failed to load conversations:", res.status);
+        return;
+      }
+      const data = await res.json();
+      if (!data.conversations) return;
+
+      // Fetch full details for each conversation (with messages)
+      const fullConversations = [];
+      for (const summary of data.conversations) {
+        try {
+          const detailRes = await fetch(`/api/conversations/${summary.id}`, { headers });
+          if (detailRes.ok) {
+            const detail = await detailRes.json();
+            fullConversations.push({
+              id: detail.id,
+              title: detail.title || "New question",
+              createdAt: detail.createdAt,
+              updatedAt: detail.updatedAt,
+              messages: (detail.messages || []).map(m => {
+                const { userId, ...rest } = m; // strip server-side userId field
+                return rest;
+              }),
+            });
+          }
+        } catch (e) {
+          console.warn(`[server-sync] Failed to load conversation ${summary.id}:`, e.message);
+        }
+      }
+
+      // Replace local state with server data
+      if (fullConversations.length > 0) {
+        state.conversations = fullConversations;
+        saveState(); // persist to localStorage as cache
+        renderHistory();
+        renderChat();
+        console.log(`[server-sync] Loaded ${fullConversations.length} conversations from server`);
+      }
+    } catch (err) {
+      console.warn("[server-sync] loadFromServer failed:", err.message);
+    }
+  }
+
+  // Sync local state to server (debounced — only one sync at a time)
+  async function syncToServer() {
+    if (!isServerMode() || _syncInProgress) {
+      _syncQueued = true;
+      return;
+    }
+    _syncInProgress = true;
+    _syncQueued = false;
+
+    try {
+      const headers = await getServerAuthHeaders();
+
+      for (const convo of state.conversations) {
+        // Check if this convo has a _synced flag (already on server)
+        if (convo._synced) continue;
+
+        // Create or update the conversation on server
+        try {
+          // Try to create it first
+          const createRes = await fetch("/api/conversations", {
+            method: "POST",
+            headers,
+            body: JSON.stringify({ title: convo.title || "New question" }),
+          });
+
+          let serverConvoId;
+          if (createRes.ok) {
+            const created = await createRes.json();
+            serverConvoId = created.id;
+          } else if (createRes.status === 409 || createRes.status === 400) {
+            // Already exists — update it
+            await fetch(`/api/conversations/${convo.id}`, {
+              method: "PUT",
+              headers,
+              body: JSON.stringify({ title: convo.title }),
+            });
+            serverConvoId = convo.id;
+          } else {
+            console.warn("[server-sync] Failed to create conversation:", createRes.status);
+            continue;
+          }
+
+          // If server assigned a new ID, update local reference
+          if (serverConvoId !== convo.id) {
+            const oldId = convo.id;
+            convo.id = serverConvoId;
+            if (state.activeId === oldId) state.activeId = serverConvoId;
+          }
+
+          // Sync all messages
+          for (const msg of convo.messages) {
+            if (msg._synced) continue;
+            try {
+              const msgRes = await fetch(`/api/conversations/${convo.id}/messages/${msg.id}`, {
+                method: "PUT",
+                headers,
+                body: JSON.stringify(msg),
+              });
+              if (msgRes.ok) msg._synced = true;
+            } catch (e) {
+              console.warn(`[server-sync] Failed to sync message ${msg.id}:`, e.message);
+            }
+          }
+
+          convo._synced = true;
+        } catch (e) {
+          console.warn(`[server-sync] Failed to sync conversation ${convo.id}:`, e.message);
+        }
+      }
+
+      // Persist the _synced flags to localStorage
+      const storageKey = getStorageKey();
+      localStorage.setItem(storageKey, JSON.stringify({
+        conversations: state.conversations,
+        activeId: state.activeId,
+        questionsUsedToday: state.questionsUsedToday,
+      }));
+    } catch (err) {
+      console.warn("[server-sync] syncToServer failed:", err.message);
+    } finally {
+      _syncInProgress = false;
+      if (_syncQueued) {
+        // Another save happened while we were syncing — run again
+        setTimeout(() => syncToServer(), 500);
+      }
+    }
+  }
+
+  // Sync a single message to server immediately (for critical updates like step completion)
+  async function syncMessageToServer(convoId, message) {
+    if (!isServerMode()) return;
+    try {
+      const headers = await getServerAuthHeaders();
+      const res = await fetch(`/api/conversations/${convoId}/messages/${message.id}`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify(message),
+      });
+      if (res.ok) message._synced = true;
+    } catch (e) {
+      console.warn(`[server-sync] syncMessage failed for ${message.id}:`, e.message);
+    }
+  }
+
+  // Migrate existing localStorage conversations to server
+  async function migrateToServer() {
+    if (!isServerMode() || _migrationDone) return;
+    _migrationDone = true;
+
+    const storageKey = getStorageKey();
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) return;
+
+    try {
+      const parsed = JSON.parse(raw);
+      if (!parsed.conversations || parsed.conversations.length === 0) return;
+      if (parsed._migratedToServer) return; // already migrated
+
+      console.log(`[server-sync] Migrating ${parsed.conversations.length} conversations to server...`);
+      const headers = await getServerAuthHeaders();
+
+      // Clean _synced flags before sending
+      const cleanConvos = parsed.conversations.map(c => {
+        const { _synced, ...rest } = c;
+        return {
+          ...rest,
+          messages: (c.messages || []).map(m => {
+            const { _synced: ms, ...mRest } = m;
+            return mRest;
+          }),
+        };
+      });
+
+      const res = await fetch("/api/conversations/migrate", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ conversations: cleanConvos }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        // Update local IDs to match server IDs
+        if (data.idMap) {
+          for (const convo of state.conversations) {
+            if (data.idMap[convo.id]) {
+              const oldId = convo.id;
+              convo.id = data.idMap[oldId];
+              convo._synced = true;
+              if (state.activeId === oldId) state.activeId = convo.id;
+            }
+          }
+          // Mark all messages as synced
+          state.conversations.forEach(c => {
+            c._synced = true;
+            (c.messages || []).forEach(m => { m._synced = true; });
+          });
+        }
+        // Set migration flag
+        parsed._migratedToServer = true;
+        localStorage.setItem(storageKey, JSON.stringify(parsed));
+        saveState();
+        renderHistory();
+        renderChat();
+        console.log("[server-sync] Migration complete");
+      } else {
+        console.warn("[server-sync] Migration failed:", res.status);
+        _migrationDone = false; // allow retry
+      }
+    } catch (err) {
+      console.warn("[server-sync] Migration error:", err.message);
+      _migrationDone = false; // allow retry
+    }
+  }
+
+  // Delete conversation on server
+  async function deleteConversationOnServer(convoId) {
+    if (!isServerMode()) return;
+    try {
+      const headers = await getServerAuthHeaders();
+      await fetch(`/api/conversations/${convoId}`, { method: "DELETE", headers });
+    } catch (e) {
+      console.warn(`[server-sync] Failed to delete conversation ${convoId}:`, e.message);
+    }
   }
 
   /* ------------------------------------------------------------------ */
@@ -669,6 +927,8 @@ import {
     renderHistory();
     renderChat();
     updateClearChatButtonState();
+    // Delete from server too (non-blocking)
+    deleteConversationOnServer(id);
     // Clear the prompt bar when deleting a chat
     if (window.promptBar) {
       window.promptBar.clear();
@@ -2184,6 +2444,12 @@ import {
     updateComposerState();
     updatePlanLabel();
 
+    // Immediately sync final message state to server (critical for persistence)
+    const activeConvo = getActiveConversation();
+    if (activeConvo && tokenMatch) {
+      syncMessageToServer(activeConvo.id, agentMsg);
+    }
+
     if (tokenMatch) {
       live.refs = null;
       live.msgId = null;
@@ -2447,6 +2713,26 @@ import {
         renderChat();
         updateComposerState();
         updatePlanLabel();
+
+        // Server sync: load from server and/or migrate localStorage data
+        if (user) {
+          // First migrate any existing localStorage conversations to server
+          migrateToServer().then(() => {
+            // Then load fresh data from server
+            return loadFromServer();
+          }).then(() => {
+            // Re-check URL after server data loaded
+            const urlId = getConvoIdFromUrl();
+            if (urlId) {
+              const c = state.conversations.find(cc => cc.id === urlId);
+              if (c) {
+                state.activeId = c.id;
+                renderHistory();
+                renderChat();
+              }
+            }
+          });
+        }
       }
       
       renderAuthSection(user);
