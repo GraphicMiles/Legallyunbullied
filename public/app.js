@@ -3818,14 +3818,27 @@ import {
     // Fast path: the chat is already loaded (server list or write-behind
     // cache). It was ownership-verified when it was fetched, so open it
     // directly without a redundant network call.
-    const convo = state.conversations.find((c) => c.id === urlId);
-    if (convo) {
-      _directFetchToken += 1; // cancel any in-flight direct fetch for another id
-      state.activeId = convo.id; // use the persisted ID — never a new one
-      renderHistory();
-      renderChat();
-      updateClearChatButtonState();
-      return;
+    //
+    // BUT local state is only authoritative once auth has settled AND (for
+    // signed-in users) the server list load has finished. Acting on the
+    // stale write-behind cache while the server load is pending causes the
+    // chat to render twice: once from cache, then again after loadFromServer
+    // replaces local state (with a redundant single-chat GET when the server
+    // list doesn't contain the chat). Gate it so exactly one load/render
+    // happens per URL open.
+    const localAuthoritative =
+      !window.firebaseAuth || (_authSettled && !_serverLoadPending);
+
+    if (localAuthoritative) {
+      const convo = state.conversations.find((c) => c.id === urlId);
+      if (convo) {
+        _directFetchToken += 1; // cancel any in-flight direct fetch for another id
+        state.activeId = convo.id; // use the persisted ID — never a new one
+        renderHistory();
+        renderChat();
+        updateClearChatButtonState();
+        return;
+      }
     }
 
     state.activeId = null;
