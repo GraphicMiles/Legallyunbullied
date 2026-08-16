@@ -2050,7 +2050,10 @@ import {
       live.refs.body.insertBefore(thinkingContainer, live.refs.body.firstChild);
       
       live.thinkingComponent = new window.BeUIThinkingState(thinkingContainer, {
-        variant: "Steps"
+        variant: "Steps",
+        // Real pipeline start time so "Thought for Xs" shows the actual
+        // elapsed time instead of the component's hardcoded demo value.
+        startedAt: agentMsg.startedAt
       });
     } else {
       // Fallback to old trace UI if BeUIThinkingState not available
@@ -2647,6 +2650,7 @@ import {
     if (window.BeUIStreamingText) {
       const instance = new window.BeUIStreamingText(container, {
         text,
+        citations: false,    // citations are inline bold text + the Sources list — no injected chips
         sources: [],         // sources shown separately via BeUIContextCards stage
         followUps: [],       // follow-ups shown separately in their own stage
         oneShot: true,       // no loop — pipeline moves forward
