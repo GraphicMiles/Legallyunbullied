@@ -1,0 +1,409 @@
+1. Establishment of a National Identity Management Commission
+
+(1) There is hereby established a body to be known as the National Identity Manage-
+ment Commission (in this Act referred to as "the Commission").
+
+(2) The Commission-
+
+(a) shall be a body corporate with perpetual succession and a common seal; and
+(b) may sue and be sued in its corporate name.
+
+(3) The Commission may hold, acquire and dispose of any property or interest in
+property, movable or immovable for the purpose of its functions under this Act.
+
+2. Membership ofthe Commission
+
+(1) There is hereby established for the Commission a governing board
+(in this Act referred to as "the Board") which shall consist of-
+
+(a) a part-time Chairman;
+
+(b) a representative each of-
+
+(i) the Independent National Electoral Commission;
+
+(ii) the National Health Insurance Scheme;
+
+(iii) the Federal Road Safety Commission;
+
+(iv) the Federal Inland Revenue Service;
+
+(v) the National Pension Commission;
+
+(vi) the Nigeria Police Force;
+
+(vii) the Nigeria Immigration Service;
+
+(viii) the Office of the National Security Adviser;
+
+(ix) the National Population Commission;
+
+(x) the Central Bank of Nigeria;
+
+(xi) the State Security Service;
+
+(xii) the Economic and Financial Crime Commission;
+(xiii) the Chief of Defence Staff;
+
+(xiv) the Corporate Affairs Commission;
+
+(c) three persons who are knowledgeable in Information Communication Technology or
+identity management to represent the public interest; and
+
+(d) the Director-General of the Commission.
+
+(2) The Chairman and members of the Commission shall be-
+
+(a) appointed by the President; and
+
+(b) citizens of Nigeria.
+
+(3) Members of the Board other than the Director-General, shall be part-time members.
+
+(4) The provisions of the First Schedule to this Act shall apply with respect to the
+proceedings of the Board and the other matters mentioned therein.
+
+[First Schedule.]
+
+3. Tenure of Office of the Chairman and members of the Board
+
+(1) The Chairman and members of the Board, other than ex officio members, shall
+hold Office for a term of 4 years in the first instance and may be re-appointed for a fur-
+ther term of 4 years and no more.
+
+(2) Notwithstanding the provisions of subsection (1) of this section, a member of the
+Board shall cease to hold Office as a member if-
+
+(a) he resigns his appointment as a member of the Board by a notice under his
+hand, addressed to the President;
+
+(b) he becomes of unsound mind;
+
+(c) becomes bankrupt or makes a compromise with his creditors;
+
+(d) he is convicted of a felony or any of offence involving dishonesty or corruption;
+
+(e) he becomes incapable of carrying on the functions of his Office arising from
+an infirmity of mind or body; or
+
+(f) the President is satisfied that it is not in the interest of the Commission or in
+the interest of the public for the person to continue in Office and notifies the
+member in writing to that effect.
+
+(3) If a member of the Board dies or resigns or otherwise vacates his Office before
+the expiration of the term for which he is appointed, a fit and proper person shall be
+appointed for the remainder of the term of Office of the predecessor, so however that the
+successor shall represent the same interest.
+
+4. Emoluments, etc.
+
+The Chairman and members of the Board shall be paid such emoluments, allowances
+and incidental expenses as the President may, from time to time, approve.
+
+PART II
+
+Functions and Powers of the Commission
+
+5. Functions of the Commission
+
+The Commission shall-
+
+(a) create, manage, maintain and operate the National Identity Database estab-
+lished under section 14 of this Act including the harmonisation and integration
+of existing identification databases in Government agencies and integrating
+them into the National Identity Database;
+
+(b) carry out the registration of citizens of Nigeria into the National Identity Database;
+
+(c) carry out the registration of non-citizens of Nigeria who are lawfully resident in Nigeria;
+
+(d) issue a General Multi-purpose Identity Card to any person registered pursuant
+to paragraphs (b) and (c) of this section;
+
+(e) collate information obtained by the Commission in pursuance of its functions
+under this Act and reproducing such information as may be required, from time to time;
+
+(f) assign a unique National Identification Number to any person registered pursuant to
+paragraphs (b) and (c) of this section and the National Identification
+Number shall be incorporated into or made compatible with other existing
+identity related databases or registers in respect of which information or data
+relating to the registered person has been registered, documented or stored;
+
+(g) ensure the preservation, protection, sanctity and security (including cyber-
+security) of any information or data collected, obtained, maintained or stored
+in respect of the National Identity Database;
+
+(h) establish and maintain secured communication links with any existing relevant
+identity related database or agency;
+
+(i) maintain secured communication links with end-users in any public or private
+organisation, agency or body including card acceptance devices, Government service centres;
+
+(j ) collaborate with relevant bodies and agencies in the setting of standards and
+technical specifications for telecommunications links between organisations
+and for the devices utilised for such communications established or maintained
+pursuant to paragraphs (j) and (k) of this section;
+
+(k) respond to verification enquiries regarding the identification of individuals;
+
+(l) perform such other duties which, in the opinion of the Commission, are necessary or
+expedient for the discharge of its functions under this Act;
+
+(m) enter into any form of agreement with any private or public sector based
+agency or organisation for the development or establishment of the Identity
+Management Solution or for the realisation of any of its functions;
+
+(n) research and monitor developments in the identity management sector;
+
+(o) carry out the registration of births and deaths in Nigeria; and
+
+(p) collaborate with relevant bodies and agencies in the setting of standards and
+technical specifications for ICT links between organisations and for the devices
+utilised for such communications established or maintained pursuant to
+paragraphs (i) and (j) of this section.
+
+6. Powers of the Commission
+
+The Commission shall have the power to-
+
+(a) request for any information or data from any person on matters relating to its
+functions under this Act;
+
+(b) fix the terms and conditions of service including remuneration of the employees of the Commission;
+
+(c) establish and operate administrative and monitoring offices in the States, Local
+Government Areas and Area Councils;
+
+(d) monitor any matter that may affect the functions of the Commission; and
+
+(e) do such other things which by this Act or any other enactment are required or
+permitted to be done by the Commission.
+
+PART III
+
+Staff of the Commission
+
+7. The Director-General
+
+(1) There shall be for the Commission, a Director-General, who shall-
+
+(a) be appointed by the President;
+
+(b) be the Chief Executive officer responsible for the day to day administration of
+the Commission;
+
+(c) possess professional skills and 15 years cognate experience in any of the following
+fields: information communication technology, engineering, management science, law, business
+administration, economics or related fields.
+
+(2) The Director-General shall, subject to the general control of the Board, be respon-
+sible for-
+
+(a) the execution of the policies and decisions of the Board and its day to day operations and administration;
+
+(b) keeping proper records of proceedings of the Board; and
+
+(c) the direction and control of all other employees.
+
+(3) The Director-General shall hold Office-
+
+(a) for a term of 4 years in the first instance and may be re-appointed for a further
+term of 4 years and no more; and
+
+(b) on such terms and conditions as to emolument and otherwise as may be specified in his letter of appointment.
+
+8. Appointment, dismissal, etc. of other staff of the Commission
+
+(1) The Board shall have power to appoint for the Commission such other employees
+as it may deem necessary for the efficient performance of its functions under this Act and
+shall have power to pay persons so employed such remuneration (including allowances)
+as the Commission may determine with the approval of the President.
+
+(2) The power of the Commission under subsection (1) of this section shall include
+the power to-
+
+(a) promote and control the staff of the Commission as may appear to the Commission
+necessary or expedient; and
+
+(b) dismiss, terminate, consider the resignation or withdrawal of appointment and
+exercise disciplinary control over the staff of the Commission, other than the
+Director-General.
+
+(3) The Board may delegate to the Director-General, generally or specifically, the
+power to appoint such categories of staff of the Commission as the Commission may
+from time to time specify.
+
+9. Staff regulations
+
+The Commission may, subject to the provisions of this Act, make staff regulations re-
+lating generally to the conditions of service of its employees and without prejudice to the
+generality of the foregoing, such regulations may provide for-
+
+(a) the appointment, promotion and disciplinary control (including dismissal) of
+employees of the Commission; and
+
+(b) appeals by such employees against dismissal or other disciplinary measures.
+
+PART IV
+
+Financial Provisions
+
+10. Fund of the Commission
+
+(1) The Commission shall establish and maintain a fund which shall consist of-
+
+(a) initial take-off grant from the Federal Government;
+
+(b) annual subvention from the Federal Government;
+
+(c) fees and other charges received by the Commission pursuant to this Act;
+
+(d) subject to section 11 of this Act, all other sums accruing to the Commission by
+way of grants-in-aid, gifts, testamentary dispositions, endowments, bequests
+and donations made to the Commission; and
+
+(e) such other sum as may accrue, from time to time, to the Commission.
+
+(2) The Commission shall from time to time apply the proceeds of the fund established
+under subsection (1) of this section-
+
+(a) to the administration cost of the Commission;
+
+(b) to the payment of the salaries, fees or other remuneration or allowances,
+payable to the officers and employees of the Commission, so however that no
+payment of any kind under this paragraph (except such as may be expressly
+authorised under any other enactment or regulation in force) shall be made to
+any person who is in receipt of emoluments from the Government of the Federation of Nigeria or of a State;
+
+(c) to reimbursing members of the Board or of any committee set up by the Board
+for such expenses as may be expressly authorised by the Commission in accordance with the
+rates approved by the Board;
+
+(d) for the maintenance of any property vested in the Commission; and
+
+(e) for and in connection with all or any of the functions of the Commission under this Act.
+
+11. Power to accept gifts
+
+(1) The Commission may accept any gift, grant or donation of land, money or other
+property from any person or organisation upon such terms and conditions (acceptable to
+the Commission), if any, as may be specified by the person or organisation making the
+gift or donation.
+
+(2) The Commission shall not accept any gift or donation if the conditions attached
+thereto by the person or organisation making the gift or donation are inconsistent with the
+functions of the Commission.
+
+12. Annual estimate and accounts
+
+(1) The Commission shall, not later than 30th September in each year, submit to the
+President an estimate of its expenditure and income (including estimates of expected
+payments into the fund of the Commission) during the next succeeding year.
+
+(2) The Commission shall keep proper accounts in a form which conforms to accepted
+accounting standards, and proper records in relation thereto and the accounts shall
+be audited as provided in subsection (3) of this section.
+
+(3) The accounts of the Commission shall be audited at the end of each calendar year
+by auditors appointed from the list and in accordance with the guidelines supplied by the
+Auditor-General for the Federation and the fees of the auditors and the expenses for the
+audit generally shall be paid from the fund of the Commission.
+
+13. Annual reports
+
+The Commission shall, not later than six months after the end each year, submit to the
+President, a report on the activities of the Commission and its administration during the
+immediately preceding year and shall include in the report the audited accounts of the
+Commission and the auditors' comments thereon.
+
+PART V
+
+Establishment of the National Identity Database, etc.
+
+14. Establishment of a National Identity Database
+
+(1) There is hereby established a National Identity Database (in this Act; referred to
+as "the Database") which shall contain registered information or data relating to citizens
+of Nigeria and non-Nigerian citizens who are registerable persons within the meaning of
+section 16 of this Act.
+
+(2) Any person in respect of whom an entry is made in the Database (in this Act referred
+to as "a registered person") shall be identified using unique and unambiguous features such
+as fingerprints and other biometric information.
+
+15. Objectives of the Database
+
+The objectives of the Database shall, be to-
+
+(a) use fingerprints and other biometric information as unique and unambiguous
+features of identifying registerable persons;
+
+(b) enable the Commission, using the information contained in the Database to
+issue a Multi-purpose Identity Card with a unique identification number to registerable persons;
+
+(c) enable the harmonisation of existing identity card schemes in Nigeria;
+
+(d) provide a medium for the identification, verification and authentication of
+citizens of Nigeria and other registerable persons entitled to the Multi-purpose Identity Cards;
+
+(e) facilitate the provision of a secured and a reliable method for ascertaining,
+obtaining, maintaining and preserving information and facts about citizens of Nigeria
+and other registerable persons in accordance with the provisions of this Act,
+and whenever same is necessary or adjudged necessary in the public interest,
+providing such information to a designated and specified judicial or police authority; and
+
+(f) facilitate the provision of a convenient method for individuals who have been
+issued with the Multi-purpose Identity Cards to provide proof of facts entered
+about themselves in the Database to other persons who reasonably require such
+proof.
+
+16. Registrable persons
+
+This Act shall apply to the following persons, who shall be registerable persons in re-
+spect of whom entries shall be recorded in the Database, that is-
+
+(a) any person who is a citizen of Nigeria;
+
+(b) any person, whether or not he is a citizen of Nigeria, who is lawfully and per-
+manently resident in Nigeria; and
+
+(c) any non-citizen of Nigeria who is lawfully resident in Nigeria for a period of
+two years or more.
+
+17. Contents
+of the Database
+
+(1) The information that may be recorded in the Database shall be limited to-
+
+(a) the information, the inclusion of which in the entry of a registered person is
+
+authorised by the Second Schedule to this Act;
+
+[Second Schedule.]
+
+(b) information of a technical nature for use in connection with the administration
+
+of the Database;
+
+(c) information of a technical nature for use in connection with the administration
+of arrangements made for purposes connected with the issue or cancellation of
+Multi-purpose Identity Cards; and
+
+(d) information recorded in the Database in accordance with subsection (2) of this
+section.
+
+(2) Information about a registered person may be recorded in his entry in the Data-
+base (whether or not it is authorised by the Second Schedule to this Act) if-
+
+[Second Schedule.]
+
+(a) he has made an application to the Commission requesting the recording of the
+information as part of his entry;
+
+(b) the information is of a description identified in regulations made by the Commission as a description of information that may be made the subject of such a request;
+
+(c) the Commission considers that it is both practicable and appropriate for such information to be recorded in accordance with the applicant's request; and
+
+(d) the applicant has paid any fees or charges prescribed by the Commission with respect to such applications.
+
+(3) The Commission may by order approved by the Attorney-General of the Federation and published in the Gazette, modify the information for the time-being set out in the

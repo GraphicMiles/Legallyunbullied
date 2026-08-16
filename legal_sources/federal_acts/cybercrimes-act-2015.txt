@@ -7,89 +7,81 @@ infrastructure, and promotes cybersecurity and the protection of computer system
 networks, electronic communications, data and computer programs, intellectual property
 and privacy rights.
 
--- 1 of 43 --
-
 CYBERCRIMES (PROHIBITION, PREVENTION, ETC) ACT, 2015
 Arrangement of Sections
 Section: PART I-­‐OBJECT AND APPLICATION
-1. 	Objectives.
-2. 	Application.
+1. Objectives.
+2. Application.
 PART II -­‐ PROTECTION OF CRITICAL NATIONAL INFORMATION INFRASTRUCTURE
-3. 	Designation of certain computer systems or networks as critical national information
+3. Designation of certain computer systems or networks as critical national information
 infrastructure.
-4. 	Audit and Inspection of critical national information infrastructure.
+4. Audit and Inspection of critical national information infrastructure.
 PART III -­‐ OFFENCES AND PENALTIES
-5. 	Offences against critical national information infrastructure.
-6. 	Unlawful access to a computer.
-7. 	Registration of cybercafé.
-8. 	System interference.
-9. 	Interception of electronic messages, email, electronic money transfers.
-10 	Tampering with critical infrastructure.
-11 	Willful misdirection of electronic messages.
-12 	Unlawful interceptions.
-13. 	Computer related forgery.
-14. 	Computer related fraud.
-15. 	Theft of Electronic Devices.
-16. 	Unauthorised modification of computer systems, network data and system
+5. Offences against critical national information infrastructure.
+6. Unlawful access to a computer.
+7. Registration of cybercafé.
+8. System interference.
+9. Interception of electronic messages, email, electronic money transfers.
+10 Tampering with critical infrastructure.
+11 Willful misdirection of electronic messages.
+12 Unlawful interceptions.
+13. Computer related forgery.
+14. Computer related fraud.
+15. Theft of Electronic Devices.
+16. Unauthorised modification of computer systems, network data and system
 interference.
-17. 	Electronic Signature.
-18. 	Cyber terrorism.
-19. 	Exceptions to financial institutions posting and authorised options.
-20. 	Fraudulent issuance of e-­‐instructions.
-21. 	Reporting of cyber threats.
-22. 	Identity theft and impersonation.
+17. Electronic Signature.
+18. Cyber terrorism.
+19. Exceptions to financial institutions posting and authorised options.
+20. Fraudulent issuance of e-­‐instructions.
+21. Reporting of cyber threats.
+22. Identity theft and impersonation.
 
--- 2 of 43 --
-
-23. 	Child pornography and related offences.
-24. 	Cyberstalking.
-25. 	Cybersquatting.
-26. 	Racist and xenophobic offences.
-27. 	Attempt, conspiracy, aiding and abetting.
-28. 	Importation and fabrication of e-­‐tools.
-29. 	Breach of confidence by service providers.
-30. 	Manipulation of ATM/POS Terminals.
-31. 	Employees Responsibility.
-32. 	Phishing, spamming, spreading of computer virus,
-33. 	Electronic cards related fraud.
-34. 	Dealing in card of another.
-35. 	Purchase or sale of card of another.
-36. 	Use of fraudulent device or attached e-­‐mails and websites.
+23. Child pornography and related offences.
+24. Cyberstalking.
+25. Cybersquatting.
+26. Racist and xenophobic offences.
+27. Attempt, conspiracy, aiding and abetting.
+28. Importation and fabrication of e-­‐tools.
+29. Breach of confidence by service providers.
+30. Manipulation of ATM/POS Terminals.
+31. Employees Responsibility.
+32. Phishing, spamming, spreading of computer virus,
+33. Electronic cards related fraud.
+34. Dealing in card of another.
+35. Purchase or sale of card of another.
+36. Use of fraudulent device or attached e-­‐mails and websites.
 PART IV-­‐DUTIES OF FINANCIAL INSTUTUTIONS
-37. 	Duties of financial institutions.
-38. 	Records retention and protection of data.
-39. 	Interception of electronic communications.
-40.. 	Failure of service provider to perform certain duties.
+37. Duties of financial institutions.
+38. Records retention and protection of data.
+39. Interception of electronic communications.
+40.. Failure of service provider to perform certain duties.
 PART V-­‐ADMINISTRATION AND ENFORCEMENT
-41. 	Co-­‐ordination and enforcement.
-42. 	Establishment of Cybercrime Advisory Council.
-43. 	Functions and powers of the Council.
-44. 	Establishment of National Cyber Security Fund.
+41. Co-­‐ordination and enforcement.
+42. Establishment of Cybercrime Advisory Council.
+43. Functions and powers of the Council.
+44. Establishment of National Cyber Security Fund.
 PART VI-­‐ARREST, SEARCH, SEIZURE AND PROSECUTION
-45. 	Power of arrest, search and seizure
-46. 	Obstruction and refusal to release information.
-47. 	Prosecution of offences.
-48. 	Order of forfeiture of assets.
+45. Power of arrest, search and seizure
+46. Obstruction and refusal to release information.
+47. Prosecution of offences.
+48. Order of forfeiture of assets.
 
--- 3 of 43 --
-
-49. 	Order for payment of compensation or restitution.
+49. Order for payment of compensation or restitution.
 PART VII-­‐JURISDICTION AND INTERNATIONAL CO-­‐OPERATION
-50. 	Jurisdiction.
-51. 	Extradition.
-52. 	Request for mutual assistance
-53. 	Evidence pursuant to a request.
-54. 	Form of request from a foreign state.
-55. 	Expedited Preservation of computer data.
-56. 	Designation of contact point.
+50. Jurisdiction.
+51. Extradition.
+52. Request for mutual assistance
+53. Evidence pursuant to a request.
+54. Form of request from a foreign state.
+55. Expedited Preservation of computer data.
+56. Designation of contact point.
 PART VIII -­‐ MISCELLANEOUS
-57. 	Regulations.
-58. 	Interpretations.
-59. 	Citation.
+57. Regulations.
+58. Interpretations.
+59. Citation.
 SCHEDULES
 CYBERCRIMES (PROHIBITION, PREVENTION, ETC) ACT, 2015
-
--- 4 of 43 --
 
 A Bill
 For
@@ -100,7 +92,7 @@ cybercrimes; and for other related matters, 2015.
 Commencement.
 ENACTED by the National Assembly of the Federal Republic of Nigeria as follows:
 PART I -­‐ OBJECT AND APPLICATION
-1. 	The objectives of this Act are to –
+1. The objectives of this Act are to –
 (a) provide an effective and unified legal, regulatory and institutional framework for
 the prohibition, prevention, detection, prosecution and punishment of cybercrimes
 in Nigeria;
@@ -109,15 +101,15 @@ in Nigeria;
 electronic communications, data and computer programs, intellectual property and
 privacy rights.
 Objectives.
-2. 	The provisions of this Act shall apply throughout the Federal Republic of Nigeria. 	Application.
+2. The provisions of this Act shall apply throughout the Federal Republic of Nigeria. Application.
 PART II -­‐ PROTECTION OF CRITICAL NATIONAL INFORMATION INFRASTRUCTURE
-3. 	(1) The President may on the recommendation of the National Security Adviser, by
+3. (1) The President may on the recommendation of the National Security Adviser, by
 Order published in the Federal Gazette, designate certain computer systems, and/or
 networks, whether physical or virtual, and/or the computer programs, computer
 data and/or traffic data vital to this country that the incapacity or destruction of or
 interference with such system and assets would have a debilitating impact on
 security, national or economic security, national public health and safety, or any
-combination 	of 	those 	matters 	as 	constituting 	Critical 	National 	Information
+combination of those matters as constituting Critical National Information
 Infrastructure.
 (2) The Presidential Order made under subsection (1) of this section may prescribe
 minimum standards, guidelines, rules or procedure in respect of -­‐
@@ -133,8 +125,6 @@ critical national
 information
 infrastructure.
 
--- 5 of 43 --
-
 (d) infrastructural or procedural rules and requirements for securing the integrity and
 authenticity of data or information contained in any designated critical national
 information infrastructure;
@@ -144,7 +134,7 @@ information infrastructure;
 information infrastructure or any part of it; and
 (g) any other matter required for the adequate protection, management and control
 of data and other resources in any critical national information infrastructure.
-4. 	The Presidential Order made under section 3 of this Act may require the Office of the
+4. The Presidential Order made under section 3 of this Act may require the Office of the
 National Security Adviser to audit and inspect any Critical National Information
 Infrastructure at any time to ensure compliance with the provisions of this Act.
 Audit and
@@ -153,7 +143,7 @@ critical national
 information
 infrastructure.
 PART III -­‐ OFFENCES AND PENALTIES
-5. 	(1) Any person who with intent, commits any offence punishable under this Act
+5. (1) Any person who with intent, commits any offence punishable under this Act
 against any critical national information infrastructure, designated pursuant to
 section 3 of this Act, shall be liable on conviction to imprisonment for a term of not
 more than 10 years without an option of fine.
@@ -166,9 +156,9 @@ Offences against
 critical national
 information
 infrastructure.
-6. 	(1) Any person, who without authorization, intentionally accesses in whole or in part,
+6. (1) Any person, who without authorization, intentionally accesses in whole or in part,
 a computer system or network for fraudulent purposes and obtain data that are vital
-to 	national 	security, 	commits 	an 	offence 	and 	shall 	be 	liable 	on 	conviction
+to national security, commits an offence and shall be liable on conviction
 to imprisonment for a term of not more than 5 years or to a fine of not more than
 N5,000,000.00 or to both fine and imprisonment.
 (2) Where the offence provided in subsection (1) of this section is committed with
@@ -182,8 +172,6 @@ the act or omission, commits an offence and shall be liable on conviction to
 Unlawful access
 to a computer.
 
--- 6 of 43 --
-
 imprisonment for a term of not more than 7 years or to a fine of not more than
 N7,000,000.00 or to both such fine and imprisonment.
 (4) Any person or organisation who knowingly and intentionally trafficks in any
@@ -192,7 +180,7 @@ lawful authority, if such trafficking affects public, private and or individual 
 within or outside the federation of Nigeria, commits an offence and shall be liable on
 conviction to a fine of not more than N7, 000,000.00 or imprisonment for a term of
 not more than 3 years or both such fine and imprisonment.
-7. 	(1) From the commencement of this Act all operators of a cybercafé shall register as
+7. (1) From the commencement of this Act all operators of a cybercafé shall register as
 a business concern with Computer Professionals’ Registration Council in addition to a
 business name registration with the Corporate Affairs Commission. Cybercafés shall
 maintain a register of users through a sign-­‐in register. This register shall be available
@@ -207,10 +195,10 @@ jail term or both.
 prosecutor.
 Registration of
 Cybercafé.
-8. 	Any person who without 	lawful authority, intentionally or for fraudulent purposes
+8. Any person who without lawful authority, intentionally or for fraudulent purposes
 does an act which causes directly or indirectly the serious hindering of the
 functioning of a computer system by inputting, transmitting, damaging, deleting,
-deteriorating, 	altering 	or 	suppressing 	computer 	data 	or 	any 	other 	form 	of
+deteriorating, altering or suppressing computer data or any other form of
 interference with the computer system, which prevents the computer system or any
 part thereof, from functioning in accordance with its intended purpose, commits an
 offence and shall be liable on conviction to imprisonment for a term of not more
@@ -218,7 +206,7 @@ than 2 years or to a fine of not more than N5,000,000.00 or to both fine and
 imprisonment.
 System
 Interference.
-9. 	Any person who unlawfully destroys or aborts any electronic mails or processes
+9. Any person who unlawfully destroys or aborts any electronic mails or processes
 through which money and or valuable information is being conveyed is guilty of an
 offence and is liable to imprisonment for 7 years in the first instance and upon
 second conviction shall be liable to 14 years imprisonment.
@@ -228,7 +216,7 @@ Messages,
 Emails Electronic
 Money
 Transfers.
-10. 	From the commencement of this Act, any person being employed by or under a Local
+10. From the commencement of this Act, any person being employed by or under a Local
 Government of Nigeria, private organization or financial institution with respect to
 working with any critical infrastructure, electronic mails commits any act which he is
 not authorized to do by virtue of his contract of service or intentionally permits,
@@ -236,11 +224,9 @@ Tampering with
 Critical
 Infrastructure.
 
--- 7 of 43 --
-
 tampering with such computer, is guilty of an offence and is liable to a fine of N2
 ,000,000.00 or imprisonment for 3 years .
-11. 	Any person who misdirects electronic messages with either the intention to
+11. Any person who misdirects electronic messages with either the intention to
 fraudulently obtain financial gain as a result of such act or with the intention of
 obstructing the process in order to cause delay or speeding the messages with a view
 to cause an omission or commission that may defeat the essence of such messages is
@@ -250,8 +236,6 @@ Willful
 misdirection of
 Electronic
 Messages.
-12.
-13.
 (1) Any person, who intentionally and without authorization, intercepts by technical
 means, non-­‐public transmissions of computer data, content, or traffic data, including
 electromagnetic emissions or signals from a computer, computer system or network
@@ -262,7 +246,7 @@ N5,000,000.00 or to both such fine and imprisonment.
 (2) Any person or organization who by means of false pretense induces any person
 employed by or under the government of the federal, state or local government of
 Nigeria or any person in charge of electronic devices to deliver to him any electronic
-messages which 	includes but is not limited to E-­‐mail, credit and debit cards
+messages which includes but is not limited to E-­‐mail, credit and debit cards
 information, facsimile messages which is not specifically meant for him or his
 organization (in the latter case except he is authorized to receive such messages for
 and on behalf of his organization) commits an offence and shall be liable on
@@ -285,12 +269,9 @@ Unlawful
 interceptions.
 Computer
 Related Forgery.
-14. 	(1) Any person who knowingly and without authority or in excess of authority causes 	Computer
+14. (1) Any person who knowingly and without authority or in excess of authority causes Computer
 Related Fraud.
 
--- 8 of 43 --
-
-15.
 any loss of property to another by altering, erasing, inputting or suppressing any data
 held in any computer, whether or not for the purpose of conferring any economic
 benefits on himself or another person, commits an offence and is liable on conviction
@@ -327,23 +308,21 @@ network, commits an offence and shall be liable on conviction to imprisonment fo
 term of not more than 7 years and shall in addition, refund the stolen money or
 forfeit any property to which it has been converted to the bank, financial institution
 or the customer.
-(a) 	Any person who steals a financial institutions or Public Infrastructure Terminal
+(a) Any person who steals a financial institutions or Public Infrastructure Terminal
 commits an offence and shall be liable on conviction to imprisonment for a term of 3
 years or a fine of N1,000,000.00 or to both fine and imprisonment.
 Theft of
 Electronic
 Devices.
 
--- 9 of 43 --
-
 (b) Any person who steals an Automated Teller Machine (ATM) commits an offence
 and shall be liable on conviction to imprisonment for a term of not more than 7 years
-or a fine of not more than N10,000,000.00 or to both fine and imprisonment. 	All
+or a fine of not more than N10,000,000.00 or to both fine and imprisonment. All
 proceeds of such theft shall be forfeited to the lawful owners of the ATM.
 (c) Any person who attempts to steal an ATM, commits an offence and shall be liable
 on conviction to imprisonment for a term of not more than 1 year or a fine of not
 more than N1,000,000.00 or both fine and imprisonment.
-16. 	(1) Any person who with intent and without lawful authority directly or indirectly
+16. (1) Any person who with intent and without lawful authority directly or indirectly
 modifies or causes modification of any data held in any computer system or network,
 commits an offence and shall be liable on conviction to imprisonment for a term of
 not more than 3 years or to a fine of not more than N7,000,000.00 or to both such
@@ -372,7 +351,7 @@ systems,
 network data
 and System
 interference.
-17. 	(1) (a) Electronic signature in respect of purchases of goods, and any other
+17. (1) (a) Electronic signature in respect of purchases of goods, and any other
 transactions shall be binding.
 (b) Whenever the geniuses or otherwise of such signatures is in question, the burden
 of proof, that the signature does not belong to the purported originator of such
@@ -382,9 +361,6 @@ electronic devices another person’s signature or company mandate commits an
 Electronic
 Signatures.
 
--- 10 of 43 --
-
-18.
 offence and shall be liable on conviction to imprisonment for a term of not more
 than 7 years or a fine of not more than N10,000,000.00 or to both fine and
 imprisonment.
@@ -410,7 +386,7 @@ conviction to life imprisonment.
 (2) For the purpose of this section, “terrorism” shall have the same meaning under
 the Terrorism (Prevention) Act, 2011, as amended.
 Cyber Terrorism.
-19. 	(1) From the commencement of this Act, no financial institution shall give posting
+19. (1) From the commencement of this Act, no financial institution shall give posting
 and authorizing access to any single employee.
 (2) Any person or persons authorized to give access to computer to employees and
 gives more than one access to any person or persons is guilty of an offense and is
@@ -426,20 +402,18 @@ Posting and
 authorized
 options.
 
--- 11 of 43 --
-
-20. 	Any person being authorized by any financial institution and charged with the
+20. Any person being authorized by any financial institution and charged with the
 responsibility of using computer or other electronic devices for financial transactions
 such as posting of debit and credit, issuance of electronic instructions as they relate
 to sending of electronic debit and credit messages or charged with the duty of
 confirmation of electronic fund transfer, unlawfully with the intent to defraud issues
-false 	electronic 	or 	verbal 	messages 	is 	guilty 	of 	an 	offence 	and 	is 	liable 	to
+false electronic or verbal messages is guilty of an offence and is liable to
 imprisonment for 7 years.
 Fraudulent
 issuance of E-­‐
 Instructions.
-21. 	(1) Any person or institution, who operates a computer system or a network,
-whether public or 	private, must immediately inform the National Computer
+21. (1) Any person or institution, who operates a computer system or a network,
+whether public or private, must immediately inform the National Computer
 Emergency Response Team (CERT) Coordination Center of any attacks, intrusions and
 other disruptions liable to hinder the functioning of another computer system or
 network, so that the National CERT can take the necessary measures to tackle the
@@ -454,7 +428,7 @@ of internet services. Such persons or institution shall in addition, pay a manda
 fine of N2, 000,000.00 into the National Cyber Security Fund.
 Reporting of
 Cyber Threats.
-22. 	(1) Any person who is engaged in the services of any financial institution, and as a
+22. (1) Any person who is engaged in the services of any financial institution, and as a
 result of his special knowledge commits identity theft of its employer, staff, service
 providers and consultants with the intent to defraud is guilty of an offence and upon
 conviction shall be sentenced to 7 years imprisonment or N5,000,000.00 fine or both.
@@ -472,16 +446,14 @@ Identity theft
 and
 impersonation.
 
--- 12 of 43 --
-
 false statement as to a material fact in writing, knowing it to be false and with intent
 that it be relied upon respecting his identity or that of any other person or his
 financial condition or that of any other person for the purpose of procuring the
 issuance of a card or other instrument to himself or another person commits an
-offence and 	shall be liable on conviction to imprisonment for a term of 	not more
+offence and shall be liable on conviction to imprisonment for a term of not more
 than 5 years or a fine of not more than N7,000,000.00 or to both such fine and
 imprisonment.
-23. 	(1) Any person who intentionally uses any computer system or network in or for-­‐
+23. (1) Any person who intentionally uses any computer system or network in or for-­‐
 (a) producing child pornography;
 (b) offering or making available child pornography;
 (c) distributing or transmitting child pornography;
@@ -509,8 +481,6 @@ Child
 pornography and
 related offences.
 
--- 13 of 43 --
-
 (iii) abuse is made of a particularly vulnerable situation of the child, mental or
 physical disability or a situation of dependence;
 (c) recruiting, inducing, coercing, exposing, or causing a child to participate in
@@ -528,12 +498,12 @@ include pornographic material that visually depicts-­‐
 (c) realistic images representing a minor engaged in sexually explicit conduct.
 (5) For the purpose of this section, the term “child” or “minor” means a person
 below 18 years of age.
-24. 	Any person who knowingly or intentionally sends a message or other matter by
+24. Any person who knowingly or intentionally sends a message or other matter by
 means of computer systems or network that -­‐
 (a) is grossly offensive, pornographic or of an indecent, obscene or menacing
 character or causes any such message or matter to be so sent; or
 (b) he knows to be false, for the purpose of causing annoyance, inconvenience
-danger, obstruction, insult, injury, criminal intimidation, enmity, hatred, ill will 	or
+danger, obstruction, insult, injury, criminal intimidation, enmity, hatred, ill will or
 needless anxiety to another or causes such a message to be sent:
 commits an offence under this Act and shall be liable on conviction to a fine of not
 more than N7,000,000.00 or imprisonment for a term of not more than 3 years or to
@@ -543,8 +513,6 @@ of any communication through a computer system or network -­‐
 (a) to bully, threaten or harass another person, where such communication places
 another person in fear of death, violence or bodily harm or to another person;
 Cyberstalking.
-
--- 14 of 43 --
 
 (b) containing any threat to kidnap any person or any threat to harm the person of
 another, any demand or request for a ransom for the release of any kidnapped
@@ -577,15 +545,13 @@ varied or discharged by a further order.
 (6) Notwithstanding the powers of the court under subsections (3) and (5), the court
 may make an interim order for the protection of victim(s) from further exposure to
 the alleged offences.
-25. 	(1) Any person who, intentionally takes or makes use of a name, business name,
+25. (1) Any person who, intentionally takes or makes use of a name, business name,
 trademark, domain name or other word or phrase registered, owned or in use by any
 individual, body corporate or belonging to either the Federal, State or Local
 Governments in Nigeria, on the internet or any other computer network, without
 authority or right, and for the purpose of interfering with their use by the owner,
 registrant or legitimate prior user, commits an offence under this Act and shall be
 Cybersquatting.
-
--- 15 of 43 --
 
 liable on conviction to imprisonment for a term of not more than 2 years or a fine of
 not more than N5,000,000.00 or to both fine and imprisonment.
@@ -602,7 +568,7 @@ or belonging to either the Federal, State or Local Government of Nigeria.
 (3) In addition to the penalty specified under this section, the court may make an
 order directing the offender to relinquish such registered name, mark, trademark,
 domain name, or other word or phrase to the rightful owner.
-26. 	(1) Any person who with intent –
+26. (1) Any person who with intent –
 (a) distributes or otherwise makes available, any racist or xenophobic material to the
 public through a computer system or network;
 (b) threatens through a computer system or network –
@@ -623,8 +589,6 @@ more thanN10,000,000.00 or both such fine and imprisonment.
 Racist and
 xenophobic
 offences.
-
--- 16 of 43 --
 
 (2) For the purpose of subsection (1) of this section, the term “Crime against
 humanity” includes any of the following acts committed as part of a widespread or
@@ -647,7 +611,7 @@ any other representation of ideas or theories, which advocates, promotes or inci
 hatred, discrimination or violence, against any individual group of individuals, based
 on race, color, descent or national or ethnic origin, as well as religion if used as a
 pretext for any of these factors.
-27. 	(1) Any person who –
+27. (1) Any person who –
 (a) attempts to commit any offence under this Act; or
 (b) aids, abets, conspires, counsels or procures another person(s) to commit any
 offence under this Act:
@@ -663,15 +627,13 @@ Attempt,
 conspiracy,
 aiding and
 abetting.
-28. 	(1) Any person who unlawfully produces, supplies, adapts, manipulates or procures
+28. (1) Any person who unlawfully produces, supplies, adapts, manipulates or procures
 for use, imports, exports, distributes, offers for sale or otherwise makes available-­‐
 (a) any device, including a computer program or a component designed or adapted
 for the purpose of committing an offence under this Act;
 Importation and
 fabrication of E-­‐
 Tools.
-
--- 17 of 43 --
 
 (b) a computer password, access code or similar data by which the whole or any part
 of a computer system or network is capable of being accessed for the purpose of
@@ -706,7 +668,7 @@ of Nigeria any tool, implement, item used or designed to be used in making, forg
 altering, or counterfeiting any electronic device, commits an offence and shall be
 liable on conviction to imprisonment for a term of not more than 7 Years or a fine of
 not more than N5,000,000.00 or to both such fine and imprisonment.
-29. 	(1) Any person or organization who being a computer based service provider and or
+29. (1) Any person or organization who being a computer based service provider and or
 vendor does any act with intent to defraud and by virtue of his position as a service
 provider, forges, illegally used security codes of the consumer with the intent to gain
 any financial and or material advantage or with intent to provide less value for
@@ -717,11 +679,9 @@ Confidence by
 Service
 Providers.
 
--- 18 of 43 --
-
 equivalent of the monetary value of the loss sustained by the consumer.
 (2) (a) Where an offence under this Act which has been committed by a body
-corporate is 	proved to have been committed on the instigation or with the
+corporate is proved to have been committed on the instigation or with the
 connivance of or attributable to any neglect on the part of a director, manager,
 secretary or other similar officer of the body corporate, or any officer purporting to
 act in any such capacity, he, as well as the body corporate, where practicable, shall
@@ -734,11 +694,11 @@ Federal Government.
 (c) If the offender is a natural person, he commits an offence and shall be liable on
 conviction to imprisonment for a term of not more than 7 Years and to a fine of not
 more than N5,000,000.00 or to both such imprisonment and fine.
-(3) 	Nothing 	contained 	in 	this 	section 	shall 	render 	any 	person 	liable 	to 	any
-punishment, 	where 	he 	proves 	that 	the 	offence 	was 	committed 	without 	his
+(3) Nothing contained in this section shall render any person liable to any
+punishment, where he proves that the offence was committed without his
 knowledge or that he exercised all due diligence to prevent the commission of the
 offence.
-30. 	(1) Any person who manipulates an ATM machine or Point of Sales terminals with the
+30. (1) Any person who manipulates an ATM machine or Point of Sales terminals with the
 intention to defraud shall be guilty of an offence and upon conviction sentenced to
 Five Years imprisonment or N5, 000,000.00 fine or both.
 (2) Any employee of a financial institution found to have connived with another
@@ -748,9 +708,9 @@ imprisonment without an option of fine.
 Manipulation of
 ATM/POS
 Terminals.
-31. 	(1) Without prejudice to any contractual agreement between the employer and the
+31. (1) Without prejudice to any contractual agreement between the employer and the
 employee all employees in both the public and private sectors must relinquish or
-surrender 	all 	codes 	and 	access 	rights 	to 	their 	employers 	immediately 	upon
+surrender all codes and access rights to their employers immediately upon
 disengagement from their employment, and if such code or access right constitutes a
 threat or risk to the employer, it shall, unless there is any lawful reason to the
 contrary, be presumed that the refusal to relinquish or surrender such code or access
@@ -761,10 +721,8 @@ be guilty of an offence and liable on conviction to 3 years imprisonment or
 3,000,000.00 or both.
 Employees
 Responsibility.
-32. 	(1) Any person who knowingly or intentionally engages in computer phishing shall be 	Phishing,
+32. (1) Any person who knowingly or intentionally engages in computer phishing shall be Phishing,
 Spamming,
-
--- 19 of 43 --
 
 liable upon conviction to 3 years imprisonment or a fine of N1, 000,000.00 or both.
 (2) Any person who engages in spamming with intent to disrupt the operations of a
@@ -777,11 +735,11 @@ institution’s computers shall be guilty of an offence is liable upon convictio
 years imprisonment or a fine of N1, 000,000.00 or both.
 Spreading of
 Computer Virus.
-33. 	(1) Any person who with intent to defraud, uses any access device including credit,
+33. (1) Any person who with intent to defraud, uses any access device including credit,
 debit, charge, loyalty and other types of financial cards, to obtain cash, credit, goods
 or service commits an offence and shall be liable on conviction to imprisonment for a
 term of not more than 7 Years or a fine of not more than N5,000,000.00 or to both
-such fine and imprisonment 	and shall further be liable to payment in monetary
+such fine and imprisonment and shall further be liable to payment in monetary
 terms the value of loss sustained by the owner of the credit card.
 (2) Any person who uses:
 (a) a counterfeit access device;
@@ -806,8 +764,6 @@ loss sustained by the cardholder.
 person, obtains control over a card as security for a debt commits an offence and
 Electronic cards
 related fraud.
-
--- 20 of 43 --
 
 shall be liable on conviction to imprisonment for a term of not more than 3 years or
 to a fine of not more than N3,000,000.00 or to such both fine and imprisonment and
@@ -851,8 +807,6 @@ services or anything else of value upon presentation of a card account number by
 cardholder, or employs, solicits or otherwise causes an agent or employee of such
 authorized person, to remit to the creditor a card transaction record of a sale that
 
--- 21 of 43 --
-
 was not made by such authorized person or his agent or employee commits an
 offence and shall be liable on conviction to imprisonment for a term of not more
 than 3 years or to a fine of not more than N1,000,000.00 or to both such fine and
@@ -884,7 +838,7 @@ cardholder, but must within 7 working days, give notice in writing of the disclo
 the cardholder. Such institution which fails to comply with the requirement to notify
 the cardholder, commits an offence and shall be liable on conviction to a fine of not
 more than N1,000,000.00.
-34. 	Any person, other than the issuer, who receives and retains possession of two or
+34. Any person, other than the issuer, who receives and retains possession of two or
 more cards issued in the name or names of different cardholders, which cards he
 knows were taken or retained under circumstances which constitute a card theft
 commits an offence and is liable on summary conviction to 3 years imprisonment or
@@ -893,23 +847,21 @@ terms the value of loss sustained by the cardholder or forfeiture of the assets 
 goods acquired with the funds from the account of the cardholder.
 Dealing in Card
 of Another.
-35. 	Any person other than an issuer or their authorized agent who sells a card or a
+35. Any person other than an issuer or their authorized agent who sells a card or a
 person who buys a card from a person other than an issuer or their authorized agent
 Purchase or Sale
 of Card of
 Another.
 
--- 22 of 43 --
-
 commits an offence and is liable on summary conviction to a fine of N500,000.00 and
 shall further be liable to payment in monetary terms the value of loss sustained by
 the card holder or forfeiture of the assets or goods acquired with the funds from the
 account of the cardholder.
-36. 	(1) Any person who with intent to defraud uses any device or attachment, e-­‐mails or
+36. (1) Any person who with intent to defraud uses any device or attachment, e-­‐mails or
 fraudulent website to obtain information or details of a cardholder commits an
 offence and upon conviction is liable to imprisonment for a period of 3years or to a
 fine of N 1,000,000.00 or both.
-(2) 	Any 	person 	who 	fraudulently 	re-­‐direct 	funds 	transfer 	instructions 	during
+(2) Any person who fraudulently re-­‐direct funds transfer instructions during
 transmissions over any authorized communications path or device and re-­‐directs
 funds transferred electronically with an authorized account commits any offence and
 upon conviction is liable to imprisonment for a period of 3years or to a fine of N
@@ -922,7 +874,7 @@ Device or
 Attached E-­‐mails
 and Websites.
 PART IV -­‐ DUTIES OF FINANCIAL INSTUTUTIONS
-37. 	(1) A financial institution shall —
+37. (1) A financial institution shall —
 (a) verify the identity of its customers carrying out Electronic financial transactions by
 requiring the customers to present documents bearing their names, addresses and
 other relevant information before issuance of ATM cards, credit cards, Debit cards
@@ -934,7 +886,7 @@ orders;
 before executing customer electronic instructions in whatever way, commits an
 offence and shall be liable on conviction to a fine of N5,000,000.00
 (3) Any financial institution that makes an unauthorized debit on a customers
-account 	shall 	upon 	written 	notification 	by 	the 	customer, 	provide 	clear 	legal
+account shall upon written notification by the customer, provide clear legal
 authorization for such debit to the customer or reverse such debit within 72 hours.
 Any financial institution that fails to reverse such debit within 72 hours , shall be
 guilty of an offence and liable on conviction to restitution of the debit and a fine of N
@@ -942,7 +894,6 @@ guilty of an offence and liable on conviction to restitution of the debit and a 
 Duties of
 Financial
 Institutions.
-38.
 DUTIES OF SERVICE PROVIDERS
 (1) A service provider shall keep all traffic data and subscriber information as may be
 prescribed by the relevant authority for the time being, responsible for the
@@ -950,8 +901,6 @@ regulation of communication services in Nigeria, for a period of 2 years.
 Records
 retention and
 protection of
-
--- 23 of 43 --
 
 (2) A service provider shall, at the request of the relevant authority referred to in
 subsection (1) of this section or any law enforcement agency –
@@ -974,19 +923,19 @@ provisions of this section commits an offence and shall be liable on conviction 
 imprisonment for a term of not more than 3 years or a fine of not more than
 N7,000,000.00 or to both fine and imprisonment.
 data.
-39. 	Where there are reasonable grounds to suspect that the content of any electronic
+39. Where there are reasonable grounds to suspect that the content of any electronic
 communication is reasonably required for the purposes of a criminal investigation or
 proceedings, a Judge may on the basis of information on oath;
 (a) order a service provider, through the application of technical means to intercept,
 collect, record, permit or assist competent authorities with the collection or
-recording 	of 	content 	data 	and/or 	traffic 	data 	associated 	with 	specified
+recording of content data and/or traffic data associated with specified
 communications transmitted by means of a computer system; or
 (b) authorize a law enforcement officer to collect or record such data through
 application of technical means.
 Interception of
 electronic
 communications.
-40. 	(1) It shall be the duty of every service provider in Nigeria to comply with all the
+40. (1) It shall be the duty of every service provider in Nigeria to comply with all the
 provisions of this Act and disclose information requested by any law enforcement
 agency or otherwise render assistance howsoever in any inquiry or proceeding under
 this Act.
@@ -997,8 +946,6 @@ Failure of service
 provider to
 perform certain
 duties.
-
--- 24 of 43 --
 
 (a) the identification, apprehension and prosecution of offenders;
 (b) the identification, tracking and tracing of proceeds of any offence or any
@@ -1016,7 +963,7 @@ the service provider shall be liable on conviction to imprisonment for a term of
 more than 3 years or a fine of not more than N7,000,000.00 or to both such fine and
 imprisonment.
 PART V -­‐ ADMINISTRATION AND ENFORCEMENT
-41. 	(1) The office of the National Security Adviser shall be the coordinating body for all
+41. (1) The office of the National Security Adviser shall be the coordinating body for all
 security and enforcement agencies under this Act and shall;
 (a) provide support to all relevant security, intelligence, law enforcement agencies
 and military services to prevent and combat cybercrimes in Nigeria;
@@ -1037,23 +984,21 @@ Co-­‐ordination
 and
 enforcement.
 
--- 25 of 43 --
-
 the functions of the relevant security and enforcement agencies under this Act.
 (2) The Attorney – General of the Federation shall strengthen and enhance the
 existing legal framework to ensure –
 (a) conformity of Nigeria’s cybercrime and cyber security laws and policies with
 regional and international standards;
-(b) 	maintenance 	of 	international 	co-­‐operation 	required 	for 	preventing 	and
+(b) maintenance of international co-­‐operation required for preventing and
 combating cybercrimes and promoting cyber security; and
 (c) effective prosecution of cybercrimes and cyber security matters.
 (3) All law enforcement, security and intelligence agencies shall develop requisite
 institutional capacity for the effective implementation of the provisions of this Act
 and shall in collaboration with the Office of the National Security Adviser, initiate,
 develop or organize training programmers nationally or internationally for officers
-charged 	with 	the 	responsibility 	for 	the 	prohibition, 	prevention, 	detection,
+charged with the responsibility for the prohibition, prevention, detection,
 investigation and prosecution of cybercrimes.
-42. 	(1) There is established, a Cybercrime Advisory Council (in this Act referred to as “the
+42. (1) There is established, a Cybercrime Advisory Council (in this Act referred to as “the
 Council”) which shall comprise of a representative each, of the Ministries and
 Agencies listed under the First Schedule to this Act.
 (2) A representative appointed pursuant to subsection (1) of this section shall be an
@@ -1070,7 +1015,7 @@ by the National Security Adviser.
 Establishment of
 the Cybercrime
 Advisory Council.
-43. 	(1) The Council shall –
+43. (1) The Council shall –
 (a) create an enabling environment for members to share knowledge, experience,
 intelligence and information on a regular basis and shall provide recommendations
 on issues relating to the prevention and combating of cybercrimes and the
@@ -1079,11 +1024,9 @@ Functions and
 powers of the
 Council.
 
--- 26 of 43 --
-
 (b) formulate and provide general policy guidelines for the implementation of the
 provisions of this Act;
-(c) 	advise 	on 	measures 	to 	prevent 	and 	combat 	computer 	related 	offences,
+(c) advise on measures to prevent and combat computer related offences,
 cybercrimes, threats to national cyberspace and other cyber security related issues;
 (d) establish a program to award grants to institutions of higher education to
 establish Cyber security Research Centers to support the development of new Cyber
@@ -1094,7 +1037,7 @@ Security Research and Development
 orders with respect to the holding of its meetings, notices to be given, the keeping of
 minutes of its proceedings and such other matters as Council may, from time to time
 determine.
-44. 	(1) There is established a Fund, which shall be known as the National Cyber security
+44. (1) There is established a Fund, which shall be known as the National Cyber security
 Fund (in this Act referred to as “The Fund”).
 (2) There shall be paid and credited into the Fund established under subsection (1) of
 this section and domiciled in the Central Bank of Nigeria:
@@ -1118,15 +1061,13 @@ Establishment of
 National Cyber
 Security Fund.
 
--- 27 of 43 --
-
 (6) Accounts and records of the Fund -­‐
 (a) The Office of the National Security Adviser shall keep proper records of the
 accounts;
 (b) The account of the Fund shall be audited in accordance with guidelines provided
 by the Auditor General of the Federation.
 PART VI -­‐ ARREST, SEARCH, SEIZURE AND PROSECUTION
-45. 	(1) A law enforcement officer may apply ex-­‐parte to a Judge in chambers for the
+45. (1) A law enforcement officer may apply ex-­‐parte to a Judge in chambers for the
 issuance of a warrant for the purpose of obtaining electronic evidence in related
 crime investigation.
 (2) The Judge may issue a warrant authorizing a law enforcement officer to-­‐
@@ -1153,8 +1094,6 @@ Power of arrest,
 search and
 seizure.
 
--- 28 of 43 --
-
 (3) The court shall issue a warrant under subsection (2) of this section where it is
 satisfied that –
 (a) the warrant is sought to prevent the commission of an offence under this Act or
@@ -1166,7 +1105,7 @@ premises or conveyance may be relevant to the cybercrime or computer related
 offences under investigation; or
 (d) the person named in the warrant is preparing to commit an offence under this
 Act.
-46. 	Subject to the provisions of the Constitution of the Federal Republic of Nigeria, any
+46. Subject to the provisions of the Constitution of the Federal Republic of Nigeria, any
 person who –
 (a) willfully obstructs any law enforcement officer in the exercise of any powers
 conferred by this Act; or
@@ -1179,13 +1118,13 @@ Obstruction and
 refusal to
 release
 information.
-47. 	Subject to the powers of the Attorney General, relevant law enforcement agencies
+47. Subject to the powers of the Attorney General, relevant law enforcement agencies
 shall have power to prosecute offences under this Act. In the case of offences
 committed under sections 19 and 21 of this Act, the approval of the Attorney General
 must be obtained before prosecution.
 Prosecution of
 offences.
-48. 	(1) The Court in imposing sentence on any person convicted of an offence under this
+48. (1) The Court in imposing sentence on any person convicted of an offence under this
 Act, may order that the convicted person forfeits to the Government of the Federal
 Republic of Nigeria –
 (a) any asset, money or property, whether tangible or intangible, traceable to
@@ -1200,15 +1139,13 @@ Order of
 forfeiture of
 assets.
 
--- 29 of 43 --
-
 (3) The office of the Attorney-­‐General of the Federation shall ensure that the
 forfeited assets or properties are effectively transferred and vested in the Federal
 Government of Nigeria.
 (4) Any person convicted of an offence under this Act shall have his International
 Passport cancelled. In the case of a foreigner, his passport shall be withheld and only
 returned to him after he has served the sentence or paid the fines imposed on him.
-49. 	In addition to any other penalty prescribed under this Act, the Court shall order a
+49. In addition to any other penalty prescribed under this Act, the Court shall order a
 person convicted of an offence under this Act to make restitution to the victim of the
 false pretense or fraud by directing that the person that –
 (a)where the property involved is money, to pay to the victim an amount equivalent
@@ -1223,7 +1160,7 @@ payment of
 compensation or
 restitution.
 PART VII -­‐ JURISDICTION AND INTERNATIONAL CO-­‐OPERATION
-50. 	(1) The Federal High Court located in any part of Nigeria regardless of the location
+50. (1) The Federal High Court located in any part of Nigeria regardless of the location
 where the offence is committed shall have jurisdiction to try offences under this Act,
 if committed –
 (a) in Nigeria; or
@@ -1239,8 +1176,6 @@ possession of-­‐
 (a) pecuniary resources or property for which he cannot satisfactorily account; or
 Jurisdiction
 
--- 30 of 43 --
-
 (b) which is disproportional to his known sources of income; or
 (c) that he had at or about the time of the alleged offence obtained an accretion to
 his pecuniary resources or property for which he cannot satisfactorily account:
@@ -1252,10 +1187,10 @@ accelerated hearing.
 (4) Subject to the provisions of the Constitution of the Federal Republic of Nigeria, an
 application for stay of proceedings in respect of any criminal matter brought under
 this Act shall not be entertained until judgment is delivered.
-51. 	Offences under this Act shall be extraditable under the Extradition Act, CAP E25,
+51. Offences under this Act shall be extraditable under the Extradition Act, CAP E25,
 Laws of the Federation of Nigeria, 2004.
 Extradition.
-52. 	(1) The Attorney -­‐ General of the Federation may request or receive assistance from
+52. (1) The Attorney -­‐ General of the Federation may request or receive assistance from
 any agency or authority of a foreign State in the investigation or prosecution of
 offences under this Act; and may authorize or participate in any joint investigation or
 cooperation carried out for the purpose of detecting, preventing, responding and
@@ -1270,7 +1205,7 @@ apprehension of an offender under this Act.
 Request for
 mutual
 assistance.
-53. 	(1) Any evidence gathered, pursuant to a request under this Act, in any investigation
+53. (1) Any evidence gathered, pursuant to a request under this Act, in any investigation
 or proceedings in the court of any foreign State, if authenticated, shall be prima facie
 admissible in any proceedings to which this Act applies.
 (2) For the purpose of subsection (1) of this section, evidence is authenticated if it is -­‐
@@ -1282,16 +1217,14 @@ Evidence
 pursuant to a
 request.
 
--- 31 of 43 --
-
 (ii) in the case of a territory, protectorate or colony, of the person administering the
 Government of the foreign territory, protectorate or colony or a department of that
 territory, protectorate or colony.
-54. 	(1) A request under this Act shall be in writing, dated and signed by or on behalf of
+54. (1) A request under this Act shall be in writing, dated and signed by or on behalf of
 the person making the request.
 (2) A request may be transmitted by facsimile or by any other electronic device or
 means; and shall include the following-­‐
-(a) 	the 	name 	of 	the 	authority 	conducting 	the 	investigation, 	prosecution 	or
+(a) the name of the authority conducting the investigation, prosecution or
 proceedings to which the request relates;
 (b) a description of the subject matter and nature of the investigation, prosecution,
 or proceedings, including the specific crimes which relate to the matter, the stage
@@ -1321,8 +1254,6 @@ Form of request
 from a foreign
 state.
 
--- 32 of 43 --
-
 (j) any other information which may be brought to the attention of the Requested
 State to facilitate its execution of the request.
 (4) A request shall not be invalidated for the purposes of this Act or any legal
@@ -1333,7 +1264,7 @@ compliance to enable him execute the request.
 an international arrangement so requires or it is in the public interest, he shall order
 that the whole or any part of any property forfeited under this Act or the value
 thereof, be returned or remitted to the requesting State.
-55. 	(1) Nigeria may be requested to expedite the preservation of electronic device or
+55. (1) Nigeria may be requested to expedite the preservation of electronic device or
 data stored in a computer system, or network, referring to crimes described under
 this Act or any other enactment, pursuant to the submission of a request for
 assistance for search, seizure and disclosure of those data.
@@ -1353,14 +1284,12 @@ Attorney -­‐ General of the Federation may order any person who has the contr
 availability of such data, including a service provider, to preserve them or turn them
 in for proper preservation by an appropriate authority or person.
 (4) Without prejudice to the provisions of subsection (3) of this section, the
-preservation 	may 	also 	be 	requested 	by 	any 	law 	enforcement 	agency, 	with
+preservation may also be requested by any law enforcement agency, with
 responsibility for enforcing any provisions of this Act, pursuant to an order of court,
 which order may be obtained ex parte where there is urgency or danger in delay.
 Expedited
 Preservation of
 computer data.
-
--- 33 of 43 --
 
 (5) Where a court grants an order, pursuant to the provisions of subsection (4) of this
 section, such order shall indicate -­‐
@@ -1375,7 +1304,7 @@ data for the specified period of time, protecting and maintaining its integrity.
 refused if, there are reasonable grounds to believe that the execution of a request
 for legal assistance for subsequent search, seizure and release of such data would be
 denied.
-56. 	(1) In order to provide immediate assistance for the purpose of international
+56. (1) In order to provide immediate assistance for the purpose of international
 cooperation under this Act, the Office of the National Security Adviser shall designate
 and maintain a contact point that shall be available twenty-­‐four hours a day and
 seven days a week.
@@ -1395,11 +1324,9 @@ implementation.
 Designation of
 contact point.
 PART VIII–MISCELLANEOUS
-57. 	(1) The Attorney General of the Federation may make orders, rules, guidelines or
+57. (1) The Attorney General of the Federation may make orders, rules, guidelines or
 regulations as are necessary for the efficient implementation of the provisions of this
 Regulations.
-
--- 34 of 43 --
 
 Act.
 (2) Orders, rules, guidelines or regulations made under subsection (1) of this section
@@ -1418,7 +1345,7 @@ international human rights standards;
 including penalties and prosecution; and
 (h) any other matter the Attorney General may consider necessary or expedient for
 the purpose of the implementation of this Act.
-58. 	In this Act –
+58. In this Act –
 “access” means gaining entry into, instructing or communicating with the logical,
 arithmetical, or memory function resources of a computer system or network;
 “Access Device” means and includes: Electronic cards such as:
@@ -1438,8 +1365,6 @@ arithmetical, or memory function resources of a computer system or network;
 (v) Any account number or other telecommunications service, equipment, or
 instrument identifier, or other means of account access including telephones, PDAs,
 Interpretation.
-
--- 35 of 43 --
 
 etc.,
 (vi) Automatic Teller Machines,
@@ -1478,22 +1403,20 @@ computer to be able to operate, run programs, store programs and store informati
 that the computer user needs such as text files or other files that are associated with
 the program the computer user is running.
 
--- 36 of 43 --
-
 “computer program” or “program” means a set of instructions written to perform or
 execute a specified task with a computer;
 “computer system” refers to any device or group of interconnected or related
 devices, one or more of which, pursuant to a program, performs automated or
 interactive processing of data. It covers any type of device with data processing
 capabilities including, but not limited to, computers and mobile phones. The device
-consisting 	of 	hardware 	and 	software 	may 	include 	input, 	output 	and 	storage
+consisting of hardware and software may include input, output and storage
 components which may stand alone or be connected in a network or other similar
 devices. It also includes computer data storage devices or media;
 “Consumer” means every person or organization who enters into computer based
 purchase, lease transfer, maintenance and consultancy service agreements with a
 computer service provider and the customer and agent of the consumer. Consumers
 will also include bank account holders who carry financial cards;
-“content data” 	means the actual information or message sent across during a
+“content data” means the actual information or message sent across during a
 communication session;
 “Counterfeit Card” means a bank card, credit card or a payment card which is
 fictitious, altered, or forged and includes any facsimile or false representation,
@@ -1504,8 +1427,8 @@ may not be embossed with account information or an issuer’s information;
 counter the persistence of violent radicalization to reduce the incidence of violent
 activities, change the behaviour of violent extremists, and counter the negative
 extreme groups while promoting core national values; also any program that seeks to
-identify 	the 	underlying 	causes 	of 	radicalization 	(social, 	cultural, 	religious 	and
-economic) 	and 	develop 	strategies 	that 	provide 	solutions 	and 	also 	introduce
+identify the underlying causes of radicalization (social, cultural, religious and
+economic) and develop strategies that provide solutions and also introduce
 measures to change the attitudes and perceptions of potential recruits, including
 providing vocational training of prisoners and means of sustainable livelihood and
 reintegration of reformed extremists to their families and communities’’;
@@ -1518,8 +1441,6 @@ or any of the services offered through the device;
 “Creditor” means a person or company that agrees or is authorised by an issuer to
 supply goods, services, or anything else of value and to accept payment by use of a
 bank card, credit card, payment card for the supply of such goods, services or
-
--- 37 of 43 --
 
 anything else of value to the cardholder;
 “Critical infrastructure” means, systems and assets which are so vital to the country
@@ -1542,7 +1463,7 @@ data, program, system or information that—
 (i) causes financial loss; or
 (ii) modifies or impairs or potentially modifies or impairs the medical examination,
 diagnosis, treatment or care of one or more persons; or
-(iii) 	causes or threatens physical injury or death to any person; or
+(iii) causes or threatens physical injury or death to any person; or
 (iv) threatens public health or public safety;
 “data” means representations of information or of concepts that are being prepared
 or have been prepared in a form suitable for use in a computer;
@@ -1554,8 +1475,6 @@ microprocessor ;
 “electronic communication” includes communications in electronic format, instant
 messages, short message service (SMS), e-­‐mail, video, voice mails, multimedia
 message service (MMS), Fax, and pager;
-
--- 38 of 43 --
 
 “electronic device” means a device which accomplishes its purpose electronically.
 This includes ,computer systems, telecommunication devices, smart phones, access
@@ -1573,19 +1492,19 @@ has expired;
 “Financial Institution” includes any individual, body, association or group of persons,
 whether corporate or unincorporated which carries on the business of investment
 and securities, a discount house, finance company and money brokerage whose
-principal 	object 	includes 	factoring 	project 	financing 	equipment 	leasing, 	debt
+principal object includes factoring project financing equipment leasing, debt
 administration, fund management, private ledger services, investment management,
-local 	purchase 	order 	financing, 	export 	finance, 	project 	consultancy, 	financial
+local purchase order financing, export finance, project consultancy, financial
 consultancy, pension fund management, insurance institutions, debt factorization
 and conversion firms, dealer, clearing and settlement companies, legal practitioners,
 hotels, casinos, bureau de change, supermarkets and such other businesses as the
-Central 	Bank 	or 	appropriate 	regulatory 	authorities 	may, 	from 	time 	to 	time,
+Central Bank or appropriate regulatory authorities may, from time to time,
 designate”;
-“Financial 	Transaction” 	means, 	(a) 	a 	transaction 	which 	in 	any 	way 	involves
+“Financial Transaction” means, (a) a transaction which in any way involves
 movement of funds by wire or other electronic means; (b) involves one or more
 monetary instruments; (c) involves the transfer of title to any real or personal
 property;
-“function” 	includes 	logic, 	control, 	arithmetic, 	deletion, 	storage, 	retrieval 	and
+“function” includes logic, control, arithmetic, deletion, storage, retrieval and
 communication or telecommunication to, from or within a computer;
 “Identity Theft” means, the stealing of somebody else personal information to obtain
 goods and services through electronic based transactions;
@@ -1593,10 +1512,8 @@ goods and services through electronic based transactions;
 used to access bank or any other sensitive information, Point of sales terminals (POS)
 and all other Card Acceptor Devices that are in use now or may be introduced in the
 future;
-“Interception” 	in relation to a function of a computer system or communications
+“Interception” in relation to a function of a computer system or communications
 network, includes listening to or recording of communication data of a computer or
-
--- 39 of 43 --
 
 acquiring the substance, meaning or purport of such and any acts capable of blocking
 or preventing any of these functions;
@@ -1608,7 +1525,7 @@ implementation and enforcement of the provisions of this Act;
 “Modification” means deletion, deterioration, alteration, restriction or suppression
 of data within computer systems or networks, including data transfer from a
 computer system by any means.
-“network” 	means 	a 	collection 	of 	hardware 	components 	and 	computers
+“network” means a collection of hardware components and computers
 interconnected by communications channels that allow sharing of resources and
 information;
 “payment Card” means any instrument, token, device, or card, or known by any
@@ -1634,8 +1551,6 @@ has been suspended or terminated by the issuer, whether on its own or on the
 request of the cardholder;
 “Service provider” means -­‐
 
--- 40 of 43 --
-
 (i) any public or private entity that provides to users of its services the ability to
 communicate by means of a computer system, electronic communication devices,
 mobile networks; and
@@ -1659,11 +1574,8 @@ and
 computer system or network, generated by a computer system that formed a part in
 the chain of communication, indicating the communication’s origin, destination,
 route, time, date, size, duration, or type of underlying service.
-59. 	This Bill may be cited as the Cybercrime (Prohibition, Prevention, Etc.) Bill,
-2015.
+59. This Bill may be cited as the Cybercrime (Prohibition, Prevention, Etc.) Bill,
 Citation.
-
--- 41 of 43 --
 
 FIRST SCHEDULE
 [Section 42]
@@ -1696,8 +1608,6 @@ Ministries, Departments and Agencies-­‐
 (x) One representative each from the following:
 (i) Association of Telecommunications Companies of Nigeria;
 
--- 42 of 43 --
-
 (ii) Internet Service Providers Association of Nigeria;
 (iii) Nigeria Bankers Committee;
 (iv) Nigeria Insurance Association;
@@ -1713,6 +1623,3 @@ Businesses which section 44 (2)(a) refers to are:
 (c) Banks and other Financial Institutions;
 (d) Insurance Companies;
 (e) Nigerian Stock Exchange.
-
--- 43 of 43 --
-

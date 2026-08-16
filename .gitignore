@@ -9,3 +9,4 @@ node_modules/
 # output that was actually ingested IS committed; only this raw cache is
 # excluded to keep the repo a reasonable size.
 legal_sources/federal_acts_bulk/_raw/
+.env
