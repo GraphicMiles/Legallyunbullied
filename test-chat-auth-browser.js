@@ -383,6 +383,39 @@ async function main() {
       await page.close();
     });
 
+    // ── 8. Transient 502 is retried and recovers ──────────────────────────
+    await check("transient 502 on load is retried and recovers", async () => {
+      const page = await setupPage(browser);
+      let fullRequests = 0;
+      await page.route("**/api/conversations/migrate", (route) => {
+        route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, idMap: {}, migrated: 0, skipped: 0 }) });
+      });
+      await page.route("**/api/conversations/cleanup", (route) => {
+        route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, deleted: 0 }) });
+      });
+      await page.route("**/api/conversations?full=true", (route) => {
+        fullRequests += 1;
+        if (fullRequests === 1) {
+          // First attempt: simulate the upstream 502 seen in the wild.
+          route.fulfill({ status: 502, contentType: "application/json", body: JSON.stringify({ error: "bad_gateway" }) });
+        } else {
+          route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
+            conversations: [{ id: "retry-chat", title: "Recovered", createdAt: 1, updatedAt: 1, messages: [] }],
+          }) });
+        }
+      });
+
+      await page.goto(`${BASE}`, { waitUntil: "load" });
+      await page.waitForFunction(() => document.querySelector(".history__item"), null, { timeout: 15000 });
+      await page.waitForTimeout(300);
+
+      assert.strictEqual(fullRequests, 2, `client should retry after the 502 (got ${fullRequests} requests)`);
+      const ids = await page.evaluate(() =>
+        [...document.querySelectorAll(".history__item")].map((b) => b.dataset.id));
+      assert.deepStrictEqual(ids, ["retry-chat"], "sidebar should show the conversations recovered on retry");
+      await page.close();
+    });
+
     console.log(failures === 0 ? "\nALL AUTH TESTS PASSED" : `\n${failures} AUTH TEST(S) FAILED`);
   } finally {
     await browser.close();
