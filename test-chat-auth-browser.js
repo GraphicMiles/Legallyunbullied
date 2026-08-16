@@ -215,6 +215,9 @@ async function main() {
       await page.route("**/api/conversations/migrate", (route) => {
         route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, idMap: {}, migrated: 0, skipped: 0 }) });
       });
+      await page.route("**/api/conversations/cleanup", (route) => {
+        route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, deleted: 0 }) });
+      });
       await page.route("**/api/conversations?full=true", (route) => {
         route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ conversations: [] }) });
       });
@@ -234,6 +237,42 @@ async function main() {
       assert.strictEqual(info.emptyShown, "flex", "landing state must show");
       assert.strictEqual(info.historyItems, 0, "no conversation must exist");
       assert.strictEqual(createdPosts, 0, "no POST /api/conversations from the base URL");
+      await page.close();
+    });
+
+    // ── 5. Sign-in automatically runs the legacy cleanup ──────────────────
+    await check("sign-in automatically runs the safe legacy cleanup", async () => {
+      const page = await setupPage(browser);
+      let cleanupCalls = 0;
+      const order = [];
+      await page.route("**/api/conversations/migrate", (route) => {
+        order.push("migrate");
+        route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, idMap: {}, migrated: 0, skipped: 0 }) });
+      });
+      await page.route("**/api/conversations/cleanup", (route) => {
+        cleanupCalls += 1;
+        order.push("cleanup");
+        route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, deleted: 3 }) });
+      });
+      await page.route("**/api/conversations?full=true", (route) => {
+        order.push("load");
+        route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
+          conversations: [{ id: "kept-chat", title: "Kept", createdAt: 1, updatedAt: 1, messages: [{ id: "m1", role: "user", content: "hi", createdAt: 1 }] }],
+        }) });
+      });
+
+      await page.goto(`${BASE}`, { waitUntil: "load" });
+      await page.waitForFunction(() => document.querySelector(".history__item"), null, { timeout: 8000 });
+      await page.waitForTimeout(400);
+
+      assert.strictEqual(cleanupCalls, 1, "cleanup must run exactly once on sign-in");
+      assert.ok(order.indexOf("migrate") < order.indexOf("cleanup"), "cleanup must run after migration");
+      assert.ok(order.indexOf("cleanup") < order.indexOf("load"), "cleanup must run before the server load");
+
+      const info = await page.evaluate(() => ({
+        historyItems: [...document.querySelectorAll(".history__item")].map((b) => b.dataset.id),
+      }));
+      assert.deepStrictEqual(info.historyItems, ["kept-chat"], "sidebar reflects the post-cleanup server state");
       await page.close();
     });
 

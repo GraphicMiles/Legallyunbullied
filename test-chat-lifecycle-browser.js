@@ -136,6 +136,22 @@ async function main() {
       assert.deepStrictEqual(ids.sort(), [firstId, secondId].sort(), "IDs must remain stable");
     });
 
+    // ── 4b. Main URL never opens a chat, even when chats exist ────────────
+    await check("opening the main URL shows the welcome screen, never a chat", async () => {
+      await page.goto(BASE, { waitUntil: "load" });
+      await page.waitForTimeout(800);
+      const info = await page.evaluate(() => ({
+        hash: window.location.hash,
+        emptyShown: document.getElementById("empty-state").style.display,
+        activeRow: document.querySelector(".history__item.is-active"),
+        stored: JSON.parse(localStorage.getItem("lu.conversations.v3.anonymous") || "null"),
+      }));
+      assert.strictEqual(info.hash, "", "main URL must have no #chat hash");
+      assert.strictEqual(info.emptyShown, "flex", "welcome screen must be shown");
+      assert.strictEqual(info.activeRow, null, "no chat may be active on the main URL");
+      assert.strictEqual(info.stored.conversations.length, 2, "existing chats must be untouched (no auto-create/delete)");
+    });
+
     // ── 5. Unknown direct URL → "Chat not found", no replacement ──────────
     await check("unknown direct URL shows 'Chat not found' (no replacement chat)", async () => {
       await page.goto(`${BASE}/#chat/does-not-exist-123`, { waitUntil: "load" });
