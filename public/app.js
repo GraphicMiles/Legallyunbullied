@@ -136,7 +136,10 @@ import {
       questionsUsedToday: state.questionsUsedToday,
     }));
     // Sync to server if authenticated (non-blocking)
-    syncToServer();
+    // Skip sync during loadFromServer to prevent sync-during-load duplication loop
+    if (!_isLoadingFromServer) {
+      syncToServer();
+    }
   }
 
   /* ------------------------------------------------------------------ */
@@ -145,6 +148,7 @@ import {
   let _syncQueued = false;
   let _syncInProgress = false;
   let _migrationDone = false;
+  let _isLoadingFromServer = false; // prevents syncToServer during loadFromServer
 
   function isServerMode() {
     return !!(window.firebaseAuth && window.firebaseAuth.currentUser);
@@ -164,50 +168,46 @@ import {
   // Fetch all conversations from server and merge into local state
   async function loadFromServer() {
     if (!isServerMode()) return;
+    _isLoadingFromServer = true;
     try {
       const headers = await getServerAuthHeaders();
-      const res = await fetch("/api/conversations", { headers });
+      // Use ?full=true to get all conversations with messages in ONE request
+      // instead of N+1 queries (one per conversation)
+      const res = await fetch("/api/conversations?full=true", { headers });
       if (!res.ok) {
         console.warn("[server-sync] Failed to load conversations:", res.status);
+        _isLoadingFromServer = false;
         return;
       }
       const data = await res.json();
-      if (!data.conversations) return;
-
-      // Fetch full details for each conversation (with messages)
-      const fullConversations = [];
-      for (const summary of data.conversations) {
-        try {
-          const detailRes = await fetch(`/api/conversations/${summary.id}`, { headers });
-          if (detailRes.ok) {
-            const detail = await detailRes.json();
-            fullConversations.push({
-              id: detail.id,
-              title: detail.title || "New question",
-              createdAt: detail.createdAt,
-              updatedAt: detail.updatedAt,
-              messages: (detail.messages || []).map(m => {
-                const { userId, ...rest } = m; // strip server-side userId field
-                return rest;
-              }),
-            });
-          }
-        } catch (e) {
-          console.warn(`[server-sync] Failed to load conversation ${summary.id}:`, e.message);
-        }
+      if (!data.conversations) {
+        _isLoadingFromServer = false;
+        return;
       }
+
+      // Map server conversations to local format with _synced flags
+      const fullConversations = data.conversations.map(detail => ({
+        id: detail.id,
+        title: detail.title || "New question",
+        createdAt: detail.createdAt,
+        updatedAt: detail.updatedAt,
+        _synced: true,
+        messages: (detail.messages || []).map(m => ({ ...m, _synced: true })),
+      }));
 
       // Always replace local state with server data (even if empty).
       // This makes Firestore the single source of truth when authenticated —
       // deleted conversations stay deleted across reloads.
       state.conversations = fullConversations;
       state.activeId = null; // let URL routing decide what's active
-      saveState(); // persist to localStorage as write-behind cache
+      saveState(); // persist to localStorage as write-behind cache (won't trigger syncToServer because _isLoadingFromServer is true)
       renderHistory();
       renderChat();
       console.log(`[server-sync] Loaded ${fullConversations.length} conversations from server`);
     } catch (err) {
       console.warn("[server-sync] loadFromServer failed:", err.message);
+    } finally {
+      _isLoadingFromServer = false;
     }
   }
 
