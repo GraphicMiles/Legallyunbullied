@@ -105,7 +105,9 @@ import {
         const parsed = JSON.parse(raw);
         if (parsed && Array.isArray(parsed.conversations)) {
           state.conversations = parsed.conversations;
-          state.activeId = parsed.activeId || null;
+          // Don't restore activeId — callers must set it explicitly based on
+          // context (URL hash, user selection). Restoring from localStorage
+          // causes the "base URL opens a chat" bug when stale IDs persist.
           state.questionsUsedToday = parsed.questionsUsedToday || 0;
 
           // Migrate: repair any agent messages missing the `steps` field
@@ -2991,6 +2993,11 @@ import {
         
         // Load conversations for the new user
         loadState();
+        
+        // CRITICAL: loadState() restores activeId from localStorage — override it.
+        // Base URL (no hash) must ALWAYS show empty landing state.
+        // Only a URL with #chat/{id} should auto-open a conversation.
+        state.activeId = null;
         
         // Re-render everything (empty state — no conversation selected)
         renderHistory();
