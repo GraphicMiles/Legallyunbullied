@@ -18,6 +18,7 @@ const rateLimit = require("express-rate-limit");
 const chatRoute = require("./server/chatRoute");
 const conversationRoute = require("./server/conversationRoute");
 const { requireAuth, optionalAuth } = require("./server/authMiddleware");
+const { sweepAndStart } = require("./server/jobRunner");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -187,6 +188,10 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`  Auth: required for /api/chat and /api/cache-invalidate`);
   console.log(`  Body limit: 50kb`);
 });
+
+// Background job runner: recovers in-flight requests that were orphaned by a
+// restart (restart-and-complete). No-op when Firestore isn't configured.
+sweepAndStart();
 
 // ── Process-level safety net ───────────────────────────────────────────────
 // Node 20 terminates the process on any unhandled promise rejection, which on
