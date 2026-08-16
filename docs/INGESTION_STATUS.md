@@ -7,12 +7,12 @@
 | Metric | Value |
 |---|---|
 | Total acts in PLAC 2004 compendium | 547 |
-| Ingested to Firestore | **545** |
-| Remaining in staging queue | **2** |
-| Estimated total sections in Firestore | ~8,200+ |
+| Ingested to Firestore | **545** (bulk) + 3 gap laws |
+| Remaining in staging queue | **2** (low-relevance, optional) |
+| Estimated total sections in Firestore | **14,119** (verified via count()) |
 | Practice areas covered | 19/19 |
 
-The bulk ingestion is essentially complete. Only 2 acts remain un-ingested:
+The bulk ingestion is essentially complete. Only 2 low-relevance acts remain un-ingested:
 
 | Act | Practice Area | Reason |
 |---|---|---|
@@ -59,9 +59,11 @@ The PLAC "2004 Laws of Nigeria" compendium covers federal Acts. Several importan
 | Law | Practice Area | Why Needed | Status |
 |---|---|---|---|
 | **Lagos State Tenancy Law 2011** | tenancy | Primary law for Lagos eviction/rent questions — the most common tenancy scenario | ✅ Already hand-ingested (658 sections across 5 flagship Acts) |
-| **Recovery of Premises Act** | tenancy | Governs eviction in Abuja/FCT (not covered by Lagos law) | ❌ Not sourced — needs PDF download + ingestion |
-| **Violence Against Persons (Prohibition) Act 2015 (VAPP)** | criminal_rights | Domestic violence, sexual assault scenarios | ❌ Not sourced — needs PDF download + ingestion |
-| **Federal Competition and Consumer Protection Act (FCCPA) 2018** | consumer_rights | Defective goods, unfair trade practices | ❌ Not sourced — needs PDF download + ingestion |
+| **Recovery of Premises Act** | tenancy | Governs eviction in Abuja/FCT (not covered by Lagos law) | ✅ Ingested 2026-08-16 (31 sections as "Recovery of Premises Law" — the uniform Recovery of Premises law text, substantively identical to the federal Act applicable in the FCT) |
+| **Violence Against Persons (Prohibition) Act 2015 (VAPP)** | criminal_rights | Domestic violence, sexual assault scenarios | ✅ Ingested 2026-08-16 (48 sections, clean text from LawGlobal Hub) |
+| **Federal Competition and Consumer Protection Act (FCCPA) 2018** | consumer_rights | Defective goods, unfair trade practices | ✅ Ingested 2026-08-16 (168 sections, clean text from LawGlobal Hub) |
+
+> **Note on Recovery of Premises:** the freely available full-text copy of this uniform law is the Kogi State–issued edition (`KGSL 1 of 1991`), whose notice-to-quit provisions (weekly/monthly/quarterly/yearly periods and the 7-day notice of intention to recover possession) are identical to the federal 1945 Act that applies in the FCT. It is ingested under the name **"Recovery of Premises Law"** with jurisdiction **Federal** so Abuja/FCT tenancy questions retrieve it; if the verbatim federal Act text becomes available, it can be ingested alongside.
 
 ### Minor Gaps (may already be in corpus under different names)
 
