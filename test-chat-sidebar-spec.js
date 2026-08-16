@@ -102,6 +102,7 @@ async function main() {
         return {
           activeIsRow: row.classList.contains("is-active"),
           background: rowStyle.backgroundColor,
+          radius: rowStyle.borderRadius,
           rowWidth: rowRect.width,
           listWidth: listRect.width,
           rowLeft: rowRect.left,
@@ -110,6 +111,12 @@ async function main() {
       });
       assert.strictEqual(info.activeIsRow, true, "active state must be on the row");
       assert.notStrictEqual(info.background, "rgba(0, 0, 0, 0)", "active row must have a highlight");
+      // No rounded corners — the highlight is a flat, full-width surface.
+      assert.strictEqual(info.radius, "0px", "active highlight must have no border-radius");
+      // Highlight is a light surface (surface-alt), not the dark background or
+      // the accent tint.
+      assert.notStrictEqual(info.background, "rgb(18, 18, 18)", "highlight must differ from the dark sidebar background");
+      assert.ok(!info.background.startsWith("rgba(242, 183, 5"), "highlight must not be the golden accent tint");
       // Full-width: the highlight should span essentially the whole list width
       // (allow a tiny tolerance for sub-pixel rounding).
       assert.ok(
