@@ -272,6 +272,7 @@ router.delete("/:id/messages", async (req, res) => {
 // ── POST /api/conversations/migrate — bulk import from localStorage ────────
 // Accepts an array of conversations with their messages.
 // Creates them in Firestore, returns the new IDs mapping.
+// Resilient: skips individual conversations that fail instead of aborting all.
 router.post("/migrate", async (req, res) => {
   try {
     const { conversations } = req.body;
@@ -285,38 +286,54 @@ router.post("/migrate", async (req, res) => {
     }
 
     const idMap = {}; // oldId -> newId
+    let migrated = 0;
+    let skipped = 0;
 
     for (const convo of conversations) {
-      const newConvoRef = convoCollection(req.uid).doc();
-      const now = Date.now();
+      try {
+        const newConvoRef = convoCollection(req.uid).doc();
+        const now = Date.now();
 
-      await newConvoRef.set({
-        userId: req.uid,
-        title: convo.title || "New question",
-        createdAt: convo.createdAt || now,
-        updatedAt: convo.updatedAt || convo.createdAt || now,
-      });
+        await newConvoRef.set({
+          userId: req.uid,
+          title: (convo.title || "New question").slice(0, 200),
+          createdAt: convo.createdAt || now,
+          updatedAt: convo.updatedAt || convo.createdAt || now,
+        });
 
-      idMap[convo.id] = newConvoRef.id;
+        idMap[convo.id] = newConvoRef.id;
 
-      // Write messages in batches of 400 (Firestore batch limit is 500)
-      if (convo.messages && convo.messages.length > 0) {
-        const messages = convo.messages;
-        for (let i = 0; i < messages.length; i += 400) {
-          const batch = db().batch();
-          const chunk = messages.slice(i, i + 400);
-          for (const msg of chunk) {
-            const msgId = msg.id || msgCollection(req.uid, newConvoRef.id).doc().id;
-            const msgData = { ...msg, userId: req.uid };
-            batch.set(msgRef(req.uid, newConvoRef.id, msgId), msgData);
+        // Write messages in batches of 400 (Firestore batch limit is 500)
+        if (convo.messages && convo.messages.length > 0) {
+          const messages = convo.messages;
+          for (let i = 0; i < messages.length; i += 400) {
+            const batch = db().batch();
+            const chunk = messages.slice(i, i + 400);
+            for (const msg of chunk) {
+              const msgId = msg.id || msgCollection(req.uid, newConvoRef.id).doc().id;
+              // Clean msg data — strip any internal flags, limit field sizes
+              const { _synced, ...cleanMsg } = msg;
+              const msgData = {
+                ...cleanMsg,
+                userId: req.uid,
+                content: (cleanMsg.content || "").slice(0, 10000),
+                casualReply: (cleanMsg.casualReply || "").slice(0, 5000),
+              };
+              batch.set(msgRef(req.uid, newConvoRef.id, msgId), msgData);
+            }
+            await batch.commit();
           }
-          await batch.commit();
         }
+        migrated++;
+      } catch (err) {
+        // Skip this conversation, continue with the rest
+        console.warn(`[conversations] Migration: skipped "${convo.id}": ${err.message}`);
+        skipped++;
       }
     }
 
-    console.log(`[conversations] Migrated ${conversations.length} conversations for user ${req.uid}`);
-    res.json({ success: true, idMap });
+    console.log(`[conversations] Migrated ${migrated} conversations for user ${req.uid} (${skipped} skipped)`);
+    res.json({ success: true, idMap, migrated, skipped });
   } catch (err) {
     console.error("[conversations] Migration failed:", err.message);
     res.status(500).json({ error: "migration_failed", message: err.message });
