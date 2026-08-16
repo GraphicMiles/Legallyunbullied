@@ -127,7 +127,7 @@ async function main() {
       const info = await page.evaluate(() => ({
         hash: window.location.hash,
         historyItems: [...document.querySelectorAll(".history__item")].map((b) => b.dataset.id),
-        activeId: document.querySelector(".history__item.is-active")?.dataset.id || null,
+        activeId: document.querySelector(".history__row.is-active .history__item")?.dataset.id || null,
         statusHidden: document.getElementById("chat-status").hidden,
       }));
       assert.strictEqual(info.hash, "#chat/server-chat-1", "direct URL must not be cleared or rewritten");

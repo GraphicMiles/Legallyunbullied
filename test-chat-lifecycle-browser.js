@@ -123,7 +123,7 @@ async function main() {
       await page.waitForTimeout(300);
       const info = await page.evaluate(() => ({
         hash: window.location.hash,
-        activeIdAttr: document.querySelector(".history__item.is-active")?.dataset.id || null,
+        activeIdAttr: document.querySelector(".history__row.is-active .history__item")?.dataset.id || null,
       }));
       assert.strictEqual(info.hash, `#chat/${firstId}`, "returning to chat A must use its original ID");
       assert.strictEqual(info.activeIdAttr, firstId, "sidebar active item must be the original chat");
@@ -143,7 +143,7 @@ async function main() {
       const info = await page.evaluate(() => ({
         hash: window.location.hash,
         emptyShown: document.getElementById("empty-state").style.display,
-        activeRow: document.querySelector(".history__item.is-active"),
+        activeRow: document.querySelector(".history__row.is-active"),
         stored: JSON.parse(localStorage.getItem("lu.conversations.v3.anonymous") || "null"),
       }));
       assert.strictEqual(info.hash, "", "main URL must have no #chat hash");
@@ -192,7 +192,7 @@ async function main() {
       assert.strictEqual(before, 2, "expected 2 conversations before delete");
 
       // Open kebab for the ACTIVE chat's row and choose "Delete chat"
-      await page.click(`.history__row:has(.history__item.is-active) .history__kebab`);
+      await page.click(`.history__row.is-active .history__kebab`);
       await page.waitForTimeout(200);
       await page.click(".menu-popover__item--danger");
       await page.waitForTimeout(200);
