@@ -97,10 +97,14 @@ function storedActionsMd(page) {
   });
 }
 
-async function runScenario(browser, actionsMd) {
+async function runScenario(browser, actionsMd, { slowApiMs = 0 } = {}) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
-  await page.route("**/api/chat", (route) => {
+  await page.route("**/api/chat", async (route) => {
     if (route.request().method() !== "POST") return route.continue();
+    // slowApiMs simulates production: the API round-trip can take tens of
+    // seconds, so the thinking component fully advances (and ticks) before
+    // the streaming phase begins.
+    if (slowApiMs) await new Promise((r) => setTimeout(r, slowApiMs));
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(legalResponse(actionsMd)) });
   });
   await page.goto(BASE, { waitUntil: "load" });
@@ -216,6 +220,49 @@ async function main() {
         assert.ok(liveText.includes("Step 1") && liveText.includes("Step 2"), "live must contain both steps");
         await page.close();
       });
+    }
+
+    // ── Scenario 3: SLOW API (production-like) — the thinking component fully
+    // advances and ticks before streaming begins, then must swap to the frozen
+    // static header and keep the steps through completion. ─────────────────
+    {
+      const page = await runScenario(browser, LONG_STEPS, { slowApiMs: 7000 });
+
+      await check("slow API: frozen 'Thought for Xs' header shows during streaming", async () => {
+        // Wait until streaming has begun (actions section revealed + streaming).
+        await page.waitForFunction(
+          () => {
+            const span = document.querySelector(".beui-thinking-header span");
+            const blocks = document.querySelectorAll(".answer-text-block");
+            return !!(span && span.textContent.startsWith("Thought for") && blocks.length >= 2);
+          },
+          null, { timeout: 20000 }
+        );
+        const label = await liveLabel(page);
+        const m = label.match(/Thought for ([\d.]+)s/);
+        assert.ok(m, `expected 'Thought for X.Xs' during streaming, got '${label}'`);
+        assert.ok(parseFloat(m[1]) >= 7, `thinking time should be >= the 7s API wait, got '${m[1]}s'`);
+        // Frozen: two samples 1.5s apart must be identical.
+        await page.waitForTimeout(1500);
+        const label2 = await liveLabel(page);
+        assert.strictEqual(label, label2, "header must be frozen during streaming");
+      });
+
+      await check("slow API: steps survive the streaming→complete transition", async () => {
+        await page.waitForFunction(
+          () => {
+            const c = document.querySelector(".beui-recommendation-card");
+            return !!(c && c.offsetParent !== null);
+          },
+          null, { timeout: 30000 }
+        );
+        await page.waitForTimeout(700);
+        const text = await liveActionsText(page);
+        assert.ok(text.includes("Step 1") && text.includes("Step 6"), "all steps must survive completion after a slow API");
+        assert.ok(!text.includes("- Step 1"), "completed text must be markdown-formatted");
+      });
+
+      await page.close();
     }
 
     await browser.close();
