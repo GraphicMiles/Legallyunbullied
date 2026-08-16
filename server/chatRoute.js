@@ -1065,17 +1065,57 @@ async function answerProceduralWithFallback(question, classification, history) {
 // save it after receiving the response — means an answer computed while the
 // user was away is waiting for them on reopen. No-op when the client didn't
 // send conversationId/messageId (e.g. older clients).
-function serverPersistMessage(req, fields) {
+async function serverPersistMessage(req, fields) {
   const conversationId = (req.body && typeof req.body.conversationId === "string" && req.body.conversationId) || null;
   const messageId = (req.body && typeof req.body.messageId === "string" && req.body.messageId) || null;
   if (!conversationId || !messageId) return Promise.resolve();
   const db = getFirestore();
   if (!db) return Promise.resolve();
-  return db
+
+  const ref = db
     .collection("users").doc(req.uid)
     .collection("conversations").doc(conversationId)
-    .collection("messages").doc(messageId)
-    .set({ userId: req.uid, ...fields }, { merge: true })
+    .collection("messages").doc(messageId);
+
+  const patch = { userId: req.uid, ...fields };
+  // This path always persists the AGENT reply.
+  patch.role = "agent";
+
+  const terminal =
+    fields.pipelineStatus === "done" ||
+    fields.pipelineStatus === "failed" ||
+    fields.pipelineStatus === "awaiting_input";
+
+  // Read existing fields so we only fill missing identity/ordering data and
+  // never clobber what the client already synced (set+merge overwrites
+  // provided fields). Defensive: older mocks may lack .get().
+  let data = {};
+  try {
+    if (typeof ref.get === "function") {
+      const existing = await ref.get();
+      if (existing && existing.exists && existing.data) data = existing.data() || {};
+    }
+  } catch (e) {
+    console.warn("[chat] serverPersistMessage read failed (best-effort):", e.message);
+  }
+
+  if (data.createdAt == null && patch.createdAt == null) {
+    patch.createdAt = (req.pipelineStartedAt != null) ? req.pipelineStartedAt : Date.now();
+  }
+  if (data.startedAt == null && patch.startedAt == null && req.pipelineStartedAt != null) {
+    patch.startedAt = req.pipelineStartedAt;
+  }
+  // thinkingElapsedMs: the client freezes it at "thinking complete" in the
+  // LIVE path and syncs it; a background job has no client, so measure the
+  // pipeline duration server-side. Base on the ORIGINAL start time
+  // (client-synced) when available, so a resumed job reports its full
+  // duration rather than just the resumed slice.
+  if (terminal && patch.thinkingElapsedMs == null) {
+    const base = data.startedAt || req.pipelineStartedAt || Date.now();
+    patch.thinkingElapsedMs = Date.now() - base;
+  }
+
+  return ref.set(patch, { merge: true })
     .catch((err) => console.warn("[chat] serverPersistMessage failed:", err.message));
 }
 
@@ -1105,6 +1145,11 @@ async function runChatPipeline(req) {
   const saveCheckpoint = (typeof (req && req.saveCheckpoint) === "function")
     ? req.saveCheckpoint
     : async () => {};
+
+  // Pipeline start time — used by serverPersistMessage to measure the actual
+  // thinking duration for background-completed jobs (the client isn't around
+  // to freeze it via collapseTrace).
+  req.pipelineStartedAt = Date.now();
 
   const question = (req.body && req.body.question || "").toString().trim();
   if (!question) {

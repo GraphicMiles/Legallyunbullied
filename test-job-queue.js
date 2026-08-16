@@ -251,6 +251,33 @@ async function main() {
     assert.strictEqual(msg.status, "done");
     assert.ok(msg.result && msg.result.lawMd, "worker must persist the full answer");
     assert.strictEqual(jobDoc("orphan1").status, "done");
+
+    // Background-completed message must carry identity/ordering/duration
+    // fields so the reconnect render shows the right time and correct order.
+    assert.strictEqual(msg.role, "agent", "agent message must carry role for rendering");
+    assert.ok(typeof msg.createdAt === "number", "agent message must carry createdAt for ordering");
+    assert.ok(typeof msg.thinkingElapsedMs === "number" && msg.thinkingElapsedMs >= 0,
+      `agent message must carry thinkingElapsedMs, got ${msg.thinkingElapsedMs}`);
+  });
+
+  await check("background-completed answer orders AFTER the user's question", async () => {
+    mockDb = makeMockDb();
+    require.cache[firebaseAdminPath].exports.getFirestore = () => mockDb.db;
+    jobRunner.__reset();
+    // Simulate the client having synced the USER message first (earlier
+    // createdAt); the worker then persists the AGENT message.
+    await mockDb.db.collection("users").doc("u1").collection("conversations").doc("c1").collection("messages").doc("um1")
+      .set({ userId: "u1", role: "user", content: "Someone killed my mom", createdAt: 1000 });
+    await mockDb.db.collection("background_jobs").doc("ord1").set({
+      uid: "u1", conversationId: "c1", messageId: "am1", question: "Someone killed my mom", history: [], status: "queued",
+    });
+    await jobRunner.sweepOnce();
+    await waitFor(() => jobDoc("ord1") && jobDoc("ord1").status === "done");
+    const user = messageDoc("c1", "um1");
+    const agent = messageDoc("c1", "am1");
+    assert.ok(user && user.createdAt === 1000, "user message createdAt preserved");
+    assert.ok(agent && agent.createdAt >= user.createdAt, "agent message createdAt must not precede the user's");
+    assert.ok(agent.role === "agent", "agent role set");
   });
 
   await check("worker concurrency is limited (serial execution)", async () => {
