@@ -49,6 +49,10 @@ import {
     chat: document.getElementById("chat"),
     chatMessages: document.getElementById("chat-messages"),
     emptyState: document.getElementById("empty-state"),
+    chatStatus: document.getElementById("chat-status"),
+    chatStatusTitle: document.getElementById("chat-status-title"),
+    chatStatusSubtitle: document.getElementById("chat-status-subtitle"),
+    chatStatusHome: document.getElementById("chat-status-home"),
     conversationTitle: document.getElementById("conversation-title"),
     classificationBadges: document.getElementById("classification-badges"),
     composerForm: document.getElementById("composer-form") || document.getElementById("prompt-bar-container"),
@@ -154,6 +158,8 @@ import {
   let _syncInProgress = false;
   let _migrationDone = false;
   let _isLoadingFromServer = false; // prevents syncToServer during loadFromServer
+  let _authSettled = false;         // true once onAuthStateChanged has fired (or no-Firebase fallback elapsed)
+  let _serverLoadPending = false;   // true while an authenticated server load is in flight
 
   function isServerMode() {
     return !!(window.firebaseAuth && window.firebaseAuth.currentUser);
@@ -200,37 +206,15 @@ import {
         messages: (detail.messages || []).map(m => ({ ...m, _synced: true })),
       }));
 
-      // Client-side dedup safety net: remove duplicate empty conversations
-      // (conversations with same title and no messages — keep the newest)
-      const GENERIC_TITLES = new Set(["new question", "legal question", "immigration", "untitled"]);
-      const seen = new Map();
-      const fullConversations = [];
-      for (const c of allConversations) {
-        const hasMessages = c.messages.length > 0;
-        const normalizedTitle = c.title.trim().toLowerCase();
-        if (!hasMessages && GENERIC_TITLES.has(normalizedTitle)) {
-          continue; // skip generic empty conversations
-        }
-        if (!hasMessages && seen.has(normalizedTitle)) {
-          continue; // skip duplicate empty conversation
-        }
-        if (!hasMessages) seen.set(normalizedTitle, true);
-        fullConversations.push(c);
-      }
-      const removed = allConversations.length - fullConversations.length;
-      if (removed > 0) {
-        console.log(`[server-sync] Dedup: skipped ${removed} duplicate/generic empty conversations`);
-      }
-
       // Always replace local state with server data (even if empty).
       // This makes Firestore the single source of truth when authenticated —
-      // deleted conversations stay deleted across reloads.
-      state.conversations = fullConversations;
+      // deleted conversations stay deleted across reloads. Loading is a pure
+      // read: it must never create, drop, or re-ID any conversation, so every
+      // conversation keeps the exact ID it was persisted under.
+      state.conversations = allConversations;
       state.activeId = null; // let URL routing decide what's active
       saveState(); // persist to localStorage as write-behind cache (won't trigger syncToServer because _isLoadingFromServer is true)
-      renderHistory();
-      renderChat();
-      console.log(`[server-sync] Loaded ${fullConversations.length} conversations from server`);
+      console.log(`[server-sync] Loaded ${allConversations.length} conversations from server`);
     } catch (err) {
       console.warn("[server-sync] loadFromServer failed:", err.message);
     } finally {
@@ -250,37 +234,20 @@ import {
     try {
       const headers = await getServerAuthHeaders();
 
-      // Deduplicate: if multiple conversations have the same title and no messages,
-      // keep only the newest one. This cleans up duplicates from the sync loop bug.
-      const seen = new Map(); // title → index of newest
-      const toRemove = [];
-      for (let i = state.conversations.length - 1; i >= 0; i--) {
-        const c = state.conversations[i];
-        const key = (c.title || "New question").trim().toLowerCase();
-        const hasMessages = c.messages && c.messages.length > 0;
-        if (!hasMessages && seen.has(key)) {
-          toRemove.push(i); // duplicate with no messages — remove
-        } else if (!hasMessages) {
-          seen.set(key, i);
-        }
-      }
-      if (toRemove.length > 0) {
-        console.log(`[server-sync] Removing ${toRemove.length} duplicate empty conversations locally`);
-        for (const idx of toRemove) {
-          state.conversations.splice(idx, 1);
-        }
-      }
-
       for (const convo of state.conversations) {
         // Check if this convo has a _synced flag (already on server)
         if (convo._synced) continue;
 
         // Create new conversation on server
         try {
+          // Canonical identity: send the local ID so the server persists the
+          // conversation under that exact document ID. The server only mints
+          // a new ID when none was provided — never for a conversation that
+          // already has one.
           const createRes = await fetch("/api/conversations", {
             method: "POST",
             headers,
-            body: JSON.stringify({ title: convo.title || "New question" }),
+            body: JSON.stringify({ id: convo.id, title: convo.title || "New question" }),
           });
 
           let serverConvoId;
@@ -292,11 +259,15 @@ import {
             continue;
           }
 
-          // If server assigned a new ID, update local reference
+          // Defensive only: with the server honoring the client ID this is a
+          // no-op. If it ever fires, keep the URL in sync with the new ID.
           if (serverConvoId !== convo.id) {
             const oldId = convo.id;
             convo.id = serverConvoId;
-            if (state.activeId === oldId) state.activeId = serverConvoId;
+            if (state.activeId === oldId) {
+              state.activeId = serverConvoId;
+              setUrlConvo(serverConvoId);
+            }
           }
 
           // Sync all messages
@@ -353,19 +324,26 @@ import {
     }
   }
 
-  // Migrate existing localStorage conversations to server
+  // Migrate existing localStorage conversations to server.
+  // This is a one-time operation per user: the flag is stored under its own
+  // key so saveState() can't accidentally erase it (which previously caused
+  // migration to re-run on every sign-in and spawn duplicate conversations).
+  // The server endpoint is also idempotent and ID-preserving as a second line
+  // of defense.
   async function migrateToServer() {
     if (!isServerMode() || _migrationDone) return;
     _migrationDone = true;
 
     const storageKey = getStorageKey();
+    const migrationFlagKey = `${storageKey}.migrated`;
+    if (localStorage.getItem(migrationFlagKey) === "1") return;
+
     const raw = localStorage.getItem(storageKey);
     if (!raw) return;
 
     try {
       const parsed = JSON.parse(raw);
       if (!parsed.conversations || parsed.conversations.length === 0) return;
-      if (parsed._migratedToServer) return; // already migrated
 
       console.log(`[server-sync] Migrating ${parsed.conversations.length} conversations to server...`);
       const headers = await getServerAuthHeaders();
@@ -406,12 +384,11 @@ import {
             (c.messages || []).forEach(m => { m._synced = true; });
           });
         }
-        // Set migration flag
-        parsed._migratedToServer = true;
-        localStorage.setItem(storageKey, JSON.stringify(parsed));
+        // Mark migration complete under a dedicated key that survives
+        // subsequent saveState() writes (this was the root cause of migration
+        // re-running on every sign-in).
+        localStorage.setItem(migrationFlagKey, "1");
         saveState();
-        renderHistory();
-        renderChat();
         console.log("[server-sync] Migration complete");
       } else {
         console.warn("[server-sync] Migration failed:", res.status);
@@ -431,28 +408,6 @@ import {
       await fetch(`/api/conversations/${convoId}`, { method: "DELETE", headers });
     } catch (e) {
       console.warn(`[server-sync] Failed to delete conversation ${convoId}:`, e.message);
-    }
-  }
-
-  // One-time cleanup: delete duplicate empty conversations from the server
-  // Created by the sync loop bug — removes conversations with no messages
-  // and generic titles like "New question", "Legal question", "Immigration"
-  let _cleanupDone = false;
-  async function cleanupDuplicates() {
-    if (!isServerMode() || _cleanupDone) return;
-    _cleanupDone = true;
-    try {
-      const headers = await getServerAuthHeaders();
-      const res = await fetch("/api/conversations/cleanup", { method: "POST", headers });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.deleted > 0) {
-          console.log(`[server-sync] Cleaned up ${data.deleted} duplicate conversations`);
-        }
-      }
-    } catch (e) {
-      console.warn("[server-sync] Cleanup failed:", e.message);
-      _cleanupDone = false; // allow retry
     }
   }
 
@@ -1118,6 +1073,7 @@ import {
     el.chatMessages.innerHTML = "";
     live.refs = null;
     live.msgId = null;
+    hideChatStatus();
     updateClearChatButtonState();
 
     if (!convo || convo.messages.length === 0) {
@@ -2920,6 +2876,7 @@ import {
   /* ------------------------------------------------------------------ */
   el.newChatBtn.addEventListener("click", createConversation);
   el.newChatMobile.addEventListener("click", createConversation);
+  if (el.chatStatusHome) el.chatStatusHome.addEventListener("click", goHome);
   el.menuToggle.addEventListener("click", openMobileSidebar);
   el.sidebarClose.addEventListener("click", closeMobileSidebar);
   el.scrim.addEventListener("click", closeMobileSidebar);
@@ -2958,11 +2915,15 @@ import {
         setupAuth();
       }, { once: true });
       
-      // Fallback: if Firebase doesn't load within 3 seconds, show sign-in disabled
+      // Fallback: if Firebase doesn't load within 3 seconds, treat auth as
+      // settled (no Firebase = anonymous/localStorage only) and resolve any
+      // pending direct-URL navigation against local data.
       setTimeout(() => {
         if (!window.firebaseAuth) {
           console.warn("[auth] Firebase Auth isn't configured — sign-in disabled.");
+          _authSettled = true;
           renderAuthSection(null);
+          resolveUrl();
         }
       }, 3000);
     }
@@ -2981,55 +2942,50 @@ import {
       const newUserId = user?.uid;
       
       state.user = user;
+      _authSettled = true;
       
       // If user changed (sign-in, sign-out, or account switch), reload conversations
       if (previousUserId !== newUserId) {
         console.log("[auth] User changed, reloading conversations");
         
-        // Reset state for new user
+        // Reset state for the new user
         state.conversations = [];
         state.activeId = null;
         state.questionsUsedToday = 0;
         
-        // Clear URL hash — don't carry stale conversation IDs across auth changes
-        setUrlConvo(null);
-        
-        // Load conversations for the new user
+        // Load conversations for the new user (localStorage write-behind cache).
+        // The URL — not localStorage, not the server — decides what is active.
         loadState();
-        
-        // CRITICAL: loadState() restores activeId from localStorage — override it.
-        // Base URL (no hash) must ALWAYS show empty landing state.
-        // Only a URL with #chat/{id} should auto-open a conversation.
         state.activeId = null;
         
-        // Re-render everything (empty state — no conversation selected)
-        renderHistory();
-        renderChat();
-        updateComposerState();
-        updatePlanLabel();
-
-        // Server sync: load from server and/or migrate localStorage data
         if (user) {
-          // First migrate any existing localStorage conversations to server
-          migrateToServer().then(() => {
-            // Clean up duplicate empty conversations created by the sync loop bug
-            return cleanupDuplicates();
-          }).then(() => {
-            // Then load fresh data from server (authoritative — replaces localStorage)
-            return loadFromServer();
-          }).then(() => {
-            // After server data loaded, check URL for explicit conversation ID
-            const urlId = getConvoIdFromUrl();
-            if (urlId) {
-              const c = state.conversations.find(cc => cc.id === urlId);
-              if (c) {
-                state.activeId = c.id;
-                renderHistory();
-                renderChat();
-              }
-            }
-          });
+          // Authenticated: server data is authoritative. Keep the URL intact
+          // and show a loading state while the server load is in flight, so a
+          // direct /#chat/{id} URL resolves against Firestore instead of being
+          // wrongly cleared or shown as "not found".
+          _serverLoadPending = true;
+          renderLoadingChat();
+          migrateToServer()
+            .then(() => loadFromServer())
+            .catch((err) => console.warn("[auth] Server load failed:", err.message))
+            .then(() => {
+              _serverLoadPending = false;
+              resolveUrl();
+            });
+        } else {
+          // Signed out: a URL pointing at a server conversation is no longer
+          // resolvable — return to the empty landing state. Never auto-create
+          // a chat, and never fabricate a replacement.
+          setUrlConvo(null);
+          renderHistory();
+          renderChat();
+          updateComposerState();
+          updatePlanLabel();
         }
+      } else {
+        // Same user (including the initial anonymous state) — resolve whatever
+        // the URL currently points at.
+        resolveUrl();
       }
       
       renderAuthSection(user);
@@ -3269,51 +3225,85 @@ import {
     }
   }
 
-  window.addEventListener("hashchange", () => {
+  // Resolve the URL against known conversations. This is the single place that
+  // decides what conversation (if any) is active from the URL:
+  //   - no #chat/{id}      → empty landing state (never auto-creates a chat)
+  //   - #chat/{id} exists  → open that conversation using its existing ID
+  //   - #chat/{id} unknown → "Chat not found" (never creates/fabricates a chat)
+  // While auth/server data is still loading, show a neutral loading state so a
+  // server-backed conversation is never prematurely declared missing.
+  function resolveUrl() {
     const urlId = getConvoIdFromUrl();
-    if (urlId === null) {
-      // URL cleared → show empty landing state
+
+    if (!urlId) {
       state.activeId = null;
-      saveState();
       renderHistory();
       renderChat();
-    } else {
-      const convo = state.conversations.find(c => c.id === urlId);
-      if (convo) {
-        state.activeId = convo.id;
-        saveState();
-        renderHistory();
-        renderChat();
-      } else {
-        // ID in URL doesn't match any conversation → empty state
-        state.activeId = null;
-        saveState();
-        renderHistory();
-        renderChat();
-      }
+      updateClearChatButtonState();
+      return;
     }
-  });
+
+    const convo = state.conversations.find((c) => c.id === urlId);
+    if (convo) {
+      state.activeId = convo.id; // use the persisted ID — never a new one
+      renderHistory();
+      renderChat();
+      updateClearChatButtonState();
+      return;
+    }
+
+    state.activeId = null;
+    if (_serverLoadPending || !_authSettled) {
+      // Server data (or the auth state itself) is still resolving. Hold the
+      // URL and show a neutral loading state; resolveUrl() runs again once
+      // the load completes.
+      renderLoadingChat();
+      return;
+    }
+    renderNotFound();
+  }
+
+  function showChatStatus(title, subtitle, { showHome = false } = {}) {
+    const status = el.chatStatus;
+    if (!status) return;
+    el.emptyState.style.display = "none";
+    el.chatMessages.innerHTML = "";
+    el.chatStatusTitle.textContent = title;
+    el.chatStatusSubtitle.textContent = subtitle || "";
+    el.chatStatusHome.style.display = showHome ? "inline-flex" : "none";
+    status.hidden = false;
+    updateClearChatButtonState();
+  }
+
+  function hideChatStatus() {
+    if (el.chatStatus) el.chatStatus.hidden = true;
+  }
+
+  function renderLoadingChat() {
+    showChatStatus("Loading chat…", "Restoring your conversation.");
+  }
+
+  function renderNotFound() {
+    showChatStatus("Chat not found", "This chat doesn't exist, was deleted, or belongs to a different account.", { showHome: true });
+  }
+
+  function goHome() {
+    setUrlConvo(null);
+    state.activeId = null;
+    renderHistory();
+    renderChat();
+    updateClearChatButtonState();
+  }
+
+  window.addEventListener("hashchange", resolveUrl);
 
   function init() {
     loadState();
-    // BUG FIX: Do NOT auto-select conversations[0]. Base URL = empty landing state.
-    // Only load a conversation if the URL explicitly references one.
-    const urlConvoId = getConvoIdFromUrl();
-    if (urlConvoId) {
-      const convo = state.conversations.find(c => c.id === urlConvoId);
-      if (convo) {
-        state.activeId = convo.id;
-      } else {
-        // URL has an ID that doesn't match any saved conversation → empty state
-        state.activeId = null;
-        setUrlConvo(null); // clean up the URL
-      }
-    } else {
-      // No conversation ID in URL → empty landing state, always
-      state.activeId = null;
-    }
+    // The URL is the source of truth for what to open. Never clear it
+    // preemptively and never auto-create a conversation from the base URL.
+    state.activeId = null;
+    resolveUrl();
     renderHistory();
-    renderChat();
     initAuth();       // auth first — more critical than composer
     initPromptBar();  // prompt bar before updateComposerState so it can delegate
     updateComposerState();

@@ -823,6 +823,48 @@
     max-width: 460px;
   }
 
+  /* --- chat status (loading / not found) --- */
+  .chat-status {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: var(--space-5);
+    padding: var(--space-7) 0;
+  }
+  .chat-status[hidden] { display: none; }
+  .chat-status__title {
+    font-size: var(--fs-xl);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .chat-status__subtitle {
+    font-size: var(--fs-base);
+    color: var(--color-text-muted);
+    max-width: 460px;
+  }
+  .chat-status__home {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-family: inherit;
+    font-weight: 600;
+    font-size: var(--fs-sm);
+    border-radius: var(--radius-md);
+    border: var(--border-width) solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text);
+    padding: var(--space-3) var(--space-4);
+    cursor: pointer;
+    transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+  }
+  .chat-status__home:hover {
+    border-color: var(--color-accent-border);
+    background: var(--color-accent-soft);
+  }
+
   .prompt-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0,1fr));
@@ -1805,6 +1847,17 @@
           <p class="empty-state__subtitle">Describe it in plain language. The agent will classify the issue, check it against Nigerian law, and tell you exactly what to do next — including when you actually need a lawyer.</p>
 
 
+        </div>
+
+        <div class="chat-status" id="chat-status" hidden>
+          <div class="empty-state__mark">
+            <svg viewBox="0 0 32 32" fill="none"><path d="M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M11 15.5L14.2 18.7L21 11.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h1 class="chat-status__title" id="chat-status-title">Chat not found</h1>
+          <p class="chat-status__subtitle" id="chat-status-subtitle">This chat doesn't exist, was deleted, or belongs to a different account.</p>
+          <button type="button" class="chat-status__home" id="chat-status-home">
+            <i class="fa-solid fa-house"></i> Back to home
+          </button>
         </div>
 
         <div class="chat__messages" id="chat-messages"></div>
