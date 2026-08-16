@@ -552,6 +552,70 @@ import {
     return headers;
   }
 
+  // ── Phase 4: Event-driven SSE client ──────────────────────────────────
+  // Uses fetch + ReadableStream for authenticated SSE (EventSource doesn't
+  // support custom headers). Emits structured events that drive the UI
+  // reactively instead of relying on hardcoded step pacing.
+  async function callChatApiSSE(question, { onClassify, onSearch, onDraft, onCritique, onSafetyFlag, onComplete, onCasual, onNeedsInput, onCorpusEmpty, onError } = {}) {
+    const headers = await getAuthHeaders();
+    const url = `/api/chat/stream?question=${encodeURIComponent(question)}`;
+
+    const res = await fetch(url, { headers, signal: AbortSignal.timeout(180000) });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.message || "SSE request failed (" + res.status + ")");
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop(); // keep incomplete line in buffer
+
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const jsonStr = line.slice(6).trim();
+        if (!jsonStr) continue;
+
+        let event;
+        try { event = JSON.parse(jsonStr); } catch (e) { continue; }
+
+        switch (event.event) {
+          case "classify_done": onClassify?.(event); break;
+          case "search_done": onSearch?.(event); break;
+          case "draft_done": onDraft?.(event); break;
+          case "critique_done": onCritique?.(event); break;
+          case "safety_flag":
+            onSafetyFlag?.(event);
+            return { safetyFlag: true, ackToken: event.ackToken, practiceArea: event.practiceArea, message: event.message };
+          case "complete":
+            onComplete?.(event);
+            return { hasResult: true, result: event.result, classification: event.classification, critique: event.critique, route: event.route };
+          case "casual":
+            onCasual?.(event);
+            return { isCasual: true, casualReply: event.casualReply };
+          case "needs_input":
+            onNeedsInput?.(event);
+            return { needsInput: true, question: event.question, field: event.field };
+          case "corpus_empty":
+            onCorpusEmpty?.(event);
+            return { corpusEmpty: true, message: event.message };
+          case "error":
+            onError?.(event);
+            throw new Error(event.message || "Stream error");
+        }
+      }
+    }
+
+    return { hasResult: false };
+  }
+
   async function callChatApi(question, history) {
     console.log('[callChatApi] Starting API call to /api/chat');
     
@@ -1805,8 +1869,22 @@ import {
       return;
     }
 
-    // HITL — agent needs clarification before continuing
+    // HITL — agent needs clarification or safety acknowledgment
     if (response.needsInput) {
+      // Phase 3: Safety acknowledgment — show ApprovalCard instead of text input
+      if (response.safetyAck) {
+        console.log('[runPipeline] Safety acknowledgment required:', response.question);
+
+        if (live.loadingState) {
+          live.loadingState.destroy();
+          live.loadingState = null;
+        }
+
+        renderSafetyApproval(agentMsg, response, token);
+        finalizeAnswer(agentMsg, token);
+        return;
+      }
+
       console.log('[runPipeline] Agent needs input:', response.question);
       
       // Stop loading state
@@ -2205,6 +2283,113 @@ import {
     
     // Focus input
     setTimeout(() => input.focus(), 100);
+  }
+
+  // Phase 3: Safety acknowledgment UI — wired to HITL when high-risk answer fails critique
+  function renderSafetyApproval(agentMsg, response, token) {
+    if (!live.refs || !live.refs.body) return;
+
+    const wrap = document.createElement("div");
+    wrap.className = "safety-approval";
+    wrap.style.cssText = `
+      background: rgba(229, 72, 77, 0.08);
+      border: 1px solid rgba(229, 72, 77, 0.35);
+      border-radius: 10px;
+      padding: 16px;
+      margin: 12px 0;
+    `;
+
+    wrap.innerHTML = `
+      <div style="display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px;">
+        <div style="flex-shrink:0; color: var(--color-danger, #e5484d); font-size: 20px; margin-top: 2px;">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div>
+          <div style="font-weight: 600; font-size: 14px; color: var(--color-danger, #e5484d); margin-bottom: 6px;">
+            High-risk legal area — review required
+          </div>
+          <div style="font-size: 13px; color: var(--color-text-muted, #9a9a94); line-height: 1.5;">
+            ${escapeHtml(response.context?.message || response.question || "This response could not be fully verified.")}
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button class="safety-ack-cancel" style="
+          padding: 8px 16px; background: transparent;
+          border: 1px solid var(--color-border, #2a2a2a);
+          border-radius: 6px; color: var(--color-text-muted, #9a9a94);
+          font-size: 13px; cursor: pointer;
+        ">Cancel</button>
+        <button class="safety-ack-confirm" style="
+          padding: 8px 16px; background: var(--color-danger, #e5484d);
+          border: none; border-radius: 6px; color: white;
+          font-size: 13px; font-weight: 600; cursor: pointer;
+        ">I understand, show me</button>
+      </div>
+    `;
+
+    // Cancel — dismiss the card
+    wrap.querySelector(".safety-ack-cancel").addEventListener("click", () => {
+      wrap.style.opacity = "0.5";
+      wrap.querySelector(".safety-ack-confirm").disabled = true;
+      wrap.querySelector(".safety-ack-cancel").textContent = "Dismissed";
+      wrap.querySelector(".safety-ack-cancel").disabled = true;
+      // Send rejection to server
+      getAuthHeaders().then(headers => {
+        fetch("/api/chat/acknowledge", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ ackToken: response.ackToken, acknowledged: false }),
+        }).catch(() => {});
+      });
+    });
+
+    // Confirm — fetch the cached response and render it
+    wrap.querySelector(".safety-ack-confirm").addEventListener("click", async () => {
+      const confirmBtn = wrap.querySelector(".safety-ack-confirm");
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = "Loading...";
+
+      try {
+        const headers = await getAuthHeaders();
+        const res = await fetch("/api/chat/acknowledge", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ ackToken: response.ackToken, acknowledged: true }),
+        });
+        const data = await res.json();
+
+        if (data.acknowledged && data.result) {
+          // Remove the approval card
+          wrap.remove();
+
+          // Set the result on the agent message and render the answer
+          agentMsg.result = data.result;
+          agentMsg.classification = data.classification;
+          agentMsg.status = "done";
+          if (data.critique) {
+            agentMsg.critique = data.critique;
+          }
+
+          // Render the answer block with safety banner
+          const answerBlock = buildAnswerBlock(agentMsg, { stream: false });
+          live.refs.body.appendChild(answerBlock);
+          saveState();
+          renderHistory();
+          scrollChatToBottom();
+        } else {
+          confirmBtn.textContent = "Response unavailable";
+          confirmBtn.style.opacity = "0.5";
+        }
+      } catch (err) {
+        console.error("[safetyAck] Failed:", err);
+        confirmBtn.textContent = "Error — try again";
+        confirmBtn.disabled = false;
+      }
+    });
+
+    live.refs.body.appendChild(wrap);
+    scrollChatToBottom();
   }
 
   function renderProvidersBusy(agentMsg, response) {
