@@ -53,6 +53,7 @@ import {
     chatStatusTitle: document.getElementById("chat-status-title"),
     chatStatusSubtitle: document.getElementById("chat-status-subtitle"),
     chatStatusHome: document.getElementById("chat-status-home"),
+    chatStatusSignin: document.getElementById("chat-status-signin"),
     conversationTitle: document.getElementById("conversation-title"),
     classificationBadges: document.getElementById("classification-badges"),
     composerForm: document.getElementById("composer-form") || document.getElementById("prompt-bar-container"),
@@ -3176,6 +3177,9 @@ import {
   el.newChatBtn.addEventListener("click", createConversation);
   el.newChatMobile.addEventListener("click", createConversation);
   if (el.chatStatusHome) el.chatStatusHome.addEventListener("click", goHome);
+  if (el.chatStatusSignin) el.chatStatusSignin.addEventListener("click", () => {
+    if (window.firebaseAuth) openAuthModal();
+  });
   el.menuToggle.addEventListener("click", openMobileSidebar);
   el.sidebarClose.addEventListener("click", closeMobileSidebar);
   el.scrim.addEventListener("click", closeMobileSidebar);
@@ -3214,15 +3218,16 @@ import {
         setupAuth();
       }, { once: true });
       
-      // Fallback: if Firebase doesn't load within 3 seconds, treat auth as
-      // settled (no Firebase = anonymous/localStorage only) and resolve any
-      // pending direct-URL navigation against local data.
+      // Fallback: if Firebase doesn't load within 3 seconds, show the
+      // disabled sign-in state. (No resolveUrl() here: in the no-Firebase
+      // path _authSettled is already true and the URL was already resolved
+      // synchronously in init(), so re-resolving would just re-render the
+      // sidebar mid-interaction and could detach in-flight elements.)
       setTimeout(() => {
         if (!window.firebaseAuth) {
           console.warn("[auth] Firebase Auth isn't configured — sign-in disabled.");
           _authSettled = true;
           renderAuthSection(null);
-          resolveUrl();
         }
       }, 3000);
     }
@@ -3564,12 +3569,30 @@ import {
       // URL and show a neutral loading state; resolveUrl() runs again once
       // the load completes.
       renderLoadingChat();
+      renderHistory(); // keep the sidebar consistent with the main area
       return;
     }
+
+    // Signed out + chat URL → the user must authenticate before we can even
+    // check ownership. Show a sign-in prompt, NOT a misleading "not found".
+    // (A signed-out visitor can't own any chat, so "not found / not yours"
+    // would be the wrong explanation.)
+    const signedOut = !!(window.firebaseAuth && !window.firebaseAuth.currentUser);
+    if (signedOut) {
+      showChatStatus(
+        "Sign in to view this chat",
+        "This chat is saved to an account. Sign in first so we can check whether it's yours.",
+        { showSignIn: true }
+      );
+      renderHistory(); // resolve the sidebar to the empty/signed-out state
+      return;
+    }
+
     renderNotFound();
+    renderHistory(); // resolve the sidebar instead of leaving it on "Loading…"
   }
 
-  function showChatStatus(title, subtitle, { showHome = false } = {}) {
+  function showChatStatus(title, subtitle, { showHome = false, showSignIn = false } = {}) {
     const status = el.chatStatus;
     if (!status) return;
     el.emptyState.style.display = "none";
@@ -3577,6 +3600,7 @@ import {
     el.chatStatusTitle.textContent = title;
     el.chatStatusSubtitle.textContent = subtitle || "";
     el.chatStatusHome.style.display = showHome ? "inline-flex" : "none";
+    if (el.chatStatusSignin) el.chatStatusSignin.style.display = showSignIn ? "inline-flex" : "none";
     status.hidden = false;
     updateClearChatButtonState();
   }

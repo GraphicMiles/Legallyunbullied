@@ -212,9 +212,11 @@ async function main() {
 
     // Delete the last remaining chat → 0 conversations is a valid state
     await check("deleting the last chat reaches a valid 0-conversation state", async () => {
+      // Use a selector click (auto-waits + re-resolves) instead of holding
+      // element handles, so a benign sidebar re-render can't stale the handle.
       const rows = await page.$$(".history__row .history__kebab");
       assert.strictEqual(rows.length, 1, "one chat should remain");
-      await rows[0].click();
+      await page.click(".history__row .history__kebab");
       await page.waitForTimeout(200);
       await page.click(".menu-popover__item--danger");
       await page.waitForTimeout(200);

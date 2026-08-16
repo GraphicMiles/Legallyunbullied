@@ -1,0 +1,37 @@
+Fix signed-out chat URL: sign-in prompt, resolved sidebar, better error logging
+
+Traced the signed-out chat-URL flow end to end and reproduced it in a
+headless browser:
+
+Root causes:
+1. resolveUrl()'s not-found branch called renderNotFound() but never
+   renderHistory(), so the sidebar stayed on 'Loading...' forever after the
+   auth callback ran. (Confirmed: the auth callback fired with a signed-out
+   user and resolveUrl() showed 'Chat not found' while the sidebar hung.)
+2. A signed-out visitor was shown 'Chat not found — doesn't exist / belongs
+   to a different account', which is misleading: a signed-out user can't own
+   any chat, so the real answer is 'you need to sign in'.
+3. The debug panel's error handler logged only e.message, so cross-origin
+   errors appeared as 'Script error. at :0' with no stack. (No same-origin
+   JS error was found in the app's own code; the sanitized 'Script error.'
+   originates from a cross-origin script — the gstatic Firebase modules —
+   and the improved logging now captures e.error.stack wherever the browser
+   exposes it.)
+
+Fixes:
+- resolveUrl() now re-renders the sidebar in every branch, so it never
+  hangs on 'Loading...'.
+- Signed-out + chat URL now shows 'Sign in to view this chat' with a Sign
+  in button (opens the auth modal), instead of the misleading 'not found'.
+  Authenticated users still get the real 'Chat not found' for unknown or
+  foreign IDs.
+- Debug panel captures full error stacks for both 'error' and
+  'unhandledrejection'.
+- Removed a redundant resolveUrl() call from the 3s no-Firebase fallback
+  (the URL is already resolved synchronously in init() when Firebase is
+  absent) — this also fixed an intermittent sidebar re-render race that
+  could detach in-flight elements.
+
+Added test-chat-signedout-url.js: signed-out URL → sign-in prompt + resolved
+sidebar; signed-out base URL → landing; signed-in unknown URL → not found;
+signed-in known URL → loads.
