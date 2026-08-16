@@ -475,31 +475,63 @@ const QUESTION_CACHE_MAX = 200;
 
 // ── Pending safety acknowledgments (V1 Phase 3 — HITL on safety fail) ────
 // When a high-risk answer fails critique after all retries, the response is
-// held in this map until the user explicitly acknowledges the safety warning.
-const pendingSafetyAck = new Map();  // token → { result, classification, ... }
+// held until the user explicitly acknowledges the safety warning.
+//
+// The pending record is persisted to Firestore (safety_acks/{token}) so it
+// SURVIVES a server restart — previously an in-memory Map, so a redeploy
+// between the warning and the user clicking "I understand, show me" wiped the
+// token and the button failed. The in-memory Map is now only a read-through
+// cache so same-instance reads stay instant. safety_acks is top-level and
+// accessed only via the Admin SDK (denied by the catch-all client rule).
+const pendingSafetyAck = new Map();  // token → { data, timestamp } (cache)
 const SAFETY_ACK_TTL = 10 * 60 * 1000; // 10 minutes
 
 function generateAckToken() {
   return "safety_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
 
-function getPendingAck(token) {
-  const entry = pendingSafetyAck.get(token);
-  if (!entry) return null;
-  if (Date.now() - entry.timestamp > SAFETY_ACK_TTL) {
-    pendingSafetyAck.delete(token);
-    return null;
+async function setPendingAck(token, data) {
+  const d = getFirestore();
+  if (d) {
+    try {
+      await d.collection("safety_acks").doc(token).set({ data, createdAt: Date.now() });
+    } catch (err) {
+      console.warn("[ack] persist failed:", err.message);
+    }
   }
-  return entry.data;
+  pendingSafetyAck.set(token, { data, timestamp: Date.now() });
 }
 
-function setPendingAck(token, data) {
-  pendingSafetyAck.set(token, { data, timestamp: Date.now() });
-  // Clean expired entries periodically
-  if (pendingSafetyAck.size > 50) {
-    const now = Date.now();
-    for (const [k, v] of pendingSafetyAck) {
-      if (now - v.timestamp > SAFETY_ACK_TTL) pendingSafetyAck.delete(k);
+async function getPendingAck(token) {
+  const mem = pendingSafetyAck.get(token);
+  if (mem && Date.now() - mem.timestamp <= SAFETY_ACK_TTL) return mem.data;
+  const d = getFirestore();
+  if (d) {
+    try {
+      const snap = await d.collection("safety_acks").doc(token).get();
+      if (snap.exists) {
+        const doc = snap.data();
+        if (Date.now() - (doc.createdAt || 0) <= SAFETY_ACK_TTL) {
+          pendingSafetyAck.set(token, { data: doc.data, timestamp: doc.createdAt });
+          return doc.data;
+        }
+        await snap.ref.delete().catch(() => {});
+      }
+    } catch (err) {
+      console.warn("[ack] lookup failed:", err.message);
+    }
+  }
+  return null;
+}
+
+async function deletePendingAck(token) {
+  pendingSafetyAck.delete(token);
+  const d = getFirestore();
+  if (d) {
+    try {
+      await d.collection("safety_acks").doc(token).delete();
+    } catch (err) {
+      console.warn("[ack] delete failed:", err.message);
     }
   }
 }
@@ -1063,6 +1095,17 @@ async function runChatPipeline(req) {
     },
   };
   try {
+  // ── Checkpoint resume (background-worker re-runs only) ───────────────────
+  // A job re-run carries req.checkpoints (step outputs saved by a previous
+  // attempt) and req.saveCheckpoint (persists new outputs). Each expensive or
+  // external step is skipped when its checkpoint already exists, so a crashed
+  // job RESUMES from the last completed step instead of restarting from
+  // scratch. The live HTTP path passes neither, so it is unchanged.
+  const cp = (req && req.checkpoints) || {};
+  const saveCheckpoint = (typeof (req && req.saveCheckpoint) === "function")
+    ? req.saveCheckpoint
+    : async () => {};
+
   const question = (req.body && req.body.question || "").toString().trim();
   if (!question) {
     return res.status(400).json({ error: "bad_request", message: '"question" is required.' });
@@ -1103,26 +1146,42 @@ async function runChatPipeline(req) {
   // or legal matter, steer the classifier toward a legal classification and
   // enforce it as a backstop below.
   const forcedLegal = detectLegalIntent(question).legal;
-  let classifyResult;
-  try {
-    classifyResult = await classifyWithFallback(question, conversationContext, { forceLegal: forcedLegal });
-  } catch (err) {
-    console.error("[/api/chat] classification failed:", err.status || "", err.message);
-    await serverPersistMessage(req, { status: "error", errorMessage: "The classification model failed to respond. " + (err.message || ""), pipelineStatus: "failed", unread: true });
-    return res.status(502).json({
-      error: "classification_failed",
-      message: "The classification model failed to respond. " + (err.message || ""),
-    });
-  }
+  let classification;
+  let classifyProvider = null;
 
-  let { classification, provider: classifyProvider } = classifyResult;
+  if (cp.classification) {
+    // Resume: reuse the already-computed classification. The checkpoint is
+    // stored as { classification, classifyProvider }, so unpack it.
+    classification = (cp.classification.classification != null)
+      ? cp.classification.classification
+      : cp.classification;
+    classifyProvider = cp.classification.classifyProvider || null;
+    console.log("[chat] Resuming from classification checkpoint");
+  } else {
+    let classifyResult;
+    try {
+      classifyResult = await classifyWithFallback(question, conversationContext, { forceLegal: forcedLegal });
+    } catch (err) {
+      console.error("[/api/chat] classification failed:", err.status || "", err.message);
+      await serverPersistMessage(req, { status: "error", errorMessage: "The classification model failed to respond. " + (err.message || ""), pipelineStatus: "failed", unread: true });
+      return res.status(502).json({
+        error: "classification_failed",
+        message: "The classification model failed to respond. " + (err.message || ""),
+      });
+    }
 
-  // Backstop: if the deterministic gate fired but the classifier still said
-  // "casual", override with a valid legal classification. A described assault
-  // must never fall through to a casual/empathy-only reply.
-  if (forcedLegal && classification.is_legal_question === false) {
-    console.warn("[/api/chat] Classifier said casual but deterministic gate detected a legal incident — forcing legal path");
-    classification = buildFallbackClassification(question);
+    classification = classifyResult.classification;
+    classifyProvider = classifyResult.provider;
+
+    // Backstop: if the deterministic gate fired but the classifier still said
+    // "casual", override with a valid legal classification. A described assault
+    // must never fall through to a casual/empathy-only reply.
+    if (forcedLegal && classification.is_legal_question === false) {
+      console.warn("[/api/chat] Classifier said casual but deterministic gate detected a legal incident — forcing legal path");
+      classification = buildFallbackClassification(question);
+    }
+
+    await saveCheckpoint("classification", { classification, classifyProvider });
   }
 
   // Step 2: If casual chat, return early with a friendly response
@@ -1224,46 +1283,6 @@ async function runChatPipeline(req) {
   }
 
   // Step 3: Legal question — proceed with full pipeline
-  let provisions;
-  try {
-    provisions = await findProvisions({
-      practiceArea: classification.practice_area,
-      jurisdiction: classification.jurisdiction,
-      keywords: classification.keywords,
-    });
-  } catch (err) {
-    console.error("[/api/chat] Firestore lookup failed:", err.message);
-    
-    // Provide user-friendly error messages
-    let userMessage = err.message;
-    if (err.message.includes("Quota exceeded")) {
-      userMessage = "Our legal database is temporarily unavailable due to high demand. Please try again in a few minutes, or ask a different question.";
-    } else if (err.message.includes("timed out")) {
-      userMessage = "The request took too long to process. Please try again with a simpler question.";
-    }
-    
-    await serverPersistMessage(req, { status: "error", errorMessage: userMessage, pipelineStatus: "failed", unread: true });
-    return res.status(502).json({ 
-      error: "corpus_lookup_failed", 
-      message: userMessage,
-      technicalDetails: err.message 
-    });
-  }
-
-  if (!provisions.length) {
-    const corpusEmptyMessage =
-      `No ingested legal sources match "${classification.practice_area}" yet. ` +
-      "Run the ingestion script for this practice area before this endpoint can answer it.";
-    await serverPersistMessage(req, { status: "corpusEmpty", corpusEmptyMessage, pipelineStatus: "done", unread: true });
-    return res.json({
-      classification,
-      result: null,
-      corpusEmpty: true,
-      message: corpusEmptyMessage,
-    });
-  }
-
-  // Route (declared here so the insufficient-evidence early returns can use it)
   const route = classification.route || (classification.complexity === "Low" ? "simple" : "complex");
   const isSimple = route === "simple";
 
@@ -1274,16 +1293,65 @@ async function runChatPipeline(req) {
   // low-confidence "insufficient evidence" response instead of dressing up a
   // mismatched citation as a confident answer.
   const MIN_SOURCES = 2; // at least 2 directly-on-point provisions required for a confident answer
-  const evidence = {
-    sufficient: false,
-    relevanceScore: null,
-    sourceCount: 0,
-    retrievedFrom: [classification.practice_area],
-    reason: "",
-    minSources: MIN_SOURCES,
-  };
 
-  let workingProvisions = provisions;
+  let workingProvisions;
+  let evidence;
+
+  if (cp.retrieval) {
+    // Resume: reuse the already-computed provisions + gate verdict.
+    workingProvisions = cp.retrieval.workingProvisions;
+    evidence = cp.retrieval.evidence;
+    console.log("[chat] Resuming from retrieval checkpoint");
+  } else {
+    evidence = {
+      sufficient: false,
+      relevanceScore: null,
+      sourceCount: 0,
+      retrievedFrom: [classification.practice_area],
+      reason: "",
+      minSources: MIN_SOURCES,
+    };
+
+    let provisions;
+    try {
+      provisions = await findProvisions({
+        practiceArea: classification.practice_area,
+        jurisdiction: classification.jurisdiction,
+        keywords: classification.keywords,
+      });
+    } catch (err) {
+      console.error("[/api/chat] Firestore lookup failed:", err.message);
+      
+      // Provide user-friendly error messages
+      let userMessage = err.message;
+      if (err.message.includes("Quota exceeded")) {
+        userMessage = "Our legal database is temporarily unavailable due to high demand. Please try again in a few minutes, or ask a different question.";
+      } else if (err.message.includes("timed out")) {
+        userMessage = "The request took too long to process. Please try again with a simpler question.";
+      }
+      
+      await serverPersistMessage(req, { status: "error", errorMessage: userMessage, pipelineStatus: "failed", unread: true });
+      return res.status(502).json({ 
+        error: "corpus_lookup_failed", 
+        message: userMessage,
+        technicalDetails: err.message 
+      });
+    }
+
+    if (!provisions.length) {
+      const corpusEmptyMessage =
+        `No ingested legal sources match "${classification.practice_area}" yet. ` +
+        "Run the ingestion script for this practice area before this endpoint can answer it.";
+      await serverPersistMessage(req, { status: "corpusEmpty", corpusEmptyMessage, pipelineStatus: "done", unread: true });
+      return res.json({
+        classification,
+        result: null,
+        corpusEmpty: true,
+        message: corpusEmptyMessage,
+      });
+    }
+
+    workingProvisions = provisions;
 
   try {
     const gate = await assessRelevanceWithFallback(question, classification, provisions);
@@ -1402,6 +1470,9 @@ async function runChatPipeline(req) {
     evidence.relevanceScore = null;
   }
 
+    await saveCheckpoint("retrieval", { workingProvisions, evidence });
+  }
+
   const EXCERPT_CHAR_CAP = 700; // keep total context small enough to fit even the tighter fallback model's per-minute limit
   const contextBlock = workingProvisions
     .map((p) => {
@@ -1410,26 +1481,40 @@ async function runChatPipeline(req) {
     })
     .join("\n\n---\n\n");
 
-  let planResult = { plan: null, provider: "skipped" };
-  if (!isSimple) {
-    try {
-      planResult = await planResponse(question, classification, workingProvisions);
-      console.log(`[/api/chat] Planning completed via ${planResult.provider} (route=${route})`);
-    } catch (err) {
-      console.warn("[/api/chat] planning failed, continuing without plan:", err.message);
-      planResult = { plan: null, provider: "none" };
-    }
-  } else {
-    console.log(`[/api/chat] Simple route — skipping planning (route=${route})`);
-  }
-
-  // Step 5: Check question cache before running draft (V1 Phase 11)
-  const cacheKey = getCacheKey(question, classification.jurisdiction);
-  const cached = getCachedResult(cacheKey);
+  let planResult;
   let draftResult;
   let critiqueResult = null;
 
-  if (cached && !cached.providersBusy) {
+  if (cp.draftAndCritique) {
+    // Resume: reuse the already-computed plan + draft + critique, skipping the
+    // most expensive step (the draft LLM call) entirely.
+    planResult = cp.draftAndCritique.planResult;
+    draftResult = cp.draftAndCritique.draftResult;
+    critiqueResult = cp.draftAndCritique.critiqueResult;
+    console.log("[chat] Resuming from draft/critique checkpoint");
+    // The previous attempt may have crashed before caching the result.
+    if (!draftResult.providersBusy && draftResult.result) {
+      setCachedResult(getCacheKey(question, classification.jurisdiction), draftResult);
+    }
+  } else {
+    planResult = { plan: null, provider: "skipped" };
+    if (!isSimple) {
+      try {
+        planResult = await planResponse(question, classification, workingProvisions);
+        console.log(`[/api/chat] Planning completed via ${planResult.provider} (route=${route})`);
+      } catch (err) {
+        console.warn("[/api/chat] planning failed, continuing without plan:", err.message);
+        planResult = { plan: null, provider: "none" };
+      }
+    } else {
+      console.log(`[/api/chat] Simple route — skipping planning (route=${route})`);
+    }
+
+    // Step 5: Check question cache before running draft (V1 Phase 11)
+    const cacheKey = getCacheKey(question, classification.jurisdiction);
+    const cached = getCachedResult(cacheKey);
+
+    if (cached && !cached.providersBusy) {
     console.log(`[/api/chat] Cache HIT for question (key: ${cacheKey.slice(0, 50)})`);
     draftResult = cached;
   } else {
@@ -1500,7 +1585,7 @@ async function runChatPipeline(req) {
         console.warn(`[/api/chat] HIGH-RISK category "${practiceArea}" failed critique after ${MAX_CRITIQUE_RETRIES + 1} attempts — requiring safety acknowledgment (HITL)`);
 
         const ackToken = generateAckToken();
-        setPendingAck(ackToken, {
+        await setPendingAck(ackToken, {
           question,
           classification,
           draftResult,
@@ -1519,10 +1604,10 @@ async function runChatPipeline(req) {
           issues: critiqueResult.issues,
           message: "This response covers a high-risk legal area and could not be verified to our standard. Do you still want to see the response? We strongly recommend consulting a qualified lawyer.",
         };
-        // Persist the card state (not the in-memory token) so a reopened chat
-        // shows the review-required card; the token itself can't survive a
-        // restart (separate follow-up: move the ack map to Firestore).
-        await serverPersistMessage(req, { status: "safetyAck", safetyAckQuestion: ackQuestion, safetyAckContext: ackContext, pipelineStatus: "awaiting_input", unread: true });
+        // Persist the card state AND the token (now Firestore-durable) so a
+        // reopened chat re-renders a WORKING "I understand, show me" button —
+        // even across a server restart.
+        await serverPersistMessage(req, { status: "safetyAck", safetyAckQuestion: ackQuestion, safetyAckContext: ackContext, safetyAckToken: ackToken, pipelineStatus: "awaiting_input", unread: true });
         res.json({
           needsInput: true,
           safetyAck: true,
@@ -1536,10 +1621,13 @@ async function runChatPipeline(req) {
       }
     }
 
-    // Cache the result (only successful, non-busy responses)
-    if (!draftResult.providersBusy && draftResult.result) {
-      setCachedResult(cacheKey, draftResult);
+      // Cache the result (only successful, non-busy responses)
+      if (!draftResult.providersBusy && draftResult.result) {
+        setCachedResult(cacheKey, draftResult);
+      }
     }
+
+    await saveCheckpoint("draftAndCritique", { planResult, draftResult, critiqueResult });
   }
 
   // ── Hedge downgrade: if the draft's OWN text doubts whether its citations
@@ -1660,14 +1748,14 @@ router.post("/api/chat/acknowledge", async (req, res) => {
     return res.status(400).json({ error: "bad_request", message: "ackToken is required" });
   }
 
-  const pending = getPendingAck(ackToken);
+  const pending = await getPendingAck(ackToken);
   if (!pending) {
     return res.status(404).json({ error: "not_found", message: "Acknowledgment token expired or not found. Please re-ask your question." });
   }
 
   // User rejected — don't return the response
   if (acknowledged === false) {
-    pendingSafetyAck.delete(ackToken);
+    await deletePendingAck(ackToken);
     return res.json({
       acknowledged: false,
       message: "Response withheld. Please consult a qualified lawyer for this matter.",
@@ -1675,7 +1763,7 @@ router.post("/api/chat/acknowledge", async (req, res) => {
   }
 
   // User acknowledged — return the cached response with safety flag attached
-  pendingSafetyAck.delete(ackToken);
+  await deletePendingAck(ackToken);
   const { question, classification, draftResult, critiqueResult, route, planResult, cacheKey } = pending;
 
   // Attach safety flag so the client can render the warning banner
@@ -1879,7 +1967,7 @@ router.get("/api/chat/stream", async (req, res) => {
     // ── Phase 3: Safety HITL ──
     if (isHighRisk && critiqueResult && !critiqueResult.passed) {
       const ackToken = generateAckToken();
-      setPendingAck(ackToken, { question, classification, draftResult, critiqueResult, route: classification.route });
+      await setPendingAck(ackToken, { question, classification, draftResult, critiqueResult, route: classification.route });
       emit({
         event: "safety_flag",
         practiceArea,
@@ -1968,5 +2056,11 @@ Examples:
 });
 
 router.runChatPipeline = runChatPipeline;
+
+// Test hooks (simulate a server restart by dropping the in-memory caches).
+router.__testing = {
+  clearAckCache: () => pendingSafetyAck.clear(),
+  clearQuestionCache: () => questionCache.clear(),
+};
 
 module.exports = router;
