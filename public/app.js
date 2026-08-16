@@ -940,31 +940,66 @@ import {
   function appendContextCards(sectionEl, sources) {
     if (!sources || !sources.length) return;
     
-    // Use BeUIContextCards if available
-    if (window.BeUIContextCards) {
-      const container = document.createElement("div");
-      sectionEl.appendChild(container);
+    // Simple inline citation list - no card styling
+    const list = document.createElement("div");
+    list.className = "answer-sources";
+    list.style.cssText = `
+      margin-top: 12px;
+      padding: 8px 0;
+      border-top: 1px solid var(--color-border-soft, #1f1f1f);
+    `;
+    
+    const label = document.createElement("div");
+    label.style.cssText = `
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--color-text-faint, #6b6b66);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    `;
+    label.textContent = "Sources";
+    list.appendChild(label);
+    
+    sources.forEach((src) => {
+      const item = document.createElement("div");
+      item.style.cssText = `
+        font-size: 12px;
+        color: var(--color-text-muted, #9a9a94);
+        margin-bottom: 4px;
+        padding-left: 12px;
+        border-left: 2px solid var(--color-accent-border, rgba(242, 183, 5, 0.35));
+      `;
       
-      // Convert sources to chunks format expected by BeUIContextCards
-      const chunks = sources.map((src) => ({
-        title: src.label || "Unknown Source",
-        body: src.excerpt || "",
-        source: src.label || "",
-        badge: src.type || "SOURCE",
-        tone: "var(--color-accent)"
-      }));
+      const name = document.createElement("span");
+      name.style.cssText = `
+        font-weight: 600;
+        color: var(--color-text, #f5f5f2);
+      `;
+      name.textContent = src.label || "Unknown Source";
+      item.appendChild(name);
       
-      new window.BeUIContextCards(container, {
-        chunks: chunks,
-        maxVisible: 3
-      });
-    } else {
-      // Fallback to old context cards
-      const list = document.createElement("div");
-      list.className = "context-list";
-      sources.forEach((src, i) => list.appendChild(buildContextCard(src, i)));
-      sectionEl.appendChild(list);
-    }
+      if (src.excerpt) {
+        const excerpt = document.createElement("span");
+        excerpt.style.cssText = `
+          display: block;
+          margin-top: 2px;
+          font-style: italic;
+          color: var(--color-text-faint, #6b6b66);
+          line-height: 1.4;
+        `;
+        // Truncate long excerpts
+        const maxLen = 200;
+        excerpt.textContent = src.excerpt.length > maxLen 
+          ? src.excerpt.slice(0, maxLen) + "..." 
+          : src.excerpt;
+        item.appendChild(excerpt);
+      }
+      
+      list.appendChild(item);
+    });
+    
+    sectionEl.appendChild(list);
   }
 
   function buildContextCard(src, index) {
@@ -1369,9 +1404,9 @@ import {
         live.loadingState = null;
       }
       
-      // Just render the casual reply directly — no trace/thinking UI
-      renderCasualReply(agentMsg, response.casualReply);
-      finalizeAnswer(agentMsg, token);
+      // Stream the casual reply with animation
+      renderCasualReply(agentMsg, response.casualReply, token);
+      // Note: finalizeAnswer is called inside renderCasualReply's streamText onDone
       return;
     }
 
@@ -1646,12 +1681,40 @@ import {
     return wrap;
   }
 
-  function renderCasualReply(agentMsg, replyText) {
+  function renderCasualReply(agentMsg, replyText, token) {
     if (!live.refs || !live.refs.body) {
       console.warn('[renderCasualReply] live.refs.body not available, cannot render casual reply');
       return;
     }
-    live.refs.body.appendChild(buildCasualReplyEl(replyText));
+    
+    // Create streaming container for casual reply
+    const wrap = document.createElement("div");
+    wrap.className = "casual-reply";
+    wrap.style.cssText = `
+      padding: 12px 0;
+    `;
+    
+    const textContainer = document.createElement("div");
+    textContainer.style.cssText = `
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--color-text, #f5f5f2);
+    `;
+    
+    wrap.appendChild(textContainer);
+    live.refs.body.appendChild(wrap);
+    
+    // Stream the casual reply text
+    streamText(textContainer, replyText, {
+      cps: 300,
+      token: token,
+      onDone: () => {
+        if (token === pipelineToken) {
+          finalizeAnswer(agentMsg, token);
+        }
+      }
+    });
+    
     scrollChatToBottom();
   }
 
