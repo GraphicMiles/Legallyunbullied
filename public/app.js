@@ -1383,7 +1383,17 @@ import {
 
     el.emptyState.style.display = "none";
 
-    convo.messages.forEach((msg) => {
+    // Order by when each message was actually created/sent (createdAt), never
+    // by when it happened to be saved/synced. This guarantees a background-
+    // completed answer always renders BELOW the user's question that prompted
+    // it, regardless of how the server or localStorage returned the array.
+    // (Array.prototype.sort is stable, so equal/missing createdAt keeps the
+    // original relative order.)
+    const orderedMessages = [...convo.messages].sort(
+      (a, b) => (a.createdAt || 0) - (b.createdAt || 0)
+    );
+
+    orderedMessages.forEach((msg) => {
       if (msg.role === "user") {
         el.chatMessages.appendChild(renderUserMessage(msg));
       } else {
