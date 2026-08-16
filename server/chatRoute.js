@@ -23,6 +23,7 @@ const { getClient: getCerebrasClient, CEREBRAS_CLASSIFY_MODEL, CEREBRAS_DRAFT_MO
 const { findProvisions, findProvisionsBroad } = require("./legalCorpus");
 const { detectLegalIntent, buildFallbackClassification } = require("./legalIntent");
 const { PRACTICE_AREAS: PRACTICE_AREA_DEFS, PRACTICE_AREA_KEYS } = require("./practiceAreas");
+const { getFirestore } = require("./firebaseAdmin");
 
 const PRACTICE_AREAS = PRACTICE_AREA_KEYS;
 
@@ -1024,6 +1025,27 @@ async function answerProceduralWithFallback(question, classification, history) {
   throw new Error(`All procedural-answer providers failed: ${lastErr ? lastErr.message : "none configured"}`);
 }
 
+// ── Recoverable-request persistence ────────────────────────────────────────
+// The pipeline runs server-side to completion even when the client's tab is
+// closed (Node keeps executing the handler; only the response write is lost).
+// Persisting the terminal result HERE — instead of relying on the client to
+// save it after receiving the response — means an answer computed while the
+// user was away is waiting for them on reopen. No-op when the client didn't
+// send conversationId/messageId (e.g. older clients).
+function serverPersistMessage(req, fields) {
+  const conversationId = (req.body && typeof req.body.conversationId === "string" && req.body.conversationId) || null;
+  const messageId = (req.body && typeof req.body.messageId === "string" && req.body.messageId) || null;
+  if (!conversationId || !messageId) return Promise.resolve();
+  const db = getFirestore();
+  if (!db) return Promise.resolve();
+  return db
+    .collection("users").doc(req.uid)
+    .collection("conversations").doc(conversationId)
+    .collection("messages").doc(messageId)
+    .set({ userId: req.uid, ...fields }, { merge: true })
+    .catch((err) => console.warn("[chat] serverPersistMessage failed:", err.message));
+}
+
 router.post("/api/chat", async (req, res) => {
   const question = (req.body && req.body.question || "").toString().trim();
   if (!question) {
@@ -1032,6 +1054,10 @@ router.post("/api/chat", async (req, res) => {
 
   // Conversation history for multi-turn context (optional, additive)
   const history = (req.body && Array.isArray(req.body.history)) ? req.body.history : [];
+
+  // Mark the message as running server-side (fire-and-forget) so a reopen
+  // during the pipeline shows "still working" instead of "incomplete".
+  serverPersistMessage(req, { pipelineStatus: "running" });
 
   // Check that at least one LLM provider is configured
   const groqClient = getGroqClient();
@@ -1066,6 +1092,7 @@ router.post("/api/chat", async (req, res) => {
     classifyResult = await classifyWithFallback(question, conversationContext, { forceLegal: forcedLegal });
   } catch (err) {
     console.error("[/api/chat] classification failed:", err.status || "", err.message);
+    await serverPersistMessage(req, { status: "error", errorMessage: "The classification model failed to respond. " + (err.message || ""), pipelineStatus: "failed", unread: true });
     return res.status(502).json({
       error: "classification_failed",
       message: "The classification model failed to respond. " + (err.message || ""),
@@ -1084,9 +1111,11 @@ router.post("/api/chat", async (req, res) => {
 
   // Step 2: If casual chat, return early with a friendly response
   if (classification.is_legal_question === false) {
+    const casualReply = classification.casual_reply || "Hello! I'm here to help with Nigerian legal questions. Feel free to ask me anything about your rights, laws, or legal situations.";
+    await serverPersistMessage(req, { status: "casual", casualReply, pipelineStatus: "done", unread: true });
     return res.json({
       isCasual: true,
-      casualReply: classification.casual_reply || "Hello! I'm here to help with Nigerian legal questions. Feel free to ask me anything about your rights, laws, or legal situations.",
+      casualReply,
       provider: classifyProvider,
     });
   }
@@ -1098,6 +1127,16 @@ router.post("/api/chat", async (req, res) => {
   if (classification.needs_sourcing === false) {
     try {
       const proc = await answerProceduralWithFallback(question, classification, history);
+      const procEvidence = {
+        sufficient: true,
+        relevanceScore: null,
+        sourceCount: 0,
+        retrievedFrom: [],
+        reason: "Practical/procedural question — no statute required.",
+        minSources: 0,
+        noSourcing: true,
+      };
+      await serverPersistMessage(req, { status: "done", result: { ...proc.result, evidence: procEvidence }, pipelineStatus: "done", unread: true });
       return res.json({
         classification,
         route: "simple",
@@ -1106,15 +1145,7 @@ router.post("/api/chat", async (req, res) => {
         draftModel: proc.model,
         draftProvider: proc.provider,
         critique: null,
-        evidence: {
-          sufficient: true,
-          relevanceScore: null,
-          sourceCount: 0,
-          retrievedFrom: [],
-          reason: "Practical/procedural question — no statute required.",
-          minSources: 0,
-          noSourcing: true,
-        },
+        evidence: procEvidence,
         providersBusy: false,
         retryAfter: null,
       });
@@ -1122,34 +1153,37 @@ router.post("/api/chat", async (req, res) => {
       console.warn("[/api/chat] Procedural answer failed, using static guidance:", err.message);
       // Honest fallback: direct practical guidance with NO citations, never
       // routed back into the citation pipeline.
+      const fallbackResult = {
+        lawMd: "Here's straightforward guidance: write things down while they're fresh, keep it factual and specific, and keep a copy for yourself. If this relates to a legal or police matter, also note dates, names, and any documents.",
+        actionsMd:
+          "- Step 1: Write down the key facts (who, what, when, where) as soon as possible.\n" +
+          "- Step 2: Keep it factual — what you saw or heard, not your opinion.\n" +
+          "- Step 3: Save a dated copy (photo or written) for yourself.\n" +
+          "- Step 4: If it's for a legal or police matter, bring this record when you report or meet a lawyer.",
+        sources: [],
+        escalate: false,
+        escalateReason: "This is a practical task you can handle yourself.",
+        followUps: [],
+      };
+      const procEvidence = {
+        sufficient: true,
+        relevanceScore: null,
+        sourceCount: 0,
+        retrievedFrom: [],
+        reason: "Practical/procedural question — no statute required.",
+        minSources: 0,
+        noSourcing: true,
+      };
+      await serverPersistMessage(req, { status: "done", result: { ...fallbackResult, evidence: procEvidence }, pipelineStatus: "done", unread: true });
       return res.json({
         classification,
         route: "simple",
         plan: null,
-        result: {
-          lawMd: "Here's straightforward guidance: write things down while they're fresh, keep it factual and specific, and keep a copy for yourself. If this relates to a legal or police matter, also note dates, names, and any documents.",
-          actionsMd:
-            "- Step 1: Write down the key facts (who, what, when, where) as soon as possible.\n" +
-            "- Step 2: Keep it factual — what you saw or heard, not your opinion.\n" +
-            "- Step 3: Save a dated copy (photo or written) for yourself.\n" +
-            "- Step 4: If it's for a legal or police matter, bring this record when you report or meet a lawyer.",
-          sources: [],
-          escalate: false,
-          escalateReason: "This is a practical task you can handle yourself.",
-          followUps: [],
-        },
+        result: fallbackResult,
         draftModel: "fallback",
         draftProvider: "procedural-fallback",
         critique: null,
-        evidence: {
-          sufficient: true,
-          relevanceScore: null,
-          sourceCount: 0,
-          retrievedFrom: [],
-          reason: "Practical/procedural question — no statute required.",
-          minSources: 0,
-          noSourcing: true,
-        },
+        evidence: procEvidence,
         providersBusy: false,
         retryAfter: null,
       });
@@ -1159,6 +1193,7 @@ router.post("/api/chat", async (req, res) => {
   // Step 2b: HITL — if jurisdiction is unclear and the answer depends on state,
   // ask the user before proceeding. Don't guess and risk wrong law.
   if (classification.jurisdiction_status === "unclear") {
+    await serverPersistMessage(req, { status: "needsInput", needsInputQuestion: "Which state did this happen in? The laws can differ by state.", needsInputField: "jurisdiction", pipelineStatus: "awaiting_input", unread: true });
     return res.json({
       needsInput: true,
       question: "Which state did this happen in? The laws can differ by state.",
@@ -1190,6 +1225,7 @@ router.post("/api/chat", async (req, res) => {
       userMessage = "The request took too long to process. Please try again with a simpler question.";
     }
     
+    await serverPersistMessage(req, { status: "error", errorMessage: userMessage, pipelineStatus: "failed", unread: true });
     return res.status(502).json({ 
       error: "corpus_lookup_failed", 
       message: userMessage,
@@ -1198,13 +1234,15 @@ router.post("/api/chat", async (req, res) => {
   }
 
   if (!provisions.length) {
+    const corpusEmptyMessage =
+      `No ingested legal sources match "${classification.practice_area}" yet. ` +
+      "Run the ingestion script for this practice area before this endpoint can answer it.";
+    await serverPersistMessage(req, { status: "corpusEmpty", corpusEmptyMessage, pipelineStatus: "done", unread: true });
     return res.json({
       classification,
       result: null,
       corpusEmpty: true,
-      message:
-        `No ingested legal sources match "${classification.practice_area}" yet. ` +
-        "Run the ingestion script for this practice area before this endpoint can answer it.",
+      message: corpusEmptyMessage,
     });
   }
 
@@ -1279,25 +1317,27 @@ router.post("/api/chat", async (req, res) => {
           console.log(`[/api/chat] Broadened search: ${relevantProvisions2.length} relevant provisions — sufficient`);
         } else {
           console.log(`[/api/chat] Broadened search still insufficient (${relevantProvisions2.length} relevant). Returning insufficient-evidence response.`);
+          const insuffResult = {
+            lawMd:
+              `I found limited directly relevant Nigerian statutes for this specific situation in the available corpus. ` +
+              `The closest provisions I could retrieve don't clearly and directly govern what you described, so I'd rather be honest than present a weakly-matched citation as solid law. ` +
+              `This is exactly the kind of situation where a qualified lawyer can give you advice tailored to your facts.`,
+            actionsMd:
+              `- Step 1: Note down the key facts (dates, names, what happened) while they're fresh.\n` +
+              `- Step 2: Report the incident to the police if it involves threats, assault, or a crime.\n` +
+              `- Step 3: Consult a lawyer for advice specific to your situation — the right statute depends on details (state, parties, circumstances) the available sources don't fully pin down.`,
+            sources: [],
+            escalate: true,
+            escalateReason: "No directly applicable provision was found in the ingested corpus for this situation.",
+            followUps: [],
+            evidence,
+          };
+          await serverPersistMessage(req, { status: "done", result: insuffResult, pipelineStatus: "done", unread: true });
           return res.json({
             classification,
             route,
             plan: null,
-            result: {
-              lawMd:
-                `I found limited directly relevant Nigerian statutes for this specific situation in the available corpus. ` +
-                `The closest provisions I could retrieve don't clearly and directly govern what you described, so I'd rather be honest than present a weakly-matched citation as solid law. ` +
-                `This is exactly the kind of situation where a qualified lawyer can give you advice tailored to your facts.`,
-              actionsMd:
-                `- Step 1: Note down the key facts (dates, names, what happened) while they're fresh.\n` +
-                `- Step 2: Report the incident to the police if it involves threats, assault, or a crime.\n` +
-                `- Step 3: Consult a lawyer for advice specific to your situation — the right statute depends on details (state, parties, circumstances) the available sources don't fully pin down.`,
-              sources: [],
-              escalate: true,
-              escalateReason: "No directly applicable provision was found in the ingested corpus for this situation.",
-              followUps: [],
-              evidence,
-            },
+            result: insuffResult,
             critique: null,
             evidence,
             providersBusy: false,
@@ -1306,24 +1346,26 @@ router.post("/api/chat", async (req, res) => {
         }
       } else {
         // Broadened search found nothing either — same honest outcome.
+        const insuffResult = {
+          lawMd:
+            `I couldn't find directly relevant Nigerian statutes for this specific situation in the available corpus. ` +
+            `Rather than guess, I recommend speaking to a qualified lawyer who can advise based on your exact circumstances.`,
+          actionsMd:
+            `- Step 1: Document the key facts while they're fresh.\n` +
+            `- Step 2: If a crime or urgent harm is involved, report it to the police.\n` +
+            `- Step 3: Consult a lawyer for tailored advice.`,
+          sources: [],
+          escalate: true,
+          escalateReason: "No directly applicable provision was found in the ingested corpus.",
+          followUps: [],
+          evidence,
+        };
+        await serverPersistMessage(req, { status: "done", result: insuffResult, pipelineStatus: "done", unread: true });
         return res.json({
           classification,
           route,
           plan: null,
-          result: {
-            lawMd:
-              `I couldn't find directly relevant Nigerian statutes for this specific situation in the available corpus. ` +
-              `Rather than guess, I recommend speaking to a qualified lawyer who can advise based on your exact circumstances.`,
-            actionsMd:
-              `- Step 1: Document the key facts while they're fresh.\n` +
-              `- Step 2: If a crime or urgent harm is involved, report it to the police.\n` +
-              `- Step 3: Consult a lawyer for tailored advice.`,
-            sources: [],
-            escalate: true,
-            escalateReason: "No directly applicable provision was found in the ingested corpus.",
-            followUps: [],
-            evidence,
-          },
+          result: insuffResult,
           critique: null,
           evidence,
           providersBusy: false,
@@ -1378,6 +1420,7 @@ router.post("/api/chat", async (req, res) => {
       draftResult = await draftWithFallback(question, contextBlock, planResult.plan, classification, history);
     } catch (err) {
       console.error("[/api/chat] drafting failed:", err.status || "", err.message);
+      await serverPersistMessage(req, { status: "error", errorMessage: "The drafting model failed to respond. " + (err.message || ""), pipelineStatus: "failed", unread: true });
       return res.status(502).json({
         error: "drafting_failed",
         message: "The drafting model failed to respond. " + (err.message || ""),
@@ -1450,19 +1493,25 @@ router.post("/api/chat", async (req, res) => {
         });
 
         // Return HITL response — client shows ApprovalCard for safety acknowledgment
+        const ackQuestion = `This question involves ${practiceArea.replace(/_/g, " ")} — a high-risk legal area. Our quality review could not fully verify the response accuracy.`;
+        const ackContext = {
+          practiceArea,
+          quality: critiqueResult.quality,
+          legal_safety: critiqueResult.legal_safety,
+          issues: critiqueResult.issues,
+          message: "This response covers a high-risk legal area and could not be verified to our standard. Do you still want to see the response? We strongly recommend consulting a qualified lawyer.",
+        };
+        // Persist the card state (not the in-memory token) so a reopened chat
+        // shows the review-required card; the token itself can't survive a
+        // restart (separate follow-up: move the ack map to Firestore).
+        await serverPersistMessage(req, { status: "safetyAck", safetyAckQuestion: ackQuestion, safetyAckContext: ackContext, pipelineStatus: "awaiting_input", unread: true });
         res.json({
           needsInput: true,
           safetyAck: true,
           ackToken,
-          question: `This question involves ${practiceArea.replace(/_/g, " ")} — a high-risk legal area. Our quality review could not fully verify the response accuracy.`,
+          question: ackQuestion,
           field: "safety_acknowledgment",
-          context: {
-            practiceArea,
-            quality: critiqueResult.quality,
-            legal_safety: critiqueResult.legal_safety,
-            issues: critiqueResult.issues,
-            message: "This response covers a high-risk legal area and could not be verified to our standard. Do you still want to see the response? We strongly recommend consulting a qualified lawyer.",
-          },
+          context: ackContext,
           provider: draftResult.provider,
         });
         return;
@@ -1493,6 +1542,35 @@ router.post("/api/chat", async (req, res) => {
   // Attach evidence inside result too so it persists with the message and the
   // client's confidence label can read it directly from agentMsg.result.
   if (draftResult.result) draftResult.result.evidence = evidence;
+
+  // Persist the terminal state server-side (recoverable requests).
+  if (draftResult.providersBusy) {
+    await serverPersistMessage(req, {
+      status: "providersBusy",
+      providersBusyRetryAfter: draftResult.retryAfter || 30,
+      providersBusyLawMd: draftResult.result?.lawMd || "All legal reasoning providers are currently busy.",
+      providersBusyActionsMd: draftResult.result?.actionsMd || "",
+      pipelineStatus: "failed",
+      unread: true,
+    });
+  } else {
+    await serverPersistMessage(req, {
+      status: "done",
+      result: draftResult.result,
+      classification,
+      critique: critiqueResult ? {
+        quality: critiqueResult.quality,
+        legal_safety: critiqueResult.legal_safety,
+        passed: critiqueResult.passed,
+        issues: critiqueResult.issues,
+        thresholds: critiqueResult.thresholds || null,
+        isHighRisk: critiqueResult.isHighRisk || false,
+      } : null,
+      evidence,
+      pipelineStatus: "done",
+      unread: true,
+    });
+  }
 
   res.json({
     classification,
