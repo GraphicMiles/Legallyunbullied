@@ -270,25 +270,8 @@ import {
         // Check if this convo has a _synced flag (already on server)
         if (convo._synced) continue;
 
-        // Before creating a new conversation on server, check if one with the
-        // same title already exists (from a previous sync). If so, adopt its ID.
+        // Create new conversation on server
         try {
-          const existingRes = await fetch("/api/conversations?full=false", { headers });
-          if (existingRes.ok) {
-            const existingData = await existingRes.json();
-            const match = (existingData.conversations || []).find(
-              ec => ec.title === (convo.title || "New question")
-            );
-            if (match) {
-              // Already exists on server — adopt the server ID and mark synced
-              convo.id = match.id;
-              convo._synced = true;
-              (convo.messages || []).forEach(m => { m._synced = true; });
-              continue;
-            }
-          }
-
-          // No match — create new conversation on server
           const createRes = await fetch("/api/conversations", {
             method: "POST",
             headers,
@@ -2053,9 +2036,6 @@ import {
     try {
       agentMsg.classification = normalizeClassification(response.classification);
       
-      console.log('[runPipeline] agentMsg.steps:', agentMsg.steps);
-      console.log('[runPipeline] agentMsg.steps[1]:', agentMsg.steps[1]);
-      
       if (agentMsg.steps[1]) {
         agentMsg.steps[1].detail = `${agentMsg.classification.practiceArea} · ${agentMsg.classification.jurisdictionGuess} · ${agentMsg.classification.urgency} urgency`;
       }
@@ -2735,7 +2715,9 @@ import {
       live.beuiStreaming = null;
     }
     // Record thinking elapsed so the trace toggle shows correct time
-    if (agentMsg.startedAt && !agentMsg.thinkingElapsedMs) {
+    // ALWAYS update — collapseTrace sets an early time before streaming,
+    // but finalizeAnswer runs after streaming completes (the real total time).
+    if (agentMsg.startedAt) {
       agentMsg.thinkingElapsedMs = Date.now() - agentMsg.startedAt;
     }
 
@@ -2743,6 +2725,17 @@ import {
     renderHistory();
     updateComposerState();
     updatePlanLabel();
+
+    // Update the trace toggle with the correct final time
+    // (collapseTrace set an early time before streaming — this fixes it)
+    if (tokenMatch && live.refs && live.refs.toggle) {
+      const toggleEl = live.refs.toggle;
+      toggleEl.innerHTML = `
+        <i class="fa-solid fa-chevron-right trace__toggle-icon"></i>
+        <span>Thought for ${(agentMsg.thinkingElapsedMs / 1000).toFixed(1)}s</span>
+        <span class="trace__status" style="color: var(--color-text-faint);">${(agentMsg.steps || []).length} steps</span>
+      `;
+    }
 
     // Immediately sync final message state to server (critical for persistence)
     const activeConvo = getActiveConversation();
