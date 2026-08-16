@@ -527,6 +527,63 @@ function markProviderRateLimited(key) {
   console.log(`[/api/chat] Provider "${key}" on cooldown for ${COOLDOWN_MS / 1000}s`);
 }
 
+/**
+ * Sanitize draft results to remove placeholder/hallucinated URLs and sources.
+ * Bug fix: LLM was generating "example.com" as a citation — this must never
+ * reach the user in a legal product.
+ */
+function sanitizeDraftResult(result) {
+  if (!result) return result;
+
+  const PLACEHOLDER_DOMAINS = [
+    'example.com', 'example.org', 'example.net',
+    'placeholder.com', 'test.com', 'domain.com',
+    'yoursite.com', 'yourdomain.com', 'sample.com',
+  ];
+
+  const isPlaceholderUrl = (str) => {
+    if (!str) return false;
+    const lower = str.toLowerCase();
+    return PLACEHOLDER_DOMAINS.some(d => lower.includes(d));
+  };
+
+  // Sanitize text fields — remove URLs that match placeholder domains
+  const stripPlaceholderUrls = (text) => {
+    if (!text) return text;
+    // Remove markdown links with placeholder domains: [text](https://example.com)
+    let cleaned = text.replace(/\[([^\]]*)\]\([^)]*example\.(?:com|org|net)[^)]*\)/gi, '$1');
+    // Remove bare URLs with placeholder domains
+    cleaned = cleaned.replace(/https?:\/\/(?:www\.)?example\.(?:com|org|net)[^\s)>"']*/gi, '');
+    // Remove any remaining "example.com" references
+    cleaned = cleaned.replace(/\bexample\.(?:com|org|net)\b/gi, '');
+    // Clean up double spaces and dangling punctuation
+    cleaned = cleaned.replace(/  +/g, ' ').replace(/ ,/g, ',').replace(/\.\.+/g, '.');
+    return cleaned.trim();
+  };
+
+  if (result.lawMd) result.lawMd = stripPlaceholderUrls(result.lawMd);
+  if (result.actionsMd) result.actionsMd = stripPlaceholderUrls(result.actionsMd);
+  if (result.escalateReason) result.escalateReason = stripPlaceholderUrls(result.escalateReason);
+
+  // Filter sources — remove any with placeholder URLs or labels
+  if (Array.isArray(result.sources)) {
+    result.sources = result.sources.filter(src => {
+      if (!src) return false;
+      if (isPlaceholderUrl(src.label)) {
+        console.warn('[sanitizeDraftResult] Removing placeholder source:', src.label);
+        return false;
+      }
+      if (isPlaceholderUrl(src.excerpt)) {
+        console.warn('[sanitizeDraftResult] Removing source with placeholder excerpt');
+        return false;
+      }
+      return true;
+    });
+  }
+
+  return result;
+}
+
 async function draftWithFallback(question, contextBlock, plan, classification, conversationHistory) {
   const groqClient = getGroqClient();
   const openRouterClient = getOpenRouterClient();
@@ -581,6 +638,8 @@ async function draftWithFallback(question, contextBlock, plan, classification, c
 
     try {
       const result = await draftWithModel(client, model, question, contextBlock, plan, classification, conversationHistory);
+      // Sanitize: strip placeholder URLs (e.g. example.com) that the LLM might hallucinate
+      sanitizeDraftResult(result);
       return { result, model, provider: key };
     } catch (err) {
       lastErr = err;
@@ -786,6 +845,10 @@ router.post("/api/chat", async (req, res) => {
     result: draftResult.result,
     draftModel: draftResult.model,
     draftProvider: draftResult.provider,
+    // Bug fix: forward providersBusy flag so client can render error state
+    // instead of styling a fallback message as a confident legal answer
+    providersBusy: draftResult.providersBusy || false,
+    retryAfter: draftResult.retryAfter || null,
   });
 });
 
