@@ -634,7 +634,9 @@ import {
     if (idx === -1) return;
     state.conversations.splice(idx, 1);
     if (state.activeId === id) {
-      state.activeId = state.conversations.length ? state.conversations[0].id : null;
+      // BUG FIX: don't auto-select another conversation — show empty landing state
+      state.activeId = null;
+      setUrlConvo(null);
     }
     saveState();
     renderHistory();
@@ -760,7 +762,11 @@ import {
       finalizeStaleMessage(msg);
     }
 
-    body.appendChild(buildTraceElStatic(msg));
+    // BUG FIX: Don't render the 5-step trace for casual messages.
+    // Casual replies don't go through the legal pipeline — the trace is irrelevant.
+    if (msg.status !== "casual") {
+      body.appendChild(buildTraceElStatic(msg));
+    }
 
     if (msg.status === "done" && msg.result) {
       body.appendChild(buildAnswerBlock(msg, { stream: false }));
@@ -784,7 +790,14 @@ import {
     // Don't fabricate an answer — say plainly that it didn't complete.
     msg.result = null;
     if (msg.steps) {
-      msg.steps.forEach((s) => { if (s.state !== "done") s.state = "pending"; });
+      // BUG FIX: If the message has a completed result, the server DID finish
+      // — mark all steps "done" so the trace doesn't freeze mid-pipeline on reload.
+      // Only reset to "pending" if there's no result (truly interrupted).
+      if (msg.result) {
+        msg.steps.forEach((s) => { s.state = "done"; });
+      } else {
+        msg.steps.forEach((s) => { if (s.state !== "done") s.state = "pending"; });
+      }
     }
     msg.thinkingElapsedMs = msg.thinkingElapsedMs || 0;
     msg.status = "incomplete";
@@ -1162,6 +1175,7 @@ import {
     };
     state.conversations.unshift(convo);
     state.activeId = convo.id;
+    setUrlConvo(convo.id);
     saveState();
     renderHistory();
     renderChat();
@@ -1179,6 +1193,7 @@ import {
   function selectConversation(id) {
     if (state.isAgentBusy) return;
     state.activeId = id;
+    setUrlConvo(id);
     saveState();
     renderHistory();
     renderChat();
@@ -1394,6 +1409,10 @@ import {
     step.elapsedMs = Date.now() - (step._start || Date.now());
     updateStepEl(index, step);
     
+    // BUG FIX: Persist step completion immediately so a page reload
+    // doesn't restore a frozen half-completed trace.
+    saveState();
+    
     // BeUIThinkingState is self-contained - no need to call renderSteps().
   }
 
@@ -1448,6 +1467,14 @@ import {
       console.log('[runPipeline] Casual chat detected, skipping pipeline');
       agentMsg.casualReply = response.casualReply;
       agentMsg.status = "casual";
+      
+      // BUG FIX: Mark ALL steps done so the trace doesn't freeze mid-pipeline on reload.
+      // Casual messages don't need the 5-step trace at all.
+      if (agentMsg.steps) {
+        agentMsg.steps.forEach((s) => { s.state = "done"; });
+      }
+      agentMsg.thinkingElapsedMs = Date.now() - agentMsg.startedAt;
+      saveState();
       
       // Stop loading state
       if (live.loadingState) {
@@ -1672,6 +1699,13 @@ import {
     agentMsg.thinkingElapsedMs = Date.now() - agentMsg.startedAt;
     agentMsg.traceOpen = false;
     agentMsg.status = "streaming";
+
+    // BUG FIX: Ensure ALL steps are marked "done" when collapsing the trace.
+    // This prevents the frozen-half-complete state if a step's setStepDone
+    // was somehow skipped or the pipeline took an unexpected path.
+    if (agentMsg.steps) {
+      agentMsg.steps.forEach((s) => { if (s.state !== "done") s.state = "done"; });
+    }
 
     // Only update old trace UI if it exists
     if (live.refs.traceEl && live.refs.toggle) {
@@ -2369,9 +2403,16 @@ import {
         // Load conversations for the new user
         loadState();
         
-        // Ensure there's an active conversation
-        if (!state.activeId && state.conversations.length > 0) {
-          state.activeId = state.conversations[0].id;
+        // BUG FIX: Don't auto-select first conversation.
+        // Check URL for explicit conversation ID, otherwise empty state.
+        const urlConvoId = getConvoIdFromUrl();
+        if (urlConvoId) {
+          const convo = state.conversations.find(c => c.id === urlConvoId);
+          if (convo) {
+            state.activeId = convo.id;
+          } else {
+            setUrlConvo(null); // clean up stale URL
+          }
         }
         
         // Re-render everything
@@ -2593,10 +2634,70 @@ import {
     }
   });
 
+  /* ------------------------------------------------------------------ */
+  /* URL-based routing — base URL = empty state, #chat/{id} = convo      */
+  /* ------------------------------------------------------------------ */
+  function getConvoIdFromUrl() {
+    const hash = window.location.hash;
+    const match = hash.match(/^#chat\/(.+)$/);
+    return match ? match[1] : null;
+  }
+
+  function setUrlConvo(convoId) {
+    if (convoId) {
+      const newHash = "#chat/" + convoId;
+      if (window.location.hash !== newHash) {
+        history.replaceState(null, "", newHash);
+      }
+    } else {
+      if (window.location.hash) {
+        history.replaceState(null, "", window.location.pathname);
+      }
+    }
+  }
+
+  window.addEventListener("hashchange", () => {
+    const urlId = getConvoIdFromUrl();
+    if (urlId === null) {
+      // URL cleared → show empty landing state
+      state.activeId = null;
+      saveState();
+      renderHistory();
+      renderChat();
+    } else {
+      const convo = state.conversations.find(c => c.id === urlId);
+      if (convo) {
+        state.activeId = convo.id;
+        saveState();
+        renderHistory();
+        renderChat();
+      } else {
+        // ID in URL doesn't match any conversation → empty state
+        state.activeId = null;
+        saveState();
+        renderHistory();
+        renderChat();
+      }
+    }
+  });
+
   function init() {
     loadState();
-    if (!state.activeId && state.conversations.length) {
-      state.activeId = state.conversations[0].id;
+    // BUG FIX: Do NOT auto-select conversations[0]. Base URL = empty landing state.
+    // Only load a conversation if the URL explicitly references one.
+    const urlConvoId = getConvoIdFromUrl();
+    if (urlConvoId) {
+      const convo = state.conversations.find(c => c.id === urlConvoId);
+      if (convo) {
+        state.activeId = convo.id;
+      } else {
+        // URL has an ID that doesn't match any saved conversation → empty state
+        state.activeId = null;
+        setUrlConvo(null); // clean up the URL
+      }
+    } else {
+      // No conversation ID in URL → empty landing state, always
+      state.activeId = null;
     }
     renderHistory();
     renderChat();
