@@ -1648,8 +1648,10 @@ import {
   /* Contextual title generation                                         */
   /* ------------------------------------------------------------------ */
   function deriveTopicFromText(text) {
-    // Simple fallback: extract key legal terms from the message
-    const lower = text.toLowerCase();
+    // Build a title from the user's first message. Legal keywords map to a
+    // category title; otherwise the message itself becomes the title so the
+    // chat always reflects what it's actually about (never a fixed placeholder).
+    const lower = String(text || "").toLowerCase();
     const topics = {
       "tenancy": ["landlord", "tenant", "rent", "eviction", "lease"],
       "employment": ["employer", "employee", "fired", "salary", "work"],
@@ -1658,14 +1660,31 @@ import {
       "family": ["divorce", "marriage", "custody", "child"],
       "property": ["property", "land", "ownership", "dispute"]
     };
-    
+
     for (const [topic, keywords] of Object.entries(topics)) {
       if (keywords.some(k => lower.includes(k))) {
         return topic.charAt(0).toUpperCase() + topic.slice(1) + " question";
       }
     }
-    
-    return "Legal question";
+
+    return titleFromFirstMessage(text);
+  }
+
+  // Derive a compact title from the first message itself (context, not a
+  // generic placeholder like "Legal question").
+  function titleFromFirstMessage(text) {
+    const clean = String(text || "").trim().replace(/\s+/g, " ");
+    if (!clean) return "New chat";
+
+    const MAX_TITLE = 48;
+    if (clean.length <= MAX_TITLE) {
+      return clean.charAt(0).toUpperCase() + clean.slice(1);
+    }
+
+    // Cut at a word boundary so we don't split a word in half.
+    const cut = clean.slice(0, MAX_TITLE);
+    const lastSpace = cut.lastIndexOf(" ");
+    return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trimEnd() + "…";
   }
 
   async function generateContextualTitle(convo, userText) {
