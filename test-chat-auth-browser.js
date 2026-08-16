@@ -276,6 +276,113 @@ async function main() {
       await page.close();
     });
 
+    // ── 6. User message AND title are synced (not just the agent reply) ──
+    await check("user message and title are synced to the server", async () => {
+      const page = await setupPage(browser);
+      const messagePuts = []; // captured PUT bodies for /messages
+      const titlePuts = [];   // captured PUT bodies for the conversation
+
+      await page.route("**/api/conversations/migrate", (route) => {
+        route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, idMap: {}, migrated: 0, skipped: 0 }) });
+      });
+      await page.route("**/api/conversations/cleanup", (route) => {
+        route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, deleted: 0 }) });
+      });
+      await page.route("**/api/conversations?full=true", (route) => {
+        route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ conversations: [] }) });
+      });
+      // Message upserts (must be registered before the generic conversation route)
+      await page.route("**/api/conversations/*/messages/*", (route) => {
+        if (route.request().method() === "PUT") {
+          const body = route.request().postDataJSON();
+          if (body) messagePuts.push(body);
+        }
+        route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true }) });
+      });
+      // Conversation-level PUT (title update)
+      await page.route("**/api/conversations/*", (route) => {
+        if (route.request().method() === "PUT") {
+          const body = route.request().postDataJSON();
+          if (body) titlePuts.push(body);
+        }
+        route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true }) });
+      });
+      // Conversation create (POST) — echo the client-supplied id back
+      await page.route("**/api/conversations", (route) => {
+        if (route.request().method() === "POST") {
+          const body = route.request().postDataJSON();
+          route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ id: body.id, title: body.title, createdAt: Date.now(), updatedAt: Date.now() }) });
+        } else {
+          route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({}) });
+        }
+      });
+
+      await page.goto(`${BASE}`, { waitUntil: "load" });
+      await page.waitForFunction(() => window.promptBar && window.promptBar.inputElement, null, { timeout: 10000 });
+
+      // Click New Chat, then send the first message.
+      await page.click("#new-chat-btn");
+      await page.waitForTimeout(200);
+      await page.evaluate(() => {
+        window.promptBar.inputElement.value = "My landlord is increasing my rent";
+        window.promptBar.submit();
+      });
+
+      // Give the async syncToServer a moment to push the messages to the server.
+      await page.waitForTimeout(1500);
+
+      assert.ok(messagePuts.some((m) => m.role === "user"), "the user message must be synced to the server");
+      assert.ok(messagePuts.some((m) => m.role === "agent"), "the agent message must be synced to the server");
+      assert.ok(titlePuts.some((t) => t.title === "Tenancy question"), `title must be synced (got: ${JSON.stringify(titlePuts)})`);
+      await page.close();
+    });
+
+    // ── 7. Stale localStorage cache must not flash before the server load ──
+    await check("stale localStorage cache does not flash before the server load", async () => {
+      // Seed 20 stale conversations in localStorage (simulating the spam era).
+      const staleConvos = Array.from({ length: 20 }, (_, i) => ({
+        id: `stale-${i}`,
+        title: `Stale chat ${i}`,
+        createdAt: 1000 + i,
+        updatedAt: 1000 + i,
+        messages: [],
+      }));
+      const page = await setupPage(browser, { seedConversations: staleConvos });
+
+      await page.route("**/api/conversations/migrate", (route) => {
+        route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, idMap: {}, migrated: 0, skipped: 0 }) });
+      });
+      await page.route("**/api/conversations/cleanup", (route) => {
+        route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, deleted: 19 }) });
+      });
+      // Delay the server response so we can observe the in-flight state.
+      await page.route("**/api/conversations?full=true", async (route) => {
+        await new Promise((r) => setTimeout(r, 1200));
+        route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
+          conversations: [{ id: "real-1", title: "Real chat", createdAt: 2000, updatedAt: 2000, messages: [] }],
+        }) });
+      });
+
+      await page.goto(`${BASE}`, { waitUntil: "load" });
+      await page.waitForTimeout(400);
+
+      // While the server load is in flight, the sidebar must show a loading
+      // placeholder — NOT the 20 stale conversations.
+      const during = await page.evaluate(() => ({
+        items: document.querySelectorAll(".history__item").length,
+        empty: document.querySelector(".history__empty")?.textContent || null,
+      }));
+      assert.strictEqual(during.items, 0, `stale chats must not flash (found ${during.items})`);
+      assert.strictEqual(during.empty, "Loading…", "sidebar should show a loading placeholder");
+
+      // After the server responds, the sidebar shows the authoritative list.
+      await page.waitForFunction(() => document.querySelectorAll(".history__item").length === 1, null, { timeout: 8000 });
+      const after = await page.evaluate(() =>
+        [...document.querySelectorAll(".history__item")].map((b) => b.dataset.id));
+      assert.deepStrictEqual(after, ["real-1"], "sidebar should show only the server's conversation");
+      await page.close();
+    });
+
     console.log(failures === 0 ? "\nALL AUTH TESTS PASSED" : `\n${failures} AUTH TEST(S) FAILED`);
   } finally {
     await browser.close();
