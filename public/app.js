@@ -18,6 +18,7 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   signOut,
+  getIdToken,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 (function () {
@@ -275,6 +276,24 @@ import {
     };
   }
 
+  // ── Auth header helper ────────────────────────────────────────────────
+  // Returns headers object with Firebase ID token for authenticated API calls.
+  // Falls back to plain JSON header if Firebase isn't available or user not signed in.
+  async function getAuthHeaders() {
+    const headers = { "Content-Type": "application/json" };
+    try {
+      if (window.firebaseAuth && window.firebaseAuth.currentUser) {
+        const token = await getIdToken(window.firebaseAuth.currentUser);
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+      }
+    } catch (e) {
+      console.warn("[auth] Failed to get ID token:", e.message);
+    }
+    return headers;
+  }
+
   async function callChatApi(question, history) {
     console.log('[callChatApi] Starting API call to /api/chat');
     
@@ -283,9 +302,10 @@ import {
     const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minute timeout — full pipeline (classify + search + plan + draft + critique) can take 60-120s on free-tier LLMs
     
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ question, history: history || [] }),
         signal: controller.signal,
       });
@@ -304,6 +324,13 @@ import {
       
       if (!res.ok) {
         console.error('[callChatApi] Request failed:', res.status, data);
+        // Provide user-friendly messages for common error codes
+        if (res.status === 401) {
+          throw new Error("Please sign in to continue. Your session may have expired.");
+        }
+        if (res.status === 429) {
+          throw new Error("You're sending messages too quickly. Please wait a moment and try again.");
+        }
         throw new Error((data && data.message) || `Request failed with status ${res.status}.`);
       }
       if (!data) {
