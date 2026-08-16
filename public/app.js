@@ -1307,7 +1307,7 @@ import {
     wrap.dataset.msgId = agentMsg.id;
     wrap.innerHTML = agentAvatarHtml();
     const body = document.createElement("div");
-    body.className = "msg__body";
+    body.className = "msg__body msg__body--agent-plain";
     wrap.appendChild(body);
 
     // Add BeUI Loading State (initial "agent is working" indicator)
@@ -1738,18 +1738,17 @@ import {
       return;
     }
     
-    // Create streaming container for casual reply
+    // Casual reply — plain inline text, no bubble/card container.
+    // Styled differently from legal responses (which get .answer-block-plain).
     const wrap = document.createElement("div");
-    wrap.className = "casual-reply";
-    wrap.style.cssText = `
-      padding: 12px 0;
-    `;
+    wrap.className = "casual-reply-plain";
     
     const textContainer = document.createElement("div");
     textContainer.style.cssText = `
       font-size: 14px;
       line-height: 1.6;
       color: var(--color-text, #f5f5f2);
+      background: transparent;
     `;
     
     wrap.appendChild(textContainer);
