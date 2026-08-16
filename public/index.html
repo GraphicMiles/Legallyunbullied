@@ -907,22 +907,29 @@
 
   /* Plain agent message body - no background/border */
   .msg__body--agent-plain {
-    background: transparent;
-    border: none;
-    padding: 0;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
   }
 
   /* Plain answer block - no card styling */
   .answer-block-plain {
-    background: transparent;
-    padding: 0;
+    background: transparent !important;
+    padding: 0 !important;
     margin-top: 8px;
+    border: none !important;
+    border-radius: 0 !important;
   }
 
   .answer-text-block {
     font-size: var(--fs-base);
     line-height: 1.6;
     color: var(--color-text);
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
   }
 
   .answer-section-title {
@@ -936,8 +943,10 @@
 
   /* Plain casual reply */
   .casual-reply-plain {
-    background: transparent;
-    padding: 0;
+    background: transparent !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
     font-size: var(--fs-base);
     line-height: 1.6;
     color: var(--color-text);
@@ -945,6 +954,7 @@
 
   .casual-reply-plain p {
     margin: 0;
+    background: transparent !important;
   }
 
   /* --- thinking / reasoning trace --- */
