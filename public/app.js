@@ -411,6 +411,30 @@ import {
     }
   }
 
+  // Automatic legacy cleanup: safely dedupe empty conversations left over from
+  // the old sync-loop bug. Runs once per page load after sign-in (idempotent —
+  // the server only deletes EMPTY conversations and always keeps the most
+  // recently updated one). Conversations with messages are never touched, and
+  // a user's current "New question" chat is never wiped.
+  let _cleanupDone = false;
+  async function cleanupDuplicates() {
+    if (!isServerMode() || _cleanupDone) return;
+    _cleanupDone = true;
+    try {
+      const headers = await getServerAuthHeaders();
+      const res = await fetch("/api/conversations/cleanup", { method: "POST", headers });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.deleted > 0) {
+          console.log(`[server-sync] Cleaned up ${data.deleted} duplicate empty conversations`);
+        }
+      }
+    } catch (e) {
+      console.warn("[server-sync] Cleanup failed:", e.message);
+      _cleanupDone = false; // allow retry
+    }
+  }
+
   /* ------------------------------------------------------------------ */
   /* Helpers                                                             */
   /* ------------------------------------------------------------------ */
@@ -2960,12 +2984,13 @@ import {
         
         if (user) {
           // Authenticated: server data is authoritative. Keep the URL intact
-          // and show a loading state while the server load is in flight, so a
-          // direct /#chat/{id} URL resolves against Firestore instead of being
-          // wrongly cleared or shown as "not found".
+          // and resolve it — if the URL references a chat, show a loading
+          // state until the server load finishes; if it's the plain base URL,
+          // show the welcome landing screen immediately (never a chat).
           _serverLoadPending = true;
-          renderLoadingChat();
+          resolveUrl();
           migrateToServer()
+            .then(() => cleanupDuplicates())
             .then(() => loadFromServer())
             .catch((err) => console.warn("[auth] Server load failed:", err.message))
             .then(() => {
