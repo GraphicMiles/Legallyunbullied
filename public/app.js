@@ -176,22 +176,52 @@ import {
     return headers;
   }
 
-  // Fetch all conversations from server and merge into local state
+  // Fetch all conversations from server and merge into local state.
+  // Retries transient failures (5xx, rate limits, network errors) with a short
+  // backoff so a single upstream hiccup or deploy race doesn't leave the user
+  // with an empty sidebar until the next reload.
   async function loadFromServer() {
     if (!isServerMode()) return;
     _isLoadingFromServer = true;
+    const MAX_ATTEMPTS = 3;
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     try {
       const headers = await getServerAuthHeaders();
-      // Use ?full=true to get all conversations with messages in ONE request
-      // instead of N+1 queries (one per conversation)
-      const res = await fetch("/api/conversations?full=true", { headers });
-      if (!res.ok) {
-        console.warn("[server-sync] Failed to load conversations:", res.status);
-        _isLoadingFromServer = false;
-        return;
+
+      let data = null;
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        let res;
+        try {
+          res = await fetch("/api/conversations?full=true", { headers });
+        } catch (err) {
+          // Network error — retry, then give up.
+          if (attempt === MAX_ATTEMPTS) {
+            console.warn("[server-sync] loadFromServer network error:", err.message);
+            _isLoadingFromServer = false;
+            return;
+          }
+          await wait(800 * attempt);
+          continue;
+        }
+
+        if (res.ok) {
+          data = await res.json();
+          break;
+        }
+
+        // Retry only transient failures (502/503/504 = upstream or deploy
+        // hiccup; 429 = rate limited). A 4xx is a real problem — don't retry.
+        const retryable = res.status === 429 || (res.status >= 500 && res.status <= 599);
+        if (!retryable || attempt === MAX_ATTEMPTS) {
+          console.warn("[server-sync] Failed to load conversations:", res.status);
+          _isLoadingFromServer = false;
+          return;
+        }
+        console.warn(`[server-sync] Transient ${res.status} loading conversations — retry ${attempt}/${MAX_ATTEMPTS - 1}`);
+        await wait(800 * attempt);
       }
-      const data = await res.json();
-      if (!data.conversations) {
+
+      if (!data || !data.conversations) {
         _isLoadingFromServer = false;
         return;
       }
