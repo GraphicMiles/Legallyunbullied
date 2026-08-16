@@ -47,6 +47,24 @@ function msgCollection(uid, convoId) {
   return convoRef(uid, convoId).collection("messages");
 }
 
+// ── Canonical conversation identity ────────────────────────────────────────
+// The conversation ID is the single source of truth everywhere:
+//   client conversation.id  =  Firestore document ID  =  URL :chatId
+// A valid ID is URL-safe, bounded in length, and not a reserved route name
+// (a client could otherwise shadow /migrate or /cleanup). Both UUID v4 strings
+// (client-generated) and Firestore auto-IDs (legacy data) satisfy this.
+const RESERVED_CONVO_IDS = new Set(["migrate", "cleanup"]);
+
+function isValidConvoId(id) {
+  return (
+    typeof id === "string" &&
+    id.length > 0 &&
+    id.length <= 128 &&
+    /^[A-Za-z0-9._~-]+$/.test(id) &&
+    !RESERVED_CONVO_IDS.has(id.toLowerCase())
+  );
+}
+
 // ── GET /api/conversations — list summaries or full conversations ──────────
 // ?full=true returns conversations with all messages inline (avoids N+1 queries)
 // Without ?full, returns summaries only (lightweight for sidebar)
@@ -98,9 +116,31 @@ router.get("/", async (req, res) => {
 // ── POST /api/conversations — create new ───────────────────────────────────
 router.post("/", async (req, res) => {
   try {
-    const { title } = req.body || {};
+    const { title, id } = req.body || {};
     const now = Date.now();
-    const ref = convoCollection(req.uid).doc();
+
+    // Canonical identity: honor the client-supplied ID so the conversation is
+    // persisted under the exact document ID the client generated. A new ID is
+    // only minted here when the client did not provide a valid one.
+    const ref = isValidConvoId(id)
+      ? convoCollection(req.uid).doc(id)
+      : convoCollection(req.uid).doc();
+
+    // Idempotent create: if this exact ID already exists, return it unchanged
+    // instead of overwriting it (protects against sync retries re-creating or
+    // clobbering an existing conversation).
+    if (isValidConvoId(id)) {
+      const existing = await ref.get();
+      if (existing.exists) {
+        const data = existing.data();
+        return res.status(200).json({
+          id: ref.id,
+          title: data.title || "New question",
+          createdAt: data.createdAt || now,
+          updatedAt: data.updatedAt || now,
+        });
+      }
+    }
 
     await ref.set({
       userId: req.uid,
@@ -271,8 +311,9 @@ router.delete("/:id/messages", async (req, res) => {
 
 // ── POST /api/conversations/migrate — bulk import from localStorage ────────
 // Accepts an array of conversations with their messages.
-// Creates them in Firestore, returns the new IDs mapping.
-// Resilient: skips individual conversations that fail instead of aborting all.
+// Preserves the client's conversation ID as the Firestore document ID so the
+// identity survives migration. Idempotent: re-running it never duplicates a
+// conversation — if the ID already exists it is skipped.
 router.post("/migrate", async (req, res) => {
   try {
     const { conversations } = req.body;
@@ -285,14 +326,29 @@ router.post("/migrate", async (req, res) => {
       return res.status(400).json({ error: "too_many", message: "Maximum 50 conversations per migration batch." });
     }
 
-    const idMap = {}; // oldId -> newId
+    const idMap = {}; // oldId -> canonicalId (identity unless oldId was invalid)
     let migrated = 0;
     let skipped = 0;
 
     for (const convo of conversations) {
       try {
-        const newConvoRef = convoCollection(req.uid).doc();
+        // Preserve the original ID. A new ID is only generated when the
+        // incoming ID is missing or invalid — never during normal migration.
+        const docId = isValidConvoId(convo.id)
+          ? convo.id
+          : convoCollection(req.uid).doc().id;
+        idMap[convo.id] = docId;
+
+        const newConvoRef = convoCollection(req.uid).doc(docId);
         const now = Date.now();
+
+        // Idempotency: if this conversation already exists on the server,
+        // skip it — re-running migration must never create a duplicate.
+        const existing = await newConvoRef.get();
+        if (existing.exists) {
+          skipped++;
+          continue;
+        }
 
         await newConvoRef.set({
           userId: req.uid,
@@ -301,8 +357,6 @@ router.post("/migrate", async (req, res) => {
           updatedAt: convo.updatedAt || convo.createdAt || now,
         });
 
-        idMap[convo.id] = newConvoRef.id;
-
         // Write messages in batches of 400 (Firestore batch limit is 500)
         if (convo.messages && convo.messages.length > 0) {
           const messages = convo.messages;
@@ -310,7 +364,7 @@ router.post("/migrate", async (req, res) => {
             const batch = db().batch();
             const chunk = messages.slice(i, i + 400);
             for (const msg of chunk) {
-              const msgId = msg.id || msgCollection(req.uid, newConvoRef.id).doc().id;
+              const msgId = msg.id || msgCollection(req.uid, docId).doc().id;
               // Clean msg data — strip any internal flags, limit field sizes
               const { _synced, ...cleanMsg } = msg;
               const msgData = {
@@ -319,7 +373,7 @@ router.post("/migrate", async (req, res) => {
                 content: (cleanMsg.content || "").slice(0, 10000),
                 casualReply: (cleanMsg.casualReply || "").slice(0, 5000),
               };
-              batch.set(msgRef(req.uid, newConvoRef.id, msgId), msgData);
+              batch.set(msgRef(req.uid, docId, msgId), msgData);
             }
             await batch.commit();
           }
@@ -332,7 +386,7 @@ router.post("/migrate", async (req, res) => {
       }
     }
 
-    console.log(`[conversations] Migrated ${migrated} conversations for user ${req.uid} (${skipped} skipped)`);
+    console.log(`[conversations] Migrated ${migrated} conversations for user ${req.uid} (${skipped} skipped; original IDs preserved)`);
     res.json({ success: true, idMap, migrated, skipped });
   } catch (err) {
     console.error("[conversations] Migration failed:", err.message);
@@ -341,44 +395,36 @@ router.post("/migrate", async (req, res) => {
 });
 
 // ── POST /api/conversations/cleanup — delete duplicate empty conversations ──
-// Removes conversations with no messages and generic titles ("New question",
-// "Legal question", etc.) that were created by the sync loop bug.
-// Keeps conversations that have messages or meaningful titles.
+// Removes redundant empty conversations left over from the old sync-loop bug.
+// Keeps the most recently updated empty conversation (a user's current,
+// just-created "New question" chat is legitimate and must never be wiped).
+// Conversations with messages are always kept.
 router.post("/cleanup", async (req, res) => {
   try {
     const snapshot = await convoCollection(req.uid).get();
-    const GENERIC_TITLES = new Set([
-      "new question", "legal question", "immigration", "Untitled",
-    ]);
 
-    const toDelete = [];
-    const seen = new Map(); // normalized title → doc ref (keep newest)
-
+    // Collect empty conversations (no messages) with their timestamps.
+    const empties = [];
     for (const doc of snapshot.docs) {
-      const data = doc.data();
-      const title = (data.title || "").trim().toLowerCase();
-      const isGeneric = GENERIC_TITLES.has(title);
-
-      // Count messages
       const msgCount = await convoRef(req.uid, doc.id)
         .collection("messages").count().get();
-      const count = msgCount.data().count;
-
-      if (count === 0 && isGeneric) {
-        toDelete.push(doc.ref);
-      } else if (count === 0 && seen.has(title)) {
-        // Duplicate empty conversation — delete older one
-        toDelete.push(seen.get(title));
-        seen.set(title, doc.ref);
-      } else if (count === 0) {
-        seen.set(title, doc.ref);
+      if (msgCount.data().count === 0) {
+        const data = doc.data();
+        const updatedAt = data.updatedAt?._seconds
+          ? data.updatedAt._seconds * 1000
+          : (data.updatedAt || 0);
+        empties.push({ ref: doc.ref, updatedAt });
       }
-      // Conversations with messages are always kept
     }
 
-    if (toDelete.length === 0) {
+    // Nothing to clean up: 0 or 1 empty conversation is a valid state.
+    if (empties.length <= 1) {
       return res.json({ success: true, deleted: 0, message: "Nothing to clean up" });
     }
+
+    // Keep the newest empty conversation; delete the older duplicates.
+    empties.sort((a, b) => b.updatedAt - a.updatedAt);
+    const toDelete = empties.slice(1).map((e) => e.ref);
 
     // Delete in batches of 400 (Firestore limit is 500)
     for (let i = 0; i < toDelete.length; i += 400) {
@@ -388,7 +434,7 @@ router.post("/cleanup", async (req, res) => {
       await batch.commit();
     }
 
-    console.log(`[conversations] Cleanup: deleted ${toDelete.length} duplicate/empty conversations for user ${req.uid}`);
+    console.log(`[conversations] Cleanup: deleted ${toDelete.length} duplicate empty conversations for user ${req.uid}`);
     res.json({ success: true, deleted: toDelete.length });
   } catch (err) {
     console.error("[conversations] Cleanup failed:", err.message);
