@@ -17,7 +17,7 @@ const cors = require("cors");
 const rateLimit = require("express-rate-limit");
 const chatRoute = require("./server/chatRoute");
 const conversationRoute = require("./server/conversationRoute");
-const { requireAuth, optionalAuth } = require("./server/authMiddleware");
+const { requireAuth } = require("./server/authMiddleware");
 const { sweepAndStart } = require("./server/jobRunner");
 const { probeProviders, getProviderHealth } = require("./server/providerHealth");
 
@@ -160,6 +160,7 @@ app.use("/api/conversations", conversationRoute);
 // Each /api/chat call invokes LLM providers (Groq/Gemini/etc.) which cost
 // tokens and have their own rate limits. Require auth + apply stricter limit.
 app.use("/api/chat", chatLimiter, requireAuth);
+app.use("/api/generate-title", chatLimiter, requireAuth);
 app.use(chatRoute);
 
 // ── SPA fallback ──────────────────────────────────────────────────────────

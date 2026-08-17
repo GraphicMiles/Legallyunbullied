@@ -1,8 +1,7 @@
 /* ==========================================================================
-   Legally Unbullied — Phase 1 AI Agent Answer UI
-   Conversation store (localStorage) + a simulated agent pipeline with a
-   real timeline trace, markdown streaming, expandable source cards, and
-   follow-up suggestions.
+   Legally Unbullied — production chat client
+   Local/server conversation state, authenticated REST requests, answer reveal,
+   source cards, safety acknowledgement and follow-up suggestions.
 
    Loaded as an ES module (see index.html) specifically so this file's
    auth imports and firebase-init.js's own module both execute in
@@ -60,8 +59,6 @@ import {
     composerForm: document.getElementById("composer-form") || document.getElementById("prompt-bar-container"),
     composerInput: document.getElementById("composer-input"),
     sendBtn: document.getElementById("send-btn"),
-    planValue: document.getElementById("plan-value"),
-    upgradeBtn: document.getElementById("upgrade-btn"),
     clearChatBtn: document.getElementById("clear-chat-btn"),
     copyChatBtn: document.getElementById("copy-chat-btn"),
     topbarAvatar: document.getElementById("topbar-avatar"),
@@ -91,7 +88,6 @@ import {
     conversations: [],
     activeId: null,
     isAgentBusy: false,
-    questionsUsedToday: 0,
     user: null, // set by the Firebase auth listener, never persisted to localStorage
   };
 
@@ -114,7 +110,6 @@ import {
           // Don't restore activeId — callers must set it explicitly based on
           // context (URL hash, user selection). Restoring from localStorage
           // causes the "base URL opens a chat" bug when stale IDs persist.
-          state.questionsUsedToday = parsed.questionsUsedToday || 0;
 
           // Migrate: repair any agent messages missing the `steps` field
           // (from sessions saved before the steps/tracing feature was added).
@@ -141,7 +136,6 @@ import {
     localStorage.setItem(storageKey, JSON.stringify({
       conversations: state.conversations,
       activeId: state.activeId,
-      questionsUsedToday: state.questionsUsedToday,
     }));
     // Sync to server if authenticated (non-blocking)
     // Skip sync during:
@@ -474,8 +468,7 @@ import {
       localStorage.setItem(storageKey, JSON.stringify({
         conversations: state.conversations,
         activeId: state.activeId,
-        questionsUsedToday: state.questionsUsedToday,
-      }));
+        }));
     } catch (err) {
       console.warn("[server-sync] syncToServer failed:", err.message);
     } finally {
@@ -681,13 +674,6 @@ import {
     }).join("");
   }
 
-  function markdownToPlainText(raw) {
-    return raw
-      .replace(/\*\*(.+?)\*\*/g, "$1")
-      .split(/\n\n+/)
-      .map((block) => block.split("\n").map((l) => l.trim().replace(/^-\s/, "• ")).join("\n"))
-      .join("\n\n");
-  }
 
   /* ------------------------------------------------------------------ */
   /* Streaming engine — reveals markdown text over time, re-parsing the
@@ -776,76 +762,12 @@ import {
     return headers;
   }
 
-  // ── Phase 4: Event-driven SSE client ──────────────────────────────────
-  // Uses fetch + ReadableStream for authenticated SSE (EventSource doesn't
-  // support custom headers). Emits structured events that drive the UI
-  // reactively instead of relying on hardcoded step pacing.
-  async function callChatApiSSE(question, { onClassify, onSearch, onDraft, onCritique, onSafetyFlag, onComplete, onCasual, onNeedsInput, onCorpusEmpty, onError } = {}) {
-    const headers = await getAuthHeaders();
-    const url = `/api/chat/stream?question=${encodeURIComponent(question)}`;
-
-    const res = await fetch(url, { headers, signal: AbortSignal.timeout(180000) });
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.message || "SSE request failed (" + res.status + ")");
-    }
-
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop(); // keep incomplete line in buffer
-
-      for (const line of lines) {
-        if (!line.startsWith("data: ")) continue;
-        const jsonStr = line.slice(6).trim();
-        if (!jsonStr) continue;
-
-        let event;
-        try { event = JSON.parse(jsonStr); } catch (e) { continue; }
-
-        switch (event.event) {
-          case "classify_done": onClassify?.(event); break;
-          case "search_done": onSearch?.(event); break;
-          case "draft_done": onDraft?.(event); break;
-          case "critique_done": onCritique?.(event); break;
-          case "safety_flag":
-            onSafetyFlag?.(event);
-            return { safetyFlag: true, ackToken: event.ackToken, practiceArea: event.practiceArea, message: event.message };
-          case "complete":
-            onComplete?.(event);
-            return { hasResult: true, result: event.result, classification: event.classification, critique: event.critique, route: event.route };
-          case "casual":
-            onCasual?.(event);
-            return { isCasual: true, casualReply: event.casualReply };
-          case "needs_input":
-            onNeedsInput?.(event);
-            return { needsInput: true, question: event.question, field: event.field };
-          case "corpus_empty":
-            onCorpusEmpty?.(event);
-            return { corpusEmpty: true, message: event.message };
-          case "error":
-            onError?.(event);
-            throw new Error(event.message || "Stream error");
-        }
-      }
-    }
-
-    return { hasResult: false };
-  }
-
   async function callChatApi(question, history, options = {}) {
     console.log('[callChatApi] Starting API call to /api/chat');
     
     // Add timeout to fetch call
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minute timeout — full pipeline (classify + search + plan + draft + critique) can take 60-120s on free-tier LLMs
+    const timeoutId = setTimeout(() => controller.abort(), 180000); // hard client safety timeout; normal requests should finish well below this
     
     try {
       const headers = await getAuthHeaders();
@@ -929,7 +851,6 @@ import {
     { key: "plan", title: "Planning the response", detail: "Analyzing provisions and structuring the answer.", icon: "bolt" },
     { key: "draft", title: "Drafting the answer", detail: "Structuring the response and the escalation verdict.", icon: "draft" },
   ];
-  const STEP_DURATIONS = [480, 620, 780, 550, 420];
 
   /* ------------------------------------------------------------------ */
   /* Sidebar / history                                                   */
@@ -1623,7 +1544,7 @@ import {
     wrap.className = "answer-block-plain";
     const r = msg.result;
 
-    // Phase 2 safety flag — warn user when high-risk answer couldn't be verified
+    // Safety flag — warn user when high-risk answer couldn't be verified
     if (r._safetyFlag) {
       const banner = document.createElement("div");
       banner.className = "safety-flag-banner";
@@ -1733,21 +1654,12 @@ import {
     wrap.appendChild(meta);
     if (stream) meta.style.display = "none";
 
-    // Approval Card (if agent needs user input)
-    let approvalCard = null;
-    if (r.approvalQuestions && r.approvalQuestions.length > 0 && window.BeUIApprovalCard) {
-      approvalCard = buildApprovalCard(r);
-      wrap.appendChild(approvalCard);
-      if (stream) approvalCard.style.display = "none";
-    }
-
     wrap._refs = { 
       lawSection: { el: lawWrapper, textEl: lawTextEl, liveDot: null },
       actionsSection: { el: actionsWrapper, textEl: actionsTextEl, liveDot: null },
       verdict,
       followUps,
-      meta,
-      approvalCard
+      meta
     };
     return wrap;
   }
@@ -1829,25 +1741,6 @@ import {
     });
     
     sectionEl.appendChild(list);
-  }
-
-  function buildContextCard(src, index) {
-    const card = document.createElement("div");
-    card.className = "context-card";
-    card.style.animationDelay = (index * 80) + "ms";
-    card.innerHTML = `
-      <button type="button" class="context-card__head">
-        <span class="context-card__badge">${escapeHtml(src.type || "SOURCE")}</span>
-        <span class="context-card__label">${escapeHtml(src.label)}</span>
-        <span class="context-card__meta">${(src.excerpt || "").length} chars</span>
-        <i class="fa-solid fa-chevron-right context-card__chevron"></i>
-      </button>
-      <div class="context-card__body"><p>${escapeHtml(src.excerpt)}</p></div>
-    `;
-    card.querySelector(".context-card__head").addEventListener("click", () => {
-      card.classList.toggle("is-open");
-    });
-    return card;
   }
 
   // Confidence label must reflect EVIDENCE quality, not just writing quality.
@@ -1948,36 +1841,6 @@ import {
       ` : ""}
     `;
     return verdict;
-  }
-
-  function buildApprovalCard(r) {
-    const container = document.createElement("div");
-    container.className = "approval-card-wrapper";
-    
-    if (window.BeUIApprovalCard) {
-      new window.BeUIApprovalCard(container, {
-        question: r.approvalQuestion || "The agent needs your input:",
-        options: r.approvalQuestions.map(q => ({
-          label: q.label || q,
-          value: q.value || q
-        })),
-        onSelect: (value) => {
-          console.log("[approval] Selected:", value);
-        },
-        onApprove: (value) => {
-          console.log("[approval] Approved:", value);
-          // Submit the selected option as a follow-up question
-          if (value && !state.isAgentBusy) {
-            submitQuestion(value);
-          }
-        },
-        onReject: () => {
-          console.log("[approval] Rejected");
-        }
-      });
-    }
-    
-    return container;
   }
 
   /* ------------------------------------------------------------------ */
@@ -2106,9 +1969,10 @@ import {
 
   async function generateContextualTitle(convo, userText) {
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch("/api/generate-title", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ question: userText })
       });
       
@@ -2158,7 +2022,6 @@ import {
       steps: STEP_DEFS.map((s, i) => ({ ...s, state: i === 0 ? "active" : "pending", elapsedMs: 0 })),
       classification: null,
       result: null,
-      feedback: null,
       startedAt: Date.now(),
       thinkingElapsedMs: 0,
       createdAt: Date.now(),
@@ -2375,7 +2238,7 @@ import {
 
     // HITL — agent needs clarification or safety acknowledgment
     if (response.needsInput) {
-      // Phase 3: Safety acknowledgment — show ApprovalCard instead of text input
+      // Safety acknowledgment — show ApprovalCard instead of text input
       if (response.safetyAck) {
         console.log('[runPipeline] Safety acknowledgment required:', response.question);
 
@@ -2605,18 +2468,6 @@ import {
     clearInterval(live.timerId);
     
     // Stop BeUI components
-    if (live.reasoningText) {
-      live.reasoningText.stop();
-      live.reasoningText = null;
-    }
-    if (live.agentProgress) {
-      live.agentProgress.stop();
-      live.agentProgress = null;
-    }
-    if (live.pipelineLoading) {
-      live.pipelineLoading.destroy();
-      live.pipelineLoading = null;
-    }
     // Freeze the thinking time NOW — this is the single source of truth for
     // "Thought for X.Xs", and it must never include streaming time.
     agentMsg.thinkingElapsedMs = Date.now() - agentMsg.startedAt;
@@ -2842,7 +2693,7 @@ import {
     return wrap;
   }
 
-  // Phase 3: Safety acknowledgment UI — wired to HITL when high-risk answer fails critique
+  // Safety acknowledgment UI — wired to HITL when high-risk answer fails critique
   function renderSafetyApproval(agentMsg, response, token) {
     if (!live.refs || !live.refs.body) return;
 
@@ -3293,10 +3144,6 @@ import {
       live.loadingState.destroy();
       live.loadingState = null;
     }
-    if (live.pipelineLoading) {
-      live.pipelineLoading.destroy();
-      live.pipelineLoading = null;
-    }
 
     // Guard against missing steps
     if (agentMsg.steps) {
@@ -3349,7 +3196,7 @@ import {
       const instance = new window.BeUIStreamingText(container, {
         text,
         citations: false,    // citations are inline bold text + the Sources list — no injected chips
-        sources: [],         // sources shown separately via BeUIContextCards stage
+        sources: [],         // source cards are rendered separately by appendContextCards
         followUps: [],       // follow-ups shown separately in their own stage
         oneShot: true,       // no loop — pipeline moves forward
         showActions: false,  // actions row handled by pipeline verdict stage
@@ -3442,7 +3289,6 @@ import {
     state.isAgentBusy = false;
     
     // Only count quota when the answer actually streamed (not casual / error / stopped)
-    if (tokenMatch && wasStreaming) state.questionsUsedToday += 1;
 
     // ── BUG FIX: properly clean up loading state, timer, and thinking elapsed ──
     // Previously these were not cleaned up in the HITL (needsInput) and
@@ -3475,7 +3321,6 @@ import {
     saveState();
     renderHistory();
     updateComposerState();
-    updatePlanLabel();
 
     // The user watched this answer live → it is NOT unread. Clear the flag so
     // the server-persisted unread:true doesn't produce a spurious badge.
@@ -3553,10 +3398,6 @@ import {
       live.loadingState.destroy();
       live.loadingState = null;
     }
-    if (live.pipelineLoading) {
-      live.pipelineLoading.destroy();
-      live.pipelineLoading = null;
-    }
     
     // Stop thinking component if active
     if (live.thinkingComponent) {
@@ -3628,21 +3469,6 @@ import {
     scrollChatToBottom();
   }
 
-  function autoGrowTextarea() {
-    // BeUIPromptBar handles its own auto-resize; this is only needed for the legacy composer
-    if (!el.composerInput) return;
-    el.composerInput.style.height = "auto";
-    el.composerInput.style.height = Math.min(el.composerInput.scrollHeight, 160) + "px";
-  }
-
-  function updatePlanLabel() {
-    const used = state.questionsUsedToday;
-    const remaining = Math.max(0, 2 - used);
-    el.planValue.textContent = remaining > 0
-      ? `Free · ${remaining} question${remaining === 1 ? "" : "s"} left today`
-      : "Free · daily limit reached";
-  }
-
   /* ------------------------------------------------------------------ */
   /* Mobile sidebar                                                       */
   /* ------------------------------------------------------------------ */
@@ -3669,10 +3495,6 @@ import {
   el.sidebarClose.addEventListener("click", closeMobileSidebar);
   el.scrim.addEventListener("click", closeMobileSidebar);
   el.historySearch.addEventListener("input", onSearchInput);
-  el.upgradeBtn.addEventListener("click", () => {
-    alert("Upgrade flow: ₦1,999/year subscription — hook up Paystack checkout here.");
-  });
-
   el.clearChatBtn.addEventListener("click", () => {
     if (!state.activeId || state.isAgentBusy) return;
     confirmClearConversation(state.activeId);
@@ -3740,7 +3562,6 @@ import {
         // Reset state for the new user
         state.conversations = [];
         state.activeId = null;
-        state.questionsUsedToday = 0;
         
         // Load conversations for the new user (localStorage write-behind cache).
         // The URL — not localStorage, not the server — decides what is active.
@@ -3770,8 +3591,7 @@ import {
           renderHistory();
           renderChat();
           updateComposerState();
-          updatePlanLabel();
-        }
+              }
       } else {
         // Same user (including the initial anonymous state) — resolve whatever
         // the URL currently points at.
@@ -3913,7 +3733,6 @@ import {
     // Reset state
     state.conversations = [];
     state.activeId = null;
-    state.questionsUsedToday = 0;
     state.user = null;
     
     // Clear URL hash — don't leave stale conversation IDs after logout
@@ -3923,10 +3742,6 @@ import {
     if (live.loadingState) {
       live.loadingState.destroy();
       live.loadingState = null;
-    }
-    if (live.pipelineLoading) {
-      live.pipelineLoading.destroy();
-      live.pipelineLoading = null;
     }
     if (live.thinkingComponent) {
       live.thinkingComponent.destroy();
@@ -4208,7 +4023,6 @@ import {
     initAuth();       // auth first — more critical than composer
     initPromptBar();  // prompt bar before updateComposerState so it can delegate
     updateComposerState();
-    updatePlanLabel();
   }
 
   function initPromptBar() {

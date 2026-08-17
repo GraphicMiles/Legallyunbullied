@@ -2,7 +2,7 @@
   "name": "legally-unbullied",
   "version": "1.0.0",
   "private": true,
-  "description": "Legally Unbullied — Phase 1 AI agent chat UI, served as a single Node/Express web service.",
+  "description": "Legally Unbullied — evidence-grounded Nigerian legal-information assistant.",
   "main": "server.js",
   "engines": {
     "node": ">=18"
@@ -12,21 +12,23 @@
     "test": "node scripts/run-tests.js",
     "test:v2": "node test-v2-guardrails.js && node test-retrieval-evidence.js && node test-safety-ack-restart.js",
     "eval:critical": "node scripts/eval/runner100.js --only police-01-arrest-no-reason,police-02-prolonged-detention,police-10-police-brutality,tenancy-01-locks-changed,tenancy-03-eviction-notice,tenancy-07-utilities-disconnected,employment-01-unpaid-salary,employment-02-unfair-dismissal,family-02-child-custody,family-04-domestic-violence,consumer-05-defective-product,consumer-06-scam-victim,cyber-01-private-photos-posted,cyber-04-account-hacked,property-01-land-sale-dispute,humanrights-02-unlawful-detention-right,other-02-breach-of-contract,other-04-inheritance-no-will,other-09-immigration-visa,other-15-complex-multi-party-fraud",
+    "eval:full": "node scripts/eval/runner100.js",
+    "eval:report": "node scripts/eval/report100.js",
+    "eval:dry": "node scripts/eval/runner100.js --dry-run",
     "pdf-to-text": "node scripts/pdf-to-text.js",
-    "ingest": "node scripts/ingest.js",
-    "eval": "node scripts/run-eval.js",
-    "eval:quick": "node scripts/run-eval.js --limit 5",
-    "eval:offline": "node scripts/run-eval.js --offline"
+    "ingest": "node scripts/ingest.js"
   },
   "dependencies": {
-    "@playwright/test": "^1.62.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^4.19.2",
     "express-rate-limit": "^8.6.2",
     "firebase-admin": "^13.10.0",
     "openai": "^6.49.0",
-    "pdf-parse": "^2.4.5",
+    "pdf-parse": "^2.4.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "playwright": "^1.62.1"
   }
 }
