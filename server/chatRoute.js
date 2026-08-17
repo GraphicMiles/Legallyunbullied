@@ -15,8 +15,10 @@
  */
 
 const express = require("express");
+const { randomBytes } = require("node:crypto");
 const router = express.Router();
-const { getClient: getGroqClient, CLASSIFY_MODEL, DRAFT_MODEL, DRAFT_MODEL_FALLBACK } = require("./groq");
+const { getClient: getGroqClient, CLASSIFY_MODEL, REVIEW_MODEL, DRAFT_MODEL, DRAFT_MODEL_FALLBACK } = require("./groq");
+const GROQ_REVIEW_MODEL = REVIEW_MODEL || DRAFT_MODEL || CLASSIFY_MODEL;
 const { getClient: getGeminiClient, GEMINI_CLASSIFY_MODEL, GEMINI_DRAFT_MODEL, GEMINI_CHAT_MODEL } = require("./gemini");
 const { getClient: getOpenRouterClient, OPENROUTER_CLASSIFY_MODEL, OPENROUTER_DRAFT_MODEL, OPENROUTER_CHAT_MODEL } = require("./openrouter");
 const { getClient: getCerebrasClient, CEREBRAS_CLASSIFY_MODEL, CEREBRAS_DRAFT_MODEL, CEREBRAS_CHAT_MODEL } = require("./cerebras");
@@ -25,8 +27,10 @@ const { detectLegalIntent, buildFallbackClassification } = require("./legalInten
 const { PRACTICE_AREAS: PRACTICE_AREA_DEFS, PRACTICE_AREA_KEYS } = require("./practiceAreas");
 const { getFirestore } = require("./firebaseAdmin");
 const { recordJobStart, recordJobEnd } = require("./jobRunner");
+const { requiredSourceCount, verifyAndResolveCitations } = require("./evidence");
 
 const PRACTICE_AREAS = PRACTICE_AREA_KEYS;
+const STATE_VARYING_AREAS = new Set(["tenancy", "family_law", "land_property"]);
 
 /**
  * Some models occasionally wrap JSON-mode output in markdown code fences
@@ -177,8 +181,9 @@ TONE & PERSONALITY:
 
 CORE PRINCIPLES:
 - Use ONLY the provided statute excerpts — never cite provisions not in the context
-- Cite the Act and section number for every legal claim (e.g., "Section 13 of the Lagos Tenancy Law 2011")
-- Do NOT include URLs, links, or [text](url) markdown in your response — citations should be inline text only
+- Every excerpt has a provisionId. Cite it using the exact token [[provisionId]]; never type or invent an Act/section label yourself
+- Return every used ID in "provisionIds" and attach IDs to individual entries in "claims"
+- Do NOT include URLs, links, or [text](url) markdown. The backend resolves provision IDs to authoritative citation labels
 - Be comprehensive but clear — explain legal concepts in plain language
 - Provide actionable next steps the user can take
 - Be honest about limitations in the available information
@@ -200,9 +205,14 @@ RESPONSE STRUCTURE:
 - Use bullet points with clear, direct language
 - Write steps the way you'd advise a friend — practical and encouraging
 
-**sources**: Array of 3-4 most important statutory provisions cited, with:
-- "label": "Act Name, s.X"
-- "excerpt": The key text from that section (max 400 chars)
+**provisionIds**: Array of the exact provisionId values used. Do not invent IDs.
+
+**claims**: Array of substantive legal claims, each with:
+- "claimId": stable local ID such as "claim-1"
+- "text": the legal claim in plain language
+- "provisionIds": exact retrieved IDs supporting that claim
+
+Do NOT return source labels or excerpts. The backend creates the public "sources" array from verified provision IDs.
 
 **escalate**: Boolean — true if this likely needs a lawyer
 
@@ -222,9 +232,10 @@ QUALITY STANDARDS:
 
 Respond with ONLY a JSON object (no prose, no markdown fences):
 {
-  "lawMd": "Comprehensive explanation with citations...",
+  "lawMd": "Comprehensive explanation with [[exact-provision-id]] citation tokens...",
   "actionsMd": "- Step 1: ...\n- Step 2: ...\n- Step 3: ...",
-  "sources": [{"label": "Act, s.X", "excerpt": "..."}],
+  "provisionIds": ["exact-provision-id"],
+  "claims": [{"claimId":"claim-1","text":"A supported legal claim","provisionIds":["exact-provision-id"]}],
   "escalate": true/false,
   "escalateReason": "...",
   "followUps": ["Question 1?", "Question 2?"]
@@ -314,18 +325,20 @@ async function assessRelevanceWithFallback(question, classification, provisions)
   const groqClient = getGroqClient();
   const cerebrasClient = getCerebrasClient();
   const geminiClient = getGeminiClient();
-  if (groqClient) providers.push(["groq", groqClient, CLASSIFY_MODEL]);
-  if (cerebrasClient) providers.push(["cerebras", cerebrasClient, CEREBRAS_CLASSIFY_MODEL]);
   if (geminiClient) providers.push(["gemini", geminiClient, GEMINI_CLASSIFY_MODEL]);
+  if (groqClient) providers.push(["groq", groqClient, GROQ_REVIEW_MODEL]);
+  if (cerebrasClient) providers.push(["cerebras", cerebrasClient, CEREBRAS_CLASSIFY_MODEL]);
 
   let lastErr = null;
   for (const [name, client, model] of providers) {
+    const key = `${name}-relevance:${model}`;
+    if (isProviderOnCooldown(key)) continue;
     try {
       const parsed = await assessRelevanceForClient(client, model, question, classification, provisions);
       return { ...parsed, provider: name };
     } catch (err) {
       lastErr = err;
-      console.warn(`[/api/chat] Relevance gate via ${model} failed: ${err.message}`);
+      markProviderFailure(key, err);
     }
   }
   throw new Error(`All relevance-gate providers failed: ${lastErr ? lastErr.message : "none configured"}`);
@@ -333,16 +346,20 @@ async function assessRelevanceWithFallback(question, classification, provisions)
 
 async function assessRelevanceForClient(client, model, question, classification, provisions) {
   const candidateBlock = provisions.map((p, i) =>
-    `[${i + 1}] ${p.act}${p.section ? ", s." + p.section : ""}: ${(p.text || "").slice(0, 220)}`
+    `[${i + 1}] ID=${p.provisionId || p.id} ${p.act}${p.section ? ", s." + p.section : ""}: ${(p.text || "").slice(0, 500)}`
   ).join("\n");
   const userMsg = `Practice area: ${classification.practice_area || "unknown"}\nQuestion: ${question}\n\nCandidate provisions:\n${candidateBlock}\n\nJudge relevance and sufficiency.`;
 
   const completion = await callCompletion(client, model, [
     { role: "system", content: RELEVANCE_SYSTEM_PROMPT },
     { role: "user", content: userMsg },
-  ], { temperature: 0, max_tokens: 400, response_format: { type: "json_object" } });
+  ], { task: "relevance", timeoutMs: 8000, temperature: 0, max_tokens: 400, response_format: { type: "json_object" } });
 
-  return completion.parsed;
+  const parsed = completion.parsed;
+  if (!parsed || !Array.isArray(parsed.relevant) || typeof parsed.sufficient !== "boolean") {
+    throw new Error("Relevance judge returned an invalid schema");
+  }
+  return parsed;
 }
 
 // ── Hedge detection (citation-fit self-doubt) ─────────────────────────────
@@ -405,7 +422,7 @@ Respond with ONLY a JSON object:
 "passed" is true only if BOTH quality >= 0.6 AND legal_safety >= 0.6.`;
 
 async function critiqueDraft(client, model, question, provisions, draft) {
-  const provisionSummary = (provisions || []).slice(0, 8).map(p =>
+  const provisionSummary = (provisions || []).slice(0, 14).map(p =>
     `[${p.act}${p.section ? ", s." + p.section : ""}]: ${p.text.slice(0, 150)}...`
   ).join("\n");
 
@@ -427,7 +444,7 @@ Review this response.`;
   const completion = await callCompletion(client, model, [
     { role: "system", content: CRITIQUE_SYSTEM_PROMPT },
     { role: "user", content: userMsg },
-  ], { response_format: { type: "json_object" }, max_tokens: 500, temperature: 0.1 });
+  ], { task: "critique", timeoutMs: 8000, response_format: { type: "json_object" }, max_tokens: 500, temperature: 0.1 });
 
   const parsed = completion.parsed;
   return {
@@ -446,20 +463,21 @@ async function critiqueWithFallback(question, provisions, draft, classification)
   const geminiClient = getGeminiClient();
 
   // Use classify-tier models (fast, cheap) for critique — doesn't need heavy reasoning
-  if (groqClient) providers.push([groqClient, CLASSIFY_MODEL]);
-  if (cerebrasClient) providers.push([cerebrasClient, CEREBRAS_CLASSIFY_MODEL]);
-  if (geminiClient) providers.push([geminiClient, GEMINI_CLASSIFY_MODEL]);
+  if (geminiClient) providers.push(["gemini", geminiClient, GEMINI_CLASSIFY_MODEL]);
+  if (groqClient) providers.push(["groq", groqClient, GROQ_REVIEW_MODEL]);
+  if (cerebrasClient) providers.push(["cerebras", cerebrasClient, CEREBRAS_CLASSIFY_MODEL]);
 
   if (providers.length === 0) {
     throw new Error("No LLM provider available for critique");
   }
 
-  for (const [client, model] of providers) {
+  for (const [name, client, model] of providers) {
+    const key = `${name}-critique:${model}`;
+    if (isProviderOnCooldown(key)) continue;
     try {
       return await critiqueDraft(client, model, question, provisions, draft);
     } catch (err) {
-      console.warn(`[/api/chat] Critique via ${model} failed: ${err.message}`);
-      continue; // try next provider
+      markProviderFailure(key, err);
     }
   }
 
@@ -487,7 +505,7 @@ const pendingSafetyAck = new Map();  // token → { data, timestamp } (cache)
 const SAFETY_ACK_TTL = 10 * 60 * 1000; // 10 minutes
 
 function generateAckToken() {
-  return "safety_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  return "safety_" + randomBytes(24).toString("base64url");
 }
 
 async function setPendingAck(token, data) {
@@ -536,8 +554,8 @@ async function deletePendingAck(token) {
   }
 }
 
-function getCacheKey(question, jurisdiction) {
-  return `${(jurisdiction || "any").toLowerCase()}::${question.toLowerCase().trim().slice(0, 200)}`;
+function getCacheKey(question, jurisdiction, practiceArea) {
+  return `${(practiceArea || "general").toLowerCase()}::${(jurisdiction || "any").toLowerCase()}::${question.toLowerCase().trim().slice(0, 300)}`;
 }
 
 function getCachedResult(key) {
@@ -591,7 +609,7 @@ Analyze this question and create a structured plan for answering it.`;
           { role: "system", content: PLAN_SYSTEM_PROMPT },
           { role: "user", content: planningPrompt }
         ],
-        { temperature: 0.3, max_tokens: 800, response_format: { type: "json_object" } }
+        { task: "planning", timeoutMs: 10000, temperature: 0.3, max_tokens: 800, response_format: { type: "json_object" } }
       );
       return { plan: completion.parsed, provider: "groq" };
     } catch (err) {
@@ -609,7 +627,7 @@ Analyze this question and create a structured plan for answering it.`;
           { role: "system", content: PLAN_SYSTEM_PROMPT },
           { role: "user", content: planningPrompt }
         ],
-        { temperature: 0.3, max_tokens: 800, response_format: { type: "json_object" } }
+        { task: "planning", timeoutMs: 10000, temperature: 0.3, max_tokens: 800, response_format: { type: "json_object" } }
       );
       return { plan: completion.parsed, provider: "gemini" };
     } catch (err) {
@@ -630,7 +648,9 @@ Analyze this question and create a structured plan for answering it.`;
 }
 
 async function callCompletion(client, model, messages, options = {}) {
-  const LLM_TIMEOUT_MS = 30000; // 30 second timeout for LLM calls
+  const LLM_TIMEOUT_MS = options.timeoutMs || 15000;
+  const task = options.task || "llm";
+  const startedAt = Date.now();
   
   const completionPromise = client.chat.completions.create({
     model,
@@ -642,12 +662,13 @@ async function callCompletion(client, model, messages, options = {}) {
   
   try {
     const result = await withTimeout(completionPromise, LLM_TIMEOUT_MS, `LLM call to ${model}`);
+    console.log(`[llm] task=${task} model=${model} ms=${Date.now() - startedAt} status=ok`);
+    if (options.parseJson === false) return result;
     const parsed = extractJsonFromResponse(result.choices[0].message.content);
-    if (!parsed) {
-      throw new Error(`Failed to parse JSON from ${model} response`);
-    }
+    if (!parsed) throw new Error(`Failed to parse JSON from ${model} response`);
     return { ...result, parsed };
   } catch (err) {
+    console.warn(`[llm] task=${task} model=${model} ms=${Date.now() - startedAt} status=${classifyProviderError(err)}`);
     throw err;
   }
 }
@@ -665,94 +686,50 @@ function withTimeout(promise, ms, operation = "operation") {
 }
 
 async function classifyWithFallback(question, conversationContext, options = {}) {
-  const groqClient = getGroqClient();
-  const openRouterClient = getOpenRouterClient();
-  const cerebrasClient = getCerebrasClient();
-  const geminiClient = getGeminiClient();
+  const providers = [
+    ["gemini-classify", getGeminiClient(), GEMINI_CLASSIFY_MODEL],
+    ["groq-classify", getGroqClient(), CLASSIFY_MODEL],
+    ["openrouter-classify", getOpenRouterClient(), OPENROUTER_CLASSIFY_MODEL],
+    ["cerebras-classify", getCerebrasClient(), CEREBRAS_CLASSIFY_MODEL],
+  ].filter(([, client]) => client);
 
-  // Deterministic legal-intent backstop: when the raw message describes an
-  // incident/legal matter, the classifier is explicitly told it MUST produce
-  // a legal classification — this prevents a short, emotional message from
-  // being misfiled as casual chat across provider fallbacks.
   const forceLegalNote = options.forceLegal
-    ? `\n\n[SYSTEM OVERRIDE — DO NOT IGNORE]: This message describes a real incident or legal matter. "is_legal_question" MUST be true. Do NOT classify it as casual chat. Provide the full legal classification (practice_area, jurisdiction, jurisdiction_status, urgency, summary, keywords, key_issues, complexity, route, reasoning_approach, stakeholders, potential_remedies).`
+    ? `\n\n[SYSTEM OVERRIDE — DO NOT IGNORE]: This message describes a real incident or legal matter. "is_legal_question" MUST be true. Do NOT classify it as casual chat. Provide the full legal classification.`
     : "";
   const userContent = (conversationContext ? `${conversationContext}\n\nUser: ${question}` : question) + forceLegalNote;
+  let lastErr = null;
 
-  // Try Groq first (fastest, already working for casual chat)
-  if (groqClient) {
+  for (const [name, client, model] of providers) {
+    const key = `${name}:${model}`;
+    if (isProviderOnCooldown(key)) {
+      console.log(`[/api/chat] Skipping ${key} — cooldown`);
+      continue;
+    }
     try {
-      const completion = await callCompletion(
-        groqClient,
-        CLASSIFY_MODEL,
-        [
-          { role: "system", content: CLASSIFY_SYSTEM_PROMPT },
-          { role: "user", content: userContent },
-        ],
-        { temperature: 0, max_tokens: 2000, response_format: { type: "json_object" } }
-      );
-      return { classification: completion.parsed, provider: "groq" };
+      const completion = await callCompletion(client, model, [
+        { role: "system", content: CLASSIFY_SYSTEM_PROMPT },
+        { role: "user", content: userContent },
+      ], { task: "classification", timeoutMs: 8000, temperature: 0, max_tokens: 2000, response_format: { type: "json_object" } });
+      const c = completion.parsed;
+      if (!c || typeof c.is_legal_question !== "boolean") throw new Error("Classification returned an invalid schema");
+      if (c.is_legal_question !== false && !PRACTICE_AREAS.includes(c.practice_area)) throw new Error("Classification returned an invalid practice area");
+      return { classification: c, provider: name.replace(/-classify$/, "") };
     } catch (err) {
-      console.warn(`[/api/chat] Groq classification failed: ${err.status || ""} ${err.message}`);
+      lastErr = err;
+      markProviderFailure(key, err);
     }
   }
 
-  // Try OpenRouter (35+ free models, OpenAI-compatible)
-  if (openRouterClient) {
-    try {
-      const completion = await callCompletion(
-        openRouterClient,
-        OPENROUTER_CLASSIFY_MODEL,
-        [
-          { role: "system", content: CLASSIFY_SYSTEM_PROMPT },
-          { role: "user", content: userContent },
-        ],
-        { temperature: 0, max_tokens: 2000, response_format: { type: "json_object" } }
-      );
-      return { classification: completion.parsed, provider: "openrouter" };
-    } catch (err) {
-      console.warn(`[/api/chat] OpenRouter classification failed: ${err.status || ""} ${err.message}`);
-    }
+  if (options.forceLegal) {
+    console.warn("[/api/chat] Classification providers unavailable; using deterministic legal-intent fallback");
+    return {
+      classification: buildFallbackClassification(options.fallbackText || question),
+      provider: "deterministic-fallback",
+    };
   }
-
-  // Try Cerebras (ultra-fast, high rate limits)
-  if (cerebrasClient) {
-    try {
-      const completion = await callCompletion(
-        cerebrasClient,
-        CEREBRAS_CLASSIFY_MODEL,
-        [
-          { role: "system", content: CLASSIFY_SYSTEM_PROMPT },
-          { role: "user", content: userContent },
-        ],
-        { temperature: 0, max_tokens: 2000, response_format: { type: "json_object" } }
-      );
-      return { classification: completion.parsed, provider: "cerebras" };
-    } catch (err) {
-      console.warn(`[/api/chat] Cerebras classification failed: ${err.status || ""} ${err.message}`);
-    }
-  }
-
-  // Try Gemini as last resort
-  if (geminiClient) {
-    try {
-      const completion = await callCompletion(
-        geminiClient,
-        GEMINI_CLASSIFY_MODEL,
-        [
-          { role: "system", content: CLASSIFY_SYSTEM_PROMPT },
-          { role: "user", content: userContent },
-        ],
-        { temperature: 0, max_tokens: 2000, response_format: { type: "json_object" } }
-      );
-      return { classification: completion.parsed, provider: "gemini" };
-    } catch (err) {
-      console.error(`[/api/chat] All LLM providers failed. Last error (Gemini): ${err.status || ""} ${err.message}`);
-      throw err;
-    }
-  }
-
-  throw new Error("No LLM provider configured for classification. Set GROQ_API_KEY, OPENROUTER_API_KEY, CEREBRAS_API_KEY, or GEMINI_API_KEY.");
+  const error = new Error(`All classification providers failed: ${lastErr ? lastErr.message : "none configured or all cooling down"}`);
+  error.code = lastErr ? classifyProviderError(lastErr) : "providers_busy";
+  throw error;
 }
 
 async function draftWithModel(client, model, question, contextBlock, plan, classification, conversationHistory) {
@@ -804,7 +781,7 @@ Follow this plan to structure your response. Be comprehensive and address all su
       { role: "system", content: DRAFT_SYSTEM_PROMPT },
       { role: "user", content: `${historyContext}\n\nQuestion: ${question}\n\nAvailable statute excerpts:\n\n${contextBlock}${enhancedContext}` },
     ],
-    { response_format: { type: "json_object" }, max_tokens: 3000 }
+    { task: "draft", timeoutMs: 20000, response_format: { type: "json_object" }, max_tokens: 3000 }
   );
   return completion.parsed;
 }
@@ -823,9 +800,31 @@ function isProviderOnCooldown(key) {
   return true;
 }
 
+function classifyProviderError(err) {
+  const status = Number(err?.status || err?.code || 0);
+  const message = String(err?.message || "").toLowerCase();
+  if (status === 404 || message.includes("does not exist") || message.includes("model_not_found")) return "model_not_found";
+  if (status === 401 || status === 403) return "authentication_failed";
+  if (status === 429 || status === 413 || message.includes("rate limit") || message.includes("rate-limited")) return "rate_limited";
+  if (message.includes("timed out") || message.includes("timeout")) return "timeout";
+  if (message.includes("failed to parse json") || message.includes("invalid schema")) return "malformed_output";
+  return "provider_unavailable";
+}
+
+function markProviderFailure(key, err) {
+  const kind = classifyProviderError(err);
+  const cooldownMs = kind === "model_not_found" || kind === "authentication_failed"
+    ? 30 * 60 * 1000
+    : kind === "rate_limited" ? 60 * 1000
+      : kind === "timeout" ? 30 * 1000
+        : 15 * 1000;
+  providerCooldowns.set(key, Date.now() + cooldownMs);
+  console.warn(`[/api/chat] Provider "${key}" ${kind}; cooldown ${Math.round(cooldownMs / 1000)}s`);
+  return kind;
+}
+
 function markProviderRateLimited(key) {
-  providerCooldowns.set(key, Date.now() + COOLDOWN_MS);
-  console.log(`[/api/chat] Provider "${key}" on cooldown for ${COOLDOWN_MS / 1000}s`);
+  markProviderFailure(key, { status: 429, message: "rate limited" });
 }
 
 /**
@@ -930,9 +929,9 @@ async function draftWithFallback(question, contextBlock, plan, classification, c
   let allRateLimited = true;
 
   for (const [key, client, model] of providers) {
-    // Skip providers on cooldown
-    if (isProviderOnCooldown(key)) {
-      console.log(`[/api/chat] Skipping "${key}" — on cooldown`);
+    const cooldownKey = `${key}:${model}`;
+    if (isProviderOnCooldown(cooldownKey)) {
+      console.log(`[/api/chat] Skipping "${cooldownKey}" — on cooldown`);
       continue;
     }
     allSkipped = false; // at least one was attempted
@@ -944,9 +943,9 @@ async function draftWithFallback(question, contextBlock, plan, classification, c
       return { result, model, provider: key };
     } catch (err) {
       lastErr = err;
+      markProviderFailure(cooldownKey, err);
       if (isRateLimitError(err)) {
         console.warn(`[/api/chat] ${key} rate-limited: ${err.message}`);
-        markProviderRateLimited(key);
       } else if (isParseError(err)) {
         console.warn(`[/api/chat] ${key} JSON parse failed, trying next provider: ${err.message}`);
       } else if (err.status === 404 || (err.message && err.message.includes('404'))) {
@@ -1012,9 +1011,7 @@ IMPORTANT:
 - "sources" MUST be an empty array [].
 - "escalate" is true only if the situation clearly needs a lawyer.
 
-Respond with ONLY a JSON object (no prose, no markdown fences):
-{
-  "lawMd": "Direct, plain-language guidance for this practical task (2-4 sentences).",
+Respond with ONLY a JSON object (no prose, no markdown fences):ge guidance for this practical task (2-4 sentences).",
   "actionsMd": "- Step 1: ...\\n- Step 2: ...\\n- Step 3: ...",
   "sources": [],
   "escalate": true/false,
@@ -1043,7 +1040,7 @@ async function answerProceduralWithFallback(question, classification, history) {
       const completion = await callCompletion(client, model, [
         { role: "system", content: PROCEDURAL_SYSTEM_PROMPT },
         { role: "user", content: `${historyContext}\n\nUser: ${question}` },
-      ], { temperature: 0.3, max_tokens: 900 });
+      ], { task: "procedural", timeoutMs: 12000, temperature: 0.3, max_tokens: 900 });
       const parsed = completion.parsed;
       if (parsed && (parsed.lawMd || parsed.actionsMd)) {
         parsed.sources = [];
@@ -1119,6 +1116,31 @@ async function serverPersistMessage(req, fields) {
     .catch((err) => console.warn("[chat] serverPersistMessage failed:", err.message));
 }
 
+function makeInsufficientEvidenceResult(evidence, urgent) {
+  return {
+    lawMd: urgent
+      ? "I cannot safely confirm the controlling provision from the available evidence right now. Your immediate safety matters more than forcing a weak citation, so take protective action first and get case-specific legal help as soon as possible."
+      : "The available evidence does not clearly establish which provision controls these facts. I will not guess or present a weak citation as settled law; a qualified lawyer should review the exact circumstances.",
+    actionsMd: urgent
+      ? "- Step 1: If you or anyone with you is in immediate danger, move to a safe public place and call the police or local emergency service now.\n- Step 2: Contact a trusted person and preserve messages, photographs, medical records, names, dates, and other evidence.\n- Step 3: Do not confront the person alone or take an action that could put you at greater risk.\n- Step 4: Contact a qualified lawyer or legal-aid organisation urgently for advice based on your location and facts."
+      : "- Step 1: Preserve contracts, receipts, messages, photographs, names, and dates.\n- Step 2: Write a clear timeline of what happened and what outcome you want.\n- Step 3: Consult a qualified lawyer for advice tied to the applicable state and complete facts.",
+    sources: [],
+    provisionIds: [],
+    claims: [],
+    escalate: true,
+    escalateReason: urgent
+      ? "The situation may involve immediate harm and the controlling law could not be verified from the retrieved evidence."
+      : "The controlling provision could not be verified from the retrieved evidence.",
+    followUps: [],
+    evidence,
+  };
+}
+
+function isClearlyProceduralQuestion(question) {
+  const q = String(question || "").toLowerCase();
+  return /\b(how (?:do|can|should) i (?:contact|find|write|note|record|prepare|organise|organize|report)|what (?:documents?|papers?|evidence) should i bring|where (?:do|can|should) i (?:go|report|file)|which (?:police )?station|how do i find a lawyer)\b/.test(q);
+}
+
 async function runChatPipeline(req) {
   // Fake response object: every terminal `res.json(...)`/`res.status(...)`
   // in the original handler body now throws a sentinel we convert into a
@@ -1150,6 +1172,12 @@ async function runChatPipeline(req) {
   // thinking duration for background-completed jobs (the client isn't around
   // to freeze it via collapseTrace).
   req.pipelineStartedAt = Date.now();
+  const timings = {};
+  const timed = async (name, fn) => {
+    const started = Date.now();
+    try { return await fn(); }
+    finally { timings[name] = (timings[name] || 0) + (Date.now() - started); }
+  };
 
   const question = (req.body && req.body.question || "").toString().trim();
   if (!question) {
@@ -1205,7 +1233,10 @@ async function runChatPipeline(req) {
   } else {
     let classifyResult;
     try {
-      classifyResult = await classifyWithFallback(question, conversationContext, { forceLegal: forcedLegal });
+      classifyResult = await timed("classificationMs", () => classifyWithFallback(question, conversationContext, {
+        forceLegal: forcedLegal || (history.length > 0 && detectLegalIntent(conversationContext).legal),
+        fallbackText: `${conversationContext}\n${question}`,
+      }));
     } catch (err) {
       console.error("[/api/chat] classification failed:", err.status || "", err.message);
       await serverPersistMessage(req, { status: "error", errorMessage: "The classification model failed to respond. " + (err.message || ""), pipelineStatus: "failed", unread: true });
@@ -1227,6 +1258,14 @@ async function runChatPipeline(req) {
     }
 
     await saveCheckpoint("classification", { classification, classifyProvider });
+  }
+
+  // `needs_sourcing:false` is accepted only for an explicitly procedural
+  // request. A described arrest, assault, eviction, dismissal, etc. still
+  // needs legal evidence even when the user asks "what can we do?".
+  if (classification.is_legal_question !== false && classification.needs_sourcing === false && !isClearlyProceduralQuestion(question)) {
+    classification.needs_sourcing = true;
+    classification.sourcing_override = "deterministic_legal_incident_guard";
   }
 
   // Step 2: If casual chat, return early with a friendly response
@@ -1313,7 +1352,8 @@ async function runChatPipeline(req) {
 
   // Step 2b: HITL — if jurisdiction is unclear and the answer depends on state,
   // ask the user before proceeding. Don't guess and risk wrong law.
-  if (classification.jurisdiction_status === "unclear") {
+  const urgentWithoutJurisdiction = classification.urgency === "High" || classification.urgency === "Critical";
+  if (classification.jurisdiction_status === "unclear" && STATE_VARYING_AREAS.has(classification.practice_area) && !urgentWithoutJurisdiction) {
     await serverPersistMessage(req, { status: "needsInput", needsInputQuestion: "Which state did this happen in? The laws can differ by state.", needsInputField: "jurisdiction", pipelineStatus: "awaiting_input", unread: true });
     return res.json({
       needsInput: true,
@@ -1331,13 +1371,22 @@ async function runChatPipeline(req) {
   const route = classification.route || (classification.complexity === "Low" ? "simple" : "complex");
   const isSimple = route === "simple";
 
+  // Global answer caching is safe only for standalone first-turn questions.
+  // History-dependent answers may contain case facts and must never cross
+  // conversation or user boundaries.
+  const cacheAllowed = history.length === 0;
+  const cacheKey = getCacheKey(question, classification.jurisdiction, classification.practice_area);
+  const urgentSafety = classification.urgency === "High" || classification.urgency === "Critical";
+
   // ── Relevance/sufficiency gate (between search and draft) ──────────────
   // Rank the retrieved provisions by whether they actually govern the
   // situation, not just overlap keywords. Insufficient evidence triggers a
   // broaden-and-re-search; if it is still insufficient, return an honest
   // low-confidence "insufficient evidence" response instead of dressing up a
   // mismatched citation as a confident answer.
-  const MIN_SOURCES = 2; // at least 2 directly-on-point provisions required for a confident answer
+  // One controlling provision can fully answer a simple factual question.
+  // Applied or high-risk scenarios retain the stronger two-source floor.
+  const MIN_SOURCES = requiredSourceCount(classification);
 
   let workingProvisions;
   let evidence;
@@ -1359,11 +1408,11 @@ async function runChatPipeline(req) {
 
     let provisions;
     try {
-      provisions = await findProvisions({
+      provisions = await timed("retrievalMs", () => findProvisions({
         practiceArea: classification.practice_area,
         jurisdiction: classification.jurisdiction,
         keywords: classification.keywords,
-      });
+      }));
     } catch (err) {
       console.error("[/api/chat] Firestore lookup failed:", err.message);
       
@@ -1399,13 +1448,11 @@ async function runChatPipeline(req) {
     workingProvisions = provisions;
 
   try {
-    const gate = await assessRelevanceWithFallback(question, classification, provisions);
+    const gate = await timed("relevanceMs", () => assessRelevanceWithFallback(question, classification, provisions));
     const relevantIdx = new Set(
       Array.isArray(gate.relevant) ? gate.relevant.map((n) => Number(n) - 1).filter((i) => i >= 0 && i < provisions.length) : []
     );
-    const relevantProvisions = relevantIdx.size
-      ? provisions.filter((_, i) => relevantIdx.has(i))
-      : provisions; // if the gate returned nothing, don't silently drop everything
+    const relevantProvisions = provisions.filter((_, i) => relevantIdx.has(i));
 
     evidence.relevanceScore = typeof gate.relevance_score === "number" ? gate.relevance_score : null;
     evidence.reason = gate.reason || "";
@@ -1425,17 +1472,16 @@ async function runChatPipeline(req) {
         jurisdiction: classification.jurisdiction,
         keywords: classification.keywords || [],
         minSources: MIN_SOURCES,
+        force: true,
       });
       evidence.retrievedFrom = broad.categories || [classification.practice_area];
 
       if (broad.provisions.length) {
-        const gate2 = await assessRelevanceWithFallback(question, classification, broad.provisions);
+        const gate2 = await timed("relevanceMs", () => assessRelevanceWithFallback(question, classification, broad.provisions));
         const relevantIdx2 = new Set(
           Array.isArray(gate2.relevant) ? gate2.relevant.map((n) => Number(n) - 1).filter((i) => i >= 0 && i < broad.provisions.length) : []
         );
-        const relevantProvisions2 = relevantIdx2.size
-          ? broad.provisions.filter((_, i) => relevantIdx2.has(i))
-          : broad.provisions;
+        const relevantProvisions2 = broad.provisions.filter((_, i) => relevantIdx2.has(i));
 
         evidence.relevanceScore = typeof gate2.relevance_score === "number" ? gate2.relevance_score : evidence.relevanceScore;
         evidence.reason = gate2.reason || evidence.reason;
@@ -1447,21 +1493,7 @@ async function runChatPipeline(req) {
           console.log(`[/api/chat] Broadened search: ${relevantProvisions2.length} relevant provisions — sufficient`);
         } else {
           console.log(`[/api/chat] Broadened search still insufficient (${relevantProvisions2.length} relevant). Returning insufficient-evidence response.`);
-          const insuffResult = {
-            lawMd:
-              `I found limited directly relevant Nigerian statutes for this specific situation in the available corpus. ` +
-              `The closest provisions I could retrieve don't clearly and directly govern what you described, so I'd rather be honest than present a weakly-matched citation as solid law. ` +
-              `This is exactly the kind of situation where a qualified lawyer can give you advice tailored to your facts.`,
-            actionsMd:
-              `- Step 1: Note down the key facts (dates, names, what happened) while they're fresh.\n` +
-              `- Step 2: Report the incident to the police if it involves threats, assault, or a crime.\n` +
-              `- Step 3: Consult a lawyer for advice specific to your situation — the right statute depends on details (state, parties, circumstances) the available sources don't fully pin down.`,
-            sources: [],
-            escalate: true,
-            escalateReason: "No directly applicable provision was found in the ingested corpus for this situation.",
-            followUps: [],
-            evidence,
-          };
+          const insuffResult = makeInsufficientEvidenceResult(evidence, urgentSafety);
           await serverPersistMessage(req, { status: "done", result: insuffResult, pipelineStatus: "done", unread: true });
           return res.json({
             classification,
@@ -1476,20 +1508,7 @@ async function runChatPipeline(req) {
         }
       } else {
         // Broadened search found nothing either — same honest outcome.
-        const insuffResult = {
-          lawMd:
-            `I couldn't find directly relevant Nigerian statutes for this specific situation in the available corpus. ` +
-            `Rather than guess, I recommend speaking to a qualified lawyer who can advise based on your exact circumstances.`,
-          actionsMd:
-            `- Step 1: Document the key facts while they're fresh.\n` +
-            `- Step 2: If a crime or urgent harm is involved, report it to the police.\n` +
-            `- Step 3: Consult a lawyer for tailored advice.`,
-          sources: [],
-          escalate: true,
-          escalateReason: "No directly applicable provision was found in the ingested corpus.",
-          followUps: [],
-          evidence,
-        };
+        const insuffResult = makeInsufficientEvidenceResult(evidence, urgentSafety);
         await serverPersistMessage(req, { status: "done", result: insuffResult, pipelineStatus: "done", unread: true });
         return res.json({
           classification,
@@ -1504,15 +1523,28 @@ async function runChatPipeline(req) {
       }
     }
   } catch (err) {
-    if (err && err.__chatResponse) throw err; // terminal response, not an error
-    // Relevance gate unavailable — degrade gracefully: pass everything through
-    // so the user still gets an answer rather than an error.
-    console.warn("[/api/chat] Relevance gate failed, proceeding with all provisions:", err.message);
-    workingProvisions = provisions;
-    evidence.sourceCount = provisions.length;
-    evidence.sufficient = provisions.length >= MIN_SOURCES;
-    evidence.reason = "Relevance check unavailable — all retrieved provisions passed through.";
+    if (err && err.__chatResponse) throw err;
+    // Legal evidence verification fails closed. Candidate quantity is not proof
+    // of relevance, so an unavailable judge must never become "sufficient".
+    console.warn("[/api/chat] Relevance gate unavailable — withholding sourced answer:", err.message);
+    evidence.sourceCount = 0;
+    evidence.sufficient = false;
+    evidence.validationUnavailable = true;
+    evidence.reason = "Evidence relevance could not be verified at this time.";
     evidence.relevanceScore = null;
+    const unavailableResult = {
+      lawMd: "I found possible legal material, but I could not verify that it directly applies to your situation. Rather than give you a potentially mismatched legal answer, I am marking this as unverified.",
+      actionsMd: "- Step 1: Keep a written record of the important facts and dates.\n- Step 2: If there is immediate danger or a crime, contact the appropriate emergency or police service.\n- Step 3: Consult a qualified lawyer for advice based on your exact circumstances.",
+      sources: [],
+      provisionIds: [],
+      claims: [],
+      escalate: true,
+      escalateReason: "The system could not verify that the retrieved provisions apply to this situation.",
+      followUps: [],
+      evidence,
+    };
+    await serverPersistMessage(req, { status: "done", result: unavailableResult, evidence, pipelineStatus: "done", unread: true });
+    return res.json({ classification, route, plan: null, result: unavailableResult, critique: null, evidence, providersBusy: false, retryAfter: null });
   }
 
     await saveCheckpoint("retrieval", { workingProvisions, evidence });
@@ -1522,7 +1554,8 @@ async function runChatPipeline(req) {
   const contextBlock = workingProvisions
     .map((p) => {
       const text = p.text.length > EXCERPT_CHAR_CAP ? p.text.slice(0, EXCERPT_CHAR_CAP) + "\u2026" : p.text;
-      return `[${p.act}${p.section ? ", s." + p.section : ""}]\\n${text}`;
+      const id = p.provisionId || p.id;
+      return `[provisionId: ${id}] [${p.act}${p.section ? ", s." + p.section : ""}]\n${text}`;
     })
     .join("\n\n---\n\n");
 
@@ -1538,34 +1571,43 @@ async function runChatPipeline(req) {
     critiqueResult = cp.draftAndCritique.critiqueResult;
     console.log("[chat] Resuming from draft/critique checkpoint");
     // The previous attempt may have crashed before caching the result.
-    if (!draftResult.providersBusy && draftResult.result) {
-      setCachedResult(getCacheKey(question, classification.jurisdiction), draftResult);
+    if (cacheAllowed && !draftResult.providersBusy && draftResult.result && critiqueResult?.passed === true && evidence?.citationVerification?.valid === true) {
+      setCachedResult(cacheKey, { draftResult, critiqueResult });
     }
   } else {
     planResult = { plan: null, provider: "skipped" };
     if (!isSimple) {
-      try {
-        planResult = await planResponse(question, classification, workingProvisions);
-        console.log(`[/api/chat] Planning completed via ${planResult.provider} (route=${route})`);
-      } catch (err) {
-        console.warn("[/api/chat] planning failed, continuing without plan:", err.message);
-        planResult = { plan: null, provider: "none" };
-      }
+      // Classification already produced the legal issues, approach, remedies,
+      // and stakeholders. Build the response plan deterministically instead of
+      // spending another provider round-trip on duplicative JSON planning.
+      planResult = {
+        provider: "deterministic",
+        plan: {
+          analysis: classification.reasoning_approach || classification.summary || "Apply the retrieved provisions to the user's facts.",
+          key_provisions: workingProvisions.slice(0, 5).map((p) => `${p.act}${p.section ? `, s.${p.section}` : ""}`),
+          sub_questions: classification.key_issues || [],
+          response_structure: "Explain the controlling law, apply it to the facts, then give practical next steps and escalation guidance.",
+          practical_steps: classification.potential_remedies || [],
+          gaps: [],
+        },
+      };
+      timings.planningMs = 0;
     } else {
       console.log(`[/api/chat] Simple route — skipping planning (route=${route})`);
     }
 
-    // Step 5: Check question cache before running draft (V1 Phase 11)
-    const cacheKey = getCacheKey(question, classification.jurisdiction);
-    const cached = getCachedResult(cacheKey);
+    // Cache only context-free first turns. A follow-up answer is a case artifact,
+    // never a globally reusable question artifact.
+    const cached = cacheAllowed ? getCachedResult(cacheKey) : null;
 
-    if (cached && !cached.providersBusy) {
-    console.log(`[/api/chat] Cache HIT for question (key: ${cacheKey.slice(0, 50)})`);
-    draftResult = cached;
-  } else {
+    if (cached && cached.draftResult && !cached.draftResult.providersBusy) {
+      console.log(`[/api/chat] Cache HIT for standalone question (key: ${cacheKey.slice(0, 50)})`);
+      draftResult = cached.draftResult;
+      critiqueResult = cached.critiqueResult || null;
+    } else {
     // Step 5a: Draft with fallback chain (plan is null for simple route)
     try {
-      draftResult = await draftWithFallback(question, contextBlock, planResult.plan, classification, history);
+      draftResult = await timed("draftMs", () => draftWithFallback(question, contextBlock, planResult.plan, classification, history));
     } catch (err) {
       console.error("[/api/chat] drafting failed:", err.status || "", err.message);
       await serverPersistMessage(req, { status: "error", errorMessage: "The drafting model failed to respond. " + (err.message || ""), pipelineStatus: "failed", unread: true });
@@ -1575,10 +1617,18 @@ async function runChatPipeline(req) {
       });
     }
 
+    // The model selects evidence by ID; the server resolves all public labels
+    // and excerpts from this run's retrieved records. Unknown IDs never reach
+    // the user as citations.
+    if (!draftResult.providersBusy && draftResult.result) {
+      const citationVerification = verifyAndResolveCitations(draftResult.result, workingProvisions);
+      evidence.citationVerification = citationVerification;
+    }
+
     // Step 6: Critique + iteration loop (V1 Phase 1+2)
     // Skip critique for providersBusy responses (they're fallback errors, not real answers)
     if (!draftResult.providersBusy && draftResult.result) {
-      const MAX_CRITIQUE_RETRIES = 2;
+      const MAX_CRITIQUE_RETRIES = 1;
 
       // Phase 2: Category-specific thresholds — high-risk categories get a stricter bar.
       // Wrong advice in these areas could lead to arrest, deportation, loss of custody, etc.
@@ -1593,9 +1643,9 @@ async function runChatPipeline(req) {
 
       for (let attempt = 0; attempt <= MAX_CRITIQUE_RETRIES; attempt++) {
         try {
-          critiqueResult = await critiqueWithFallback(
+          critiqueResult = await timed("critiqueMs", () => critiqueWithFallback(
             question, workingProvisions, draftResult.result, classification
-          );
+          ));
 
           // Override the critique's own "passed" with our category-specific thresholds
           critiqueResult.passed = critiqueResult.quality >= QUALITY_THRESHOLD
@@ -1605,7 +1655,7 @@ async function runChatPipeline(req) {
 
           console.log(`[/api/chat] Critique ${attempt + 1}/${MAX_CRITIQUE_RETRIES + 1} [${isHighRisk ? "HIGH-RISK" : "standard"}]: quality=${critiqueResult.quality.toFixed(2)}>=${QUALITY_THRESHOLD}, safety=${critiqueResult.legal_safety.toFixed(2)}>=${SAFETY_THRESHOLD} → ${critiqueResult.passed ? "PASS" : "FAIL"}`);
 
-          if (critiqueResult.passed || attempt === MAX_CRITIQUE_RETRIES) {
+          if (critiqueResult.passed || attempt === MAX_CRITIQUE_RETRIES || !isHighRisk) {
             break;
           }
 
@@ -1613,14 +1663,48 @@ async function runChatPipeline(req) {
           console.log(`[/api/chat] Re-drafting with feedback: ${critiqueResult.issues.join("; ").slice(0, 100)}`);
           const feedbackContext = `\n\nIMPORTANT FEEDBACK FROM PREVIOUS DRAFT REVIEW (attempt ${attempt + 1} failed):\n${critiqueResult.issues.map(i => "- " + i).join("\n")}\n\nFix ALL of these issues. ${isHighRisk ? "This is a HIGH-RISK legal area — accuracy and safety are critical." : ""}`;
 
-          draftResult = await draftWithFallback(
+          draftResult = await timed("draftMs", () => draftWithFallback(
             question, contextBlock + feedbackContext, planResult.plan, classification, history
-          );
+          ));
+          if (!draftResult.providersBusy && draftResult.result) {
+            evidence.citationVerification = verifyAndResolveCitations(draftResult.result, workingProvisions);
+          }
         } catch (err) {
-          // Critique itself failed — don't block the response
-          console.warn(`[/api/chat] Critique ${attempt + 1} error: ${err.message}`);
-          critiqueResult = { quality: 0.5, legal_safety: 0.5, issues: ["critique_unavailable"], passed: true, thresholds: { quality: QUALITY_THRESHOLD, safety: SAFETY_THRESHOLD }, isHighRisk };
+          // Verification failure is not a pass. High-risk answers flow into the
+          // acknowledgment gate; standard answers are visibly downgraded.
+          console.warn(`[/api/chat] Critique ${attempt + 1} unavailable: ${err.message}`);
+          critiqueResult = { quality: 0.5, legal_safety: 0.5, issues: ["critique_unavailable"], passed: false, unavailable: true, thresholds: { quality: QUALITY_THRESHOLD, safety: SAFETY_THRESHOLD }, isHighRisk };
+          evidence.sufficient = false;
+          evidence.safetyValidationUnavailable = true;
+          evidence.reason = "Response safety review could not be completed.";
+          if (!isHighRisk && draftResult.result) {
+            draftResult.result.escalate = true;
+            draftResult.result.escalateReason = "This response could not complete safety review; consult a qualified lawyer before relying on it.";
+          }
           break;
+        }
+      }
+
+      // Citation integrity is deterministic and overrides model self-review.
+      const citationOk = evidence.citationVerification?.valid === true;
+      if (!citationOk) {
+        evidence.sufficient = false;
+        evidence.reason = evidence.citationVerification?.reason || "Citations could not be verified.";
+        critiqueResult = critiqueResult || { quality: 0.5, legal_safety: 0.5, issues: [], passed: false, thresholds: { quality: QUALITY_THRESHOLD, safety: SAFETY_THRESHOLD }, isHighRisk };
+        critiqueResult.passed = false;
+        critiqueResult.issues = Array.from(new Set([...(critiqueResult.issues || []), "citation_integrity_failed"]));
+        if (draftResult.result) {
+          draftResult.result.escalate = true;
+          draftResult.result.escalateReason = "The response's citations could not all be verified against retrieved legal text.";
+        }
+      }
+
+      if (!isHighRisk && critiqueResult && !critiqueResult.passed) {
+        evidence.sufficient = false;
+        evidence.reason = `Response review did not pass: ${(critiqueResult.issues || []).join("; ") || "quality or safety threshold not met"}`;
+        if (draftResult.result) {
+          draftResult.result.escalate = true;
+          draftResult.result.escalateReason = "This draft did not pass the response review threshold; consult a qualified lawyer before relying on it.";
         }
       }
 
@@ -1631,13 +1715,18 @@ async function runChatPipeline(req) {
 
         const ackToken = generateAckToken();
         await setPendingAck(ackToken, {
+          uid: req.uid,
+          conversationId: req.body?.conversationId || null,
+          messageId: req.body?.messageId || null,
           question,
           classification,
           draftResult,
           critiqueResult,
+          evidence,
           route,
           planResult,
           cacheKey,
+          cacheAllowed,
         });
 
         // Return HITL response — client shows ApprovalCard for safety acknowledgment
@@ -1667,8 +1756,8 @@ async function runChatPipeline(req) {
     }
 
       // Cache the result (only successful, non-busy responses)
-      if (!draftResult.providersBusy && draftResult.result) {
-        setCachedResult(cacheKey, draftResult);
+      if (cacheAllowed && !draftResult.providersBusy && draftResult.result && critiqueResult?.passed === true && evidence.citationVerification?.valid === true) {
+        setCachedResult(cacheKey, { draftResult, critiqueResult });
       }
     }
 
@@ -1723,9 +1812,12 @@ async function runChatPipeline(req) {
     });
   }
 
+  timings.totalMs = Date.now() - req.pipelineStartedAt;
+  console.log(`[pipeline] totalMs=${timings.totalMs} stages=${JSON.stringify(timings)}`);
   res.json({
     classification,
     route,
+    timings,
     plan: planResult.plan,
     result: draftResult.result,
     draftModel: draftResult.model,
@@ -1759,8 +1851,9 @@ async function runChatPipeline(req) {
 }
 
 router.post("/api/chat", async (req, res) => {
-  // Durable job record (restart-and-complete): mark running before work.
-  recordJobStart(req);
+  // The durable running record must exist before external work starts. Without
+  // awaiting this write, a delayed "running" update can overwrite "done".
+  await recordJobStart(req);
   let result;
   try {
     result = await runChatPipeline(req);
@@ -1768,7 +1861,7 @@ router.post("/api/chat", async (req, res) => {
     console.error("[/api/chat] unhandled pipeline error:", err && err.stack ? err.stack : err);
     result = { status: 500, body: { error: "internal_error", message: "Something went wrong while processing your question." } };
   }
-  recordJobEnd(req, result);
+  await recordJobEnd(req, result);
   try {
     res.status(result.status).json(result.body);
   } catch (e) {
@@ -1794,7 +1887,8 @@ router.post("/api/chat/acknowledge", async (req, res) => {
   }
 
   const pending = await getPendingAck(ackToken);
-  if (!pending) {
+  if (!pending || !pending.uid || pending.uid !== req.uid) {
+    // Ownership mismatches deliberately look identical to missing tokens.
     return res.status(404).json({ error: "not_found", message: "Acknowledgment token expired or not found. Please re-ask your question." });
   }
 
@@ -1809,7 +1903,7 @@ router.post("/api/chat/acknowledge", async (req, res) => {
 
   // User acknowledged — return the cached response with safety flag attached
   await deletePendingAck(ackToken);
-  const { question, classification, draftResult, critiqueResult, route, planResult, cacheKey } = pending;
+  const { classification, draftResult, critiqueResult, evidence, route, planResult } = pending;
 
   // Attach safety flag so the client can render the warning banner
   if (draftResult.result) {
@@ -1823,10 +1917,33 @@ router.post("/api/chat/acknowledge", async (req, res) => {
     };
   }
 
-  // Cache the result now that it's been acknowledged
-  if (cacheKey && !draftResult.providersBusy) {
-    setCachedResult(cacheKey, draftResult);
+  // Persist the acknowledged terminal result server-side. The client is not
+  // the authority for this transition and may disconnect immediately after
+  // clicking the button.
+  if (pending.conversationId && pending.messageId) {
+    const d = getFirestore();
+    if (d) {
+      await d.collection("users").doc(req.uid)
+        .collection("conversations").doc(pending.conversationId)
+        .collection("messages").doc(pending.messageId)
+        .set({
+          userId: req.uid,
+          role: "agent",
+          status: "done",
+          result: draftResult.result,
+          classification,
+          critique: critiqueResult,
+          evidence: evidence || null,
+          pipelineStatus: "done",
+          unread: false,
+          safetyAcknowledgedAt: Date.now(),
+        }, { merge: true })
+        .catch((err) => console.warn("[ack] terminal persistence failed:", err.message));
+    }
   }
+
+  // Safety-flagged responses are never globally cached, even after one user
+  // acknowledges the warning.
 
   res.json({
     acknowledged: true,
@@ -1836,6 +1953,7 @@ router.post("/api/chat/acknowledge", async (req, res) => {
     result: draftResult.result,
     draftModel: draftResult.model,
     draftProvider: draftResult.provider,
+    evidence: evidence || draftResult.result?.evidence || null,
     critique: {
       quality: critiqueResult.quality,
       legal_safety: critiqueResult.legal_safety,
@@ -2086,7 +2204,7 @@ Examples:
           { role: "system", content: TITLE_PROMPT },
           { role: "user", content: question },
         ],
-        { temperature: 0.3, max_tokens: 30 }
+        { task: "title", timeoutMs: 8000, temperature: 0.3, max_tokens: 30, parseJson: false }
       );
       const raw = (completion.choices[0].message.content || "").trim().replace(/^["']|["']$/g, "");
       if (raw === "NOT_LEGAL" || raw.length === 0) return res.json({ title: null });
@@ -2106,6 +2224,7 @@ router.runChatPipeline = runChatPipeline;
 router.__testing = {
   clearAckCache: () => pendingSafetyAck.clear(),
   clearQuestionCache: () => questionCache.clear(),
+  clearProviderCooldowns: () => providerCooldowns.clear(),
 };
 
 module.exports = router;
