@@ -96,6 +96,7 @@ function rankProvisions(provisions, { keywords = [], jurisdiction } = {}) {
     else if (/federal/.test(provisionJurisdiction)) score += 3;
     if (p.source_url || p.sourceUrl) score += 1;
     if (p.section) score += 0.5;
+    if (/uncertain|unverified|stale/i.test(String(p.source_status || p.sourceStatus || ""))) score -= 15;
 
     return {
       ...p,
@@ -247,6 +248,7 @@ async function findProvisions({ practiceArea, jurisdiction, keywords = [] }) {
     console.error("[legalCorpus] Firestore query failed:", err.message);
     throw new Error(`Failed to retrieve legal provisions: ${err.message}`);
   }
+  docs = docs.filter((d) => d.in_force !== false && !/repealed|superseded/i.test(String(d.source_status || d.sourceStatus || "")));
   if (jurisdiction) {
     docs = docs.filter((d) =>
       !d.jurisdiction ||
@@ -255,17 +257,9 @@ async function findProvisions({ practiceArea, jurisdiction, keywords = [] }) {
     );
   }
 
-  const terms = cleanKeywords(keywords);
-  if (terms.length) {
-    const matched = docs.filter((d) => {
-      const haystack = normalize(`${d.act || ""} ${d.title || ""} ${d.heading || ""} ${d.text || ""}`);
-      return terms.some((term) => haystack.includes(term));
-    });
-    // Preserve the old safe fallback: a poor classifier keyword cannot turn a
-    // populated legal category into an empty result.
-    if (matched.length) docs = matched;
-  }
-
+  // Rank the complete jurisdiction-filtered category. Hard keyword filtering
+  // previously dropped controlling provisions whenever any weaker document
+  // happened to match a vague classifier term.
   const result = selectDiverse(rankProvisions(docs, { keywords, jurisdiction }));
   if (cache.size >= MAX_CACHE_SIZE) cache.delete(cache.keys().next().value);
   cache.set(cacheKey, { data: result, timestamp: Date.now() });

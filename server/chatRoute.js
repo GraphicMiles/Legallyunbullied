@@ -15,7 +15,7 @@
  */
 
 const express = require("express");
-const { randomBytes } = require("node:crypto");
+const { createHash, randomBytes } = require("node:crypto");
 const router = express.Router();
 const { getClient: getGroqClient, CLASSIFY_MODEL, REVIEW_MODEL, DRAFT_MODEL, DRAFT_MODEL_FALLBACK } = require("./groq");
 const GROQ_REVIEW_MODEL = REVIEW_MODEL || DRAFT_MODEL || CLASSIFY_MODEL;
@@ -27,7 +27,7 @@ const { detectLegalIntent, buildFallbackClassification } = require("./legalInten
 const { PRACTICE_AREAS: PRACTICE_AREA_DEFS, PRACTICE_AREA_KEYS } = require("./practiceAreas");
 const { getFirestore } = require("./firebaseAdmin");
 const { recordJobStart, recordJobEnd } = require("./jobRunner");
-const { requiredSourceCount, verifyAndResolveCitations } = require("./evidence");
+const { requiredSourceCount, validateDraftResult, verifyAndResolveCitations } = require("./evidence");
 
 const PRACTICE_AREAS = PRACTICE_AREA_KEYS;
 const STATE_VARYING_AREAS = new Set(["tenancy", "family_law", "land_property"]);
@@ -270,6 +270,7 @@ Respond with ONLY a JSON object:
   "irrelevant": [<1-based numbers of irrelevant provisions>],
   "relevance_score": 0.0-1.0,
   "sufficient": true/false,
+  "conflicts": ["describe any material conflict between candidate provisions or jurisdictions"],
   "reason": "one sentence explaining the sufficiency decision"
 }`;
 
@@ -309,7 +310,7 @@ async function assessRelevanceForClient(client, model, question, classification,
   ], { task: "relevance", timeoutMs: 8000, temperature: 0, max_tokens: 400, response_format: { type: "json_object" } });
 
   const parsed = completion.parsed;
-  if (!parsed || !Array.isArray(parsed.relevant) || typeof parsed.sufficient !== "boolean") {
+  if (!parsed || !Array.isArray(parsed.relevant) || typeof parsed.sufficient !== "boolean" || !Array.isArray(parsed.conflicts)) {
     throw new Error("Relevance judge returned an invalid schema");
   }
   return parsed;
@@ -369,10 +370,15 @@ Respond with ONLY a JSON object:
   "quality": 0.0-1.0,
   "legal_safety": 0.0-1.0,
   "issues": ["brief list of specific problems found"],
+  "claim_support": [{
+    "claimId": "claim ID from the draft",
+    "status": "supported|partial|unsupported|uncertain",
+    "reason": "whether the cited excerpt actually supports this claim"
+  }],
   "passed": true/false
 }
 
-"passed" is true only if BOTH quality >= 0.6 AND legal_safety >= 0.6.`;
+Return one claim_support item for every draft claim. "passed" is true only if quality >= 0.6, legal_safety >= 0.6, and no claim is unsupported or uncertain.`;
 
 async function critiqueDraft(client, model, question, provisions, draft) {
   const provisionSummary = (provisions || []).slice(0, 14).map(p =>
@@ -389,7 +395,8 @@ Draft response to review:
 Law: ${(draft.lawMd || "").slice(0, 1500)}
 Actions: ${(draft.actionsMd || "").slice(0, 800)}
 Escalate: ${draft.escalate}
-Sources: ${JSON.stringify((draft.sources || []).slice(0, 4))}
+Sources: ${JSON.stringify((draft.sources || []).slice(0, 6))}
+Claims: ${JSON.stringify(draft.claims || [])}
 ---
 
 Review this response.`;
@@ -400,10 +407,21 @@ Review this response.`;
   ], { task: "critique", timeoutMs: 8000, response_format: { type: "json_object" }, max_tokens: 500, temperature: 0.1 });
 
   const parsed = completion.parsed;
+  const claimSupport = Array.isArray(parsed.claim_support) ? parsed.claim_support.map((item) => ({
+    claimId: String(item?.claimId || ""),
+    status: ["supported", "partial", "unsupported", "uncertain"].includes(item?.status) ? item.status : "uncertain",
+    reason: String(item?.reason || ""),
+  })) : [];
+  const expectedClaimIds = new Set((draft.claims || []).map((claim) => String(claim.claimId)));
+  const returnedClaimIds = new Set(claimSupport.map((item) => item.claimId));
+  if ([...expectedClaimIds].some((id) => !returnedClaimIds.has(id))) {
+    throw new Error("Critique returned an invalid claim_support schema");
+  }
   return {
     quality: typeof parsed.quality === "number" ? parsed.quality : 0.5,
     legal_safety: typeof parsed.legal_safety === "number" ? parsed.legal_safety : 0.5,
     issues: Array.isArray(parsed.issues) ? parsed.issues : [],
+    claimSupport,
     passed: parsed.passed === true,
   };
 }
@@ -507,8 +525,9 @@ async function deletePendingAck(token) {
   }
 }
 
-function getCacheKey(question, jurisdiction, practiceArea) {
-  return `${(practiceArea || "general").toLowerCase()}::${(jurisdiction || "any").toLowerCase()}::${question.toLowerCase().trim().slice(0, 300)}`;
+function getCacheKey(uid, question, jurisdiction, practiceArea) {
+  const digest = createHash("sha256").update(String(question || "").toLowerCase().trim()).digest("hex");
+  return `${uid || "anonymous"}::${(practiceArea || "general").toLowerCase()}::${(jurisdiction || "any").toLowerCase()}::${digest}`;
 }
 
 function getCachedResult(key) {
@@ -568,6 +587,33 @@ function withTimeout(promise, ms, operation = "operation") {
   ]);
 }
 
+function validateClassification(value) {
+  const errors = [];
+  if (!value || typeof value !== "object" || Array.isArray(value)) return { valid: false, errors: ["classification_not_object"] };
+  if (typeof value.is_legal_question !== "boolean") errors.push("is_legal_question_boolean_required");
+  if (value.is_legal_question === false) {
+    if (typeof value.casual_reply !== "string") errors.push("casual_reply_required");
+    return { valid: errors.length === 0, errors };
+  }
+  if (!PRACTICE_AREAS.includes(value.practice_area)) errors.push("invalid_practice_area");
+  if (typeof value.jurisdiction !== "string" || !value.jurisdiction.trim()) errors.push("jurisdiction_required");
+  if (!["clear", "unclear"].includes(value.jurisdiction_status)) errors.push("invalid_jurisdiction_status");
+  if (!["Low", "Medium", "High", "Critical"].includes(value.urgency)) errors.push("invalid_urgency");
+  if (!Array.isArray(value.keywords)) errors.push("keywords_array_required");
+  if (!Array.isArray(value.key_issues)) errors.push("key_issues_array_required");
+  if (typeof value.needs_sourcing !== "boolean") errors.push("needs_sourcing_boolean_required");
+  if (!["Low", "Medium", "High"].includes(value.complexity)) errors.push("invalid_complexity");
+  if (!["simple", "complex"].includes(value.route)) errors.push("invalid_route");
+  if (!Array.isArray(value.stakeholders)) errors.push("stakeholders_array_required");
+  if (!Array.isArray(value.potential_remedies)) errors.push("potential_remedies_array_required");
+  return { valid: errors.length === 0, errors };
+}
+
+function checkpointClassification(value) {
+  const classification = value?.classification != null ? value.classification : value;
+  return validateClassification(classification).valid ? classification : null;
+}
+
 async function classifyWithFallback(question, conversationContext, options = {}) {
   const providers = [
     ["gemini-classify", getGeminiClient(), GEMINI_CLASSIFY_MODEL],
@@ -594,8 +640,8 @@ async function classifyWithFallback(question, conversationContext, options = {})
         { role: "user", content: userContent },
       ], { task: "classification", timeoutMs: 8000, temperature: 0, max_tokens: 2000, response_format: { type: "json_object" } });
       const c = completion.parsed;
-      if (!c || typeof c.is_legal_question !== "boolean") throw new Error("Classification returned an invalid schema");
-      if (c.is_legal_question !== false && !PRACTICE_AREAS.includes(c.practice_area)) throw new Error("Classification returned an invalid practice area");
+      const validation = validateClassification(c);
+      if (!validation.valid) throw new Error(`Classification returned an invalid schema: ${validation.errors.join(", ")}`);
       return { classification: c, provider: name.replace(/-classify$/, "") };
     } catch (err) {
       lastErr = err;
@@ -603,16 +649,18 @@ async function classifyWithFallback(question, conversationContext, options = {})
     }
   }
 
-  if (options.forceLegal) {
-    console.warn("[/api/chat] Classification providers unavailable; using deterministic legal-intent fallback");
-    return {
-      classification: buildFallbackClassification(options.fallbackText || question),
-      provider: "deterministic-fallback",
-    };
+  const casual = /^\s*(hi|hello|hey|good (morning|afternoon|evening)|thanks|thank you|who are you|what are you)\s*[!.?]*\s*$/i.test(question);
+  if (casual && !options.forceLegal) {
+    return { classification: { is_legal_question: false, casual_reply: "Hello! I’m here to help with Nigerian legal-information questions." }, provider: "deterministic-fallback" };
   }
-  const error = new Error(`All classification providers failed: ${lastErr ? lastErr.message : "none configured or all cooling down"}`);
-  error.code = lastErr ? classifyProviderError(lastErr) : "providers_busy";
-  throw error;
+  console.warn("[/api/chat] Classification providers unavailable; using deterministic fail-closed classification");
+  const currentDetection = detectLegalIntent(question);
+  const priorDetection = detectLegalIntent(conversationContext);
+  const detection = currentDetection.legal ? currentDetection : (priorDetection.legal ? priorDetection : undefined);
+  return {
+    classification: buildFallbackClassification(question, detection),
+    provider: "deterministic-fallback",
+  };
 }
 
 async function draftWithModel(client, model, question, contextBlock, plan, classification, conversationHistory) {
@@ -666,6 +714,8 @@ Follow this plan to structure your response. Be comprehensive and address all su
     ],
     { task: "draft", timeoutMs: 20000, response_format: { type: "json_object" }, max_tokens: 3000 }
   );
+  const validation = validateDraftResult(completion.parsed);
+  if (!validation.valid) throw new Error(`Draft returned an invalid schema: ${validation.errors.join(", ")}`);
   return completion.parsed;
 }
 
@@ -988,6 +1038,17 @@ async function serverPersistMessage(req, fields) {
     .catch((err) => console.warn("[chat] serverPersistMessage failed:", err.message));
 }
 
+function validRetrievalCheckpoint(value) {
+  if (!value || !Array.isArray(value.workingProvisions) || !value.evidence || typeof value.evidence !== "object") return false;
+  if (typeof value.evidence.sufficient !== "boolean") return false;
+  return value.workingProvisions.every((p) => p && (p.provisionId || p.id) && typeof p.text === "string");
+}
+
+function validDraftCheckpoint(value, provisions) {
+  if (!(value && value.planResult && value.draftResult?.result && validateDraftResult(value.draftResult.result).valid)) return false;
+  return verifyAndResolveCitations(value.draftResult.result, provisions || []).valid;
+}
+
 function makeInsufficientEvidenceResult(evidence, urgent) {
   return {
     lawMd: urgent
@@ -995,7 +1056,7 @@ function makeInsufficientEvidenceResult(evidence, urgent) {
       : "The available evidence does not clearly establish which provision controls these facts. I will not guess or present a weak citation as settled law; a qualified lawyer should review the exact circumstances.",
     actionsMd: urgent
       ? "- Step 1: If you or anyone with you is in immediate danger, move to a safe public place and call the police or local emergency service now.\n- Step 2: Contact a trusted person and preserve messages, photographs, medical records, names, dates, and other evidence.\n- Step 3: Do not confront the person alone or take an action that could put you at greater risk.\n- Step 4: Contact a qualified lawyer or legal-aid organisation urgently for advice based on your location and facts."
-      : "- Step 1: Preserve contracts, receipts, messages, photographs, names, and dates.\n- Step 2: Write a clear timeline of what happened and what outcome you want.\n- Step 3: Consult a qualified lawyer for advice tied to the applicable state and complete facts.",
+      : "- Step 1: Preserve contracts, receipts, messages, photographs, names, and dates.\n- Step 2: Write a clear timeline of what happened and what outcome you want.\n- Step 3: If the matter involves threats, violence, fraud, a child at risk, or another possible crime, move to safety where necessary and report it to the appropriate police or protection authority.\n- Step 4: Consult a qualified lawyer for advice tied to the applicable state and complete facts.",
     sources: [],
     provisionIds: [],
     claims: [],
@@ -1006,6 +1067,36 @@ function makeInsufficientEvidenceResult(evidence, urgent) {
     followUps: [],
     evidence,
   };
+}
+
+function applyDeterministicSafetyPolicy(result, classification, question, history) {
+  if (!result) return;
+  const area = String(classification?.practice_area || "").toLowerCase();
+  const urgency = classification?.urgency;
+  const highRisk = ["criminal_rights", "criminal_offences", "immigration_citizenship", "constitutional_rights", "family_law"].includes(area);
+  const urgent = urgency === "High" || urgency === "Critical";
+  const context = `${history?.map((m) => m.content).join(" ") || ""} ${question}`.toLowerCase();
+
+  if (highRisk || urgent) {
+    result.escalate = true;
+    if (!result.escalateReason || /handle.*yourself|no lawyer/i.test(result.escalateReason)) {
+      result.escalateReason = urgent
+        ? "The situation is urgent or high-risk and should be reviewed by a qualified lawyer or appropriate emergency authority."
+        : "This is a high-risk legal area and should be reviewed by a qualified lawyer.";
+    }
+  }
+
+  if (urgent) {
+    const actions = String(result.actionsMd || "");
+    const hasImmediateStep = /(safe place|immediate danger|emergency|medical|hospital|call the police|report to the police|protect)/i.test(actions);
+    if (!hasImmediateStep) {
+      let first = "- Step 1: If there is immediate danger, move to a safe place and contact the police or local emergency service now.";
+      if (/injur|hospital|treatment|accident|bleed|torture|beat/.test(context)) {
+        first = "- Step 1: Get urgent medical help and preserve the medical report; if danger is continuing, move to a safe place and contact the police or emergency service.";
+      }
+      result.actionsMd = `${first}\n${actions}`.trim();
+    }
+  }
 }
 
 function isClearlyProceduralQuestion(question) {
@@ -1051,17 +1142,24 @@ async function runChatPipeline(req) {
     finally { timings[name] = (timings[name] || 0) + (Date.now() - started); }
   };
 
-  const question = (req.body && req.body.question || "").toString().trim();
-  if (!question) {
-    return res.status(400).json({ error: "bad_request", message: '"question" is required.' });
+  const rawQuestion = req.body?.question;
+  if (typeof rawQuestion !== "string" || !rawQuestion.trim() || rawQuestion.length > 10000) {
+    return res.status(400).json({ error: "bad_request", message: '"question" must be a non-empty string of at most 10,000 characters.' });
   }
+  const question = rawQuestion.trim();
 
-  // Conversation history for multi-turn context (optional, additive)
-  const history = (req.body && Array.isArray(req.body.history)) ? req.body.history : [];
+  const rawHistory = req.body?.history;
+  if (rawHistory != null && !Array.isArray(rawHistory)) {
+    return res.status(400).json({ error: "bad_request", message: '"history" must be an array.' });
+  }
+  const history = (rawHistory || []).slice(-18);
+  if (history.some((item) => !item || !["user", "agent"].includes(item.role) || typeof item.content !== "string" || item.content.length > 10000)) {
+    return res.status(400).json({ error: "bad_request", message: "Each history item must have role user|agent and string content up to 10,000 characters." });
+  }
 
   // Mark the message as running server-side (fire-and-forget) so a reopen
   // during the pipeline shows "still working" instead of "incomplete".
-  serverPersistMessage(req, { pipelineStatus: "running" });
+  await serverPersistMessage(req, { pipelineStatus: "running" });
 
   // Check that at least one LLM provider is configured
   const groqClient = getGroqClient();
@@ -1094,20 +1192,17 @@ async function runChatPipeline(req) {
   let classification;
   let classifyProvider = null;
 
-  if (cp.classification) {
-    // Resume: reuse the already-computed classification. The checkpoint is
-    // stored as { classification, classifyProvider }, so unpack it.
-    classification = (cp.classification.classification != null)
-      ? cp.classification.classification
-      : cp.classification;
+  const savedClassification = cp.classification ? checkpointClassification(cp.classification) : null;
+  if (savedClassification) {
+    classification = savedClassification;
     classifyProvider = cp.classification.classifyProvider || null;
-    console.log("[chat] Resuming from classification checkpoint");
+    console.log("[chat] Resuming from validated classification checkpoint");
   } else {
+    if (cp.classification) console.warn("[chat] Discarding invalid classification checkpoint");
     let classifyResult;
     try {
       classifyResult = await timed("classificationMs", () => classifyWithFallback(question, conversationContext, {
         forceLegal: forcedLegal || (history.length > 0 && detectLegalIntent(conversationContext).legal),
-        fallbackText: `${conversationContext}\n${question}`,
       }));
     } catch (err) {
       console.error("[/api/chat] classification failed:", err.status || "", err.message);
@@ -1247,7 +1342,7 @@ async function runChatPipeline(req) {
   // History-dependent answers may contain case facts and must never cross
   // conversation or user boundaries.
   const cacheAllowed = history.length === 0;
-  const cacheKey = getCacheKey(question, classification.jurisdiction, classification.practice_area);
+  const cacheKey = getCacheKey(req.uid, question, classification.jurisdiction, classification.practice_area);
   const urgentSafety = classification.urgency === "High" || classification.urgency === "Critical";
 
   // ── Relevance/sufficiency gate (between search and draft) ──────────────
@@ -1263,18 +1358,21 @@ async function runChatPipeline(req) {
   let workingProvisions;
   let evidence;
 
-  if (cp.retrieval) {
-    // Resume: reuse the already-computed provisions + gate verdict.
+  if (validRetrievalCheckpoint(cp.retrieval)) {
     workingProvisions = cp.retrieval.workingProvisions;
     evidence = cp.retrieval.evidence;
-    console.log("[chat] Resuming from retrieval checkpoint");
+    evidence.mode = evidence.mode || (workingProvisions.some((p) => p.local_eval) ? "local_fallback" : "firestore");
+    console.log("[chat] Resuming from validated retrieval checkpoint");
   } else {
+    if (cp.retrieval) console.warn("[chat] Discarding invalid retrieval checkpoint");
     evidence = {
       sufficient: false,
+      mode: "unknown",
       relevanceScore: null,
       sourceCount: 0,
       retrievedFrom: [classification.practice_area],
       reason: "",
+      conflicts: [],
       minSources: MIN_SOURCES,
     };
 
@@ -1304,6 +1402,8 @@ async function runChatPipeline(req) {
       });
     }
 
+    evidence.mode = provisions.some((p) => p.local_eval === true) ? "local_fallback" : "firestore";
+
     if (!provisions.length) {
       const corpusEmptyMessage =
         `No ingested legal sources match "${classification.practice_area}" yet. ` +
@@ -1328,9 +1428,10 @@ async function runChatPipeline(req) {
 
     evidence.relevanceScore = typeof gate.relevance_score === "number" ? gate.relevance_score : null;
     evidence.reason = gate.reason || "";
+    evidence.conflicts = Array.isArray(gate.conflicts) ? gate.conflicts.filter(Boolean) : [];
     evidence.sourceCount = relevantProvisions.length;
 
-    const sufficient = gate.sufficient === true && relevantProvisions.length >= MIN_SOURCES;
+    const sufficient = gate.sufficient === true && relevantProvisions.length >= MIN_SOURCES && evidence.conflicts.length === 0;
     if (sufficient) {
       workingProvisions = relevantProvisions;
       evidence.sufficient = true;
@@ -1347,6 +1448,7 @@ async function runChatPipeline(req) {
         force: true,
       });
       evidence.retrievedFrom = broad.categories || [classification.practice_area];
+      if (broad.provisions.some((p) => p.local_eval === true)) evidence.mode = "local_fallback";
 
       if (broad.provisions.length) {
         const gate2 = await timed("relevanceMs", () => assessRelevanceWithFallback(question, classification, broad.provisions));
@@ -1357,9 +1459,10 @@ async function runChatPipeline(req) {
 
         evidence.relevanceScore = typeof gate2.relevance_score === "number" ? gate2.relevance_score : evidence.relevanceScore;
         evidence.reason = gate2.reason || evidence.reason;
+        evidence.conflicts = Array.isArray(gate2.conflicts) ? gate2.conflicts.filter(Boolean) : [];
         evidence.sourceCount = relevantProvisions2.length;
 
-        if (gate2.sufficient === true && relevantProvisions2.length >= MIN_SOURCES) {
+        if (gate2.sufficient === true && relevantProvisions2.length >= MIN_SOURCES && evidence.conflicts.length === 0) {
           workingProvisions = relevantProvisions2;
           evidence.sufficient = true;
           console.log(`[/api/chat] Broadened search: ${relevantProvisions2.length} relevant provisions — sufficient`);
@@ -1435,9 +1538,8 @@ async function runChatPipeline(req) {
   let draftResult;
   let critiqueResult = null;
 
-  if (cp.draftAndCritique) {
-    // Resume: reuse the already-computed plan + draft + critique, skipping the
-    // most expensive step (the draft LLM call) entirely.
+  if (validDraftCheckpoint(cp.draftAndCritique, workingProvisions)) {
+    // Resume only from a schema-valid draft checkpoint.
     planResult = cp.draftAndCritique.planResult;
     draftResult = cp.draftAndCritique.draftResult;
     critiqueResult = cp.draftAndCritique.critiqueResult;
@@ -1447,6 +1549,7 @@ async function runChatPipeline(req) {
       setCachedResult(cacheKey, { draftResult, critiqueResult });
     }
   } else {
+    if (cp.draftAndCritique) console.warn("[chat] Discarding invalid draft checkpoint");
     planResult = { plan: null, provider: "skipped" };
     if (!isSimple) {
       // Classification already produced the legal issues, approach, remedies,
@@ -1520,8 +1623,13 @@ async function runChatPipeline(req) {
           ));
 
           // Override the critique's own "passed" with our category-specific thresholds
+          const claimsSupported = critiqueResult.claimSupport.every((item) => item.status === "supported");
           critiqueResult.passed = critiqueResult.quality >= QUALITY_THRESHOLD
-                               && critiqueResult.legal_safety >= SAFETY_THRESHOLD;
+                               && critiqueResult.legal_safety >= SAFETY_THRESHOLD
+                               && claimsSupported;
+          if (!claimsSupported) {
+            critiqueResult.issues = [...new Set([...(critiqueResult.issues || []), "claim_support_not_verified"])];
+          }
           critiqueResult.thresholds = { quality: QUALITY_THRESHOLD, safety: SAFETY_THRESHOLD };
           critiqueResult.isHighRisk = isHighRisk;
 
@@ -1636,6 +1744,10 @@ async function runChatPipeline(req) {
     await saveCheckpoint("draftAndCritique", { planResult, draftResult, critiqueResult });
   }
 
+  if (!draftResult.providersBusy && draftResult.result) {
+    applyDeterministicSafetyPolicy(draftResult.result, classification, question, history);
+  }
+
   // ── Hedge downgrade: if the draft's OWN text doubts whether its citations
   // apply ("might be relevant", "does not directly address", ...), that is
   // itself proof the citations are weak — confidence must NOT be High, even
@@ -1675,6 +1787,7 @@ async function runChatPipeline(req) {
         legal_safety: critiqueResult.legal_safety,
         passed: critiqueResult.passed,
         issues: critiqueResult.issues,
+        claimSupport: critiqueResult.claimSupport || [],
         thresholds: critiqueResult.thresholds || null,
         isHighRisk: critiqueResult.isHighRisk || false,
       } : null,
@@ -1703,6 +1816,7 @@ async function runChatPipeline(req) {
       legal_safety: critiqueResult.legal_safety,
       passed: critiqueResult.passed,
       issues: critiqueResult.issues,
+      claimSupport: critiqueResult.claimSupport || [],
       thresholds: critiqueResult.thresholds || null,
       isHighRisk: critiqueResult.isHighRisk || false,
     } : null,
@@ -1722,9 +1836,52 @@ async function runChatPipeline(req) {
   }
 }
 
-router.post("/api/chat", async (req, res) => {
-  // The durable running record must exist before external work starts. Without
-  // awaiting this write, a delayed "running" update can overwrite "done".
+const inFlightRuns = new Map();
+
+function validRunId(value) {
+  return typeof value === "string" && value.length > 0 && value.length <= 128 && /^[A-Za-z0-9._~-]+$/.test(value);
+}
+
+function runKey(req) {
+  const body = req.body || {};
+  return req.uid && validRunId(body.conversationId) && validRunId(body.messageId)
+    ? `${req.uid}:${body.conversationId}:${body.messageId}`
+    : null;
+}
+
+async function loadPersistedTerminal(req) {
+  const body = req.body || {};
+  if (!req.uid || !body.conversationId || !body.messageId) return null;
+  const d = getFirestore();
+  if (!d) return null;
+  try {
+    const snap = await d.collection("users").doc(req.uid)
+      .collection("conversations").doc(body.conversationId)
+      .collection("messages").doc(body.messageId).get();
+    if (!snap.exists) return null;
+    const msg = snap.data() || {};
+    if (msg.pipelineStatus !== "done" || msg.status !== "done" || !msg.result) return null;
+    return {
+      status: 200,
+      body: {
+        classification: msg.classification || null,
+        route: msg.classification?.route || null,
+        plan: msg.plan || null,
+        result: msg.result,
+        evidence: msg.evidence || msg.result?.evidence || null,
+        critique: msg.critique || null,
+        providersBusy: false,
+        retryAfter: null,
+        idempotentReplay: true,
+      },
+    };
+  } catch (err) {
+    console.warn("[chat] idempotency lookup failed:", err.message);
+    return null;
+  }
+}
+
+async function executeChatRequest(req) {
   await recordJobStart(req);
   let result;
   try {
@@ -1734,11 +1891,36 @@ router.post("/api/chat", async (req, res) => {
     result = { status: 500, body: { error: "internal_error", message: "Something went wrong while processing your question." } };
   }
   await recordJobEnd(req, result);
+  return result;
+}
+
+router.post("/api/chat", async (req, res) => {
+  const body = req.body || {};
+  const hasRunIdentity = body.conversationId != null || body.messageId != null;
+  if (hasRunIdentity && (!validRunId(body.conversationId) || !validRunId(body.messageId))) {
+    return res.status(400).json({ error: "invalid_run_identity", message: "conversationId and messageId must both be URL-safe IDs up to 128 characters." });
+  }
+  const key = runKey(req);
+  let result;
+
+  if (key) {
+    result = await loadPersistedTerminal(req);
+    if (!result) {
+      let promise = inFlightRuns.get(key);
+      if (!promise) {
+        promise = executeChatRequest(req).finally(() => inFlightRuns.delete(key));
+        inFlightRuns.set(key, promise);
+      }
+      result = await promise;
+    }
+  } else {
+    result = await executeChatRequest(req);
+  }
+
   try {
     res.status(result.status).json(result.body);
   } catch (e) {
-    // Client disconnected before the response was written — the result has
-    // already been persisted server-side (recoverable requests).
+    // Client disconnected; terminal state is persisted server-side.
   }
 });
 
@@ -1831,6 +2013,7 @@ router.post("/api/chat/acknowledge", async (req, res) => {
       legal_safety: critiqueResult.legal_safety,
       passed: critiqueResult.passed,
       issues: critiqueResult.issues,
+      claimSupport: critiqueResult.claimSupport || [],
       thresholds: critiqueResult.thresholds || null,
       isHighRisk: critiqueResult.isHighRisk || false,
     },

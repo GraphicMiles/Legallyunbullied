@@ -29,36 +29,32 @@ function officialLabel(p) {
   return `${p.act || "Unknown Act"}${p.section ? `, s.${p.section}` : ""}`;
 }
 
-function buildLookup(provisions) {
-  const byId = new Map();
-  const byLegacyLabel = new Map();
-  for (const p of provisions || []) {
-    const id = provisionId(p);
-    if (!id) continue;
-    byId.set(id, p);
-    const labels = [
-      officialLabel(p),
-      `${p.act || ""} section ${p.section || ""}`,
-      `section ${p.section || ""} of ${p.act || ""}`,
-    ];
-    for (const label of labels) byLegacyLabel.set(normalize(label), id);
+function validateDraftResult(result) {
+  const errors = [];
+  if (!result || typeof result !== "object" || Array.isArray(result)) return { valid: false, errors: ["draft_not_object"] };
+  if (typeof result.lawMd !== "string" || !result.lawMd.trim()) errors.push("lawMd_required");
+  if (typeof result.actionsMd !== "string" || !result.actionsMd.trim()) errors.push("actionsMd_required");
+  if (typeof result.escalate !== "boolean") errors.push("escalate_boolean_required");
+  if (typeof result.escalateReason !== "string") errors.push("escalateReason_required");
+  if (!Array.isArray(result.followUps)) errors.push("followUps_array_required");
+  if (!Array.isArray(result.provisionIds) || result.provisionIds.length === 0) errors.push("provisionIds_required");
+  if (!Array.isArray(result.claims) || result.claims.length === 0) errors.push("claims_required");
+  else {
+    result.claims.forEach((claim, index) => {
+      if (!claim || typeof claim.text !== "string" || !claim.text.trim()) errors.push(`claim_${index + 1}_text_required`);
+      if (!Array.isArray(claim?.provisionIds) || claim.provisionIds.length === 0) errors.push(`claim_${index + 1}_provisionIds_required`);
+    });
   }
-  return { byId, byLegacyLabel };
+  return { valid: errors.length === 0, errors };
 }
 
-function resolveLegacyLabel(label, lookup) {
-  const normalized = normalize(label);
-  if (!normalized) return null;
-  if (lookup.byLegacyLabel.has(normalized)) return lookup.byLegacyLabel.get(normalized);
-
-  // Backward-compatible exact authority matching for V1 model output. Both the
-  // Act name and section must match; loose fuzzy labels are never accepted.
-  for (const [id, p] of lookup.byId.entries()) {
-    const act = normalize(p.act);
-    const section = normalize(p.section);
-    if (act && section && normalized.includes(act) && normalized.includes(section)) return id;
+function buildLookup(provisions) {
+  const byId = new Map();
+  for (const p of provisions || []) {
+    const id = provisionId(p);
+    if (id) byId.set(id, p);
   }
-  return null;
+  return { byId };
 }
 
 function collectRequestedIds(result, lookup) {
@@ -72,23 +68,17 @@ function collectRequestedIds(result, lookup) {
   };
 
   for (const id of result?.provisionIds || []) add(id);
-  for (const claim of result?.claims || []) {
-    for (const id of claim?.provisionIds || []) add(id);
-  }
+  for (const claim of result?.claims || []) for (const id of claim?.provisionIds || []) add(id);
+
+  // The model never controls public source labels, excerpts, or URLs. A source
+  // object is accepted only when it carries a retrieved provision ID.
   for (const source of result?.sources || []) {
     const direct = source?.provisionId || source?.id;
     if (direct) add(direct);
-    else {
-      const resolved = resolveLegacyLabel(source?.label, lookup);
-      if (resolved) requested.push(resolved);
-      else if (source?.label) unknown.push(`label:${source.label}`);
-    }
+    else if (source?.label || source?.url || source?.sourceUrl) unknown.push("untrusted_model_source");
   }
 
-  return {
-    valid: Array.from(new Set(requested)),
-    unknown: Array.from(new Set(unknown)),
-  };
+  return { valid: [...new Set(requested)], unknown: [...new Set(unknown)] };
 }
 
 function resolveCitationTokens(text, lookup, used, unknown) {
@@ -104,46 +94,55 @@ function resolveCitationTokens(text, lookup, used, unknown) {
   });
 }
 
-/**
- * Enforce citation integrity at the server boundary.
- *
- * The model may select provision IDs, but it never controls displayed labels,
- * excerpts, URLs, or source metadata. Those are resolved from retrieved records.
- */
-function verifyAndResolveCitations(result, provisions) {
-  if (!result) return {
-    valid: false,
-    reason: "Draft result missing.",
-    unknownIds: [],
-    verifiedIds: [],
-  };
+function findUnverifiedInlineCitations(result, lookup) {
+  const raw = `${result?.lawMd || ""}\n${result?.actionsMd || ""}`.replace(/\[\[[^\]]+\]\]/g, "");
+  const allowedActs = [...lookup.byId.values()].map((p) => normalize(p.act)).filter(Boolean);
+  const allowedSections = new Set([...lookup.byId.values()].map((p) => normalize(p.section)).filter(Boolean));
+  const unknown = [];
 
+  const actPattern = /\b([A-Z][A-Za-z0-9()'’&., -]{2,100}?\s(?:Act|Law|Constitution)(?:\s+\d{4})?)\b/g;
+  for (const match of raw.matchAll(actPattern)) {
+    const candidate = normalize(match[1]);
+    if (!allowedActs.some((act) => act === candidate || act.includes(candidate) || candidate.includes(act))) {
+      unknown.push(`act:${match[1].trim()}`);
+    }
+  }
+
+  const sectionPattern = /\b(?:section|s\.)\s*(\d+(?:\s*\([a-z0-9]+\))*)/gi;
+  for (const match of raw.matchAll(sectionPattern)) {
+    const candidate = normalize(match[1]);
+    if (!allowedSections.has(candidate)) unknown.push(`section:${match[1].trim()}`);
+  }
+  return [...new Set(unknown)];
+}
+
+/** Resolve citations exclusively from evidence retrieved for this run. */
+function verifyAndResolveCitations(result, provisions) {
+  if (!result) return { valid: false, reason: "Draft result missing.", unknownIds: [], verifiedIds: [] };
+
+  const schema = validateDraftResult(result);
   const lookup = buildLookup(provisions);
   const requested = collectRequestedIds(result, lookup);
   const used = new Set(requested.valid);
   const tokenUnknown = [];
+  const inlineUnknown = findUnverifiedInlineCitations(result, lookup);
 
   result.lawMd = resolveCitationTokens(result.lawMd, lookup, used, tokenUnknown);
   result.actionsMd = resolveCitationTokens(result.actionsMd, lookup, used, tokenUnknown);
 
-  const unknownIds = Array.from(new Set([...requested.unknown, ...tokenUnknown]));
+  const unknownIds = [...new Set([...requested.unknown, ...tokenUnknown])];
   const verifiedIds = [...used].filter((id) => lookup.byId.has(id));
 
-  // Claims retain provenance and receive a deterministic linkage result. This
-  // proves that their cited evidence was retrieved; semantic support remains a
-  // separate safety/relevance decision and is never inferred from ID existence.
-  if (Array.isArray(result.claims)) {
-    result.claims = result.claims.map((claim, index) => {
-      const ids = Array.from(new Set((claim?.provisionIds || []).map(String)));
-      const bad = ids.filter((id) => !lookup.byId.has(id));
-      return {
-        claimId: String(claim?.claimId || `claim-${index + 1}`),
-        text: String(claim?.text || ""),
-        provisionIds: ids.filter((id) => lookup.byId.has(id)),
-        evidenceLink: bad.length || !ids.length ? "unsupported" : "retrieved",
-      };
-    });
-  }
+  result.claims = Array.isArray(result.claims) ? result.claims.map((claim, index) => {
+    const ids = [...new Set((claim?.provisionIds || []).map(String))];
+    const bad = ids.filter((id) => !lookup.byId.has(id));
+    return {
+      claimId: String(claim?.claimId || `claim-${index + 1}`),
+      text: String(claim?.text || ""),
+      provisionIds: ids.filter((id) => lookup.byId.has(id)),
+      evidenceLink: bad.length || !ids.length ? "unsupported" : "retrieved",
+    };
+  }) : [];
 
   result.provisionIds = verifiedIds;
   result.sources = verifiedIds.map((id) => {
@@ -158,20 +157,22 @@ function verifyAndResolveCitations(result, provisions) {
     };
   });
 
-  const unsupportedClaims = (result.claims || []).filter((c) => c.evidenceLink !== "retrieved");
-  const valid = verifiedIds.length > 0 && unknownIds.length === 0 && unsupportedClaims.length === 0;
+  const unsupportedClaims = result.claims.filter((claim) => claim.evidenceLink !== "retrieved");
+  const valid = schema.valid && verifiedIds.length > 0 && unknownIds.length === 0 && inlineUnknown.length === 0 && unsupportedClaims.length === 0;
   const verification = {
     valid,
+    schemaErrors: schema.errors,
     verifiedIds,
     unknownIds,
-    unsupportedClaimIds: unsupportedClaims.map((c) => c.claimId),
+    unverifiedInlineCitations: inlineUnknown,
+    unsupportedClaimIds: unsupportedClaims.map((claim) => claim.claimId),
     reason: valid
-      ? "Every displayed citation resolves to evidence retrieved for this run."
-      : unknownIds.length
-        ? "The draft referenced evidence that was not retrieved for this run."
-        : unsupportedClaims.length
-          ? "One or more claims did not reference retrieved evidence."
-          : "The draft did not reference any retrieved provision.",
+      ? "Every citation and claim reference resolves to evidence retrieved for this run."
+      : !schema.valid ? `Draft schema invalid: ${schema.errors.join(", ")}`
+        : inlineUnknown.length ? "The draft contained Act/section citations outside verified citation tokens."
+          : unknownIds.length ? "The draft referenced evidence that was not retrieved for this run."
+            : unsupportedClaims.length ? "One or more claims did not reference retrieved evidence."
+              : "The draft did not reference any retrieved provision.",
   };
   result.citationVerification = verification;
   return verification;
@@ -179,7 +180,9 @@ function verifyAndResolveCitations(result, provisions) {
 
 module.exports = {
   requiredSourceCount,
+  validateDraftResult,
   verifyAndResolveCitations,
   officialLabel,
   provisionId,
+  findUnverifiedInlineCitations,
 };
