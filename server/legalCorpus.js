@@ -16,7 +16,12 @@ const FIRESTORE_TIMEOUT_MS = 10000;
 const CACHE_TTL_MS = 3600000;
 const MAX_CACHE_SIZE = 100;
 const cache = new Map();
-const cacheStats = { hits: 0, misses: 0, size: 0 };
+// Raw category cache is deliberately independent of keywords/jurisdiction.
+// Previously every new keyword set re-read up to 4,000 Firestore documents,
+// exhausting the daily quota during ordinary multi-turn conversations.
+const rawCategoryCache = new Map();
+const rawCategoryInflight = new Map();
+const cacheStats = { hits: 0, misses: 0, size: 0, rawCategoryReads: 0 };
 
 // Conservative adjacency only. Broad retrieval is still sequential in V2.0;
 // correctness and inspectability come before parallel execution.
@@ -151,6 +156,8 @@ function cleanupCache() {
 function invalidateCache() {
   const size = cache.size;
   cache.clear();
+  rawCategoryCache.clear();
+  rawCategoryInflight.clear();
   cacheStats.size = 0;
   console.log(`[cache] Invalidated ${size} entries`);
 }
@@ -164,12 +171,58 @@ function getCacheStats() {
     hitRate: `${total ? (cacheStats.hits / total * 100).toFixed(1) : 0}%`,
     maxSize: MAX_CACHE_SIZE,
     ttlMs: CACHE_TTL_MS,
+    rawCategories: rawCategoryCache.size,
+    rawCategoryReads: cacheStats.rawCategoryReads,
   };
+}
+
+async function getRawCategoryDocs(db, practiceArea) {
+  const cached = rawCategoryCache.get(practiceArea);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) return cached.data;
+  if (process.env.LOCAL_LEGAL_CORPUS === "true") {
+    const { getLocalCategory } = require("./localLegalCorpus");
+    const docs = getLocalCategory(practiceArea);
+    rawCategoryCache.set(practiceArea, { data: docs, timestamp: Date.now() });
+    return docs;
+  }
+  if (rawCategoryInflight.has(practiceArea)) return rawCategoryInflight.get(practiceArea);
+
+  const request = (async () => {
+    try {
+      const snapshot = await withTimeout(
+        db.collection(COLLECTION).where("practice_area", "==", practiceArea).limit(RAW_FETCH_CAP).get(),
+        FIRESTORE_TIMEOUT_MS,
+        "Firestore query"
+      );
+      const docs = snapshot.docs.map((d) => {
+        const data = d.data();
+        return { id: d.id, ...data, provisionId: data.provisionId || d.id };
+      });
+      rawCategoryCache.set(practiceArea, { data: docs, timestamp: Date.now() });
+      cacheStats.rawCategoryReads += docs.length;
+      return docs;
+    } catch (err) {
+      const transientStoreFailure = /quota|timed out|unavailable|resource.exhausted/i.test(String(err?.message || ""));
+      if (transientStoreFailure && process.env.LEGAL_CORPUS_LOCAL_FALLBACK !== "false") {
+        const { getLocalCategory } = require("./localLegalCorpus");
+        const docs = getLocalCategory(practiceArea);
+        if (docs.length) {
+          console.warn(`[legalCorpus] Firestore unavailable for ${practiceArea}; using ${docs.length} local verified provisions`);
+          rawCategoryCache.set(practiceArea, { data: docs, timestamp: Date.now(), fallback: true });
+          return docs;
+        }
+      }
+      throw err;
+    }
+  })().finally(() => rawCategoryInflight.delete(practiceArea));
+
+  rawCategoryInflight.set(practiceArea, request);
+  return request;
 }
 
 async function findProvisions({ practiceArea, jurisdiction, keywords = [] }) {
   const db = getFirestore();
-  if (!db || !practiceArea) return [];
+  if ((!db && process.env.LOCAL_LEGAL_CORPUS !== "true") || !practiceArea) return [];
 
   const cacheKey = getCacheKey({ practiceArea, jurisdiction, keywords });
   const cached = cache.get(cacheKey);
@@ -182,22 +235,14 @@ async function findProvisions({ practiceArea, jurisdiction, keywords = [] }) {
   cacheStats.misses++;
   console.log(`[cache] MISS: ${cacheKey} - querying Firestore`);
 
-  let snapshot;
+  let docs;
   try {
-    snapshot = await withTimeout(
-      db.collection(COLLECTION)
-        .where("practice_area", "==", practiceArea)
-        .limit(RAW_FETCH_CAP)
-        .get(),
-      FIRESTORE_TIMEOUT_MS,
-      "Firestore query"
-    );
+    // Copy before per-request filtering/ranking; the raw cache stays immutable.
+    docs = [...await getRawCategoryDocs(db, practiceArea)];
   } catch (err) {
     console.error("[legalCorpus] Firestore query failed:", err.message);
     throw new Error(`Failed to retrieve legal provisions: ${err.message}`);
   }
-
-  let docs = snapshot.docs.map((d) => ({ id: d.id, ...d.data(), provisionId: d.data().provisionId || d.id }));
   if (jurisdiction) {
     docs = docs.filter((d) =>
       !d.jurisdiction ||

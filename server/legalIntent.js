@@ -84,6 +84,11 @@ const HARD_RULES = [
   { re: /\bdivorce\b/i, area: "family_law", kw: ["divorce"] },
   { re: /\bchild\s+(custody|support)\b/i, area: "family_law", kw: ["custody", "child support"] },
 
+  // ── Consumer / defective products ──
+  { re: /\b(defective|faulty|unsafe)\s+(product|goods?|item|appliance|generator|phone|device)\b/i, area: "consumer_rights", kw: ["defective goods", "consumer", "refund"] },
+  { re: /\b(bought|purchased)\b.{0,80}\b(caught fire|exploded|stopped working|damaged|faulty|defective)\b/i, area: "consumer_rights", kw: ["defective goods", "consumer", "compensation"] },
+  { re: /\b(refused|won'?t|will not)\s+(a\s+)?refund\b/i, area: "consumer_rights", kw: ["refund", "consumer"] },
+
   // ── Money / contract ──
   { re: /\bowe[sd]?\s+me\s+(money|n[0-9]+)\b/i, area: "contract", kw: ["debt", "money owed"] },
   { re: /\bbreach\s+of\s+contract\b/i, area: "contract", kw: ["breach of contract"] },
@@ -99,7 +104,7 @@ const SOFT_SIGNALS = [
   "police", "lawyer", "solicitor", "court", "sue", "sued", "suing",
   "compensation", "damages", "legal", "rights", "law",
   "divorce", "custody", "evict", "arrest", "detain", "bail", "prison", "jail",
-  "breach", "dispute", "refund", "deposit", "inheritance", "will", "probate",
+  "breach", "dispute", "refund", "deposit", "consumer", "defective", "faulty", "inheritance", "will", "probate",
   "discrimination", "harass", "threat", "abuse", "abused", "violent", "violence",
   "stolen", "stole", "robbery", "fraud", "scam", "bribe", "corruption",
   "injury", "injured", "accident", "negligence",
@@ -109,7 +114,8 @@ const SOFT_SIGNALS = [
 const SOFT_AREA_HINTS = {
   landlord: "tenancy", tenant: "tenancy", tenancy: "tenancy", rent: "tenancy", lease: "tenancy", evict: "tenancy",
   employer: "employment", employee: "employment", salary: "employment", wages: "employment",
-  contract: "contract", agreement: "contract", breach: "contract", refund: "contract", deposit: "contract",
+  contract: "contract", agreement: "contract", breach: "contract", deposit: "contract",
+  refund: "consumer_rights", consumer: "consumer_rights", defective: "consumer_rights", faulty: "consumer_rights",
   police: "criminal_rights", arrest: "criminal_rights", detain: "criminal_rights", bail: "criminal_rights",
   prison: "criminal_offences", jail: "criminal_offences", stolen: "criminal_offences", stole: "criminal_offences",
   robbery: "criminal_offences", fraud: "criminal_offences", scam: "criminal_offences", bribe: "criminal_offences",
