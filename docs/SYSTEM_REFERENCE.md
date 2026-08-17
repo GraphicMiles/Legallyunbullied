@@ -114,7 +114,49 @@ The superseded 35-scenario runner/scorer/result set was removed.
 - `manifest/` — classification, staging and ingestion progress;
 - `SOURCES.md` — provenance notes.
 
-See `docs/INGESTION_STATUS.md` for corpus counts and limitations.
+Corpus counts, provenance and limitations are consolidated in section 13 of this file.
+
+## Developer and operator quick start
+
+Requirements:
+
+- Node.js 18 or newer;
+- Firebase web configuration;
+- Firebase Admin service-account JSON;
+- at least one supported LLM provider key.
+
+```bash
+cp .env.example .env
+npm install
+npm start
+```
+
+Open `http://localhost:3000`.
+
+Core commands:
+
+```bash
+npm test                 # deterministic server/regression suite
+npm run test:v2          # focused evidence/safety guardrails
+npm run eval:dry         # list the 100-scenario evaluation plan
+npm run eval:critical -- --base-url https://staging.example --delay 12000
+npm run eval:full -- --base-url https://staging.example --delay 12000
+npm run eval:report
+```
+
+Environment groups:
+
+| Group | Variables |
+|---|---|
+| Firebase browser | `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_PROJECT_ID`, `FIREBASE_STORAGE_BUCKET`, `FIREBASE_MESSAGING_SENDER_ID`, `FIREBASE_APP_ID` |
+| Firebase server | `FIREBASE_SERVICE_ACCOUNT_JSON` |
+| Providers | `GROQ_API_KEY`, `GEMINI_API_KEY`, optional `OPENROUTER_API_KEY`, `CEREBRAS_API_KEY` |
+| Models | optional `GROQ_MODEL_*`, `GEMINI_MODEL_*` overrides |
+| Server | `PORT`, `NODE_ENV` |
+| Retrieval | `FIRESTORE_TIMEOUT_MS`, `LEGAL_CORPUS_LOCAL_FALLBACK`, evaluation-only `LOCAL_LEGAL_CORPUS` |
+| Worker | `JOB_CONCURRENCY`, optional `DISABLE_JOB_WORKER` |
+
+Real values belong only in ignored environment files or deployment secrets. Do not commit service-account JSON or provider tokens.
 
 ---
 
@@ -646,40 +688,155 @@ Current boundaries:
 
 # 13. Legal corpus and ingestion
 
-## Paths
+## 13.1 Corpus snapshot
+
+Snapshot verified on 16 August 2026:
+
+| Metric | Value |
+|---|---:|
+| PLAC 2004 compendium Acts | 547 |
+| Bulk Acts ingested | 545 |
+| Separately sourced gap laws | 3 |
+| Additional coverage laws | 4 |
+| Optional PLAC Acts remaining | 2 |
+| Firestore provisions | approximately 14,384 |
+| Checked-in fallback provisions parsed | approximately 7,655 |
+| Subject practice areas covered | 19/19, plus `general` |
+
+The two optional PLAC Acts not ingested are:
+
+- Treaty to Establish the African Union (Ratification and Enforcement) Act;
+- World Meteorological Organisation (Protection) Act.
+
+Neither is used by the current evaluation set.
+
+## 13.2 Bulk Act distribution
+
+| Practice area | Bulk Acts |
+|---|---:|
+| general | 186 |
+| tax_finance | 71 |
+| education | 47 |
+| health | 37 |
+| transport_traffic | 36 |
+| land_property | 23 |
+| company_business | 23 |
+| government_administration | 22 |
+| criminal_offences | 19 |
+| environment | 14 |
+| criminal_rights | 12 |
+| employment | 10 |
+| employment_labour_safety | 9 |
+| family_law | 9 |
+| immigration_citizenship | 7 |
+| contract | 6 |
+| intellectual_property | 6 |
+| constitutional_rights | 5 |
+| consumer_rights | 3 |
+| **Total** | **545** |
+
+## 13.3 Important separately sourced laws
+
+| Law | Category | Status/coverage |
+|---|---|---|
+| Lagos State Tenancy Law 2011 | tenancy | hand-ingested; primary Lagos rent/eviction source |
+| Recovery of Premises Law/Act text | tenancy | 31 sections; uniform text used as Federal/FCT coverage pending a verbatim federal source |
+| Violence Against Persons (Prohibition) Act 2015 | criminal_rights | 48 sections; domestic/sexual violence coverage |
+| Federal Competition and Consumer Protection Act 2018 | consumer_rights | 168 sections; consumer/competition coverage |
+| Wills Act 1837 | family_law | 33 parsed sections; testate succession |
+| Child Rights Act 2003 | family_law | 278 sections; custody/welfare/protection |
+| Sale of Goods Act 1893 | contract | 53 parsed sections; sale/defective-goods remedies |
+| Trade Marks Act | intellectual_property | 69 sections |
+
+The freely available Recovery of Premises source is a Kogi-issued edition of the uniform law. Its notice periods are treated as substantively aligned with the FCT federal regime, but a verbatim authoritative federal source remains preferable.
+
+Some LawGlobal Hub coverage files are incomplete: the Wills source lacks sections 2 and 12, and the Sale of Goods source lacks sections 4 and 40–48. These limitations must remain disclosed.
+
+## 13.4 Hand-reviewed foundation
+
+Individually reviewed sources include:
+
+1. Lagos State Tenancy Law 2011;
+2. Labour Act;
+3. Administration of Criminal Justice Act 2015;
+4. National Industrial Court Act 2006;
+5. Lagos State Small Claims Court Practice Direction;
+6. Constitution of the Federal Republic of Nigeria 1999 as amended.
+
+## 13.5 Ingestion paths
 
 ### Reviewed/single Act
 
 ```text
-PDF/text
-→ inspect/clean
-→ section parser
-→ Firestore batch write
+source PDF/text
+→ extract
+→ human inspect/clean
+→ section parser preview
+→ Firestore Admin batch write
+→ invalidate corpus cache
 ```
+
+Example:
+
+```bash
+node scripts/pdf-to-text.js --file legal_sources/federal_acts/example.pdf
+node scripts/ingest.js \
+  --file legal_sources/federal_acts/example.txt \
+  --act "Example Act" \
+  --practice-area contract \
+  --jurisdiction Federal \
+  --source-url "https://authoritative-source.example" \
+  --dry-run
+```
+
+Remove `--dry-run` only after reviewing the parsed sections.
 
 ### Bulk PLAC
 
 ```text
 title classification
-→ fetch/cache raw source
-→ generic cleanup
-→ staged stats
+→ fetch/cache source
+→ generic text cleanup
+→ staged quality statistics
 → resumable Firestore ingestion
 ```
 
-## Coverage
+Commands:
 
-The repository documents approximately 545 PLAC Acts plus selected gap/coverage laws and Constitution material. Firestore reports approximately 14,384 provisions. Local fallback currently parses approximately 7,655.
+```bash
+node scripts/classify-acts.js
+node scripts/bulk-fetch-clean.js
+node scripts/bulk-ingest-firestore.js --dry-run
+node scripts/bulk-ingest-firestore.js
+```
 
-## Legal limitations
+Progress is stored in `legal_sources/manifest/ingest_progress.json`.
 
-- 2004 compendium age;
-- incomplete amendments/repeals;
-- uneven source quality;
-- limited state law;
-- no case law;
-- no verified current-in-force service;
-- no lawyer editorial workflow.
+## 13.6 Source locations
+
+Preferred source classes:
+
+- official gazettes and government publications;
+- PLAC Laws of Nigeria;
+- authoritative court/government repositories;
+- reviewed secondary repositories only when an official full text is unavailable.
+
+Every provision should eventually carry source URL, source version, jurisdiction, effective date, in-force status and review provenance.
+
+## 13.7 Known legal-data gaps
+
+- the PLAC corpus is largely a 2004 federal compendium;
+- amendments, replacements and repeals are not systematically consolidated;
+- CAMA 2020 and other amended laws require exact-version verification;
+- state tenancy, family, succession and land law coverage is limited;
+- intestate succession and many tort questions depend on state/common law;
+- there is no case-law corpus;
+- `in_force` is not a maintained legal-status service;
+- source quality is uneven across automated bulk documents;
+- no qualified-lawyer editorial workflow approves corpus updates;
+- no scheduled freshness monitor exists.
+
+The pipeline must use honest insufficient-evidence handling rather than extrapolating beyond this coverage.
 
 ---
 
