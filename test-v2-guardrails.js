@@ -137,7 +137,7 @@ async function check(name, fn) {
   });
 
   await check("high-risk critique outage requires safety acknowledgment", async () => {
-    chatRoute.__testing.clearQuestionCache(); mode = "high-critique-failure"; draftCalls = 0;
+    chatRoute.__testing.clearQuestionCache(); chatRoute.__testing.clearProviderCooldowns(); mode = "high-critique-failure"; draftCalls = 0;
     const response = await post({ question: "The police detained me", history: [] });
     assert.strictEqual(response.status, 200);
     assert.strictEqual(response.body.safetyAck, true);

@@ -62,6 +62,22 @@ Implemented guardrails:
 - Unknown IDs and unsupported claim links fail citation integrity, remove invented source cards, downgrade evidence, and force escalation/safety review.
 - V1 label output remains accepted only when both Act and section exactly map to evidence retrieved for that run, preventing a breaking deployment while providers transition to the V2 schema.
 
+## Provider and critical-eval verification (2026-08-17)
+
+Verified against real Groq/Gemini APIs and the repository's 7,655-provision local evaluation corpus:
+
+- Groq models available: `openai/gpt-oss-20b`, `openai/gpt-oss-120b`
+- Gemini models available: `gemini-flash-lite-latest`, `gemini-flash-latest`
+- Critical suite: **20/20 passed**, **0 critical failures**, average **3.87/5**
+- 61 turns: **61 HTTP 200**, 0 provider-busy responses, 0 API errors
+- latency: p50 **3.62s**, p90 **6.41s**, p95 **28.75s**, maximum **47.76s**
+- citation/hallucination critical failures: **0**
+- safety critical failures: **0**
+
+The first real-Firestore smoke run exposed a separate production defect: keyword-specific cache keys caused repeated reads of up to 4,000 documents and exhausted the Firestore quota. Retrieval now caches each raw practice-area corpus once per hour, then performs keyword/jurisdiction ranking locally. After the quota was exhausted, the complete critical run used `LOCAL_LEGAL_CORPUS=true`. Production continues to prefer Firestore, but quota/timeouts can now fail over to the checked-in legal corpus instead of returning a 502; set `LEGAL_CORPUS_LOCAL_FALLBACK=false` to disable that fallback.
+
+Remaining quality signal: source-grounding averaged 2.90/5 and seven scenarios used honest insufficient-evidence handling. They passed the safety gate but remain retrieval-improvement targets for the next phase.
+
 ## Explicit limitations before Phase 3+
 
 - Claim-to-provision linkage is deterministic, but full semantic claim-support adjudication still relies on the relevance and safety review boundaries. A later canonical pipeline stage should make claim-support review its own typed artifact.

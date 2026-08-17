@@ -32,10 +32,14 @@ const DEFAULT_WEB_API_KEY = "AIzaSyD8ISl4LfU1cpUFAaK_ySSw-7y4jkbQG4o";
 let cached = null; // { idToken, expiresAt }
 
 function loadServiceAccount() {
-  const env = fs.readFileSync(ENV_PATH, "utf-8");
-  const m = env.match(/FIREBASE_SERVICE_ACCOUNT_JSON=(.+)/);
-  if (!m) throw new Error("FIREBASE_SERVICE_ACCOUNT_JSON not found in .env");
-  const raw = m[1].trim();
+  let raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  if (!raw) {
+    if (!fs.existsSync(ENV_PATH)) throw new Error("FIREBASE_SERVICE_ACCOUNT_JSON not found in environment or .env");
+    const env = fs.readFileSync(ENV_PATH, "utf-8");
+    const m = env.match(/FIREBASE_SERVICE_ACCOUNT_JSON=(.+)/);
+    if (!m) throw new Error("FIREBASE_SERVICE_ACCOUNT_JSON not found in .env");
+    raw = m[1].trim();
+  }
   // Strip surrounding quotes if present
   const cleaned = raw.replace(/^['"]|['"]$/g, "");
   try {

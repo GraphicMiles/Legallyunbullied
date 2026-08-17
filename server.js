@@ -19,6 +19,7 @@ const chatRoute = require("./server/chatRoute");
 const conversationRoute = require("./server/conversationRoute");
 const { requireAuth, optionalAuth } = require("./server/authMiddleware");
 const { sweepAndStart } = require("./server/jobRunner");
+const { probeProviders, getProviderHealth } = require("./server/providerHealth");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -126,7 +127,14 @@ app.use(express.static(PUBLIC_DIR, {
 
 // ── Health check ──────────────────────────────────────────────────────────
 app.get("/healthz", (req, res) => {
-  res.status(200).json({ status: "ok" });
+  const providerHealth = getProviderHealth();
+  const configured = Object.values(providerHealth.providers).filter((p) => p.configured);
+  const healthy = configured.some((p) => p.status === "healthy");
+  res.status(200).json({
+    status: configured.length && !healthy ? "degraded" : "ok",
+    providers: providerHealth.providers,
+    providerHealthCheckedAt: providerHealth.checkedAt,
+  });
 });
 
 // ── Cache management (auth required) ──────────────────────────────────────
@@ -192,6 +200,11 @@ app.listen(PORT, "0.0.0.0", () => {
 // Background job runner: recovers in-flight requests that were orphaned by a
 // restart (restart-and-complete). No-op when Firestore isn't configured.
 sweepAndStart();
+// Non-blocking startup validation catches retired model IDs before the first
+// user request. Health output is metadata-only and never exposes credentials.
+probeProviders()
+  .then((health) => console.log("[providers] startup health:", JSON.stringify(health.providers)))
+  .catch((err) => console.warn("[providers] startup health check failed:", err.message));
 
 // ── Process-level safety net ───────────────────────────────────────────────
 // Node 20 terminates the process on any unhandled promise rejection, which on
