@@ -594,13 +594,14 @@ The initial live request does not currently save these checkpoints; they primari
 
 ## Limitations
 
-- no transactional lease;
-- unsafe for multiple service instances;
-- no durable cancellation;
-- no TTL cleanup;
-- sweeper queries can consume quota;
-- start failures are swallowed as best-effort;
-- message running marker is not awaited and can race terminal state.
+Worker execution now uses transactional Firestore leases with an owner and `leaseUntil`, duplicate queue suppression, stale-lease recovery, and validation of persisted checkpoints. The message running marker is awaited before pipeline work starts. Remaining limitations are:
+
+- no durable user cancellation;
+- no TTL cleanup for temporary job/acknowledgement records;
+- no first-class persisted `runId` state machine;
+- leases coordinate Firestore-backed workers, but there is no separate distributed queue service;
+- sweeper queries still consume Firestore quota;
+- upstream provider calls that time out are not actually cancelled.
 
 ---
 
@@ -702,7 +703,7 @@ Snapshot verified on 16 August 2026:
 | Additional coverage laws | 4 |
 | Optional PLAC Acts remaining | 2 |
 | Firestore provisions | approximately 14,384 |
-| Checked-in fallback provisions parsed after final quality additions | approximately 7,737 |
+| Checked-in fallback provisions parsed after final quality additions | approximately 7,750 |
 | Subject practice areas covered | 19/19, plus `general` |
 
 The reviewed disposition of the 17 confirmed evidence gaps is stored in `legal_sources/manifest/v1_evidence_gap_review.json`. It records the authority, jurisdiction, sections, status and safe answer policy for each gap. The final quality pass added the Nigeria Police Act 2020 official-gazette text and reviewed extracts from three official CBN regulatory documents; questions still dependent on contract, case law, state domestication or unavailable authority remain intentionally insufficient.
@@ -1120,20 +1121,34 @@ Four turns ended in a safe `providersBusy` response during provider exhaustion; 
 | Firestore | Full comparison not run: quota exhausted. The system opened its circuit and did not repeatedly hammer Firestore. |
 | Local fallback | Full 100-scenario pressure run completed through the same relevance, citation, claim-support and safety gates. |
 
-No equivalence claim is made. Firestore documents approximately 14,384 provisions. The final evaluation used approximately 7,655 local provisions; the reviewed Police Act/CBN quality additions increased the current parsed fallback to approximately 7,737. A healthy-Firestore comparison remains mandatory when quota returns.
+No equivalence claim is made. Firestore documents approximately 14,384 provisions. The final evaluation used approximately 7,655 local provisions; the reviewed Police Act/CBN quality additions increased the current parsed fallback to approximately 7,750. A healthy-Firestore comparison remains mandatory when quota returns.
 
 ## 19.6 Remaining known limitations
 
-- Local source grounding is low (2.16/5) and many answers safely escalate instead of giving sourced law.
-- Claim support is model-reviewed, not independently verified by a qualified lawyer.
-- The final 100 result is a regression composite, not one uninterrupted first-pass run.
-- Provider quotas were exhausted during pressure; production needs budget/quota planning and cancellation of timed-out upstream calls.
-- Follow-up reasoning and communication remain below 3.5/5.
-- Firestore/local parity is unmeasured.
-- Local corpus is smaller and has provenance/freshness gaps.
-- Durable server cancellation and job TTL cleanup remain incomplete.
-- No qualified-lawyer review, case-law corpus, amendment/repeal monitor, or full state-law coverage exists.
-- Exposed Firebase, Groq, Gemini and GitHub credentials still require rotation.
+### Evaluation evidence still outstanding
+
+- The measured source-grounding score remains **2.16/5**, citation accuracy **3.27/5**, and follow-up reasoning **2.33/5**. These are pre-addition measurements and must not be presented as improved merely because reviewed Police Act and CBN sources and stronger case context were added.
+- The final 100-scenario result is a regression composite containing targeted reruns, not one uninterrupted first-pass run.
+- A clean, paced 100-scenario run against the current approximately 7,750-provision local corpus has not been completed because Groq/Gemini quotas were exhausted.
+- Provider/infrastructure failures must remain reported separately from legal-quality failures. Four measured turns safely returned `providersBusy`; they did not become confident legal answers.
+- Firestore/local parity is unmeasured. Firestore was quota-limited, so no equivalence claim is valid and it must not be hammered to obtain one.
+
+### Legal and corpus coverage
+
+- Local fallback is materially smaller than Firestore (approximately 7,750 versus the previously documented approximately 14,384 provisions) and does not claim complete coverage.
+- Claim-to-provision and exact quote occurrence checks are deterministic, but semantic support is still judged by an LLM reviewer rather than a qualified lawyer or deterministic legal-entailment system.
+- There is no qualified-lawyer sign-off, comprehensive case-law corpus, amendment/repeal monitor, or complete state-law coverage. Provenance, current in-force status, and jurisdictional coverage therefore remain incomplete.
+- Several of the 17 reviewed evidence-gap scenarios must still narrow the answer, ask for missing facts, or return insufficient verified evidence: phone searches without warrant/consent/reasonable-suspicion facts; police invitation versus arrest ambiguity; roadblock extortion without a verified specific anti-corruption authority; unfair-dismissal claims beyond verified Labour Act notice rules; workplace harassment without a specific statutory hook; spouse/child relocation without jurisdiction, marriage, or order facts; eviction notice without state and tenancy type; terminal employment benefits beyond verified wage provisions; and banking disputes without channel, investigation, or transaction-status facts.
+- The CBN authority files are reviewed extracts derived from indexed official-document content after direct CBN downloads returned HTTP 403; they are not represented as complete official PDFs.
+- Safe escalation is intentional when authoritative evidence is insufficient; this is a limitation of coverage, not a reason to relax support gates.
+
+### Operations and security
+
+- Provider free-tier quota exhaustion remains an availability risk. Timed-out upstream requests are not cancelled.
+- Durable user cancellation, temporary job/acknowledgement TTL cleanup, and a first-class persisted `runId` state machine remain incomplete.
+- Cache administration endpoints still require explicit admin authorization hardening.
+- Firestore rules in this repository are not deployed by Render and still require a separate `firebase deploy --only firestore:rules` using rotated credentials.
+- Firebase, Groq, Gemini, and GitHub credentials exposed outside the repository must be revoked/rotated. They are not reproduced in source control.
 
 # 20. Accuracy statement
 
