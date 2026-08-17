@@ -81,7 +81,7 @@ async function setupPage(browser, { seedConversations } = {}) {
   // Seed localStorage for the authenticated user BEFORE app.js runs.
   if (seedConversations) {
     await page.addInitScript(({ storageKey, convos }) => {
-      localStorage.setItem(storageKey, JSON.stringify({ conversations: convos, activeId: null, questionsUsedToday: 0 }));
+      localStorage.setItem(storageKey, JSON.stringify({ conversations: convos, activeId: null }));
     }, { storageKey: "lu.conversations.v3.user-abc", convos: seedConversations });
   }
 

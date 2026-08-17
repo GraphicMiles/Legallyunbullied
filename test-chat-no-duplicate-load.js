@@ -75,7 +75,7 @@ async function setupPage(browser, { seedCache = true } = {}) {
     if (seed) {
       localStorage.setItem("lu.conversations.v3.user-abc", JSON.stringify({
         conversations: [{ id: "target-chat", title: "Cached target", createdAt: 1, updatedAt: 1, messages: [{ id: "m1", role: "user", content: "CACHED_STALE_CONTENT", createdAt: 1 }] }],
-        activeId: null, questionsUsedToday: 0,
+        activeId: null,
       }));
     }
     // MutationObserver: record whenever the stale cached bubble ever renders.

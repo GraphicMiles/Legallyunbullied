@@ -2,90 +2,58 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // ── Helper functions ──────────────────────────────────────────────────
-    function isSignedIn() {
-      return request.auth != null;
-    }
-    
     function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+      return request.auth != null && request.auth.uid == userId;
     }
 
-    // Maximum document size (1MB is Firestore's hard limit; we use 500KB as safety margin)
-    function isReasonableSize() {
-      return request.resource.size() < 524288; // 512KB
+    function validConversation(userId) {
+      return request.resource.data.userId == userId
+        && request.resource.data.keys().hasOnly([
+          'userId', 'title', 'createdAt', 'updatedAt'
+        ]);
     }
 
-    // Validate message fields
-    function isValidMessage() {
+    function validMessage(userId) {
       let data = request.resource.data;
-      return data.keys().hasOnly([
-        'role', 'content', 'casualReply', 'status', 'createdAt',
-        'thinkingElapsedMs', 'traceOpen', 'classification', 'steps',
-        'result', 'plan', 'corpusEmptyMessage', 'errorMessage', 'userId'
-      ])
-      && data.role is string
-      && data.status is string
-      && data.status in ['done', 'casual', 'error', 'stopped', 'corpusEmpty', 'incomplete', 'thinking', 'streaming'];
+      return data.userId == userId
+        && data.role in ['user', 'agent']
+        && data.status in [
+          'thinking', 'streaming', 'running', 'done', 'casual', 'error',
+          'stopped', 'corpusEmpty', 'incomplete', 'needsInput',
+          'safetyAck', 'providersBusy'
+        ]
+        && data.keys().hasOnly([
+          'userId', 'role', 'content', 'casualReply', 'status', 'createdAt',
+          'startedAt', 'thinkingElapsedMs', 'traceOpen', 'classification',
+          'steps', 'result', 'plan', 'corpusEmptyMessage', 'errorMessage',
+          'pipelineStatus', 'unread', 'evidence', 'critique',
+          'needsInputQuestion', 'needsInputField', 'safetyAckQuestion',
+          'safetyAckContext', 'safetyAckToken', 'providersBusyRetryAfter',
+          'providersBusyLawMd', 'providersBusyActionsMd',
+          'safetyAcknowledgedAt'
+        ]);
     }
-    
-    // ── Legal provisions (public read, admin-only write) ──────────────────
+
+    // Legal evidence is served by the authenticated server pipeline. Direct
+    // browser reads are denied to prevent corpus scraping and quota abuse.
     match /legal_provisions/{document=**} {
-      allow read: if true;
-      allow write: if false; // ingestion uses Admin SDK (bypasses rules)
+      allow read, write: if false;
     }
-    
-    // ── User conversations (private to user) ──────────────────────────────
+
     match /users/{userId}/conversations/{conversationId} {
       allow read: if isOwner(userId);
-      
-      allow create: if isOwner(userId) 
-                    && request.resource.data.userId == userId
-                    && isReasonableSize()
-                    && request.resource.data.keys().hasOnly([
-                      'userId', 'title', 'createdAt', 'updatedAt'
-                    ]);
-      
-      allow update: if isOwner(userId)
-                    && resource.data.userId == userId
-                    && request.resource.data.userId == userId
-                    && isReasonableSize();
-      
+      allow create, update: if isOwner(userId) && validConversation(userId);
       allow delete: if isOwner(userId);
 
-      // ── Messages subcollection ────────────────────────────────────────
       match /messages/{messageId} {
         allow read: if isOwner(userId);
-        
-        allow create: if isOwner(userId)
-                      && request.resource.data.userId == userId
-                      && isReasonableSize()
-                      && isValidMessage();
-        
-        allow update: if isOwner(userId)
-                      && resource.data.userId == userId
-                      && request.resource.data.userId == userId
-                      && isReasonableSize();
-        
+        allow create, update: if isOwner(userId) && validMessage(userId);
         allow delete: if isOwner(userId);
       }
     }
-    
-    // ── User settings (private to user) ──────────────────────────────────
-    match /users/{userId}/settings/{document=**} {
-      allow read, write: if isOwner(userId);
-    }
-    
-    // ── User feedback (immutable record) ─────────────────────────────────
-    match /users/{userId}/feedback/{feedbackId} {
-      allow create: if isOwner(userId)
-                    && request.resource.data.userId == userId;
-      allow read: if isOwner(userId);
-      allow update, delete: if false;
-    }
-    
-    // ── Deny all other access ────────────────────────────────────────────
+
+    // Internal collections such as background_jobs and safety_acks are Admin
+    // SDK only and remain denied by the catch-all rule.
     match /{document=**} {
       allow read, write: if false;
     }

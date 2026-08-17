@@ -72,7 +72,7 @@ async function main() {
 
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
     await page.addInitScript(({ key, convos }) => {
-      localStorage.setItem(key, JSON.stringify({ conversations: convos, activeId: null, questionsUsedToday: 0 }));
+      localStorage.setItem(key, JSON.stringify({ conversations: convos, activeId: null }));
     }, { key: "lu.conversations.v3.anonymous", convos });
     await page.goto(`${BASE}`, { waitUntil: "load" });
     await page.waitForFunction(() => document.querySelectorAll(".history__item").length === 2, null, { timeout: 10000 });

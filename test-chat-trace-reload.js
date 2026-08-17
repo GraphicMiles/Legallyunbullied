@@ -84,7 +84,7 @@ async function main() {
   try {
     console.log("\n=== Trace reload-style tests ===\n");
     await page.addInitScript(({ storageKey, convos }) => {
-      localStorage.setItem(storageKey, JSON.stringify({ conversations: convos, activeId: null, questionsUsedToday: 0 }));
+      localStorage.setItem(storageKey, JSON.stringify({ conversations: convos, activeId: null }));
     }, { storageKey: "lu.conversations.v3.anonymous", convos: [seededConvo] });
 
     await page.goto(`${BASE}/#chat/chat-trace-1`, { waitUntil: "load" });

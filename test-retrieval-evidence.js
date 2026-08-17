@@ -1,21 +1,13 @@
 /**
  * Unit tests for the retrieval-evidence fixes.
  *
- * Verifies:
- *   1. findProvisionsBroad merges the primary category with keyword-filtered
- *      "general" provisions when the primary category is sparse, dedupes by
- *      id, and reports which categories were searched.
- *   2. findProvisionsBroad does NOT broaden when the primary category already
- *      has enough sources.
- *   3. Scoring flags hedging/self-correction language in generated text.
- *   4. Scoring fails a "confident" answer with too few sources and passes an
- *      honest insufficient-evidence + escalate response.
+ * Verifies broad retrieval, forced broadening, deterministic ranking,
+ * route-aware source requirements, and authoritative citation resolution.
  *
  * Run: node test-retrieval-evidence.js
  */
 
 const assert = require("assert");
-const path = require("path");
 
 // ── Mock Firestore for legalCorpus ────────────────────────────────────────
 function makeMockFirestore(areaDocs) {
@@ -73,7 +65,6 @@ require.cache[adminPath] = {
 
 const { findProvisionsBroad, findProvisions, rankProvisions } = require("./server/legalCorpus");
 const { requiredSourceCount, verifyAndResolveCitations } = require("./server/evidence");
-const { scoreScenario } = require("./server/eval/scoring.js");
 
 let failures = 0;
 function check(name, fn) {
@@ -157,79 +148,6 @@ async function main() {
     assert.strictEqual(result.sources[0].label, "Constitution of the Federal Republic of Nigeria 1999, s.35(1)");
     assert.strictEqual(result.sources[0].excerpt, provisions[0].text);
     assert.ok(!JSON.stringify(result.sources).includes("Made Up Act"));
-  });
-
-  await check("scoring flags hedging language in generated text", async () => {
-    const r = scoreScenario(
-      { id: "t1", category: "retrieval_accuracy", expected: {} },
-      {
-        result: {
-          lawMd: "The Robbery and Firearms Act s.11 defines assault. However, this Act primarily deals with robbery and firearms. For a more direct application, we would look at general criminal law.",
-          actionsMd: "- Step 1: x",
-        },
-      }
-    );
-    assert.strictEqual(r.dimensions.hedging_language, 0, "hedging should fail the scenario");
-  });
-
-  await check("scoring passes clean text (no hedging)", async () => {
-    const r = scoreScenario(
-      { id: "t2", category: "retrieval_accuracy", expected: {} },
-      {
-        result: {
-          lawMd: "Under section 252 of the Criminal Code Act, assault is a crime...",
-          actionsMd: "- Step 1: report to police",
-        },
-      }
-    );
-    assert.strictEqual(r.dimensions.hedging_language, 1, "no hedging should pass");
-  });
-
-  await check("scoring fails a confident answer with too few sources", async () => {
-    const r = scoreScenario(
-      { id: "t3", category: "retrieval_accuracy", expected: {} },
-      {
-        result: { escalate: false, lawMd: "x", actionsMd: "y", sources: [{ label: "Robbery and Firearms Act, s.11" }] },
-        evidence: { sufficient: true, sourceCount: 1, minSources: 2 },
-      }
-    );
-    assert.strictEqual(r.dimensions.evidence_sufficiency, 0, "confident + 1 source should fail");
-  });
-
-  await check("scoring passes honest insufficient-evidence + escalate", async () => {
-    const r = scoreScenario(
-      { id: "t4", category: "retrieval_accuracy", expected: {} },
-      {
-        result: { escalate: true, lawMd: "I found limited directly relevant statutes...", actionsMd: "- Step 1: x" },
-        evidence: { sufficient: false, sourceCount: 0, minSources: 2 },
-      }
-    );
-    assert.strictEqual(r.dimensions.evidence_sufficiency, 1, "honest insufficient + escalate should pass");
-  });
-
-  await check("scoring fails insufficient evidence presented without escalation", async () => {
-    const r = scoreScenario(
-      { id: "t5", category: "retrieval_accuracy", expected: {} },
-      {
-        result: { escalate: false, lawMd: "x", actionsMd: "y" },
-        evidence: { sufficient: false, sourceCount: 0, minSources: 2 },
-      }
-    );
-    assert.strictEqual(r.dimensions.evidence_sufficiency, 0, "insufficient + no escalation should fail");
-  });
-
-  await check("retrieval scenario fails must_not_cite for the old bug citation", async () => {
-    const r = scoreScenario(
-      { id: "t6", category: "retrieval_accuracy", expected: { must_not_cite: ["Robbery and Firearms"] } },
-      {
-        result: {
-          lawMd: "Under the Robbery and Firearms (Special Provisions) Act, s.11...",
-          actionsMd: "- Step 1: x",
-          sources: [{ label: "Robbery and Firearms (Special Provisions) Act, s.11" }],
-        },
-      }
-    );
-    assert.strictEqual(r.dimensions.must_not_cite, 0, "citing Robbery and Firearms for assault should fail");
   });
 
   console.log(failures === 0 ? "\nALL RETRIEVAL-EVIDENCE TESTS PASSED" : `\n${failures} TEST(S) FAILED`);

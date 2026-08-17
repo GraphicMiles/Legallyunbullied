@@ -117,7 +117,6 @@ require.cache[authPath] = {
   id: authPath, filename: authPath, loaded: true,
   exports: {
     requireAuth: (req, res, next) => { req.uid = CURRENT_UID; next(); },
-    optionalAuth: (req, res, next) => { req.uid = null; next(); },
   },
 };
 

@@ -56,34 +56,4 @@ function requireAuth(req, res, next) {
     });
 }
 
-/**
- * Middleware: optional auth. Tries to verify token but doesn't reject if missing.
- * Sets req.uid if valid token present, otherwise req.uid = null.
- */
-function optionalAuth(req, res, next) {
-  const authHeader = req.headers.authorization || "";
-  const match = authHeader.match(/^Bearer\s+(.+)$/i);
-  if (!match) {
-    req.uid = null;
-    return next();
-  }
-
-  const idToken = match[1];
-  const auth = getAdminAuth();
-  if (!auth) {
-    req.uid = null;
-    return next();
-  }
-
-  auth.verifyIdToken(idToken)
-    .then((decoded) => {
-      req.uid = decoded.uid;
-      next();
-    })
-    .catch(() => {
-      req.uid = null;
-      next();
-    });
-}
-
-module.exports = { requireAuth, optionalAuth };
+module.exports = { requireAuth };

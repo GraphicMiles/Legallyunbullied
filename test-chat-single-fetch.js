@@ -66,7 +66,7 @@ async function signedInPage(browser, { seed } = {}) {
   });
   if (seed) {
     await page.addInitScript(({ key, convos }) => {
-      localStorage.setItem(key, JSON.stringify({ conversations: convos, activeId: null, questionsUsedToday: 0 }));
+      localStorage.setItem(key, JSON.stringify({ conversations: convos, activeId: null }));
     }, { key: "lu.conversations.v3.user-abc", convos: seed });
   }
   await page.route("https://www.gstatic.com/firebasejs/**", (route) => {

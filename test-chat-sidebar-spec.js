@@ -58,7 +58,7 @@ async function main() {
 
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
     await page.addInitScript(({ storageKey, convos }) => {
-      localStorage.setItem(storageKey, JSON.stringify({ conversations: convos, activeId: null, questionsUsedToday: 0 }));
+      localStorage.setItem(storageKey, JSON.stringify({ conversations: convos, activeId: null }));
     }, { storageKey: "lu.conversations.v3.anonymous", convos: seeded });
 
     // Open chat-b directly so it is the active conversation.

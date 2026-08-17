@@ -1,145 +1,86 @@
-# Legally Unbullied — Product Roadmap
+# Legally Unbullied — Current Roadmap
 
-> Last updated: 2026-08-16
+> Updated 17 August 2026. Completed work reflects the code on `main`; planned work is not represented as shipped.
 
-## V1 — Core ✅ COMPLETE
+## Shipped foundation
 
-All 7 phases shipped and deployed to production at `https://legally-unbullied.onrender.com`.
+- Responsive authenticated chat application
+- Firebase email/password and Google authentication
+- Firestore conversation persistence and localStorage migration
+- Canonical URL/message identity
+- Deterministic legal-intent guard
+- Legal/casual/procedural routing
+- State clarification for non-urgent state-sensitive matters
+- Firestore legal corpus with checked-in fallback
+- Raw-category cache and Firestore quota circuit breaker
+- Deterministic lexical ranking and authority diversification
+- Forced adjacent/general broad retrieval
+- Relevance/sufficiency gate
+- Deterministic complex-response plan
+- Provision-ID source-card resolution
+- Category-specific quality/safety thresholds
+- High-risk user acknowledgement
+- Provider model health, fallback, timeout and cooldown handling
+- Server-side terminal result persistence
+- Single-instance restart/replay background worker
+- 100-scenario dataset, critical-20 gate and deterministic test suite
+- Authenticated title generation
+- Server message-field allowlisting
+- Direct client corpus reads denied by Firestore rules
+- Obsolete SSE/demo/debug code removed
 
-| Phase | Feature | Status | Commit |
-|---|---|---|---|
-| 1 | Pipeline (classify → search → draft → critique → answer), simple/complex router, plan tool, critique loop (2-retry cap) | ✅ Done | `a9dd4f1` |
-| 2 | Split scoring (quality vs legal_safety), high-risk categories get stricter bar (0.7 safety threshold) | ✅ Done | `b6304d8` |
-| 3 | `askUser` HITL — triggers on failed safety for high-risk categories, wired to safety approval card | ✅ Done | `6709cdb` |
-| 4 | SSE event system + event-driven UI — 12 granular events, fetch-streaming client | ✅ Done | `6709cdb` |
-| 5 | Conversation state (within-session + Firestore persistence) | ✅ Done | `9eac777` |
-| 6 | Eval set (35 real scenarios) + regression scoring (15+ dimensions, pass threshold 0.7) | ✅ Done | pre-existing |
-| 7 | Polish — provider fallback chain (5 providers), LLM timeouts, question cache (10-min TTL) | ✅ Done | `a9dd4f1` |
+## P0 — Safety and security cleanup
 
-### V1 Security & Infrastructure (also shipped)
+1. Rotate all credentials exposed during development/review.
+2. Require admin authorization for corpus cache invalidation/stats.
+3. Add strict classification and draft-output schemas.
+4. Detect/reject plain-text model citations that bypass provision tokens.
+5. Implement semantic claim-to-provision support decisions.
+6. Fix message running/terminal write ordering.
+7. Make unresolved emergency jurisdiction explicit in answer metadata.
 
-| Feature | Status | Commit |
-|---|---|---|
-| CORS with origin allowlist | ✅ Done | `cd2587c` |
-| Rate limiting (60/min general, 20/min chat) | ✅ Done | `cd2587c` |
-| Firebase ID token auth on all API endpoints | ✅ Done | `cd2587c` |
-| Body size limits (50kb) | ✅ Done | `cd2587c` |
-| Firestore security rules (field validation, size limits) | ✅ Done | `cd2587c` |
-| Server-side conversation persistence (Firestore) | ✅ Done | `9eac777` |
-| UUID v4 conversation IDs (high-entropy) | ✅ Done | `24c08c4` |
-| Ownership checks return 404 (not 403) — prevents enumeration | ✅ Done | `24c08c4` |
-| URL-based routing (`#chat/{uuid}`) | ✅ Done | `165bac3` |
-| Legal corpus: 545/547 federal Acts ingested (~8,200 sections) | ✅ Done | bulk ingestion |
+## P1 — Canonical typed run and durable operations
 
----
+1. Introduce a stable `runId` and typed artifact for every pipeline stage.
+2. Emit events from the canonical engine if live progress/streaming is reintroduced.
+3. Add upstream request cancellation and one overall pipeline deadline.
+4. Replace the in-process queue with transactional Firestore leases or a durable queue.
+5. Add durable cancellation and temporary-document TTL cleanup.
+6. Add structured logs, tracing, alerts and model/token/cost metrics.
+7. Remove Firestore N+1 conversation queries and chunk large deletes.
+8. Add security headers and a strict CSP.
+9. Add CI for deterministic and browser tests.
 
-## V2 — Product Maturity
+## P2 — Legal quality
 
-Build these only after V1's eval suite proves the core agent is consistently accurate and safe.
+1. Structured case profile with user-stated, inferred and verified provenance.
+2. Hybrid lexical/semantic retrieval after deterministic quality baselines.
+3. Source hierarchy, effective dates, amendment/repeal tracking and freshness alerts.
+4. Expand state-law coverage.
+5. Add case law only with an authoritative, licensed source strategy.
+6. Build a qualified-lawyer review/audit workflow.
+7. Run the full 100-scenario suite repeatedly against staging and obtain lawyer review.
 
-| Phase | Feature | Description | Priority |
-|---|---|---|---|
-| 8 | **Persistent memory** | Per-user preferences, cross-session context (remember past topics, preferred communication style, jurisdiction defaults). Currently conversations persist but there's no preference layer on top. | High |
-| 9 | **Parallel tool execution** | Run `search` + partial `draft` prep concurrently where safe. Currently all pipeline steps are sequential. Could cut latency 30-40% on complex questions. | Medium |
-| 10 | **Multi-model fallback** | Already done for provider failover (Phase 7). This phase adds *semantic* fallback — if primary model produces low-quality output, automatically retry with a different model tier. | Medium |
-| 11 | **Question caching** | Already done for identical questions (Phase 7). This phase adds *semantic* caching — "minimum wage in Lagos" and "what's the lowest legal pay in Lagos" should hit the same cache entry. Requires embedding similarity. | Low |
-| 12 | **Expanded eval + CI gating** | Grow eval set from 35 → 100+ scenarios. Add CI pipeline that runs eval on every deploy and blocks merge if score drops below regression gate. | High |
+## P3 — Product/scale
 
-### V2 Architecture Notes
+- real lawyer handoff and referral workflow
+- verified emergency/legal-aid resource directory
+- user/org quotas and spending controls
+- privacy export, retention and deletion controls
+- audit dashboard
+- feature flags, canary deployment and rollback automation
+- multi-tenant support only after security/compliance readiness
 
-- **Phase 8** needs a new Firestore collection: `users/{uid}/preferences` with fields like `defaultJurisdiction`, `preferredComplexity`, `pastTopics[]`.
-- **Phase 9** requires refactoring the pipeline from sequential `await` chains to `Promise.all()` groups with dependency tracking.
-- **Phase 11** needs an embedding model (e.g. `text-embedding-3-small`) and a vector store (Firestore doesn't natively support vector search — consider Pinecone or Qdrant).
-- **Phase 12** needs a CI config (GitHub Actions or Render's built-in CI) that runs `npm run eval` after each deploy.
+## Release gate
 
----
+A release must not introduce:
 
-## V3 — Enterprise / Scale
+- cross-user/context cache leakage;
+- fabricated displayed citations;
+- verification failure marked as success;
+- cross-user acknowledgement access;
+- duplicate terminal answers for one run;
+- provider model-not-found loops;
+- critical evaluation failures.
 
-Only relevant when the product has real users and compliance requirements.
-
-| Phase | Feature | Description | Priority |
-|---|---|---|---|
-| 13 | **Observability** | Structured logging (JSON), distributed tracing per agent run (classify→search→draft→critique), dashboards for latency/cost/safety-fail-rate. Currently using `console.log` statements. | High |
-| 14 | **Audit logs** | Every answer's full decision trail stored for compliance review — which tools ran, what scores they got, which citations were used, what the user asked. Legal advice requires accountability. | High |
-| 15 | **Human-review dashboard** | Lets a qualified lawyer spot-check flagged or low-safety-score answers post-hoc. Currently the safety flag is user-facing only; lawyers need a backend view. | Medium |
-| 16 | **Multi-tenant / quotas** | Per-user or per-org rate limits and cost controls. Currently IP-based rate limiting only. Needs user-level token buckets and spending caps. | Medium |
-| 17 | **A/B testing** | Compare prompt/model changes against the eval suite and live traffic simultaneously. Needs feature flags + metrics pipeline. | Low |
-| 18 | **Gradual rollout** | The 10%→100% traffic shift for new model versions. Needs a traffic router + canary deployment infrastructure. | Low |
-
-### V3 Architecture Notes
-
-- **Phase 13** should use a structured logging library (e.g. `pino`) with a log aggregator (Datadog, Axiom, or self-hosted Grafana Loki).
-- **Phase 14** needs a new Firestore collection: `audit_logs/{runId}` with the full agent trace as a single document.
-- **Phase 15** is a separate web app (React dashboard) that reads from the audit log collection and lets lawyers annotate answers.
-- **Phase 16** needs a token bucket implementation (Redis or in-memory with cluster sync) keyed on `userId`.
-
----
-
-## Ingestion Backlog
-
-See `docs/INGESTION_STATUS.md` for the full breakdown. Summary:
-
-- **545/547** federal Acts ingested from PLAC 2004 compendium — essentially complete
-- **4 critical gaps** need separate sourcing (not in PLAC compendium):
-  1. Recovery of Premises Act (Abuja tenancy)
-  2. Violence Against Persons (Prohibition) Act 2015 (domestic violence)
-  3. Federal Competition and Consumer Protection Act 2018 (consumer rights)
-  4. Lagos State Tenancy Law 2011 — ✅ already hand-ingested as a flagship Act
-
----
-
-## How to Test V1 Success
-
-See the testing guide below for concrete steps to verify each phase on the live site.
-
-### Quick Smoke Test (5 minutes)
-
-| # | Action | Expected | Phase |
-|---|---|---|---|
-| 1 | Visit base URL | Empty landing state | 5 |
-| 2 | Type "Hi" | Casual reply, no step trace | 1 |
-| 3 | Ask a Lagos tenancy question | Full answer with citations, steps all done | 1, 2 |
-| 4 | Check Network tab → response JSON | `critique` field with quality + safety scores | 2 |
-| 5 | Ask a criminal rights question | Higher safety threshold (0.7) in critique scores | 2 |
-| 6 | Reload page | Conversation restored from Firestore | 5 |
-| 7 | Delete conversation, reload | Stays deleted | Persistence |
-| 8 | `curl` the SSE endpoint | Stream of structured events | 4 |
-| 9 | Run `npm run eval -- --limit 5` | Scores ≥ 0.7 | 6 |
-
-### Detailed Per-Phase Tests
-
-**Phase 1 — Pipeline:**
-- Simple question ("What is the minimum wage?") → fast, no plan step
-- Complex question (multi-fact scenario) → plan step visible, longer response
-- Verify: `response.route` is `"simple"` or `"complex"` as expected
-
-**Phase 2 — Split Scoring:**
-- Check `response.critique.quality` and `response.critique.legal_safety` exist
-- Standard category: thresholds are `{quality: 0.6, safety: 0.6}`
-- High-risk (criminal, immigration, family, constitutional): safety threshold is 0.7
-- Check `response.critique.isHighRisk` is correct for the practice area
-
-**Phase 3 — HITL on Safety Fail:**
-- Test `/api/chat/acknowledge` endpoint with invalid token → 404
-- This only triggers naturally when a high-risk answer fails critique 3 times — check server logs for `"requiring safety acknowledgment"` messages
-
-**Phase 4 — SSE:**
-- `curl -N "/api/chat/stream?question=..."` with auth header
-- Should see events: `start` → `classify_done` → `search_done` → `draft_done` → `critique_done` → `complete`
-- Each event carries sanitized data only (no raw prompts or reasoning)
-
-**Phase 5 — Persistence:**
-- Create conversation → reload → still there
-- Delete conversation → reload → stays gone
-- Sign in on different device → same conversations appear
-
-**Phase 6 — Eval:**
-- `npm run eval` should score ≥ 0.7 overall
-- No single scenario should score 0 (unless it's an expected error case)
-- Critique dimensions should be present in scoring output
-
-**Phase 7 — Polish:**
-- Check server logs for provider fallback (e.g., `"groq rate-limited"` → next provider)
-- Question cache: ask the same question twice → second response should be faster
-- Check `response.providersBusy` is `false` for normal responses
+Required evidence should include deterministic tests, browser tests, critical 20, full 100 for major pipeline changes, dependency audit, and documented corpus/provider versions.

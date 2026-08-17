@@ -60,7 +60,7 @@ async function main() {
       messages: [agentMsg(), userMsg],
     };
     await page.addInitScript(({ key, convo }) => {
-      localStorage.setItem(key, JSON.stringify({ conversations: [convo], activeId: null, questionsUsedToday: 0 }));
+      localStorage.setItem(key, JSON.stringify({ conversations: [convo], activeId: null }));
     }, { key: "lu.conversations.v3.anonymous", convo });
 
     await page.goto(`${BASE}/#chat/c1`, { waitUntil: "load" });

@@ -77,7 +77,7 @@ async function main() {
         evidence: { sufficient: true, sourceCount: 2, minSources: 2, reason: "directly on point" },
       });
       await page.addInitScript(({ key, convo }) => {
-        localStorage.setItem(key, JSON.stringify({ conversations: [convo], activeId: null, questionsUsedToday: 0 }));
+        localStorage.setItem(key, JSON.stringify({ conversations: [convo], activeId: null }));
       }, {
         key: "lu.conversations.v3.anonymous",
         convo: { id: "c1", title: "Witness", createdAt: 1000, updatedAt: 1000, messages: [{ id: "u1", role: "user", content: "I witnessed a crime", createdAt: 900 }, hedged] },
@@ -107,7 +107,7 @@ async function main() {
         evidence: { sufficient: true, sourceCount: 0, minSources: 0, noSourcing: true, reason: "no statute required" },
       });
       await page.addInitScript(({ key, convo }) => {
-        localStorage.setItem(key, JSON.stringify({ conversations: [convo], activeId: null, questionsUsedToday: 0 }));
+        localStorage.setItem(key, JSON.stringify({ conversations: [convo], activeId: null }));
       }, {
         key: "lu.conversations.v3.anonymous",
         convo: { id: "c2", title: "Notes", createdAt: 1000, updatedAt: 1000, messages: [{ id: "u1", role: "user", content: "How do I note down key facts", createdAt: 900 }, practical] },

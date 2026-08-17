@@ -1,4 +1,4 @@
-# Legally Unbullied — 100 Real-World Conversation Evaluation
+# Legally Unbullied — Critical 20 Conversation Evaluation
 
 Generated: 2026-08-17T10:56:30.306Z
 

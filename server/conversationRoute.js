@@ -47,6 +47,27 @@ function msgCollection(uid, convoId) {
   return convoRef(uid, convoId).collection("messages");
 }
 
+const MESSAGE_FIELDS = new Set([
+  "role", "content", "casualReply", "status", "createdAt", "startedAt",
+  "thinkingElapsedMs", "traceOpen", "classification", "steps", "result", "plan",
+  "corpusEmptyMessage", "errorMessage", "pipelineStatus", "unread", "evidence", "critique",
+  "needsInputQuestion", "needsInputField", "safetyAckQuestion", "safetyAckContext",
+  "safetyAckToken", "providersBusyRetryAfter", "providersBusyLawMd",
+  "providersBusyActionsMd", "safetyAcknowledgedAt"
+]);
+
+function sanitizeMessage(input, uid) {
+  const source = input && typeof input === "object" && !Array.isArray(input) ? input : {};
+  const clean = { userId: uid };
+  for (const [key, value] of Object.entries(source)) {
+    if (MESSAGE_FIELDS.has(key) && value !== undefined) clean[key] = value;
+  }
+  if (typeof clean.content === "string") clean.content = clean.content.slice(0, 10000);
+  if (typeof clean.casualReply === "string") clean.casualReply = clean.casualReply.slice(0, 5000);
+  if (typeof clean.errorMessage === "string") clean.errorMessage = clean.errorMessage.slice(0, 2000);
+  return clean;
+}
+
 // ── Canonical conversation identity ────────────────────────────────────────
 // The conversation ID is the single source of truth everywhere:
 //   client conversation.id  =  Firestore document ID  =  URL :chatId
@@ -347,9 +368,10 @@ router.put("/:id/messages/:msgId", async (req, res) => {
       return res.status(404).json({ error: "not_found", message: "Conversation not found." });
     }
 
-    const messageData = req.body;
-    // Ensure userId is set correctly
-    messageData.userId = req.uid;
+    const messageData = sanitizeMessage(req.body, req.uid);
+    if (!messageData.role || !messageData.status) {
+      return res.status(400).json({ error: "invalid_message", message: "Message role and status are required." });
+    }
 
     await msgRef(req.uid, req.params.id, req.params.msgId).set(messageData, { merge: true });
 
@@ -445,14 +467,8 @@ router.post("/migrate", async (req, res) => {
             const chunk = messages.slice(i, i + 400);
             for (const msg of chunk) {
               const msgId = msg.id || msgCollection(req.uid, docId).doc().id;
-              // Clean msg data — strip any internal flags, limit field sizes
-              const { _synced, ...cleanMsg } = msg;
-              const msgData = {
-                ...cleanMsg,
-                userId: req.uid,
-                content: (cleanMsg.content || "").slice(0, 10000),
-                casualReply: (cleanMsg.casualReply || "").slice(0, 5000),
-              };
+              const msgData = sanitizeMessage(msg, req.uid);
+              if (!msgData.role || !msgData.status) continue;
               batch.set(msgRef(req.uid, docId, msgId), msgData);
             }
             await batch.commit();
