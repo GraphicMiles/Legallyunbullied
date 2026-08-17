@@ -24,13 +24,14 @@ function getClient() {
   return client;
 }
 
-const CLASSIFY_MODEL = process.env.GROQ_MODEL_CLASSIFY || "llama-3.1-8b-instant";
-const DRAFT_MODEL = process.env.GROQ_MODEL_DRAFT || "llama-3.3-70b-versatile";
+const CLASSIFY_MODEL = process.env.GROQ_MODEL_CLASSIFY || "openai/gpt-oss-20b";
+const DRAFT_MODEL = process.env.GROQ_MODEL_DRAFT || "openai/gpt-oss-20b";
+const REVIEW_MODEL = process.env.GROQ_MODEL_REVIEW || "openai/gpt-oss-120b";
 // Groq's rate limits are per-model. If the primary drafting model is
 // exhausted for the day, falling back to a different (smaller, separately
 // metered) model still gets the user a real answer instead of an error —
 // worse quality is better than no answer. Same idea could extend to a
 // second fallback if this one also gets exhausted.
-const DRAFT_MODEL_FALLBACK = process.env.GROQ_MODEL_DRAFT_FALLBACK || "llama-3.1-8b-instant";
+const DRAFT_MODEL_FALLBACK = process.env.GROQ_MODEL_DRAFT_FALLBACK || "openai/gpt-oss-120b";
 
-module.exports = { getClient, CLASSIFY_MODEL, DRAFT_MODEL, DRAFT_MODEL_FALLBACK };
+module.exports = { getClient, CLASSIFY_MODEL, REVIEW_MODEL, DRAFT_MODEL, DRAFT_MODEL_FALLBACK };

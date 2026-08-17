@@ -205,6 +205,10 @@ async function sweepOnce() {
 function sweepAndStart() {
   if (started) return;
   started = true;
+  if (process.env.DISABLE_JOB_WORKER === "true") {
+    console.log("[jobs] Background worker disabled by environment.");
+    return;
+  }
   const d = db();
   if (!d) {
     console.log("[jobs] Firestore not configured — background worker disabled.");
