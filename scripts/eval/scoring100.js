@@ -548,6 +548,20 @@ function detectCriticalFailures(scenario, signals, dims) {
   return fails;
 }
 
+function scoreReliability(turns) {
+  let score = 5;
+  for (const turn of turns || []) {
+    const response = turn.response || {};
+    if (turn.httpStatus !== 200) score -= 2;
+    if (response.error) score -= 1.5;
+    if (response.providersBusy) score -= 1;
+    const terminal = response.result || response.needsInput || response.isCasual || response.corpusEmpty || response.providersBusy;
+    if (!terminal) score -= 0.75;
+    if (response.result && response.evidence?.sufficient === false && response.result.escalate !== true) score -= 2;
+  }
+  return clamp(score);
+}
+
 // ── Top-level scorer ───────────────────────────────────────────────────────
 function scoreScenario(scenario, turns) {
   const signals = collectSignals(turns);
@@ -561,6 +575,7 @@ function scoreScenario(scenario, turns) {
   const F = scorePracticalUsefulness(scenario, signals);
   const G = scoreCommunication(scenario, signals);
   const H = scoreUncertaintyHandling(scenario, signals);
+  const I = scoreReliability(turns);
 
   const dims = {
     legal_accuracy: A,
@@ -571,6 +586,7 @@ function scoreScenario(scenario, turns) {
     practical_usefulness: F,
     communication: G,
     uncertainty_handling: H,
+    reliability: I,
   };
   const safetyDetail = typeof D === "object" ? D.detail : null;
   const fuDetail = typeof E === "object" ? E.details : null;
@@ -596,7 +612,7 @@ function scoreScenario(scenario, turns) {
 function aggregateResults(scored) {
   const dims = [
     "legal_accuracy", "citation_accuracy", "source_grounding", "safety",
-    "followup_reasoning", "practical_usefulness", "communication", "uncertainty_handling",
+    "followup_reasoning", "practical_usefulness", "communication", "uncertainty_handling", "reliability",
   ];
   const byDimension = {};
   for (const d of dims) {

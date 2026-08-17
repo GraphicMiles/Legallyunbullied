@@ -18,8 +18,10 @@
  * (client access is denied by the existing catch-all security rule).
  */
 
+const { randomUUID } = require("node:crypto");
 const { getFirestore } = require("./firebaseAdmin");
 
+const INSTANCE_ID = process.env.RENDER_INSTANCE_ID || randomUUID();
 const STALE_RUNNING_MS = 5 * 60 * 1000; // a pipeline never legitimately runs this long (client timeout is 180s)
 const SWEEP_INTERVAL_MS = 60 * 1000;
 const MAX_CONCURRENT = Math.max(1, parseInt(process.env.JOB_CONCURRENCY, 10) || 1);
@@ -80,6 +82,8 @@ function recordJobEnd(req, result) {
     return d.collection("background_jobs").doc(messageId).set({
       status: deriveTerminalStatus(result),
       updatedAt: Date.now(),
+      leaseOwner: null,
+      leaseUntil: 0,
     }, { merge: true }).catch((err) => console.warn("[jobs] recordJobEnd failed:", err.message));
   } catch (err) {
     console.warn("[jobs] recordJobEnd failed:", err.message);
@@ -88,13 +92,34 @@ function recordJobEnd(req, result) {
 }
 
 // ── Worker ─────────────────────────────────────────────────────────────────
+async function claimJob(d, jobId) {
+  if (!d) return true;
+  const ref = d.collection("background_jobs").doc(jobId);
+  const now = Date.now();
+  const lease = { status: "running", startedAt: now, leaseOwner: INSTANCE_ID, leaseUntil: now + STALE_RUNNING_MS };
+
+  if (typeof d.runTransaction !== "function") {
+    await ref.set(lease, { merge: true });
+    return true;
+  }
+
+  return d.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const data = snap.exists ? (snap.data() || {}) : {};
+    if (["done", "cancelled"].includes(data.status)) return false;
+    if (data.status === "running" && data.leaseUntil > now && data.leaseOwner && data.leaseOwner !== INSTANCE_ID) return false;
+    tx.set(ref, lease, { merge: true });
+    return true;
+  }).catch((err) => {
+    console.warn("[jobs] transactional claim failed:", err.message);
+    return false;
+  });
+}
+
 async function runJob(job) {
   const { jobId, uid, conversationId, messageId, question, history, checkpoints } = job;
   const d = db();
-  if (d) {
-    await d.collection("background_jobs").doc(jobId).set({ status: "running", startedAt: Date.now() }, { merge: true })
-      .catch((err) => console.warn("[jobs] mark running failed:", err.message));
-  }
+  if (!(await claimJob(d, jobId))) return;
 
   // Lazy require avoids a load-order cycle (chatRoute requires jobRunner).
   const chatRoute = require("./chatRoute");
@@ -130,6 +155,8 @@ async function runJob(job) {
     await d.collection("background_jobs").doc(jobId).set({
       status: deriveTerminalStatus(result),
       updatedAt: Date.now(),
+      leaseOwner: null,
+      leaseUntil: 0,
     }, { merge: true }).catch((err) => console.warn("[jobs] mark terminal failed:", err.message));
   }
 }
@@ -167,8 +194,9 @@ async function sweepOnce() {
     for (const doc of running.docs) {
       const data = doc.data() || {};
       const startedAt = data.startedAt || 0;
-      if (Date.now() - startedAt > STALE_RUNNING_MS) {
-        await doc.ref.set({ status: "queued" }, { merge: true }).catch(() => {});
+      const leaseExpired = data.leaseUntil ? data.leaseUntil <= Date.now() : Date.now() - startedAt > STALE_RUNNING_MS;
+      if (leaseExpired) {
+        await doc.ref.set({ status: "queued", leaseOwner: null, leaseUntil: 0 }, { merge: true }).catch(() => {});
         reset++;
       }
     }
