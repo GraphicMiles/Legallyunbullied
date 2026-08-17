@@ -25,9 +25,9 @@ function getClient() {
   return client;
 }
 
-const GEMINI_CLASSIFY_MODEL = process.env.GEMINI_MODEL_CLASSIFY || "gemini-3.5-flash";
-const GEMINI_DRAFT_MODEL = process.env.GEMINI_MODEL_DRAFT || "gemini-3.5-flash";
-const GEMINI_CHAT_MODEL = process.env.GEMINI_MODEL_CHAT || "gemini-3.5-flash";
+const GEMINI_CLASSIFY_MODEL = process.env.GEMINI_MODEL_CLASSIFY || "gemini-flash-lite-latest";
+const GEMINI_DRAFT_MODEL = process.env.GEMINI_MODEL_DRAFT || "gemini-flash-latest";
+const GEMINI_CHAT_MODEL = process.env.GEMINI_MODEL_CHAT || "gemini-flash-lite-latest";
 
 module.exports = {
   getClient,
