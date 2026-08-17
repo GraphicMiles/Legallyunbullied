@@ -15,6 +15,7 @@
  */
 
 const express = require("express");
+const { randomBytes } = require("node:crypto");
 const router = express.Router();
 const { getClient: getGroqClient, CLASSIFY_MODEL, DRAFT_MODEL, DRAFT_MODEL_FALLBACK } = require("./groq");
 const { getClient: getGeminiClient, GEMINI_CLASSIFY_MODEL, GEMINI_DRAFT_MODEL, GEMINI_CHAT_MODEL } = require("./gemini");
@@ -25,6 +26,7 @@ const { detectLegalIntent, buildFallbackClassification } = require("./legalInten
 const { PRACTICE_AREAS: PRACTICE_AREA_DEFS, PRACTICE_AREA_KEYS } = require("./practiceAreas");
 const { getFirestore } = require("./firebaseAdmin");
 const { recordJobStart, recordJobEnd } = require("./jobRunner");
+const { requiredSourceCount, verifyAndResolveCitations } = require("./evidence");
 
 const PRACTICE_AREAS = PRACTICE_AREA_KEYS;
 
@@ -177,8 +179,9 @@ TONE & PERSONALITY:
 
 CORE PRINCIPLES:
 - Use ONLY the provided statute excerpts — never cite provisions not in the context
-- Cite the Act and section number for every legal claim (e.g., "Section 13 of the Lagos Tenancy Law 2011")
-- Do NOT include URLs, links, or [text](url) markdown in your response — citations should be inline text only
+- Every excerpt has a provisionId. Cite it using the exact token [[provisionId]]; never type or invent an Act/section label yourself
+- Return every used ID in "provisionIds" and attach IDs to individual entries in "claims"
+- Do NOT include URLs, links, or [text](url) markdown. The backend resolves provision IDs to authoritative citation labels
 - Be comprehensive but clear — explain legal concepts in plain language
 - Provide actionable next steps the user can take
 - Be honest about limitations in the available information
@@ -200,9 +203,14 @@ RESPONSE STRUCTURE:
 - Use bullet points with clear, direct language
 - Write steps the way you'd advise a friend — practical and encouraging
 
-**sources**: Array of 3-4 most important statutory provisions cited, with:
-- "label": "Act Name, s.X"
-- "excerpt": The key text from that section (max 400 chars)
+**provisionIds**: Array of the exact provisionId values used. Do not invent IDs.
+
+**claims**: Array of substantive legal claims, each with:
+- "claimId": stable local ID such as "claim-1"
+- "text": the legal claim in plain language
+- "provisionIds": exact retrieved IDs supporting that claim
+
+Do NOT return source labels or excerpts. The backend creates the public "sources" array from verified provision IDs.
 
 **escalate**: Boolean — true if this likely needs a lawyer
 
@@ -222,9 +230,10 @@ QUALITY STANDARDS:
 
 Respond with ONLY a JSON object (no prose, no markdown fences):
 {
-  "lawMd": "Comprehensive explanation with citations...",
+  "lawMd": "Comprehensive explanation with [[exact-provision-id]] citation tokens...",
   "actionsMd": "- Step 1: ...\n- Step 2: ...\n- Step 3: ...",
-  "sources": [{"label": "Act, s.X", "excerpt": "..."}],
+  "provisionIds": ["exact-provision-id"],
+  "claims": [{"claimId":"claim-1","text":"A supported legal claim","provisionIds":["exact-provision-id"]}],
   "escalate": true/false,
   "escalateReason": "...",
   "followUps": ["Question 1?", "Question 2?"]
@@ -333,7 +342,7 @@ async function assessRelevanceWithFallback(question, classification, provisions)
 
 async function assessRelevanceForClient(client, model, question, classification, provisions) {
   const candidateBlock = provisions.map((p, i) =>
-    `[${i + 1}] ${p.act}${p.section ? ", s." + p.section : ""}: ${(p.text || "").slice(0, 220)}`
+    `[${i + 1}] ID=${p.provisionId || p.id} ${p.act}${p.section ? ", s." + p.section : ""}: ${(p.text || "").slice(0, 220)}`
   ).join("\n");
   const userMsg = `Practice area: ${classification.practice_area || "unknown"}\nQuestion: ${question}\n\nCandidate provisions:\n${candidateBlock}\n\nJudge relevance and sufficiency.`;
 
@@ -342,7 +351,11 @@ async function assessRelevanceForClient(client, model, question, classification,
     { role: "user", content: userMsg },
   ], { temperature: 0, max_tokens: 400, response_format: { type: "json_object" } });
 
-  return completion.parsed;
+  const parsed = completion.parsed;
+  if (!parsed || !Array.isArray(parsed.relevant) || typeof parsed.sufficient !== "boolean") {
+    throw new Error("Relevance judge returned an invalid schema");
+  }
+  return parsed;
 }
 
 // ── Hedge detection (citation-fit self-doubt) ─────────────────────────────
@@ -405,7 +418,7 @@ Respond with ONLY a JSON object:
 "passed" is true only if BOTH quality >= 0.6 AND legal_safety >= 0.6.`;
 
 async function critiqueDraft(client, model, question, provisions, draft) {
-  const provisionSummary = (provisions || []).slice(0, 8).map(p =>
+  const provisionSummary = (provisions || []).slice(0, 14).map(p =>
     `[${p.act}${p.section ? ", s." + p.section : ""}]: ${p.text.slice(0, 150)}...`
   ).join("\n");
 
@@ -487,7 +500,7 @@ const pendingSafetyAck = new Map();  // token → { data, timestamp } (cache)
 const SAFETY_ACK_TTL = 10 * 60 * 1000; // 10 minutes
 
 function generateAckToken() {
-  return "safety_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  return "safety_" + randomBytes(24).toString("base64url");
 }
 
 async function setPendingAck(token, data) {
@@ -536,8 +549,8 @@ async function deletePendingAck(token) {
   }
 }
 
-function getCacheKey(question, jurisdiction) {
-  return `${(jurisdiction || "any").toLowerCase()}::${question.toLowerCase().trim().slice(0, 200)}`;
+function getCacheKey(question, jurisdiction, practiceArea) {
+  return `${(practiceArea || "general").toLowerCase()}::${(jurisdiction || "any").toLowerCase()}::${question.toLowerCase().trim().slice(0, 300)}`;
 }
 
 function getCachedResult(key) {
@@ -642,6 +655,7 @@ async function callCompletion(client, model, messages, options = {}) {
   
   try {
     const result = await withTimeout(completionPromise, LLM_TIMEOUT_MS, `LLM call to ${model}`);
+    if (options.parseJson === false) return result;
     const parsed = extractJsonFromResponse(result.choices[0].message.content);
     if (!parsed) {
       throw new Error(`Failed to parse JSON from ${model} response`);
@@ -1331,13 +1345,21 @@ async function runChatPipeline(req) {
   const route = classification.route || (classification.complexity === "Low" ? "simple" : "complex");
   const isSimple = route === "simple";
 
+  // Global answer caching is safe only for standalone first-turn questions.
+  // History-dependent answers may contain case facts and must never cross
+  // conversation or user boundaries.
+  const cacheAllowed = history.length === 0;
+  const cacheKey = getCacheKey(question, classification.jurisdiction, classification.practice_area);
+
   // ── Relevance/sufficiency gate (between search and draft) ──────────────
   // Rank the retrieved provisions by whether they actually govern the
   // situation, not just overlap keywords. Insufficient evidence triggers a
   // broaden-and-re-search; if it is still insufficient, return an honest
   // low-confidence "insufficient evidence" response instead of dressing up a
   // mismatched citation as a confident answer.
-  const MIN_SOURCES = 2; // at least 2 directly-on-point provisions required for a confident answer
+  // One controlling provision can fully answer a simple factual question.
+  // Applied or high-risk scenarios retain the stronger two-source floor.
+  const MIN_SOURCES = requiredSourceCount(classification);
 
   let workingProvisions;
   let evidence;
@@ -1403,9 +1425,7 @@ async function runChatPipeline(req) {
     const relevantIdx = new Set(
       Array.isArray(gate.relevant) ? gate.relevant.map((n) => Number(n) - 1).filter((i) => i >= 0 && i < provisions.length) : []
     );
-    const relevantProvisions = relevantIdx.size
-      ? provisions.filter((_, i) => relevantIdx.has(i))
-      : provisions; // if the gate returned nothing, don't silently drop everything
+    const relevantProvisions = provisions.filter((_, i) => relevantIdx.has(i));
 
     evidence.relevanceScore = typeof gate.relevance_score === "number" ? gate.relevance_score : null;
     evidence.reason = gate.reason || "";
@@ -1425,6 +1445,7 @@ async function runChatPipeline(req) {
         jurisdiction: classification.jurisdiction,
         keywords: classification.keywords || [],
         minSources: MIN_SOURCES,
+        force: true,
       });
       evidence.retrievedFrom = broad.categories || [classification.practice_area];
 
@@ -1433,9 +1454,7 @@ async function runChatPipeline(req) {
         const relevantIdx2 = new Set(
           Array.isArray(gate2.relevant) ? gate2.relevant.map((n) => Number(n) - 1).filter((i) => i >= 0 && i < broad.provisions.length) : []
         );
-        const relevantProvisions2 = relevantIdx2.size
-          ? broad.provisions.filter((_, i) => relevantIdx2.has(i))
-          : broad.provisions;
+        const relevantProvisions2 = broad.provisions.filter((_, i) => relevantIdx2.has(i));
 
         evidence.relevanceScore = typeof gate2.relevance_score === "number" ? gate2.relevance_score : evidence.relevanceScore;
         evidence.reason = gate2.reason || evidence.reason;
@@ -1504,15 +1523,28 @@ async function runChatPipeline(req) {
       }
     }
   } catch (err) {
-    if (err && err.__chatResponse) throw err; // terminal response, not an error
-    // Relevance gate unavailable — degrade gracefully: pass everything through
-    // so the user still gets an answer rather than an error.
-    console.warn("[/api/chat] Relevance gate failed, proceeding with all provisions:", err.message);
-    workingProvisions = provisions;
-    evidence.sourceCount = provisions.length;
-    evidence.sufficient = provisions.length >= MIN_SOURCES;
-    evidence.reason = "Relevance check unavailable — all retrieved provisions passed through.";
+    if (err && err.__chatResponse) throw err;
+    // Legal evidence verification fails closed. Candidate quantity is not proof
+    // of relevance, so an unavailable judge must never become "sufficient".
+    console.warn("[/api/chat] Relevance gate unavailable — withholding sourced answer:", err.message);
+    evidence.sourceCount = 0;
+    evidence.sufficient = false;
+    evidence.validationUnavailable = true;
+    evidence.reason = "Evidence relevance could not be verified at this time.";
     evidence.relevanceScore = null;
+    const unavailableResult = {
+      lawMd: "I found possible legal material, but I could not verify that it directly applies to your situation. Rather than give you a potentially mismatched legal answer, I am marking this as unverified.",
+      actionsMd: "- Step 1: Keep a written record of the important facts and dates.\n- Step 2: If there is immediate danger or a crime, contact the appropriate emergency or police service.\n- Step 3: Consult a qualified lawyer for advice based on your exact circumstances.",
+      sources: [],
+      provisionIds: [],
+      claims: [],
+      escalate: true,
+      escalateReason: "The system could not verify that the retrieved provisions apply to this situation.",
+      followUps: [],
+      evidence,
+    };
+    await serverPersistMessage(req, { status: "done", result: unavailableResult, evidence, pipelineStatus: "done", unread: true });
+    return res.json({ classification, route, plan: null, result: unavailableResult, critique: null, evidence, providersBusy: false, retryAfter: null });
   }
 
     await saveCheckpoint("retrieval", { workingProvisions, evidence });
@@ -1522,7 +1554,8 @@ async function runChatPipeline(req) {
   const contextBlock = workingProvisions
     .map((p) => {
       const text = p.text.length > EXCERPT_CHAR_CAP ? p.text.slice(0, EXCERPT_CHAR_CAP) + "\u2026" : p.text;
-      return `[${p.act}${p.section ? ", s." + p.section : ""}]\\n${text}`;
+      const id = p.provisionId || p.id;
+      return `[provisionId: ${id}] [${p.act}${p.section ? ", s." + p.section : ""}]\n${text}`;
     })
     .join("\n\n---\n\n");
 
@@ -1538,8 +1571,8 @@ async function runChatPipeline(req) {
     critiqueResult = cp.draftAndCritique.critiqueResult;
     console.log("[chat] Resuming from draft/critique checkpoint");
     // The previous attempt may have crashed before caching the result.
-    if (!draftResult.providersBusy && draftResult.result) {
-      setCachedResult(getCacheKey(question, classification.jurisdiction), draftResult);
+    if (cacheAllowed && !draftResult.providersBusy && draftResult.result && critiqueResult?.passed === true && evidence?.citationVerification?.valid === true) {
+      setCachedResult(cacheKey, { draftResult, critiqueResult });
     }
   } else {
     planResult = { plan: null, provider: "skipped" };
@@ -1555,14 +1588,15 @@ async function runChatPipeline(req) {
       console.log(`[/api/chat] Simple route — skipping planning (route=${route})`);
     }
 
-    // Step 5: Check question cache before running draft (V1 Phase 11)
-    const cacheKey = getCacheKey(question, classification.jurisdiction);
-    const cached = getCachedResult(cacheKey);
+    // Cache only context-free first turns. A follow-up answer is a case artifact,
+    // never a globally reusable question artifact.
+    const cached = cacheAllowed ? getCachedResult(cacheKey) : null;
 
-    if (cached && !cached.providersBusy) {
-    console.log(`[/api/chat] Cache HIT for question (key: ${cacheKey.slice(0, 50)})`);
-    draftResult = cached;
-  } else {
+    if (cached && cached.draftResult && !cached.draftResult.providersBusy) {
+      console.log(`[/api/chat] Cache HIT for standalone question (key: ${cacheKey.slice(0, 50)})`);
+      draftResult = cached.draftResult;
+      critiqueResult = cached.critiqueResult || null;
+    } else {
     // Step 5a: Draft with fallback chain (plan is null for simple route)
     try {
       draftResult = await draftWithFallback(question, contextBlock, planResult.plan, classification, history);
@@ -1573,6 +1607,14 @@ async function runChatPipeline(req) {
         error: "drafting_failed",
         message: "The drafting model failed to respond. " + (err.message || ""),
       });
+    }
+
+    // The model selects evidence by ID; the server resolves all public labels
+    // and excerpts from this run's retrieved records. Unknown IDs never reach
+    // the user as citations.
+    if (!draftResult.providersBusy && draftResult.result) {
+      const citationVerification = verifyAndResolveCitations(draftResult.result, workingProvisions);
+      evidence.citationVerification = citationVerification;
     }
 
     // Step 6: Critique + iteration loop (V1 Phase 1+2)
@@ -1616,11 +1658,36 @@ async function runChatPipeline(req) {
           draftResult = await draftWithFallback(
             question, contextBlock + feedbackContext, planResult.plan, classification, history
           );
+          if (!draftResult.providersBusy && draftResult.result) {
+            evidence.citationVerification = verifyAndResolveCitations(draftResult.result, workingProvisions);
+          }
         } catch (err) {
-          // Critique itself failed — don't block the response
-          console.warn(`[/api/chat] Critique ${attempt + 1} error: ${err.message}`);
-          critiqueResult = { quality: 0.5, legal_safety: 0.5, issues: ["critique_unavailable"], passed: true, thresholds: { quality: QUALITY_THRESHOLD, safety: SAFETY_THRESHOLD }, isHighRisk };
+          // Verification failure is not a pass. High-risk answers flow into the
+          // acknowledgment gate; standard answers are visibly downgraded.
+          console.warn(`[/api/chat] Critique ${attempt + 1} unavailable: ${err.message}`);
+          critiqueResult = { quality: 0.5, legal_safety: 0.5, issues: ["critique_unavailable"], passed: false, unavailable: true, thresholds: { quality: QUALITY_THRESHOLD, safety: SAFETY_THRESHOLD }, isHighRisk };
+          evidence.sufficient = false;
+          evidence.safetyValidationUnavailable = true;
+          evidence.reason = "Response safety review could not be completed.";
+          if (!isHighRisk && draftResult.result) {
+            draftResult.result.escalate = true;
+            draftResult.result.escalateReason = "This response could not complete safety review; consult a qualified lawyer before relying on it.";
+          }
           break;
+        }
+      }
+
+      // Citation integrity is deterministic and overrides model self-review.
+      const citationOk = evidence.citationVerification?.valid === true;
+      if (!citationOk) {
+        evidence.sufficient = false;
+        evidence.reason = evidence.citationVerification?.reason || "Citations could not be verified.";
+        critiqueResult = critiqueResult || { quality: 0.5, legal_safety: 0.5, issues: [], passed: false, thresholds: { quality: QUALITY_THRESHOLD, safety: SAFETY_THRESHOLD }, isHighRisk };
+        critiqueResult.passed = false;
+        critiqueResult.issues = Array.from(new Set([...(critiqueResult.issues || []), "citation_integrity_failed"]));
+        if (draftResult.result) {
+          draftResult.result.escalate = true;
+          draftResult.result.escalateReason = "The response's citations could not all be verified against retrieved legal text.";
         }
       }
 
@@ -1631,13 +1698,18 @@ async function runChatPipeline(req) {
 
         const ackToken = generateAckToken();
         await setPendingAck(ackToken, {
+          uid: req.uid,
+          conversationId: req.body?.conversationId || null,
+          messageId: req.body?.messageId || null,
           question,
           classification,
           draftResult,
           critiqueResult,
+          evidence,
           route,
           planResult,
           cacheKey,
+          cacheAllowed,
         });
 
         // Return HITL response — client shows ApprovalCard for safety acknowledgment
@@ -1667,8 +1739,8 @@ async function runChatPipeline(req) {
     }
 
       // Cache the result (only successful, non-busy responses)
-      if (!draftResult.providersBusy && draftResult.result) {
-        setCachedResult(cacheKey, draftResult);
+      if (cacheAllowed && !draftResult.providersBusy && draftResult.result && critiqueResult?.passed === true && evidence.citationVerification?.valid === true) {
+        setCachedResult(cacheKey, { draftResult, critiqueResult });
       }
     }
 
@@ -1759,8 +1831,9 @@ async function runChatPipeline(req) {
 }
 
 router.post("/api/chat", async (req, res) => {
-  // Durable job record (restart-and-complete): mark running before work.
-  recordJobStart(req);
+  // The durable running record must exist before external work starts. Without
+  // awaiting this write, a delayed "running" update can overwrite "done".
+  await recordJobStart(req);
   let result;
   try {
     result = await runChatPipeline(req);
@@ -1768,7 +1841,7 @@ router.post("/api/chat", async (req, res) => {
     console.error("[/api/chat] unhandled pipeline error:", err && err.stack ? err.stack : err);
     result = { status: 500, body: { error: "internal_error", message: "Something went wrong while processing your question." } };
   }
-  recordJobEnd(req, result);
+  await recordJobEnd(req, result);
   try {
     res.status(result.status).json(result.body);
   } catch (e) {
@@ -1794,7 +1867,8 @@ router.post("/api/chat/acknowledge", async (req, res) => {
   }
 
   const pending = await getPendingAck(ackToken);
-  if (!pending) {
+  if (!pending || !pending.uid || pending.uid !== req.uid) {
+    // Ownership mismatches deliberately look identical to missing tokens.
     return res.status(404).json({ error: "not_found", message: "Acknowledgment token expired or not found. Please re-ask your question." });
   }
 
@@ -1809,7 +1883,7 @@ router.post("/api/chat/acknowledge", async (req, res) => {
 
   // User acknowledged — return the cached response with safety flag attached
   await deletePendingAck(ackToken);
-  const { question, classification, draftResult, critiqueResult, route, planResult, cacheKey } = pending;
+  const { classification, draftResult, critiqueResult, evidence, route, planResult } = pending;
 
   // Attach safety flag so the client can render the warning banner
   if (draftResult.result) {
@@ -1823,10 +1897,33 @@ router.post("/api/chat/acknowledge", async (req, res) => {
     };
   }
 
-  // Cache the result now that it's been acknowledged
-  if (cacheKey && !draftResult.providersBusy) {
-    setCachedResult(cacheKey, draftResult);
+  // Persist the acknowledged terminal result server-side. The client is not
+  // the authority for this transition and may disconnect immediately after
+  // clicking the button.
+  if (pending.conversationId && pending.messageId) {
+    const d = getFirestore();
+    if (d) {
+      await d.collection("users").doc(req.uid)
+        .collection("conversations").doc(pending.conversationId)
+        .collection("messages").doc(pending.messageId)
+        .set({
+          userId: req.uid,
+          role: "agent",
+          status: "done",
+          result: draftResult.result,
+          classification,
+          critique: critiqueResult,
+          evidence: evidence || null,
+          pipelineStatus: "done",
+          unread: false,
+          safetyAcknowledgedAt: Date.now(),
+        }, { merge: true })
+        .catch((err) => console.warn("[ack] terminal persistence failed:", err.message));
+    }
   }
+
+  // Safety-flagged responses are never globally cached, even after one user
+  // acknowledges the warning.
 
   res.json({
     acknowledged: true,
@@ -1836,6 +1933,7 @@ router.post("/api/chat/acknowledge", async (req, res) => {
     result: draftResult.result,
     draftModel: draftResult.model,
     draftProvider: draftResult.provider,
+    evidence: evidence || draftResult.result?.evidence || null,
     critique: {
       quality: critiqueResult.quality,
       legal_safety: critiqueResult.legal_safety,
@@ -2086,7 +2184,7 @@ Examples:
           { role: "system", content: TITLE_PROMPT },
           { role: "user", content: question },
         ],
-        { temperature: 0.3, max_tokens: 30 }
+        { temperature: 0.3, max_tokens: 30, parseJson: false }
       );
       const raw = (completion.choices[0].message.content || "").trim().replace(/^["']|["']$/g, "");
       if (raw === "NOT_LEGAL" || raw.length === 0) return res.json({ title: null });
