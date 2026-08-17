@@ -21,6 +21,7 @@ const cache = new Map();
 // exhausting the daily quota during ordinary multi-turn conversations.
 const rawCategoryCache = new Map();
 const rawCategoryInflight = new Map();
+let firestoreUnavailableUntil = 0;
 const cacheStats = { hits: 0, misses: 0, size: 0, rawCategoryReads: 0 };
 
 // Conservative adjacency only. Broad retrieval is still sequential in V2.0;
@@ -158,6 +159,7 @@ function invalidateCache() {
   cache.clear();
   rawCategoryCache.clear();
   rawCategoryInflight.clear();
+  firestoreUnavailableUntil = 0;
   cacheStats.size = 0;
   console.log(`[cache] Invalidated ${size} entries`);
 }
@@ -173,16 +175,17 @@ function getCacheStats() {
     ttlMs: CACHE_TTL_MS,
     rawCategories: rawCategoryCache.size,
     rawCategoryReads: cacheStats.rawCategoryReads,
+    firestoreCircuitOpen: Date.now() < firestoreUnavailableUntil,
   };
 }
 
 async function getRawCategoryDocs(db, practiceArea) {
   const cached = rawCategoryCache.get(practiceArea);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) return cached.data;
-  if (process.env.LOCAL_LEGAL_CORPUS === "true") {
+  if (process.env.LOCAL_LEGAL_CORPUS === "true" || Date.now() < firestoreUnavailableUntil) {
     const { getLocalCategory } = require("./localLegalCorpus");
     const docs = getLocalCategory(practiceArea);
-    rawCategoryCache.set(practiceArea, { data: docs, timestamp: Date.now() });
+    rawCategoryCache.set(practiceArea, { data: docs, timestamp: Date.now(), fallback: true });
     return docs;
   }
   if (rawCategoryInflight.has(practiceArea)) return rawCategoryInflight.get(practiceArea);
@@ -204,6 +207,7 @@ async function getRawCategoryDocs(db, practiceArea) {
     } catch (err) {
       const transientStoreFailure = /quota|timed out|unavailable|resource.exhausted/i.test(String(err?.message || ""));
       if (transientStoreFailure && process.env.LEGAL_CORPUS_LOCAL_FALLBACK !== "false") {
+        firestoreUnavailableUntil = Date.now() + 5 * 60 * 1000;
         const { getLocalCategory } = require("./localLegalCorpus");
         const docs = getLocalCategory(practiceArea);
         if (docs.length) {
