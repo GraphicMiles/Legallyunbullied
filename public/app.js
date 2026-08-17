@@ -2187,7 +2187,9 @@ import {
         .slice(-18)
         .map(m => ({
           role: m.role,
-          content: m.content || m.casualReply || (m.result && m.result.lawMd) || m.needsInputQuestion || "",
+          content: m.content || m.casualReply || (m.result && `${m.result.lawMd || ""}\n${m.result.actionsMd || ""}`) || m.needsInputQuestion || "",
+          classification: m.classificationRaw || null,
+          evidence: m.evidence || m.result?.evidence || null,
         }));
       
       response = await callChatApi(question, recentMessages, {
@@ -2276,6 +2278,12 @@ import {
       agentMsg.status = "needsInput";
       agentMsg.needsInputQuestion = response.question || "";
       agentMsg.needsInputField = response.field || "";
+      agentMsg.classificationRaw = response.context ? {
+        is_legal_question: true,
+        practice_area: response.context.practice_area,
+        urgency: response.context.urgency,
+        jurisdiction_status: "unclear"
+      } : null;
 
       // Show inline prompt
       renderNeedsInput(agentMsg, response, originalQuestion);
@@ -2357,7 +2365,9 @@ import {
     startTimer(agentMsg, token);
 
     try {
+      agentMsg.classificationRaw = response.classification || null;
       agentMsg.classification = normalizeClassification(response.classification);
+      agentMsg.evidence = response.evidence || null;
       
       if (agentMsg.steps[1]) {
         agentMsg.steps[1].detail = `${agentMsg.classification.practiceArea} · ${agentMsg.classification.jurisdictionGuess} · ${agentMsg.classification.urgency} urgency`;
@@ -2773,7 +2783,9 @@ import {
 
           // Set the result on the agent message and render the answer
           agentMsg.result = data.result;
-          agentMsg.classification = data.classification;
+          agentMsg.classificationRaw = data.classification || null;
+          agentMsg.classification = normalizeClassification(data.classification);
+          agentMsg.evidence = data.evidence || null;
           agentMsg.status = "done";
           if (data.critique) {
             agentMsg.critique = data.critique;
@@ -2980,7 +2992,9 @@ import {
         const data = await res.json();
         if (data.acknowledged && data.result) {
           msg.result = data.result;
-          msg.classification = data.classification;
+          msg.classificationRaw = data.classification || null;
+          msg.classification = normalizeClassification(data.classification);
+          msg.evidence = data.evidence || null;
           msg.status = "done";
           if (data.critique) msg.critique = data.critique;
           saveState();

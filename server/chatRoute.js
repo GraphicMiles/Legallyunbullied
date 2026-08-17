@@ -1153,7 +1153,7 @@ async function runChatPipeline(req) {
     return res.status(400).json({ error: "bad_request", message: '"history" must be an array.' });
   }
   const history = (rawHistory || []).slice(-18);
-  if (history.some((item) => !item || !["user", "agent"].includes(item.role) || typeof item.content !== "string" || item.content.length > 10000)) {
+  if (history.some((item) => !item || !["user", "agent"].includes(item.role) || typeof item.content !== "string" || item.content.length > 10000 || (item.classification != null && (typeof item.classification !== "object" || Array.isArray(item.classification))) || (item.evidence != null && (typeof item.evidence !== "object" || Array.isArray(item.evidence))))) {
     return res.status(400).json({ error: "bad_request", message: "Each history item must have role user|agent and string content up to 10,000 characters." });
   }
 
@@ -1180,7 +1180,9 @@ async function runChatPipeline(req) {
     const recent = history.slice(-18);
     conversationContext = recent.map(msg => {
       const role = msg.role === "user" ? "User" : "Agent";
-      return `${role}: ${msg.content}`;
+      const c = msg.classification && typeof msg.classification === "object" ? msg.classification : null;
+      const caseLine = c ? ` [case: area=${c.practice_area || "unknown"}; jurisdiction=${c.jurisdiction || "unknown"}; jurisdiction_status=${c.jurisdiction_status || "unknown"}; urgency=${c.urgency || "unknown"}]` : "";
+      return `${role}${caseLine}: ${msg.content}`;
     }).join("\n");
   }
 
@@ -1222,6 +1224,20 @@ async function runChatPipeline(req) {
     if (forcedLegal && classification.is_legal_question === false) {
       console.warn("[/api/chat] Classifier said casual but deterministic gate detected a legal incident — forcing legal path");
       classification = buildFallbackClassification(question);
+    }
+
+    const priorClassification = [...history].reverse().map((item) => item.classification).find((item) => item && item.is_legal_question !== false);
+    const currentDetection = detectLegalIntent(question);
+    if (priorClassification) {
+      if (classification.practice_area === "general" && !currentDetection.legal && priorClassification.practice_area) {
+        classification.practice_area = priorClassification.practice_area;
+        classification.context_inherited_area = true;
+      }
+      if (priorClassification.jurisdiction_status === "clear" && priorClassification.jurisdiction && classification.jurisdiction_status === "unclear") {
+        classification.jurisdiction = priorClassification.jurisdiction;
+        classification.jurisdiction_status = "clear";
+        classification.context_inherited_jurisdiction = true;
+      }
     }
 
     await saveCheckpoint("classification", { classification, classifyProvider });
