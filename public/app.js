@@ -97,7 +97,7 @@ import {
 
   // Runtime-only (never persisted): refs + timers for whichever message is
   // currently mid-pipeline, plus a token to invalidate stale async callbacks.
-  let live = { msgId: null, refs: null, timerId: null };
+  let live = { msgId: null, refs: null, timerId: null, busyRetryTimer: null };
   let pipelineToken = 0;
 
   /* ------------------------------------------------------------------ */
@@ -1290,6 +1290,7 @@ import {
   }
 
   function deleteConversationById(id) {
+    cancelBusyRetry();
     const idx = state.conversations.findIndex((c) => c.id === id);
     if (idx === -1) {
       // Not in the loaded pages (e.g. a search result). Delete on the server,
@@ -1408,6 +1409,11 @@ import {
   function renderUserMessage(msg) {
     const wrap = document.createElement("div");
     wrap.className = "msg msg--user";
+    // data-msg-id must match what mountLivePipeline queries for its
+    // "already rendered?" dedup check — without it, re-mounting a pipeline
+    // for an existing message (e.g. the providers-busy auto-retry) appends a
+    // duplicate user bubble.
+    wrap.dataset.msgId = msg.id;
     wrap.innerHTML = `
       <div class="msg__body">
         <div class="msg__bubble">${escapeHtml(msg.content)}</div>
@@ -1979,6 +1985,7 @@ import {
   /* ------------------------------------------------------------------ */
   function createConversation() {
     if (state.isAgentBusy) return;
+    cancelBusyRetry();
     const convo = {
       id: uid(),
       title: "New question",
@@ -2005,6 +2012,7 @@ import {
 
   function selectConversation(id) {
     if (state.isAgentBusy) return;
+    cancelBusyRetry();
 
     const existing = state.conversations.find((c) => c.id === id);
     if (!existing) {
@@ -2127,6 +2135,7 @@ import {
   /* ------------------------------------------------------------------ */
   function submitQuestion(text) {
     if (state.isAgentBusy) return;
+    cancelBusyRetry(); // a manual send supersedes any pending auto-retry
     _runningPolls = 0; // new pipeline → reset the bounded running-job poll budget
     ensureActiveConversation();
     const convo = getActiveConversation();
@@ -2574,6 +2583,11 @@ import {
   }
 
   function lastUserText(convo) {
+    // Defensive: the providers-busy auto-retry used to pass a MESSAGE object
+    // here (which has no `.messages`), throwing
+    // "Cannot read properties of undefined (reading 'filter')". Never crash on
+    // bad input — return "" and let the caller no-op.
+    if (!convo || !Array.isArray(convo.messages)) return "";
     const msgs = convo.messages.filter((m) => m.role === "user");
     return msgs.length ? msgs[msgs.length - 1].content : "";
   }
@@ -2998,14 +3012,57 @@ import {
     live.refs.body.appendChild(wrap);
     scrollChatToBottom();
     
-    // Auto-retry after cooldown
-    setTimeout(() => {
-      const lastQ = lastUserText(agentMsg);
-      if (lastQ) {
-        console.log('[renderProvidersBusy] Auto-retrying:', lastQ);
-        submitQuestion(lastQ);
+    // Auto-retry after cooldown. BUG FIX (two issues):
+    //   1. `lastUserText(agentMsg)` used to pass a MESSAGE object (no
+    //      `.messages`), throwing "Cannot read properties of undefined" and
+    //      silently killing the retry.
+    //   2. `submitQuestion(lastQ)` would append a DUPLICATE user bubble.
+    //   Instead: read FRESH conversation state at fire time, verify the
+    //   message is still the pending busy one (user hasn't moved on), then
+    //   re-run the SAME agent message via mountLivePipeline (which reuses the
+    //   existing user message and reads the question from the conversation).
+    cancelBusyRetry();
+    live.busyRetryTimer = setTimeout(() => {
+      live.busyRetryTimer = null;
+      if (state.isAgentBusy) return; // a newer pipeline is already running
+      const convo = getActiveConversation();
+      if (!convo) return;
+      const msg = convo.messages[convo.messages.length - 1];
+      if (!msg || msg.id !== agentMsg.id || msg.status !== "providersBusy") {
+        return; // user switched chats, answered manually, or deleted the chat
       }
+
+      // Remove the stale busy banner DOM, reset the message to "thinking",
+      // and mount the live pipeline. runPipeline reads the question via
+      // lastUserText(convo), so nothing is duplicated.
+      const oldEl = el.chatMessages.querySelector(`[data-msg-id="${agentMsg.id}"]`);
+      if (oldEl) oldEl.remove();
+
+      msg.status = "thinking";
+      msg.traceOpen = true;
+      msg.steps = STEP_DEFS.map((s, i) => ({ ...s, state: i === 0 ? "active" : "pending", elapsedMs: 0 }));
+      msg.classification = null;
+      msg.result = null;
+      msg.thinkingElapsedMs = 0;
+      msg.startedAt = Date.now();
+      msg.providersBusyRetryAfter = null;
+      msg.providersBusyLawMd = null;
+      msg.providersBusyActionsMd = null;
+
+      state.isAgentBusy = true;
+      updateComposerState();
+      pipelineToken += 1;
+      mountLivePipeline(convo, msg, pipelineToken);
     }, retryAfter * 1000);
+  }
+
+  // Cancel any pending providers-busy auto-retry (the user moved on: a new
+  // send, a chat switch, a new chat, logout, or a stop).
+  function cancelBusyRetry() {
+    if (live.busyRetryTimer) {
+      clearTimeout(live.busyRetryTimer);
+      live.busyRetryTimer = null;
+    }
   }
 
   // ── Static re-render builders for HITL/busy states (reload path) ────────
@@ -3489,6 +3546,7 @@ import {
     // Increment token to invalidate the current pipeline's async callbacks
     pipelineToken += 1;
     clearInterval(live.timerId);
+    cancelBusyRetry();
     
     // Stop loading state if still active
     if (live.loadingState) {
@@ -3836,6 +3894,7 @@ import {
   // Clear all user-specific data from localStorage and state
   function clearUserData() {
     console.log("[auth] Clearing user data");
+    cancelBusyRetry();
     
     // Clear current user's storage
     const storageKey = getStorageKey();
@@ -4124,6 +4183,7 @@ import {
 
   function goHome() {
     _directFetchToken += 1; // cancel any in-flight direct fetch
+    cancelBusyRetry();
     setUrlConvo(null);
     state.activeId = null;
     renderHistory();
