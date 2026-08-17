@@ -373,6 +373,7 @@ Respond with ONLY a JSON object:
   "claim_support": [{
     "claimId": "claim ID from the draft",
     "status": "supported|partial|unsupported|uncertain",
+    "supportingQuote": "exact text copied from one cited provision, or empty when unsupported/uncertain",
     "reason": "whether the cited excerpt actually supports this claim"
   }],
   "passed": true/false
@@ -407,11 +408,19 @@ Review this response.`;
   ], { task: "critique", timeoutMs: 8000, response_format: { type: "json_object" }, max_tokens: 500, temperature: 0.1 });
 
   const parsed = completion.parsed;
-  const claimSupport = Array.isArray(parsed.claim_support) ? parsed.claim_support.map((item) => ({
-    claimId: String(item?.claimId || ""),
-    status: ["supported", "partial", "unsupported", "uncertain"].includes(item?.status) ? item.status : "uncertain",
-    reason: String(item?.reason || ""),
-  })) : [];
+  const provisionById = new Map((provisions || []).map((p) => [String(p.provisionId || p.id), p]));
+  const claimById = new Map((draft.claims || []).map((claim) => [String(claim.claimId), claim]));
+  const normalizeQuote = (value) => String(value || "").toLowerCase().replace(/\s+/g, " ").trim();
+  const claimSupport = Array.isArray(parsed.claim_support) ? parsed.claim_support.map((item) => {
+    const claimId = String(item?.claimId || "");
+    let status = ["supported", "partial", "unsupported", "uncertain"].includes(item?.status) ? item.status : "uncertain";
+    const supportingQuote = String(item?.supportingQuote || "").trim();
+    const claim = claimById.get(claimId);
+    const quote = normalizeQuote(supportingQuote);
+    const quoteVerified = !!quote && (claim?.provisionIds || []).some((id) => normalizeQuote(provisionById.get(String(id))?.text).includes(quote));
+    if (["supported", "partial"].includes(status) && !quoteVerified) status = "uncertain";
+    return { claimId, status, supportingQuote, supportSpanVerified: quoteVerified, reason: String(item?.reason || "") };
+  }) : [];
   const expectedClaimIds = new Set((draft.claims || []).map((claim) => String(claim.claimId)));
   const returnedClaimIds = new Set(claimSupport.map((item) => item.claimId));
   if ([...expectedClaimIds].some((id) => !returnedClaimIds.has(id))) {

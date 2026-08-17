@@ -38,7 +38,8 @@ function makeFakeClient(classifyResponse, draftResponse) {
             return json({ relevant: [1, 2], irrelevant: [], relevance_score: 0.9, sufficient: true, conflicts: [], reason: "directly on point" });
           }
           if (sys.includes("quality reviewer")) {
-            return json({ quality: 0.85, legal_safety: 0.85, issues: [], claim_support: [{ claimId: "claim-1", status: "supported", reason: "directly supported" }], passed: true });
+            const supportingQuote = (messages?.[1]?.content || "").includes("Criminal Code Act") ? "assault is unlawfully striking" : "crime";
+            return json({ quality: 0.85, legal_safety: 0.85, issues: [], claim_support: [{ claimId: "claim-1", status: "supported", supportingQuote, reason: "directly supported" }], passed: true });
           }
           // Draft
           return json(draftResponse);

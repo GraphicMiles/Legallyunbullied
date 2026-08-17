@@ -86,7 +86,7 @@ function makeFakeClient(classify, draft, tracker) {
         return json({ relevant: [1, 2], irrelevant: [], relevance_score: 0.9, sufficient: true, conflicts: [], reason: "on point" });
       }
       if (sys.includes("quality reviewer")) {
-        return json({ quality: 0.85, legal_safety: 0.85, issues: [], claim_support: [{ claimId: "claim-1", status: "supported", reason: "directly supported" }], passed: true });
+        return json({ quality: 0.85, legal_safety: 0.85, issues: [], claim_support: [{ claimId: "claim-1", status: "supported", supportingQuote: "assault is a crime", reason: "directly supported" }], passed: true });
       }
       return json(draft);
     } } },
@@ -373,7 +373,7 @@ async function main() {
         const json = (o) => ({ choices: [{ message: { content: JSON.stringify(o) } }] });
         if (sys.includes("determine if this is a legal question or casual")) { classifyCalls++; return json(LEGAL_CLASSIFY); }
         if (sys.includes("legal retrieval relevance judge")) { throw new Error("gate must not run on resume"); }
-        if (sys.includes("quality reviewer")) { return json({ quality: 0.85, legal_safety: 0.85, issues: [], claim_support: [{ claimId: "claim-1", status: "supported", reason: "directly supported" }], passed: true }); }
+        if (sys.includes("quality reviewer")) { return json({ quality: 0.85, legal_safety: 0.85, issues: [], claim_support: [{ claimId: "claim-1", status: "supported", supportingQuote: "assault is a crime", reason: "directly supported" }], passed: true }); }
         draftCalls++;
         return json(DRAFT);
       } } },
@@ -412,7 +412,7 @@ async function main() {
       chat: { completions: { create: async ({ messages }) => {
         const sys = messages?.[0]?.content || "";
         const json = (o) => ({ choices: [{ message: { content: JSON.stringify(o) } }] });
-        if (sys.includes("quality reviewer")) return json({ quality: 0.85, legal_safety: 0.85, issues: [], claim_support: [{ claimId: "claim-1", status: "supported", reason: "directly supported" }], passed: true });
+        if (sys.includes("quality reviewer")) return json({ quality: 0.85, legal_safety: 0.85, issues: [], claim_support: [{ claimId: "claim-1", status: "supported", supportingQuote: "assault is a crime", reason: "directly supported" }], passed: true });
         draftCalls++;
         return json(DRAFT);
       } } },

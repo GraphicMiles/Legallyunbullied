@@ -38,7 +38,8 @@ const fakeClient = {
     if (sys.includes("quality reviewer")) {
       if (mode === "high-critique-failure") throw new Error("critic unavailable");
       const status = mode === "unsupported-claim" ? "unsupported" : "supported";
-      return json({ quality: 0.9, legal_safety: status === "supported" ? 0.9 : 0.5, issues: status === "supported" ? [] : ["unsupported claim"], claim_support: [{ claimId: "claim-1", status, reason: status }], passed: status === "supported" });
+      const supportingQuote = mode === "invented-span" ? "This sentence does not exist in any provision" : (["high-critique-failure", "high-pass"].includes(mode) ? "Every person shall be entitled to personal liberty" : "Wages shall be paid");
+      return json({ quality: 0.9, legal_safety: status === "supported" ? 0.9 : 0.5, issues: status === "supported" ? [] : ["unsupported claim"], claim_support: [{ claimId: "claim-1", status, supportingQuote: status === "supported" ? supportingQuote : "", reason: status }], passed: status === "supported" });
     }
     if (sys.includes("Generate a very short title")) {
       return { choices: [{ message: { content: "Unpaid salary claim" } }] };
@@ -196,6 +197,15 @@ async function check(name, fn) {
     assert.strictEqual(response.status, 200);
     assert.strictEqual(response.body.providersBusy, true);
     assert.strictEqual(response.body.result.sources.length, 0);
+  });
+
+  await check("invented supporting quote is converted to uncertain and escalated", async () => {
+    chatRoute.__testing.clearQuestionCache(); chatRoute.__testing.clearProviderCooldowns(); mode = "invented-span"; draftCalls = 0;
+    const response = await post({ question: "My employer has not paid me", history: [] });
+    assert.strictEqual(response.status, 200);
+    assert.strictEqual(response.body.critique.claimSupport[0].status, "uncertain");
+    assert.strictEqual(response.body.critique.claimSupport[0].supportSpanVerified, false);
+    assert.strictEqual(response.body.result.escalate, true);
   });
 
   await check("unsupported claim downgrades evidence and forces escalation", async () => {

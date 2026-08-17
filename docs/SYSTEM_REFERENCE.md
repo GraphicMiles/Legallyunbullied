@@ -702,8 +702,10 @@ Snapshot verified on 16 August 2026:
 | Additional coverage laws | 4 |
 | Optional PLAC Acts remaining | 2 |
 | Firestore provisions | approximately 14,384 |
-| Checked-in fallback provisions parsed | approximately 7,655 |
+| Checked-in fallback provisions parsed after final quality additions | approximately 7,737 |
 | Subject practice areas covered | 19/19, plus `general` |
+
+The reviewed disposition of the 17 confirmed evidence gaps is stored in `legal_sources/manifest/v1_evidence_gap_review.json`. It records the authority, jurisdiction, sections, status and safe answer policy for each gap. The final quality pass added the Nigeria Police Act 2020 official-gazette text and reviewed extracts from three official CBN regulatory documents; questions still dependent on contract, case law, state domestication or unavailable authority remain intentionally insufficient.
 
 The two optional PLAC Acts not ingested are:
 
@@ -1118,7 +1120,7 @@ Four turns ended in a safe `providersBusy` response during provider exhaustion; 
 | Firestore | Full comparison not run: quota exhausted. The system opened its circuit and did not repeatedly hammer Firestore. |
 | Local fallback | Full 100-scenario pressure run completed through the same relevance, citation, claim-support and safety gates. |
 
-No equivalence claim is made. Firestore documents approximately 14,384 provisions; checked-in fallback parsing yields approximately 7,655. A healthy-Firestore comparison remains mandatory when quota returns.
+No equivalence claim is made. Firestore documents approximately 14,384 provisions. The final evaluation used approximately 7,655 local provisions; the reviewed Police Act/CBN quality additions increased the current parsed fallback to approximately 7,737. A healthy-Firestore comparison remains mandatory when quota returns.
 
 ## 19.6 Remaining known limitations
 

@@ -158,6 +158,20 @@ async function main() {
     invalidateCache();
   });
 
+  await check("reviewed Police Act and CBN gap sources are present with provenance", async () => {
+    const { getLocalCategory } = require("./server/localLegalCorpus");
+    const police = getLocalCategory("criminal_rights").filter((p) => p.act === "Nigeria Police Act 2020");
+    assert.ok(police.some((p) => p.section === "35"));
+    assert.ok(police.some((p) => p.section === "36"));
+    assert.ok(police.some((p) => p.section === "62"));
+    assert.ok(police.every((p) => p.reviewed === true && p.source_url));
+    const cbn = getLocalCategory("consumer_rights").filter((p) => p.act.startsWith("CBN"));
+    assert.ok(cbn.some((p) => p.section === "6.3.7"));
+    assert.ok(cbn.some((p) => p.section === "5.2.8"));
+    assert.ok(cbn.some((p) => p.section === "3.4.6.8"));
+    assert.ok(cbn.every((p) => p.source_status === "reviewed_extract" && p.source_url));
+  });
+
   await check("citation resolver uses authoritative metadata and rejects invented IDs", async () => {
     const provisions = [{ id: "constitution-s35", act: "Constitution of the Federal Republic of Nigeria 1999", section: "35(1)", text: "Every person shall be entitled to personal liberty.", jurisdiction: "Federal", source_url: "https://source.test" }];
     const result = {

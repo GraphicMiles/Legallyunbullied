@@ -54,7 +54,7 @@ function makeFakeClient({ delayMs = 0, classify, draft } = {}) {
         return json({ relevant: [1, 2], irrelevant: [], relevance_score: 0.9, sufficient: true, conflicts: [], reason: "on point" });
       }
       if (sys.includes("quality reviewer")) {
-        return json({ quality: 0.85, legal_safety: 0.85, issues: [], claim_support: [{ claimId: "claim-1", status: "supported", reason: "directly supported" }], passed: true });
+        return json({ quality: 0.85, legal_safety: 0.85, issues: [], claim_support: [{ claimId: "claim-1", status: "supported", supportingQuote: "assault is a crime", reason: "directly supported" }], passed: true });
       }
       return json(draft);
     } } },

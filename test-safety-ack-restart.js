@@ -60,7 +60,7 @@ function makeFakeClient() {
       }
       if (sys.includes("quality reviewer")) {
         // Fail safety → high-risk + not passed → safety ack required.
-        return json({ quality: 0.5, legal_safety: 0.5, issues: ["unverifiable"], claim_support: [{ claimId: "claim-1", status: "uncertain", reason: "unverifiable" }], passed: false });
+        return json({ quality: 0.5, legal_safety: 0.5, issues: ["unverifiable"], claim_support: [{ claimId: "claim-1", status: "uncertain", supportingQuote: "", reason: "unverifiable" }], passed: false });
       }
       return json({
         lawMd: "Assault is addressed by [[p1]].",
