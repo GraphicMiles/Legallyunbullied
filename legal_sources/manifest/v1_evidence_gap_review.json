@@ -1,0 +1,150 @@
+{
+  "version": "2026-08-17",
+  "purpose": "Reviewed authority map for the 17 confirmed V1 evidence gaps. A verified entry narrows retrieval; it does not guarantee that every factual variation is answerable.",
+  "entries": [
+    {
+      "scenario": "police-04-phone-search",
+      "category": "wrong_provision_retrieved",
+      "answer_policy": "insufficient_without_warrant_consent_or_reasonable_suspicion_facts",
+      "authorities": [
+        {"act":"Nigeria Police Act 2020","jurisdiction":"Federal","sections":["49","50","51","56"],"status":"in_force_reviewed","source":"legal_sources/federal_acts/police-act-2020-official-gazette.txt"},
+        {"act":"Constitution of the Federal Republic of Nigeria 1999","jurisdiction":"Federal","sections":["37"],"status":"in_force_reviewed","source":"legal_sources/constitution/1999-constitution-updated-5th-alteration-cleaned.txt"}
+      ]
+    },
+    {
+      "scenario": "police-05-home-search-no-warrant",
+      "category": "wrong_provision_retrieved",
+      "answer_policy": "answer_only_when_search_power_or_warrant_exception_is_identified",
+      "authorities": [
+        {"act":"Administration of Criminal Justice Act 2015","jurisdiction":"Federal","sections":["12","143","144","146","149","150","151","152"],"status":"in_force_reviewed","source":"legal_sources/federal_acts/acja-2015-cleaned.txt"},
+        {"act":"Constitution of the Federal Republic of Nigeria 1999","jurisdiction":"Federal","sections":["37"],"status":"in_force_reviewed","source":"legal_sources/constitution/1999-constitution-updated-5th-alteration-cleaned.txt"}
+      ]
+    },
+    {
+      "scenario": "police-06-denied-lawyer",
+      "category": "wrong_provision_retrieved",
+      "answer_policy": "verified",
+      "authorities": [
+        {"act":"Nigeria Police Act 2020","jurisdiction":"Federal","sections":["5","35"],"status":"in_force_reviewed","source":"legal_sources/federal_acts/police-act-2020-official-gazette.txt"},
+        {"act":"Administration of Criminal Justice Act 2015","jurisdiction":"Federal","sections":["6","14","15"],"status":"in_force_reviewed","source":"legal_sources/federal_acts/acja-2015-cleaned.txt"}
+      ]
+    },
+    {
+      "scenario": "police-07-arrested-for-anothers-offence",
+      "category": "missing_law",
+      "answer_policy": "verified",
+      "authorities": [
+        {"act":"Nigeria Police Act 2020","jurisdiction":"Federal","sections":["36"],"status":"in_force_reviewed","source":"legal_sources/federal_acts/police-act-2020-official-gazette.txt"},
+        {"act":"Administration of Criminal Justice Act 2015","jurisdiction":"Federal","sections":["7"],"status":"in_force_reviewed","source":"legal_sources/federal_acts/acja-2015-cleaned.txt"}
+      ]
+    },
+    {
+      "scenario": "police-08-police-invitation-vs-arrest",
+      "category": "insufficient_evidence",
+      "answer_policy": "distinguish_voluntary_invitation_from_arrest_and_do_not_guarantee_no_detention",
+      "authorities": [
+        {"act":"Nigeria Police Act 2020","jurisdiction":"Federal","sections":["35","38","43","44"],"status":"in_force_reviewed","source":"legal_sources/federal_acts/police-act-2020-official-gazette.txt"}
+      ]
+    },
+    {
+      "scenario": "police-11-questioning-without-lawyer",
+      "category": "wrong_provision_retrieved",
+      "answer_policy": "verified",
+      "authorities": [
+        {"act":"Administration of Criminal Justice Act 2015","jurisdiction":"Federal","sections":["6","15"],"status":"in_force_reviewed","source":"legal_sources/federal_acts/acja-2015-cleaned.txt"},
+        {"act":"Nigeria Police Act 2020","jurisdiction":"Federal","sections":["35"],"status":"in_force_reviewed","source":"legal_sources/federal_acts/police-act-2020-official-gazette.txt"}
+      ]
+    },
+    {
+      "scenario": "police-13-station-bail-vs-court-bail",
+      "category": "missing_law",
+      "answer_policy": "verified_but_never_promise_release",
+      "authorities": [
+        {"act":"Nigeria Police Act 2020","jurisdiction":"Federal","sections":["62","63"],"status":"in_force_reviewed","source":"legal_sources/federal_acts/police-act-2020-official-gazette.txt"},
+        {"act":"Administration of Criminal Justice Act 2015","jurisdiction":"Federal","sections":["30"],"status":"in_force_reviewed","source":"legal_sources/federal_acts/acja-2015-cleaned.txt"}
+      ]
+    },
+    {
+      "scenario": "police-14-roadblock-extortion",
+      "category": "weak_non_authoritative_source",
+      "answer_policy": "insufficient_for_specific_offence_or_complaint_body_without_current_anti_corruption_authority",
+      "authorities": [
+        {"act":"Nigeria Police Act 2020","jurisdiction":"Federal","sections":["4","49","50"],"status":"in_force_reviewed","source":"legal_sources/federal_acts/police-act-2020-official-gazette.txt"}
+      ]
+    },
+    {
+      "scenario": "tenancy-03-eviction-notice",
+      "category": "wrong_jurisdiction",
+      "answer_policy": "require_state_and_tenancy_type_before_notice_period",
+      "authorities": [
+        {"act":"Lagos State Tenancy Law 2011","jurisdiction":"Lagos State","sections":["13","16","17","18","19","24"],"status":"in_force_reviewed_for_lagos","source":"legal_sources/state_laws/lagos-tenancy-law-2011-cleaned.txt"},
+        {"act":"Recovery of Premises Act","jurisdiction":"Federal Capital Territory","sections":["8"],"status":"reviewed_uniform_text_not_verbatim_federal_source","source":"legal_sources/federal_acts/recovery-of-premises-act-cleaned.txt"}
+      ]
+    },
+    {
+      "scenario": "tenancy-04-landlord-enters-apartment",
+      "category": "wrong_provision_retrieved",
+      "answer_policy": "verified_for_lagos_only",
+      "authorities": [
+        {"act":"Lagos State Tenancy Law 2011","jurisdiction":"Lagos State","sections":["6","8"],"status":"in_force_reviewed_for_lagos","source":"legal_sources/state_laws/lagos-tenancy-law-2011-cleaned.txt"}
+      ]
+    },
+    {
+      "scenario": "employment-02-unfair-dismissal",
+      "category": "insufficient_evidence",
+      "answer_policy": "labour_act_notice_only_other_wrongful_dismissal_questions_depend_on_contract_and_case_law",
+      "authorities": [
+        {"act":"Labour Act","jurisdiction":"Federal","sections":["7","11"],"status":"in_force_reviewed_with_limited_worker_scope","source":"legal_sources/federal_acts/labour-act-cap-l1-lfn-2004-cleaned.txt"}
+      ]
+    },
+    {
+      "scenario": "employment-03-final-salary-withheld",
+      "category": "wrong_provision_retrieved",
+      "answer_policy": "verified_for_wages_not_all_terminal_benefits",
+      "authorities": [
+        {"act":"Labour Act","jurisdiction":"Federal","sections":["1","5","11","15"],"status":"in_force_reviewed_with_limited_worker_scope","source":"legal_sources/federal_acts/labour-act-cap-l1-lfn-2004-cleaned.txt"}
+      ]
+    },
+    {
+      "scenario": "employment-04-workplace-harassment",
+      "category": "missing_law",
+      "answer_policy": "insufficient_without_discrimination_violence_or_contract_facts_linking_to_a_specific_authority",
+      "authorities": []
+    },
+    {
+      "scenario": "employment-10-unilateral-change-of-terms",
+      "category": "wrong_provision_retrieved",
+      "answer_policy": "verified_only_for_written_particulars_and_notice_of_changes_other_contract_remedies_may_require_case_law",
+      "authorities": [
+        {"act":"Labour Act","jurisdiction":"Federal","sections":["7","11","13"],"status":"in_force_reviewed_with_limited_worker_scope","source":"legal_sources/federal_acts/labour-act-cap-l1-lfn-2004-cleaned.txt"}
+      ]
+    },
+    {
+      "scenario": "family-06-spouse-taking-children",
+      "category": "wrong_jurisdiction",
+      "answer_policy": "require_location_marriage_type_existing_orders_and_child_details",
+      "authorities": [
+        {"act":"Child Rights Act 2003","jurisdiction":"Federal_or_domesticated_state_version","sections":["1"],"status":"application_depends_on_state_domestication","source":"legal_sources/federal_acts/nigerian-childs-right-act-2003-cleaned.txt"},
+        {"act":"Matrimonial Causes Act","jurisdiction":"Federal_for_statutory_marriage","sections":["71"],"status":"verify_retrieved_bulk_text_before_answer","source":"legal_sources/federal_acts_bulk/matrimonial-causes-act.txt"}
+      ]
+    },
+    {
+      "scenario": "consumer-02-unauthorized-transaction",
+      "category": "local_corpus_coverage_gap",
+      "answer_policy": "verified_regulatory_extract_no_guarantee_of_refund_until_facts_and_investigation",
+      "authorities": [
+        {"act":"CBN Consumer Protection Regulations 2019","jurisdiction":"Federal","sections":["6.3.7","6.3.8","6.3.9"],"status":"reviewed_official_extract","source":"legal_sources/regulations/cbn-consumer-protection-regulations-2019-reviewed-extract.txt"},
+        {"act":"CBN Guidelines on Operations of Electronic Payment Channels in Nigeria 2020","jurisdiction":"Federal","sections":["3.4.6.8"],"status":"reviewed_official_extract","source":"legal_sources/regulations/cbn-electronic-payment-channels-guidelines-2020-reviewed-extract.txt"}
+      ]
+    },
+    {
+      "scenario": "consumer-03-failed-transfer",
+      "category": "local_corpus_coverage_gap",
+      "answer_policy": "verified_for_failed_instant_eft_only",
+      "authorities": [
+        {"act":"CBN Regulation on Instant Inter-Bank Electronic Funds Transfer Services 2018","jurisdiction":"Federal","sections":["5.2.8","5.2.9","5.3.2"],"status":"reviewed_official_extract","source":"legal_sources/regulations/cbn-instant-eft-regulation-2018-reviewed-extract.txt"},
+        {"act":"CBN Guidelines on Operations of Electronic Payment Channels in Nigeria 2020","jurisdiction":"Federal","sections":["3.4.6.8"],"status":"reviewed_official_extract","source":"legal_sources/regulations/cbn-electronic-payment-channels-guidelines-2020-reviewed-extract.txt"}
+      ]
+    }
+  ]
+}
