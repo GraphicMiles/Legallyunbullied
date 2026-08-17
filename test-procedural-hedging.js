@@ -195,7 +195,11 @@ async function main() {
     assert.strictEqual(json.result.evidence.sufficient, false, "evidence inside result must also be downgraded");
   });
 
-  // ── Test 3: clean (non-hedging) draft stays sufficient ──────────────────
+  // ── Test 3: clean (non-hedging), actually retrieved citations stay sufficient ──
+  mockProvisions = [
+    { id: "cc-252", act: "Criminal Code Act", section: "252", text: "assault is unlawfully striking another person", jurisdiction: "Federal" },
+    { id: "cc-253", act: "Criminal Code Act", section: "253", text: "punishment for assault", jurisdiction: "Federal" },
+  ];
   fakeClient = makeFakeClient(
     { ...LEGAL_CLASSIFY, needs_sourcing: true },
     {

@@ -105,10 +105,10 @@ require.cache[corpusPath] = {
 
 const chatRoute = require("./server/chatRoute");
 
-function makeApp() {
+function makeApp(uid = "u1") {
   const app = express();
   app.use(express.json());
-  app.use((req, res, next) => { req.uid = "u1"; next(); });
+  app.use((req, res, next) => { req.uid = uid; next(); });
   app.use(chatRoute);
   return app;
 }
@@ -165,6 +165,13 @@ async function main() {
     assert.ok(msg, "message must be persisted");
     assert.strictEqual(msg.safetyAckToken, json.ackToken, "message must carry the durable token");
     global.__lastAckToken = json.ackToken;
+  });
+
+  await check("another user cannot acknowledge the token", async () => {
+    const app = makeApp("u2");
+    const { status } = await request(app, "POST", "/api/chat/acknowledge", { ackToken: global.__lastAckToken, acknowledged: true });
+    assert.strictEqual(status, 404, "cross-user token access must look not found");
+    assert.ok(mockDb.store.get(`safety_acks/${global.__lastAckToken}`), "unauthorized attempt must not consume the token");
   });
 
   await check("token survives a simulated restart (in-memory cache cleared)", async () => {

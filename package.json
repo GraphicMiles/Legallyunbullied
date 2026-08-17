@@ -9,6 +9,9 @@
   },
   "scripts": {
     "start": "node server.js",
+    "test": "node scripts/run-tests.js",
+    "test:v2": "node test-v2-guardrails.js && node test-retrieval-evidence.js && node test-safety-ack-restart.js",
+    "eval:critical": "node scripts/eval/runner100.js --only police-01-arrest-no-reason,police-02-prolonged-detention,police-10-police-brutality,tenancy-01-locks-changed,tenancy-03-eviction-notice,tenancy-07-utilities-disconnected,employment-01-unpaid-salary,employment-02-unfair-dismissal,family-02-child-custody,family-04-domestic-violence,consumer-05-defective-product,consumer-06-scam-victim,cyber-01-private-photos-posted,cyber-04-account-hacked,property-01-land-sale-dispute,humanrights-02-unlawful-detention-right,other-02-breach-of-contract,other-04-inheritance-no-will,other-09-immigration-visa,other-15-complex-multi-party-fraud",
     "pdf-to-text": "node scripts/pdf-to-text.js",
     "ingest": "node scripts/ingest.js",
     "eval": "node scripts/run-eval.js",
