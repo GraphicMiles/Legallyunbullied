@@ -1083,7 +1083,7 @@ Current canonical artifacts are the production REST path, 100-scenario evaluatio
 - corrupt checkpoint rejection/recomputation;
 - existing disconnect/recovery, acknowledgement ownership, pagination, migration and queue tests retained.
 
-`npm test` now runs 10 deterministic test files and passes.
+`npm test` now runs 11 deterministic test files and passes.
 
 ## 19.4 100-case results
 

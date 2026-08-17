@@ -9,6 +9,7 @@ const tests = [
   "test-legal-intent.js",
   "test-retrieval-evidence.js",
   "test-v1-retrieval-pressure.js",
+  "test-v1-followup-pressure.js",
   "test-procedural-hedging.js",
   "test-recoverable-request.js",
   "test-job-queue.js",

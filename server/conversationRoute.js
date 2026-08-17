@@ -49,7 +49,7 @@ function msgCollection(uid, convoId) {
 
 const MESSAGE_FIELDS = new Set([
   "role", "content", "casualReply", "status", "createdAt", "startedAt",
-  "thinkingElapsedMs", "traceOpen", "classification", "steps", "result", "plan",
+  "thinkingElapsedMs", "traceOpen", "classification", "classificationRaw", "steps", "result", "plan",
   "corpusEmptyMessage", "errorMessage", "pipelineStatus", "unread", "evidence", "critique",
   "needsInputQuestion", "needsInputField", "safetyAckQuestion", "safetyAckContext",
   "safetyAckToken", "providersBusyRetryAfter", "providersBusyLawMd",

@@ -154,6 +154,8 @@ function verifyAndResolveCitations(result, provisions) {
       jurisdiction: p.jurisdiction || null,
       sourceUrl: p.source_url || p.sourceUrl || null,
       sourceVersion: p.source_version || p.sourceVersion || null,
+      sourceStatus: p.source_status || p.sourceStatus || null,
+      reviewed: p.reviewed === true,
     };
   });
 

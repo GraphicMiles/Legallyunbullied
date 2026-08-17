@@ -96,6 +96,7 @@ function rankProvisions(provisions, { keywords = [], jurisdiction } = {}) {
     else if (/federal/.test(provisionJurisdiction)) score += 3;
     if (p.source_url || p.sourceUrl) score += 1;
     if (p.section) score += 0.5;
+    if (p.reviewed === true || /reviewed|official/i.test(String(p.source_status || p.sourceStatus || ""))) score += 10;
     if (/uncertain|unverified|stale/i.test(String(p.source_status || p.sourceStatus || ""))) score -= 15;
 
     return {
