@@ -1,0 +1,14 @@
+CENTRAL BANK OF NIGERIA REGULATION ON INSTANT (INTER-BANK) ELECTRONIC FUNDS TRANSFER SERVICES IN NIGERIA 2018
+Reviewed extract for retrieval. Source document: https://www.cbn.gov.ng/out/2018/bpsd/regulation%20on%20instant%20payment.pdf
+Authority type: Central Bank of Nigeria regulation. Review date: 2026-08-17.
+
+5.2.8. A Sending Entity shall refund into the customer's account full proceeds of failed transactions returned by the Receiving Entity within 10 minutes.
+
+5.2.9. A Sending Entity shall refund into the customer's account full proceeds of a transaction which the Sending Entity is unable to process within one hour after the next settlement closure.
+
+5.3.2. A Receiving Entity shall apply Instant EFT proceeds to the customer's account within 60 seconds.
+
+10.2.1. Where a Sending Entity erroneously sends value contrary to a customer's instructions due to wrong account number, wrong amount, duplication or similar bank error, and requests reversal in writing within 14 working days, the Receiving Entity shall oblige within one business day without recourse to the beneficiary, provided funds are available.
+
+10.3. Wrong transfer due to fraud
+Fraud-related wrong transfers are subject to the applicable CBN fraud and dispute-resolution procedures.

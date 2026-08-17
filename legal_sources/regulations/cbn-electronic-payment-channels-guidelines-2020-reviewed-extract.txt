@@ -1,0 +1,11 @@
+CENTRAL BANK OF NIGERIA GUIDELINES ON OPERATIONS OF ELECTRONIC PAYMENT CHANNELS IN NIGERIA 2020
+Reviewed extract for retrieval. Source document: https://www.cbn.gov.ng/out/2020/ccd/reviewed%20and%20approved%20guidelines%20on%20operations%20of%20electronic%20payment%20channels%20in%20nigeria%202020.pdf
+Authority type: Central Bank of Nigeria guideline. Review date: 2026-08-17.
+
+3.4.6.8. If a cardholder or user notifies the bank of a transaction error, the issuer shall investigate and resolve the claim within 48 hours from the day of notification, irrespective of the dispute-resolution process of the card scheme. The acquirer must immediately respond to the issuer's request in the process.
+
+3.4.6.9. A cardholder or user shall be given not less than five working days' notice before changes are made to the terms and conditions of the card contract.
+
+4.5.1.13. Acquirers shall implement a fraud-management system that will detect customer usage patterns and decline or accept transactions based on defined rules.
+
+4.5.1.14. Acquirers shall profile merchants based on the services being offered and define transaction limits.
