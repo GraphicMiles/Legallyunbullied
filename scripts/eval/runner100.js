@@ -15,6 +15,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const http = require("http");
 const https = require("https");
 
 const REPO_ROOT = path.join(__dirname, "..", "..");
@@ -61,16 +62,19 @@ function sleep(ms) {
 }
 
 // ── HTTP POST with retries / backoff / token refresh ───────────────────────
-const agent = new https.Agent({ keepAlive: true, maxSockets: 1 });
+const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 1 });
+const httpAgent = new http.Agent({ keepAlive: true, maxSockets: 1 });
 
 async function postChat(baseUrl, body, token, timeoutMs = 180000) {
   const url = new URL("/api/chat", baseUrl);
   const payload = Buffer.from(JSON.stringify(body));
+  const transport = url.protocol === "http:" ? http : https;
+  const agent = url.protocol === "http:" ? httpAgent : httpsAgent;
   return new Promise((resolve, reject) => {
-    const req = https.request(
+    const req = transport.request(
       {
         hostname: url.hostname,
-        port: url.port || 443,
+        port: url.port || (url.protocol === "http:" ? 80 : 443),
         path: url.pathname,
         method: "POST",
         agent,
@@ -112,27 +116,26 @@ async function callOnce(baseUrl, question, history, timeoutMs) {
   return res;
 }
 
-async function callWithRetry(baseUrl, question, history, timeoutMs, maxAttempts = 3) {
-  // Gentle retry: after any transient failure, wait LONG before retrying so
-  // orphaned in-flight requests on the server (which keep computing even after
-  // the client gave up) get a chance to drain. Rapid retries just pile more
-  // requests on top of a saturated pipeline and make 502s worse.
-  let delay = 45000; // first wait after a transient failure
+async function callWithRetry(baseUrl, question, history, timeoutMs, maxAttempts = 2) {
+  // Retry transient capacity errors once. Permanent configuration/schema
+  // failures are recorded immediately; waiting cannot repair them.
+  let delay = 5000;
   let lastErr = null;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
       const res = await callOnce(baseUrl, question, history, timeoutMs);
-      if (res.status === 429) {
-        const w = 30000;
-        console.log(`    [429] rate-limited — waiting ${w / 1000}s before retry`);
+      if (res.status === 429 && attempt < maxAttempts - 1) {
+        const w = 15000;
+        console.log(`    [429] rate-limited — waiting ${w / 1000}s before one retry`);
         await sleep(w);
-        delay = Math.min(delay * 1.5, 90000);
         continue;
       }
+      const message = String(res.body?.message || res.body?.error || "").toLowerCase();
+      const permanent = /model.*(not found|does not exist)|invalid.*(key|schema|practice area)|authentication/.test(message);
+      if (permanent) return { res, attempts: attempt + 1 };
       if ((res.status === 502 || res.status === 503 || res.status === 504) && attempt < maxAttempts - 1) {
-        console.log(`    [${res.status}] transient — waiting ${Math.round(delay / 1000)}s before retry (attempt ${attempt + 1}/${maxAttempts})`);
+        console.log(`    [${res.status}] transient — waiting ${Math.round(delay / 1000)}s before one retry`);
         await sleep(delay);
-        delay = Math.min(delay * 1.5, 90000);
         continue;
       }
       // Success, or a terminal failure on the last attempt — return as-is
@@ -157,20 +160,28 @@ async function reproduceRetrieval(classification, evidence) {
   const kw = Array.isArray(classification.keywords) ? classification.keywords : [];
   const jur = classification.jurisdiction;
   let primary = [];
-  let general = [];
   try { primary = await findProvisions({ practiceArea: pa, jurisdiction: jur, keywords: kw }); }
   catch (e) { console.warn(`    [retrieval] primary query failed: ${e.message}`); }
-  const broadened = !!(evidence && Array.isArray(evidence.retrievedFrom) && evidence.retrievedFrom.includes("general"));
-  if (broadened) {
-    try { general = await findProvisions({ practiceArea: "general", jurisdiction: jur, keywords: kw }); }
-    catch (e) { console.warn(`    [retrieval] general query failed: ${e.message}`); }
+
+  const categories = Array.isArray(evidence?.retrievedFrom)
+    ? evidence.retrievedFrom.filter((area) => area && area !== pa)
+    : [];
+  const additional = [];
+  for (const area of categories) {
+    try {
+      const rows = await findProvisions({ practiceArea: area, jurisdiction: jur, keywords: kw });
+      additional.push(...rows.map((p) => ({ ...p, retrievedCategory: area })));
+    } catch (e) {
+      console.warn(`    [retrieval] ${area} query failed: ${e.message}`);
+    }
   }
-  const candidateActs = Array.from(new Set(primary.concat(general).map((p) => p.act)));
+  const candidateActs = Array.from(new Set(primary.concat(additional).map((p) => p.act)));
   return {
     noSourcing: false,
     practiceArea: pa,
     primary: primary.map((p) => ({ act: p.act, section: p.section })),
-    general: general.map((p) => ({ act: p.act, section: p.section })),
+    general: additional.filter((p) => p.retrievedCategory === "general").map((p) => ({ act: p.act, section: p.section })),
+    additional: additional.map((p) => ({ category: p.retrievedCategory, act: p.act, section: p.section })),
     candidateActs,
   };
 }
@@ -282,7 +293,7 @@ async function main() {
       // Longer drain after a turn that needed retries — lets the server
       // settle before the next request.
       if (ti < s.turns.length - 1) {
-        const extra = troubled ? 30000 : 0;
+        const extra = troubled ? 5000 : 0;
         await sleep(opts.delay + extra);
       }
     }
@@ -306,7 +317,7 @@ async function main() {
     console.log(`  ✓ recorded (${Math.round(record.scenarioMs / 1000)}s)`);
 
     if (si < todo.length - 1) {
-      const extra = scenarioTroubled ? 30000 : 0;
+      const extra = scenarioTroubled ? 5000 : 0;
       await sleep(opts.delay + extra);
     }
   }

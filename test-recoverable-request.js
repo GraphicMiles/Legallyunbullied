@@ -185,7 +185,7 @@ async function main() {
 
   await check("HITL needsInput is persisted as awaiting_input", async () => {
     writes.length = 0;
-    fakeClient = makeFakeClient({ classify: { ...LEGAL_CLASSIFY, jurisdiction_status: "unclear" }, draft: DRAFT });
+    fakeClient = makeFakeClient({ classify: { ...LEGAL_CLASSIFY, practice_area: "tenancy", jurisdiction_status: "unclear" }, draft: DRAFT });
     const { status, json } = await postChat({ question: "My landlord evicted me", conversationId: "c1", messageId: "m1" });
     assert.strictEqual(status, 200);
     assert.strictEqual(json.needsInput, true);

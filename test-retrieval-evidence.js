@@ -57,6 +57,7 @@ const adminPath = require.resolve("./server/firebaseAdmin");
 const mockDb = makeMockFirestore({
   criminal_offences: [
     { id: "robfire-s11", act: "Robbery and Firearms (Special Provisions) Act", section: "11", text: "assault means striking...", jurisdiction: "Federal" },
+    { id: "terror-s2", act: "Terrorism Act", section: "2", text: "assault against protected infrastructure...", jurisdiction: "Federal" },
   ],
   general: [
     { id: "cc-s252", act: "Criminal Code Act", section: "252", text: "assault is unlawfully striking...", jurisdiction: "Federal" },
@@ -70,7 +71,8 @@ require.cache[adminPath] = {
   exports: { getFirestore: () => mockDb },
 };
 
-const { findProvisionsBroad, findProvisions } = require("./server/legalCorpus");
+const { findProvisionsBroad, findProvisions, rankProvisions } = require("./server/legalCorpus");
+const { requiredSourceCount, verifyAndResolveCitations } = require("./server/evidence");
 const { scoreScenario } = require("./server/eval/scoring.js");
 
 let failures = 0;
@@ -101,7 +103,19 @@ async function main() {
     assert.strictEqual(new Set(ids).size, ids.length, "no duplicate provision ids");
   });
 
-  await check("findProvisionsBroad does not broaden when primary is sufficient", async () => {
+  await check("forced broadening searches beyond a numerically sufficient but rejected primary set", async () => {
+    const { provisions, categories } = await findProvisionsBroad({
+      practiceArea: "criminal_offences",
+      jurisdiction: "Federal",
+      keywords: ["assault"],
+      minSources: 2,
+      force: true,
+    });
+    assert.ok(categories.includes("general"), "a failed relevance gate must force a general-category search");
+    assert.ok(provisions.some((p) => p.act === "Criminal Code Act"), "forced broadening must add the controlling general authority");
+  });
+
+  await check("findProvisionsBroad does not broaden when primary is sufficient and force is false", async () => {
     const primary = await findProvisions({ practiceArea: "general", jurisdiction: "Federal", keywords: ["assault"] });
     const { provisions, categories } = await findProvisionsBroad({
       practiceArea: "general",
@@ -111,6 +125,38 @@ async function main() {
     });
     assert.strictEqual(categories.length, 1, "should not add general when primary already suffices");
     assert.deepStrictEqual(provisions, primary, "provisions should equal the primary result");
+  });
+
+  await check("deterministic ranking prefers stronger title/phrase coverage", async () => {
+    const ranked = rankProvisions([
+      { id: "weak", act: "Unrelated Act", section: "1", text: "an incidental mention of assault" },
+      { id: "strong", act: "Criminal Code Act — Assault", section: "252", text: "A person who unlawfully assaults another person commits an offence" },
+    ], { keywords: ["assault", "unlawfully assaults"] });
+    assert.strictEqual(ranked[0].id, "strong");
+  });
+
+  await check("simple factual routes allow one controlling authority; high-risk routes require two", async () => {
+    assert.strictEqual(requiredSourceCount({ route: "simple", practice_area: "employment" }), 1);
+    assert.strictEqual(requiredSourceCount({ route: "simple", practice_area: "criminal_rights" }), 2);
+    assert.strictEqual(requiredSourceCount({ route: "complex", practice_area: "contract" }), 2);
+  });
+
+  await check("citation resolver uses authoritative metadata and rejects invented IDs", async () => {
+    const provisions = [{ id: "constitution-s35", act: "Constitution of the Federal Republic of Nigeria 1999", section: "35(1)", text: "Every person shall be entitled to personal liberty.", jurisdiction: "Federal", source_url: "https://source.test" }];
+    const result = {
+      lawMd: "Liberty is protected [[constitution-s35]], but not [[invented-s99]].",
+      actionsMd: "- Keep records",
+      provisionIds: ["constitution-s35", "invented-s99"],
+      claims: [{ claimId: "c1", text: "Liberty is protected", provisionIds: ["constitution-s35"] }],
+      sources: [{ label: "Made Up Act, s.99", excerpt: "fake" }],
+    };
+    const verification = verifyAndResolveCitations(result, provisions);
+    assert.strictEqual(verification.valid, false, "an invented ID must fail integrity");
+    assert.ok(verification.unknownIds.includes("invented-s99"));
+    assert.strictEqual(result.sources.length, 1, "only the retrieved source may be displayed");
+    assert.strictEqual(result.sources[0].label, "Constitution of the Federal Republic of Nigeria 1999, s.35(1)");
+    assert.strictEqual(result.sources[0].excerpt, provisions[0].text);
+    assert.ok(!JSON.stringify(result.sources).includes("Made Up Act"));
   });
 
   await check("scoring flags hedging language in generated text", async () => {
