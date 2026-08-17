@@ -51,10 +51,10 @@ function makeFakeClient({ delayMs = 0, classify, draft } = {}) {
         return json(classify);
       }
       if (sys.includes("legal retrieval relevance judge")) {
-        return json({ relevant: [1, 2], irrelevant: [], relevance_score: 0.9, sufficient: true, reason: "on point" });
+        return json({ relevant: [1, 2], irrelevant: [], relevance_score: 0.9, sufficient: true, conflicts: [], reason: "on point" });
       }
       if (sys.includes("quality reviewer")) {
-        return json({ quality: 0.85, legal_safety: 0.85, issues: [], passed: true });
+        return json({ quality: 0.85, legal_safety: 0.85, issues: [], claim_support: [{ claimId: "claim-1", status: "supported", reason: "directly supported" }], passed: true });
       }
       return json(draft);
     } } },
@@ -101,9 +101,11 @@ const LEGAL_CLASSIFY = {
   reasoning_approach: "", stakeholders: [], potential_remedies: [],
 };
 const DRAFT = {
-  lawMd: "Under section 252 of the Criminal Code Act, assault is a crime.",
+  lawMd: "Assault is addressed by [[p1]].",
   actionsMd: "- Step 1: Report to the police\n- Step 2: Consult a lawyer",
-  sources: [{ label: "Criminal Code Act, s.252", excerpt: "..." }],
+  provisionIds: ["p1", "p2"],
+  claims: [{ claimId: "claim-1", text: "Assault is addressed by the Criminal Code.", provisionIds: ["p1"] }],
+  sources: [],
   escalate: false, escalateReason: "", followUps: [],
 };
 

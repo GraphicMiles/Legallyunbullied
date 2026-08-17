@@ -66,8 +66,8 @@ There is one legal-answer HTTP path: `POST /api/chat`. The obsolete independent 
 | `cerebras.js` | optional Cerebras client |
 | `eval/critical20.json` | selected release-critical scenarios |
 | `eval/scenarios100.json` | complete authored 100-scenario multi-turn dataset |
-| `eval/results-critical20.json` | latest scored critical result artifact |
-| `eval/report-critical20.md` | latest human-readable critical report |
+| `eval/results-critical20.json` / `eval/report-critical20.md` | critical-20 baseline artifacts |
+| `eval/results100.json` / `eval/report100.md` | final local-fallback 100-scenario pressure-test artifacts |
 
 ## `public/`
 
@@ -440,7 +440,7 @@ Expected fields:
 }
 ```
 
-A strict complete draft schema is still required.
+The server rejects drafts missing required answer fields, provision IDs, claims, claim-to-provision links, escalation fields or follow-up arrays. Malformed drafts fall through to another provider and can never be presented as a legal answer.
 
 ## 6.16 Citation resolution
 
@@ -452,9 +452,10 @@ The server:
 - removes unknown IDs;
 - records verification details;
 - marks claims without retrieved IDs unsupported;
-- temporarily supports exact legacy Act/section mapping.
+- rejects model-supplied source labels/URLs without retrieved IDs;
+- flags Act/section citations that do not match the retrieved evidence set.
 
-This verifies displayed citation identity, not semantic claim support.
+This deterministically verifies citation identity. Semantic support is reviewed claim-by-claim by the critique stage; that review remains model-based rather than an independent legal-authority engine.
 
 ## 6.17 Critique/safety review
 
@@ -474,7 +475,7 @@ Thresholds:
 - standard safety: 0.6;
 - high-risk safety: 0.7.
 
-Standard failure returns limited evidence and escalation without repeated redrafts. High-risk failure permits one corrective draft/review, then requires acknowledgement.
+The critic must return one `supported|partial|unsupported|uncertain` decision for every structured claim. Unsupported, partial or uncertain claim support prevents a passing review. Standard failure returns limited evidence and escalation without repeated redrafts. High-risk failure permits one corrective draft/review, then requires acknowledgement.
 
 ## 6.18 Deterministic overrides
 
@@ -518,18 +519,19 @@ Existing Firestore document IDs serve as compatibility IDs when explicit `provis
 
 ## Verified today
 
-- source card came from retrieved ID;
+- source card came from a retrieved ID;
 - displayed label/excerpt is server generated;
-- unknown IDs are not accepted;
-- answer evidence carries source counts/sufficiency/reason.
+- unknown IDs and untrusted model source metadata are rejected;
+- inline Act/section references outside the retrieved evidence set fail integrity;
+- every structured claim receives a claim-support decision;
+- answer evidence carries mode, source counts, conflicts, sufficiency and reason.
 
-## Not verified today
+## Remaining evidence limitations
 
-- semantic claim support;
-- current in-force status;
-- amendments/repeals;
-- controlling jurisdiction;
-- every plain-text inline Act/section mention.
+- claim support is judged by an LLM reviewer, not a qualified lawyer or deterministic legal entailment engine;
+- current in-force status and amendments/repeals are incomplete;
+- controlling jurisdiction can remain uncertain in emergency fallback;
+- local fallback coverage is materially smaller than Firestore.
 
 ---
 
@@ -854,7 +856,10 @@ Runs deterministic suites for:
 - recoverable requests;
 - job replay/checkpoints;
 - acknowledgement ownership/restart;
-- V2 cache/fail-closed/title behavior.
+- cache/fail-closed/title behavior;
+- exact/vague/multi-area retrieval, jurisdiction, stale sources and Firestore fallback pressure;
+- concurrent request idempotency, worker leases and corrupted checkpoint rejection;
+- malformed model output, unsupported claims, conflicting evidence and total provider failure.
 
 ## Browser tests
 
@@ -866,18 +871,28 @@ Runs deterministic suites for:
 - 20 critical subset;
 - live Firebase authentication;
 - resumable JSONL output;
-- deterministic eight-dimension scoring;
+- deterministic nine-dimension scoring, including reliability;
 - report generation.
 
-Latest critical artifact:
+Final local-fallback pressure-test artifact:
 
-- 20/20 passed;
-- 0 critical failures;
-- average 3.87/5;
-- 61 HTTP-200 turns;
-- p50 3.62s, p90 6.41s, p95 28.75s, max 47.76s.
+- 100/100 scenarios passed the automated gate after fixes and targeted regression reruns;
+- 0 critical failures in the final composite;
+- average 3.71/5;
+- 293/293 final turns returned HTTP 200;
+- legal accuracy 4.12/5;
+- citation accuracy 3.27/5;
+- source grounding 2.16/5;
+- safety 4.73/5;
+- follow-up reasoning 2.33/5;
+- practical usefulness 4.41/5;
+- uncertainty handling 3.98/5;
+- reliability 4.96/5;
+- p50 0.14s, p90 4.50s, p95 12.20s, maximum 64.06s under mixed provider-available/provider-exhausted conditions.
 
-It used local-corpus mode after Firestore quota exhaustion. A fresh full 100 against staging and qualified-lawyer review remain required.
+The first uninterrupted pressure run exposed 113 classification 502s after both free provider quotas were exhausted. Deterministic fail-closed classification removed those 502s; affected scenarios were rerun and merged into the final artifact. The final result is therefore a regression composite, not a claim that one uninterrupted clean run passed first time.
+
+The run used `LOCAL_LEGAL_CORPUS=true`; Firestore remained quota-limited and was deliberately not hammered. A complete Firestore-versus-local comparison remains pending until Firestore is available. Qualified-lawyer review also remains required, particularly because source grounding averaged only 2.16/5.
 
 ---
 
@@ -924,23 +939,28 @@ Current production-dependency audit reports 8 moderate, 0 high and 0 critical ad
 - provision-ID displayed citations;
 - safety critique/acknowledgement;
 - provider fallback/health;
-- quota circuit/local fallback;
+- quota circuit/local fallback with `evidence.mode`;
+- strict request, classification and draft schemas;
+- provision-ID and inline-citation integrity checks;
+- model-based per-claim support review with fail-closed escalation;
+- UID-scoped cache and concurrent message idempotency;
+- transactional worker leases and corrupted-checkpoint rejection;
 - single-instance replay worker;
-- critical evaluation gate.
+- critical-20 and full-100 local-fallback pressure gates.
 
 ## Partial
 
-- claim provenance without semantic adjudication;
+- claim support is model-reviewed rather than independently legally adjudicated;
 - checkpoint recovery after worker start;
-- message/run idempotency without transactional run state;
-- user warning described historically as HITL;
+- message idempotency exists, but there is no first-class persisted `runId` state machine;
+- worker leases exist, but TTL cleanup and durable cancellation do not;
 - corpus provenance/freshness fields;
-- evaluation without full-100/lawyer review;
+- full-100 has no qualified-lawyer review and no healthy-Firestore comparison;
 - observability without run traces/cost accounting.
 
 ## Missing
 
-- semantic claim-support stage;
+- independent/qualified legal claim-support review;
 - live events/token streaming from canonical engine;
 - vector/semantic retrieval;
 - case law;
@@ -961,18 +981,16 @@ Current production-dependency audit reports 8 moderate, 0 high and 0 critical ad
 
 1. Rotate exposed secrets.
 2. Admin-protect cache endpoints.
-3. Add strict classification/draft schemas (request/message allowlisting is implemented).
-4. Verify/reject every plain-text legal citation.
-5. Add semantic claim-support decisions.
-6. Fix message running/terminal race.
-7. Make emergency default jurisdiction explicit.
+3. Independently validate model-based claim-support decisions with qualified legal review.
+4. Make emergency default jurisdiction explicit and persistent across follow-ups.
+5. Resolve the low local-corpus source-grounding score before expanding reliance.
 
 ## P1
 
 1. Stable `runId` and typed stage artifacts.
 2. Canonical event emission if streaming returns.
 3. Upstream cancellation/global deadline.
-4. Transactional queue leases and TTL cleanup.
+4. Complete worker leases with TTL cleanup and durable cancellation.
 5. Firestore query/delete scaling fixes.
 6. structured logs, traces, alerts and cost metrics.
 7. security headers/CSP.
@@ -1011,8 +1029,110 @@ Removed from the production/repository surface:
 - unused client helpers, cleanup branches and presentation constants;
 - stale test fixtures/version expectations.
 
-Current canonical artifacts are the production REST path, 100-scenario evaluation framework, critical-20 result, four current documentation files and only the UI components loaded by `public/index.html`.
+Current canonical artifacts are the production REST path, 100-scenario evaluation framework, critical/full evaluation results, this single documentation file and only the UI components loaded by `public/index.html`.
 
-# 19. Accuracy statement
+# 19. Final V1 reliability and pressure-test report
 
-This file documents repository-controlled behavior after dead-code cleanup. It does not certify external Render settings, Firebase IAM/quotas, provider retention policies, statutory legal accuracy, or current-law completeness. Those require cloud-console inspection, fresh staging evaluation and qualified legal review.
+## 19.1 What failed
+
+- Keyword hard-filtering dropped controlling provisions on vague questions.
+- The global standalone-answer cache was not UID-scoped and used a truncated question prefix.
+- Model drafts and classifications were only partially schema-validated.
+- Source cards were verified, but model source labels, plain-text fabricated citations and claim support still had bypasses.
+- Materially conflicting provisions were not represented in evidence sufficiency.
+- The message running marker could race terminal persistence.
+- Concurrent duplicate message requests could execute twice.
+- Worker queue claims had no cross-instance lease.
+- Corrupted draft checkpoints could be trusted without re-verifying evidence IDs.
+- Under sustained pressure, both free LLM providers exhausted rate/token limits. The first full run recorded 113 classification 502s.
+- Deterministic provider-outage fallback initially classified too many follow-ups as `general`/Medium and missed urgent safety prioritization.
+- Firestore could not support a comparison run because its quota was already exhausted.
+- Local fallback retrieval frequently returned honest insufficiency; source grounding remained weak.
+
+## 19.2 What was fixed
+
+- Removed hard keyword filtering; all jurisdiction-valid category provisions are ranked.
+- Scoped answer cache by UID and full SHA-256 question hash; history remains excluded.
+- Added strict question/history, classification and draft schemas.
+- Required provision IDs and structured claims in substantive drafts.
+- Rejected untrusted model source metadata and unknown inline Act/section references.
+- Added per-claim `supported|partial|unsupported|uncertain` review; non-supported claims fail review and escalate.
+- Added evidence conflicts and prevented conflicts from becoming sufficient.
+- Added `evidence.mode = firestore|local_fallback` and verified local-fallback answers through the same gates.
+- Awaited the message running marker.
+- Added in-flight duplicate request coalescing and persisted terminal replay.
+- Added transactional worker leases and lease-expiry recovery.
+- Added classification/retrieval/draft checkpoint validation and corrupt-checkpoint recomputation.
+- Added deterministic fail-closed classification for total provider outage, preserving prior legal area when possible.
+- Added deterministic urgent-category detection and immediate-safety/escalation policy.
+- Added stale/repealed source filtering/ranking controls.
+- Kept Firestore circuit behavior: Firestore → checked-in corpus → verified answer or safe escalation.
+
+## 19.3 Regression tests added
+
+- UID/cache isolation, full-question cache identity and concurrent duplicate execution;
+- exact-section, vague, wrong-category, adjacent-area, multi-intent and Federal/state retrieval;
+- Firestore quota circuit/no-hammer behavior and local-fallback mode;
+- stale/repealed source handling;
+- fabricated provision ID, source metadata, Act and section rejection;
+- malformed draft schema and bad request/history rejection;
+- conflicting evidence and unsupported claim escalation;
+- total provider failure and critique/relevance failure;
+- urgent high-risk deterministic escalation;
+- cross-instance worker lease exclusion;
+- corrupt checkpoint rejection/recomputation;
+- existing disconnect/recovery, acknowledgement ownership, pagination, migration and queue tests retained.
+
+`npm test` now runs 10 deterministic test files and passes.
+
+## 19.4 100-case results
+
+Final composite after fixes and targeted reruns, using `LOCAL_LEGAL_CORPUS=true`:
+
+| Metric | Result |
+|---|---:|
+| Scenarios | 100 |
+| Turns | 293 |
+| HTTP 200 turns | 293/293 |
+| Automated passes | 100/100 |
+| Critical failures | 0 |
+| Average score | 3.71/5 |
+| Legal accuracy | 4.12/5 |
+| Citation accuracy | 3.27/5 |
+| Source grounding | 2.16/5 |
+| Safety | 4.73/5 |
+| Follow-up reasoning | 2.33/5 |
+| Practical usefulness | 4.41/5 |
+| Communication | 3.42/5 |
+| Uncertainty handling | 3.98/5 |
+| Reliability | 4.96/5 |
+| p50 / p90 / p95 latency | 0.14s / 4.50s / 12.20s |
+| Maximum latency | 64.06s |
+
+Four turns ended in a safe `providersBusy` response during provider exhaustion; none became confident legal answers. The final score is a composite containing targeted reruns after each demonstrated failure, not a first-attempt clean run.
+
+## 19.5 Firestore vs local-fallback results
+
+| Mode | Result |
+|---|---|
+| Firestore | Full comparison not run: quota exhausted. The system opened its circuit and did not repeatedly hammer Firestore. |
+| Local fallback | Full 100-scenario pressure run completed through the same relevance, citation, claim-support and safety gates. |
+
+No equivalence claim is made. Firestore documents approximately 14,384 provisions; checked-in fallback parsing yields approximately 7,655. A healthy-Firestore comparison remains mandatory when quota returns.
+
+## 19.6 Remaining known limitations
+
+- Local source grounding is low (2.16/5) and many answers safely escalate instead of giving sourced law.
+- Claim support is model-reviewed, not independently verified by a qualified lawyer.
+- The final 100 result is a regression composite, not one uninterrupted first-pass run.
+- Provider quotas were exhausted during pressure; production needs budget/quota planning and cancellation of timed-out upstream calls.
+- Follow-up reasoning and communication remain below 3.5/5.
+- Firestore/local parity is unmeasured.
+- Local corpus is smaller and has provenance/freshness gaps.
+- Durable server cancellation and job TTL cleanup remain incomplete.
+- No qualified-lawyer review, case-law corpus, amendment/repeal monitor, or full state-law coverage exists.
+- Exposed Firebase, Groq, Gemini and GitHub credentials still require rotation.
+
+# 20. Accuracy statement
+
+This file documents repository-controlled behavior and the executed regression composite. It does not certify external Render settings, Firebase IAM/quotas, provider retention policies, statutory legal accuracy, or current-law completeness. Those require cloud-console inspection, a healthy-Firestore comparison and qualified legal review.

@@ -35,10 +35,10 @@ function makeFakeClient(classifyResponse, draftResponse) {
             });
           }
           if (sys.includes("legal retrieval relevance judge")) {
-            return json({ relevant: [1, 2], irrelevant: [], relevance_score: 0.9, sufficient: true, reason: "directly on point" });
+            return json({ relevant: [1, 2], irrelevant: [], relevance_score: 0.9, sufficient: true, conflicts: [], reason: "directly on point" });
           }
           if (sys.includes("quality reviewer")) {
-            return json({ quality: 0.85, legal_safety: 0.85, issues: [], passed: true });
+            return json({ quality: 0.85, legal_safety: 0.85, issues: [], claim_support: [{ claimId: "claim-1", status: "supported", reason: "directly supported" }], passed: true });
           }
           // Draft
           return json(draftResponse);
@@ -174,12 +174,11 @@ async function main() {
   fakeClient = makeFakeClient(
     { ...LEGAL_CLASSIFY, needs_sourcing: true },
     {
-      lawMd: "The provided statute excerpts do not directly address how to note down key facts. The Harmful Waste Act discusses parties to a crime, which might be relevant when describing roles.",
+      lawMd: "The retrieved excerpts do not directly address how to note down key facts. One provision might be relevant when describing roles [[p1]].",
       actionsMd: "- Step 1: Document it\n- Step 2: Report it",
-      sources: [
-        { label: "Prevention of Crimes Act, s.2", excerpt: "..." },
-        { label: "Harmful Waste (Special Criminal Provisions) Act, s.2", excerpt: "..." },
-      ],
+      provisionIds: ["p1", "p2"],
+      claims: [{ claimId: "claim-1", text: "The cited excerpts do not directly answer the practical question.", provisionIds: ["p1", "p2"] }],
+      sources: [],
       escalate: false,
       escalateReason: "",
       followUps: [],
@@ -205,10 +204,9 @@ async function main() {
     {
       lawMd: "Under section 252 of the Criminal Code Act, assault is a crime punishable by law. The section establishes the elements of assault.",
       actionsMd: "- Step 1: Report to the police\n- Step 2: Consult a lawyer",
-      sources: [
-        { label: "Criminal Code Act, s.252", excerpt: "..." },
-        { label: "Criminal Code Act, s.253", excerpt: "..." },
-      ],
+      provisionIds: ["cc-252", "cc-253"],
+      claims: [{ claimId: "claim-1", text: "Assault is addressed by the Criminal Code.", provisionIds: ["cc-252", "cc-253"] }],
+      sources: [],
       escalate: false,
       escalateReason: "",
       followUps: [],

@@ -121,6 +121,18 @@ function main() {
     assert.strictEqual(c.route, "simple");
   });
 
+  check("urgent and vulnerable-user incidents get deterministic category and urgency", () => {
+    const threat = buildFallbackClassification("Someone is sending me death threats and says they are coming to my workplace");
+    assert.strictEqual(threat.practice_area, "criminal_offences");
+    assert.ok(["High", "Critical"].includes(threat.urgency));
+    const child = buildFallbackClassification("My uncle wants to marry off my 14-year-old cousin");
+    assert.strictEqual(child.practice_area, "family_law");
+    assert.ok(["High", "Critical"].includes(child.urgency));
+    const injury = buildFallbackClassification("I was injured by a machine at the factory");
+    assert.strictEqual(injury.practice_area, "employment_labour_safety");
+    assert.strictEqual(injury.needs_sourcing, true);
+  });
+
   check("buildFallbackClassification marks state-varying areas as unclear", () => {
     const c = buildFallbackClassification("my landlord evicted me");
     assert.strictEqual(c.practice_area, "tenancy");

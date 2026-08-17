@@ -27,27 +27,31 @@ const fakeClient = {
     const sys = messages?.[0]?.content || "";
     const json = (o) => ({ choices: [{ message: { content: JSON.stringify(o) } }] });
     if (sys.includes("determine if this is a legal question or casual")) {
-      return json(mode === "high-critique-failure" ? HIGH_RISK : STANDARD);
+      if (mode === "all-providers-fail") throw new Error("classifier unavailable");
+      return json(["high-critique-failure", "high-pass"].includes(mode) ? HIGH_RISK : STANDARD);
     }
     if (sys.includes("legal retrieval relevance judge")) {
-      if (mode === "relevance-failure") throw new Error("judge unavailable");
-      return json({ relevant: mode === "high-critique-failure" ? [1, 2] : [1], irrelevant: [], relevance_score: 0.95, sufficient: true, reason: "direct authority" });
+      if (["relevance-failure", "all-providers-fail"].includes(mode)) throw new Error("judge unavailable");
+      const conflicts = mode === "conflicting-evidence" ? ["Federal and state provisions conflict"] : [];
+      return json({ relevant: ["high-critique-failure", "high-pass"].includes(mode) ? [1, 2] : [1], irrelevant: [], relevance_score: 0.95, sufficient: true, conflicts, reason: conflicts.length ? "material conflict" : "direct authority" });
     }
     if (sys.includes("quality reviewer")) {
       if (mode === "high-critique-failure") throw new Error("critic unavailable");
-      return json({ quality: 0.9, legal_safety: 0.9, issues: [], passed: true });
+      const status = mode === "unsupported-claim" ? "unsupported" : "supported";
+      return json({ quality: 0.9, legal_safety: status === "supported" ? 0.9 : 0.5, issues: status === "supported" ? [] : ["unsupported claim"], claim_support: [{ claimId: "claim-1", status, reason: status }], passed: status === "supported" });
     }
     if (sys.includes("Generate a very short title")) {
       return { choices: [{ message: { content: "Unpaid salary claim" } }] };
     }
     draftCalls += 1;
-    if (mode === "high-critique-failure") {
+    if (mode === "idempotency") await new Promise((resolve) => setTimeout(resolve, 50));
+    if (mode === "malformed-draft") return json({ lawMd: "incomplete" });
+    if (["high-critique-failure", "high-pass"].includes(mode)) {
       return json({
         lawMd: "Personal liberty is protected.", actionsMd: "- Keep records\n- Contact a lawyer",
-        sources: [
-          { label: "Labour Act, s.11", excerpt: "model text ignored" },
-          { label: "Constitution of the Federal Republic of Nigeria 1999, s.35(1)", excerpt: "model text ignored" },
-        ],
+        provisionIds: ["labour-s11", "constitution-s35"],
+        claims: [{ claimId: "claim-1", text: "Personal liberty is protected.", provisionIds: ["constitution-s35"] }],
+        sources: [],
         escalate: true, escalateReason: "High risk", followUps: [],
       });
     }
@@ -55,7 +59,9 @@ const fakeClient = {
     return json({
       lawMd: `Wages are governed by the Labour Act. ${historyText.includes("CASE-B") ? "B" : historyText.includes("CASE-A") ? "A" : "standalone"}`,
       actionsMd: "- Keep records\n- Request payment",
-      sources: [{ label: "Labour Act, s.11", excerpt: "model text ignored" }],
+      provisionIds: ["labour-s11"],
+      claims: [{ claimId: "claim-1", text: "Wages are governed by the Labour Act.", provisionIds: ["labour-s11"] }],
+      sources: [],
       escalate: false, escalateReason: "Straightforward", followUps: [],
     });
   } } },
@@ -72,9 +78,11 @@ require.cache[groqPath] = { id: groqPath, filename: groqPath, loaded: true, expo
 require.cache[geminiPath] = { id: geminiPath, filename: geminiPath, loaded: true, exports: { getClient: () => null, GEMINI_CLASSIFY_MODEL: "g", GEMINI_DRAFT_MODEL: "g", GEMINI_CHAT_MODEL: "g" } };
 require.cache[openrouterPath] = { id: openrouterPath, filename: openrouterPath, loaded: true, exports: { getClient: () => null, OPENROUTER_CLASSIFY_MODEL: "o", OPENROUTER_DRAFT_MODEL: "o", OPENROUTER_CHAT_MODEL: "o" } };
 require.cache[cerebrasPath] = { id: cerebrasPath, filename: cerebrasPath, loaded: true, exports: { getClient: () => null, CEREBRAS_CLASSIFY_MODEL: "c", CEREBRAS_DRAFT_MODEL: "c", CEREBRAS_CHAT_MODEL: "c" } };
+let localCorpusMode = false;
+const corpusRows = () => provisions.map((p) => localCorpusMode ? { ...p, local_eval: true } : { ...p });
 require.cache[corpusPath] = { id: corpusPath, filename: corpusPath, loaded: true, exports: {
-  findProvisions: async () => provisions,
-  findProvisionsBroad: async () => ({ provisions, categories: ["employment", "general"] }),
+  findProvisions: async () => corpusRows(),
+  findProvisionsBroad: async () => ({ provisions: corpusRows(), categories: ["employment", "general"] }),
   COLLECTION: "legal_provisions", invalidateCache() {}, getCacheStats: () => ({}), cleanupCache() {},
 } };
 require.cache[firebasePath] = { id: firebasePath, filename: firebasePath, loaded: true, exports: { getFirestore: () => null } };
@@ -119,11 +127,22 @@ async function check(name, fn) {
     assert.ok(b.body.result.lawMd.endsWith("B"));
   });
 
-  await check("standalone context-free questions remain safely cacheable", async () => {
+  await check("standalone context-free questions cache only within the same user", async () => {
     chatRoute.__testing.clearQuestionCache(); mode = "standard"; draftCalls = 0;
-    await post({ question: "When must wages be paid?", history: [] });
-    await post({ question: "When must wages be paid?", history: [] });
-    assert.strictEqual(draftCalls, 1, "identical standalone question should reuse verified artifact");
+    await post({ question: "When must wages be paid?", history: [] }, "user-a");
+    await post({ question: "When must wages be paid?", history: [] }, "user-a");
+    assert.strictEqual(draftCalls, 1, "same user should reuse a verified standalone artifact");
+    await post({ question: "When must wages be paid?", history: [] }, "user-b");
+    assert.strictEqual(draftCalls, 2, "a different user must not receive another user's cached answer");
+  });
+
+  await check("duplicate concurrent message requests execute the pipeline once", async () => {
+    chatRoute.__testing.clearQuestionCache(); chatRoute.__testing.clearProviderCooldowns(); mode = "idempotency"; draftCalls = 0;
+    const body = { question: "When must wages be paid?", history: [{ role: "user", content: "same case" }], conversationId: "case-1", messageId: "agent-1" };
+    const [first, second] = await Promise.all([post(body, "user-a"), post(body, "user-a")]);
+    assert.strictEqual(first.status, 200);
+    assert.strictEqual(second.status, 200);
+    assert.strictEqual(draftCalls, 1, "duplicate in-flight requests must share one execution");
   });
 
   await check("relevance-provider outage fails closed without drafting", async () => {
@@ -142,6 +161,68 @@ async function check(name, fn) {
     assert.strictEqual(response.status, 200);
     assert.strictEqual(response.body.safetyAck, true);
     assert.ok(response.body.ackToken);
+  });
+
+  await check("urgent high-risk answers are deterministically escalated with an immediate safety step", async () => {
+    chatRoute.__testing.clearQuestionCache(); chatRoute.__testing.clearProviderCooldowns(); mode = "high-pass"; draftCalls = 0;
+    const response = await post({ question: "The police detained and beat me", history: [] });
+    assert.strictEqual(response.status, 200);
+    assert.strictEqual(response.body.result.escalate, true);
+    assert.match(response.body.result.actionsMd, /(medical|safe place|police|emergency)/i);
+  });
+
+  await check("local corpus mode is exposed in evidence and still requires verification", async () => {
+    chatRoute.__testing.clearQuestionCache(); chatRoute.__testing.clearProviderCooldowns(); mode = "standard"; localCorpusMode = true; draftCalls = 0;
+    const response = await post({ question: "When must wages be paid?", history: [] }, "local-user");
+    assert.strictEqual(response.status, 200);
+    assert.strictEqual(response.body.evidence.mode, "local_fallback");
+    assert.strictEqual(response.body.result.citationVerification.valid, true);
+    localCorpusMode = false;
+  });
+
+  await check("conflicting provisions cannot become sufficient evidence", async () => {
+    chatRoute.__testing.clearQuestionCache(); chatRoute.__testing.clearProviderCooldowns(); mode = "conflicting-evidence"; draftCalls = 0;
+    const response = await post({ question: "My employer has not paid me", history: [] });
+    assert.strictEqual(response.status, 200);
+    assert.strictEqual(response.body.evidence.sufficient, false);
+    assert.ok(response.body.evidence.conflicts.length > 0);
+    assert.strictEqual(response.body.result.escalate, true);
+    assert.strictEqual(draftCalls, 0);
+  });
+
+  await check("malformed draft JSON/schema becomes provider-busy, never a legal answer", async () => {
+    chatRoute.__testing.clearQuestionCache(); chatRoute.__testing.clearProviderCooldowns(); mode = "malformed-draft"; draftCalls = 0;
+    const response = await post({ question: "My employer has not paid me", history: [] });
+    assert.strictEqual(response.status, 200);
+    assert.strictEqual(response.body.providersBusy, true);
+    assert.strictEqual(response.body.result.sources.length, 0);
+  });
+
+  await check("unsupported claim downgrades evidence and forces escalation", async () => {
+    chatRoute.__testing.clearQuestionCache(); chatRoute.__testing.clearProviderCooldowns(); mode = "unsupported-claim"; draftCalls = 0;
+    const response = await post({ question: "My employer has not paid me", history: [] });
+    assert.strictEqual(response.status, 200);
+    assert.strictEqual(response.body.critique.passed, false);
+    assert.strictEqual(response.body.evidence.sufficient, false);
+    assert.strictEqual(response.body.result.escalate, true);
+  });
+
+  await check("all provider failure on a legal incident fails closed", async () => {
+    chatRoute.__testing.clearQuestionCache(); chatRoute.__testing.clearProviderCooldowns(); mode = "all-providers-fail"; draftCalls = 0;
+    const response = await post({ question: "My employer fired me and has not paid my salary", history: [] });
+    assert.strictEqual(response.status, 200);
+    assert.strictEqual(response.body.evidence.sufficient, false);
+    assert.strictEqual(response.body.result.escalate, true);
+    assert.strictEqual(draftCalls, 0);
+  });
+
+  await check("bad question/history input is rejected before provider work", async () => {
+    mode = "standard"; draftCalls = 0;
+    const badQuestion = await post({ question: { text: "not a string" }, history: [] });
+    const badHistory = await post({ question: "valid", history: [{ role: "system", content: "bad role" }] });
+    assert.strictEqual(badQuestion.status, 400);
+    assert.strictEqual(badHistory.status, 400);
+    assert.strictEqual(draftCalls, 0);
   });
 
   await check("title generation accepts the plain-text format it requests", async () => {

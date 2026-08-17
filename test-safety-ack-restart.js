@@ -56,16 +56,18 @@ function makeFakeClient() {
         });
       }
       if (sys.includes("legal retrieval relevance judge")) {
-        return json({ relevant: [1, 2], irrelevant: [], relevance_score: 0.9, sufficient: true, reason: "on point" });
+        return json({ relevant: [1, 2], irrelevant: [], relevance_score: 0.9, sufficient: true, conflicts: [], reason: "on point" });
       }
       if (sys.includes("quality reviewer")) {
         // Fail safety → high-risk + not passed → safety ack required.
-        return json({ quality: 0.5, legal_safety: 0.5, issues: ["unverifiable"], passed: false });
+        return json({ quality: 0.5, legal_safety: 0.5, issues: ["unverifiable"], claim_support: [{ claimId: "claim-1", status: "uncertain", reason: "unverifiable" }], passed: false });
       }
       return json({
-        lawMd: "Under section 252 of the Criminal Code Act, assault is a crime.",
+        lawMd: "Assault is addressed by [[p1]].",
         actionsMd: "- Step 1: Report it\n- Step 2: Consult a lawyer",
-        sources: [{ label: "Criminal Code Act, s.252", excerpt: "..." }],
+        provisionIds: ["p1", "p2"],
+        claims: [{ claimId: "claim-1", text: "Assault is addressed by law.", provisionIds: ["p1"] }],
+        sources: [],
         escalate: false, escalateReason: "", followUps: [],
       });
     } } },

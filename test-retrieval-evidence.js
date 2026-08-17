@@ -10,6 +10,8 @@
 const assert = require("assert");
 
 // ── Mock Firestore for legalCorpus ────────────────────────────────────────
+let mockFailure = null;
+let firestoreGets = 0;
 function makeMockFirestore(areaDocs) {
   // Flat doc list with practice_area in each doc (mirrors legal_provisions).
   const docs = [];
@@ -25,6 +27,8 @@ function makeMockFirestore(areaDocs) {
     count: () => ({ get: async () => ({ data: () => ({ count: 0 }) }) }),
     doc: (id) => ({ id, get: async () => ({ exists: false, data: () => ({}) }) }),
     get: async () => {
+      firestoreGets += 1;
+      if (mockFailure) throw new Error(mockFailure);
       let out = docs;
       for (const f of filters) {
         if (f.op === "==") out = out.filter((d) => d[f.field] === f.val);
@@ -63,7 +67,7 @@ require.cache[adminPath] = {
   exports: { getFirestore: () => mockDb },
 };
 
-const { findProvisionsBroad, findProvisions, rankProvisions } = require("./server/legalCorpus");
+const { findProvisionsBroad, findProvisions, rankProvisions, invalidateCache } = require("./server/legalCorpus");
 const { requiredSourceCount, verifyAndResolveCitations } = require("./server/evidence");
 
 let failures = 0;
@@ -132,6 +136,28 @@ async function main() {
     assert.strictEqual(requiredSourceCount({ route: "complex", practice_area: "contract" }), 2);
   });
 
+  await check("repealed sources are excluded and uncertain sources rank lower", async () => {
+    const ranked = rankProvisions([
+      { id: "current", act: "Current Act", section: "1", text: "consumer refund remedy", in_force: true },
+      { id: "uncertain", act: "Uncertain Act", section: "1", text: "consumer refund remedy", source_status: "unverified" },
+    ], { keywords: ["consumer refund"] });
+    assert.strictEqual(ranked[0].id, "current");
+  });
+
+  await check("Firestore quota opens the circuit and returns local-fallback evidence without hammering", async () => {
+    invalidateCache();
+    mockFailure = "Quota exceeded";
+    firestoreGets = 0;
+    const first = await findProvisions({ practiceArea: "employment", jurisdiction: "Federal", keywords: ["wages"] });
+    assert.ok(first.length > 0 && first.every((p) => p.local_eval === true), "quota failure must use local corpus rows");
+    const readsAfterFirst = firestoreGets;
+    const second = await findProvisions({ practiceArea: "tenancy", jurisdiction: "Federal", keywords: ["notice"] });
+    assert.ok(second.every((p) => p.local_eval === true), "open circuit must keep using local corpus");
+    assert.strictEqual(firestoreGets, readsAfterFirst, "open circuit must not retry Firestore for another category");
+    mockFailure = null;
+    invalidateCache();
+  });
+
   await check("citation resolver uses authoritative metadata and rejects invented IDs", async () => {
     const provisions = [{ id: "constitution-s35", act: "Constitution of the Federal Republic of Nigeria 1999", section: "35(1)", text: "Every person shall be entitled to personal liberty.", jurisdiction: "Federal", source_url: "https://source.test" }];
     const result = {
@@ -148,6 +174,21 @@ async function main() {
     assert.strictEqual(result.sources[0].label, "Constitution of the Federal Republic of Nigeria 1999, s.35(1)");
     assert.strictEqual(result.sources[0].excerpt, provisions[0].text);
     assert.ok(!JSON.stringify(result.sources).includes("Made Up Act"));
+  });
+
+  await check("fabricated plain-text Act or section fails citation integrity", async () => {
+    const provisions = [{ id: "p1", act: "Labour Act", section: "11", text: "Wages are payable.", jurisdiction: "Federal" }];
+    const result = {
+      lawMd: "The Imaginary Workers Act section 99 guarantees payment. [[p1]]",
+      actionsMd: "- Keep records",
+      provisionIds: ["p1"],
+      claims: [{ claimId: "claim-1", text: "Wages are payable.", provisionIds: ["p1"] }],
+      sources: [], escalate: false, escalateReason: "", followUps: [],
+    };
+    const verification = verifyAndResolveCitations(result, provisions);
+    assert.strictEqual(verification.valid, false);
+    assert.ok(verification.unverifiedInlineCitations.some((item) => item.includes("Imaginary Workers Act")));
+    assert.ok(verification.unverifiedInlineCitations.some((item) => item.includes("section:99")));
   });
 
   console.log(failures === 0 ? "\nALL RETRIEVAL-EVIDENCE TESTS PASSED" : `\n${failures} TEST(S) FAILED`);

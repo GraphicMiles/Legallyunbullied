@@ -59,7 +59,14 @@ function makeMockDb() {
     };
   }
 
-  return { db: { collection: (n) => coll([n]) }, store, writeLog };
+  const db = {
+    collection: (n) => coll([n]),
+    runTransaction: async (fn) => fn({
+      get: (ref) => ref.get(),
+      set: (ref, data, opts) => ref.set(data, opts),
+    }),
+  };
+  return { db, store, writeLog };
 }
 
 // ── Fake LLM client with a shared concurrency tracker ──────────────────────
@@ -76,10 +83,10 @@ function makeFakeClient(classify, draft, tracker) {
         return json(classify);
       }
       if (sys.includes("legal retrieval relevance judge")) {
-        return json({ relevant: [1, 2], irrelevant: [], relevance_score: 0.9, sufficient: true, reason: "on point" });
+        return json({ relevant: [1, 2], irrelevant: [], relevance_score: 0.9, sufficient: true, conflicts: [], reason: "on point" });
       }
       if (sys.includes("quality reviewer")) {
-        return json({ quality: 0.85, legal_safety: 0.85, issues: [], passed: true });
+        return json({ quality: 0.85, legal_safety: 0.85, issues: [], claim_support: [{ claimId: "claim-1", status: "supported", reason: "directly supported" }], passed: true });
       }
       return json(draft);
     } } },
@@ -128,9 +135,11 @@ const LEGAL_CLASSIFY = {
   reasoning_approach: "", stakeholders: [], potential_remedies: [],
 };
 const DRAFT = {
-  lawMd: "Under section 252 of the Criminal Code Act, assault is a crime.",
+  lawMd: "Assault is addressed by [[p1]].",
   actionsMd: "- Step 1: Report to the police\n- Step 2: Consult a lawyer",
-  sources: [{ label: "Criminal Code Act, s.252", excerpt: "..." }],
+  provisionIds: ["p1", "p2"],
+  claims: [{ claimId: "claim-1", text: "Assault is addressed by the Criminal Code.", provisionIds: ["p1"] }],
+  sources: [],
   escalate: false, escalateReason: "", followUps: [],
 };
 
@@ -280,10 +289,24 @@ async function main() {
     assert.ok(agent.role === "agent", "agent role set");
   });
 
+  await check("active lease owned by another instance prevents duplicate execution", async () => {
+    mockDb = makeMockDb();
+    require.cache[firebaseAdminPath].exports.getFirestore = () => mockDb.db;
+    jobRunner.__reset();
+    let calls = 0;
+    fakeClient = { chat: { completions: { create: async () => { calls++; throw new Error("leased job must not execute"); } } } };
+    await mockDb.db.collection("background_jobs").doc("leased1").set({ uid: "u1", conversationId: "c1", messageId: "m1", question: "Q", status: "running", leaseOwner: "other-instance", leaseUntil: Date.now() + 60000 });
+    await jobRunner.runJob({ jobId: "leased1", uid: "u1", conversationId: "c1", messageId: "m1", question: "Q", history: [] });
+    assert.strictEqual(calls, 0);
+    assert.strictEqual(jobDoc("leased1").leaseOwner, "other-instance");
+  });
+
   await check("worker concurrency is limited (serial execution)", async () => {
     mockDb = makeMockDb();
     require.cache[firebaseAdminPath].exports.getFirestore = () => mockDb.db;
     jobRunner.__reset();
+    chatRoute.__testing.clearProviderCooldowns();
+    fakeClient = makeFakeClient(LEGAL_CLASSIFY, DRAFT, tracker);
     tracker.max = 0;
     tracker.active = 0;
     await mockDb.db.collection("background_jobs").doc("j1").set({ uid: "u1", conversationId: "c1", messageId: "m1", question: "Q1", history: [], status: "queued" });
@@ -316,7 +339,7 @@ async function main() {
       draftAndCritique: {
         planResult: { plan: null, provider: "skipped" },
         draftResult: {
-          result: { lawMd: "Under section 252, assault is a crime.", actionsMd: "- Step 1: Report it\n- Step 2: Consult a lawyer", sources: [{ label: "Criminal Code Act, s.252", excerpt: "..." }], escalate: false, escalateReason: "", followUps: [] },
+          result: { lawMd: "Assault is addressed by [[p1]].", actionsMd: "- Step 1: Report it\n- Step 2: Consult a lawyer", provisionIds: ["p1"], claims: [{ claimId: "claim-1", text: "Assault is addressed by law.", provisionIds: ["p1"] }], sources: [], escalate: false, escalateReason: "", followUps: [] },
           model: "draft-model",
           provider: "groq",
         },
@@ -332,7 +355,7 @@ async function main() {
     assert.strictEqual(llmCalls, 0, `resume must skip classify/gate/draft/critique (made ${llmCalls} LLM calls)`);
     const msg = messageDoc("c1", "m-resume");
     assert.ok(msg && msg.status === "done", "message must be persisted done");
-    assert.strictEqual(msg.result.lawMd, "Under section 252, assault is a crime.", "the stored draft result must be delivered");
+    assert.ok(msg.result.lawMd.includes("Criminal Code Act, s.252"), "the verified stored draft result must be delivered");
     // The job keeps its checkpoints (no regression to them).
     assert.ok(jobDoc("resume1").checkpoints.draftAndCritique, "checkpoints preserved");
   });
@@ -350,7 +373,7 @@ async function main() {
         const json = (o) => ({ choices: [{ message: { content: JSON.stringify(o) } }] });
         if (sys.includes("determine if this is a legal question or casual")) { classifyCalls++; return json(LEGAL_CLASSIFY); }
         if (sys.includes("legal retrieval relevance judge")) { throw new Error("gate must not run on resume"); }
-        if (sys.includes("quality reviewer")) { return json({ quality: 0.85, legal_safety: 0.85, issues: [], passed: true }); }
+        if (sys.includes("quality reviewer")) { return json({ quality: 0.85, legal_safety: 0.85, issues: [], claim_support: [{ claimId: "claim-1", status: "supported", reason: "directly supported" }], passed: true }); }
         draftCalls++;
         return json(DRAFT);
       } } },
@@ -377,6 +400,43 @@ async function main() {
     assert.strictEqual(classifyCalls, 0, "classify must be skipped on resume");
     assert.strictEqual(draftCalls, 1, "draft must be re-run (it was not checkpointed)");
     assert.ok(messageDoc("c1", "m-resume2") && messageDoc("c1", "m-resume2").status === "done");
+  });
+
+  await check("corrupted draft checkpoint is discarded and safely recomputed", async () => {
+    mockDb = makeMockDb();
+    require.cache[firebaseAdminPath].exports.getFirestore = () => mockDb.db;
+    jobRunner.__reset();
+    chatRoute.__testing.clearQuestionCache();
+    let draftCalls = 0;
+    fakeClient = {
+      chat: { completions: { create: async ({ messages }) => {
+        const sys = messages?.[0]?.content || "";
+        const json = (o) => ({ choices: [{ message: { content: JSON.stringify(o) } }] });
+        if (sys.includes("quality reviewer")) return json({ quality: 0.85, legal_safety: 0.85, issues: [], claim_support: [{ claimId: "claim-1", status: "supported", reason: "directly supported" }], passed: true });
+        draftCalls++;
+        return json(DRAFT);
+      } } },
+    };
+    const checkpoints = {
+      classification: { classification: LEGAL_CLASSIFY, classifyProvider: "groq" },
+      retrieval: {
+        workingProvisions: [
+          { id: "p1", act: "Criminal Code Act", section: "252", text: "assault is a crime...", jurisdiction: "Federal" },
+          { id: "p2", act: "Criminal Code Act", section: "253", text: "punishment for assault...", jurisdiction: "Federal" },
+        ],
+        evidence: { sufficient: true, mode: "firestore", relevanceScore: 0.9, sourceCount: 2, retrievedFrom: ["criminal_offences"], reason: "on point", conflicts: [], minSources: 2 },
+      },
+      draftAndCritique: {
+        planResult: { plan: null, provider: "skipped" },
+        draftResult: { result: { ...DRAFT, provisionIds: ["invented-id"], claims: [{ claimId: "claim-1", text: "invented", provisionIds: ["invented-id"] }] }, model: "bad", provider: "bad" },
+        critiqueResult: { quality: 1, legal_safety: 1, passed: true },
+      },
+    };
+    await mockDb.db.collection("background_jobs").doc("corrupt1").set({ uid: "u1", conversationId: "c1", messageId: "m-corrupt", question: "Someone slapped me", history: [], status: "queued", checkpoints });
+    await jobRunner.sweepOnce();
+    await waitFor(() => jobDoc("corrupt1")?.status === "done");
+    assert.strictEqual(draftCalls, 1, "corrupt draft must be recomputed exactly once");
+    assert.strictEqual(messageDoc("c1", "m-corrupt").result.citationVerification.valid, true);
   });
 
   console.log(failures === 0 ? "\nALL JOB-QUEUE TESTS PASSED" : `\n${failures} TEST(S) FAILED`);

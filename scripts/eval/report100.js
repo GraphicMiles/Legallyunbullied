@@ -21,6 +21,7 @@ const DIM_LABELS = {
   practical_usefulness: "Practical usefulness",
   communication: "Communication",
   uncertainty_handling: "Uncertainty handling",
+  reliability: "Reliability",
 };
 
 function main() {
@@ -120,17 +121,17 @@ function buildMarkdown(agg, scored) {
   // Full table
   L.push("## Per-scenario scores");
   L.push("");
-  L.push("| # | Scenario | A | B | C | D | E | F | G | H | Avg | Critical |");
-  L.push("|---|---|---|---|---|---|---|---|---|---|---|---|");
+  L.push("| # | Scenario | A | B | C | D | E | F | G | H | I | Avg | Critical |");
+  L.push("|---|---|---|---|---|---|---|---|---|---|---|---|---|");
   const order = ["legal_accuracy", "citation_accuracy", "source_grounding", "safety",
-    "followup_reasoning", "practical_usefulness", "communication", "uncertainty_handling"];
+    "followup_reasoning", "practical_usefulness", "communication", "uncertainty_handling", "reliability"];
   scored.forEach((s, i) => {
     const d = s.dimensions;
     const cf = s.critical_failures.length ? s.critical_failures.map((f) => f.type).join(",") : "—";
     L.push(`| ${i + 1} | ${s.scenario_id} | ${order.map((k) => d[k].toFixed(1)).join(" | ")} | ${s.avg_score.toFixed(2)} | ${cf} |`);
   });
   L.push("");
-  L.push("_A=Legal accuracy · B=Citation accuracy · C=Source grounding · D=Safety · E=Follow-up reasoning · F=Practical usefulness · G=Communication · H=Uncertainty handling_");
+  L.push("_A=Legal accuracy · B=Citation accuracy · C=Source grounding · D=Safety · E=Follow-up reasoning · F=Practical usefulness · G=Communication · H=Uncertainty handling · I=Reliability_");
   L.push("");
 
   return L.join("\n");

@@ -40,6 +40,7 @@ const HARD_RULES = [
   { re: /\brape[ds]?\b/i, area: "criminal_offences", kw: ["sexual assault"] },
   { re: /\bharass(ed|ing|ment|es)?\b/i, area: "criminal_offences", kw: ["harassment"] },
   { re: /\bthreaten(ed|ing|s)?\s+(me|my|to|with)\b/i, area: "criminal_offences", kw: ["threat"] },
+  { re: /\b(death threats?|threats? (?:on|through|via)|coming to (?:my|our) (?:home|house|workplace|office)|scared for (?:my|our) life)\b/i, area: "criminal_offences", kw: ["threat", "intimidation", "safety"] },
 
   // ── Theft / property ──
   { re: /\bstole\s+(my|our|the)\b/i, area: "criminal_offences", kw: ["theft", "stealing"] },
@@ -60,7 +61,8 @@ const HARD_RULES = [
   { re: /\b(?:be|being|get|getting|got|was|were)\s+arrested\b/i, area: "criminal_rights", kw: ["arrest"] },
   { re: /\barrest(ed|s)?\s+for\b/i, area: "criminal_rights", kw: ["arrest"] },
   { re: /\bpolice\s+(arrested|beat|slapped|shot|detained)\b/i, area: "criminal_rights", kw: ["police", "arrest"] },
-  { re: /\bdetained\s+(me|by|him|her|them)\b/i, area: "criminal_rights", kw: ["detention"] },
+  { re: /\bdetained\s+(me|by|him|her|them|for)\b/i, area: "criminal_rights", kw: ["detention"] },
+  { re: /\b(?:was|were|been|being)\s+detained\b/i, area: "criminal_rights", kw: ["detention", "personal liberty"] },
   { re: /\bpolice\s+brutality\b/i, area: "criminal_rights", kw: ["police", "brutality"] },
 
   // ── Tenancy ──
@@ -83,11 +85,20 @@ const HARD_RULES = [
   // ── Family ──
   { re: /\bdivorce\b/i, area: "family_law", kw: ["divorce"] },
   { re: /\bchild\s+(custody|support)\b/i, area: "family_law", kw: ["custody", "child support"] },
+  { re: /\b(marry off|child marriage|underage marriage|beating (?:a|the|her|his) (?:young )?(?:child|son|daughter)|beats? (?:a|the|her|his) (?:young )?(?:child|son|daughter))\b/i, area: "family_law", kw: ["child protection", "best interests", "abuse"] },
+  { re: /\b(security operatives?|security agents?|officers)\b.{0,80}\b(raided|missing|broke into|arrested)\b/i, area: "criminal_rights", kw: ["security agency", "unlawful arrest", "fundamental rights", "safety"] },
+
+  // ── Injury / road safety ──
+  { re: /(?:\b(workplace|factory|machine)\b.{0,80}\b(injur(?:y|ed)|accident|hospital)\b|\b(injur(?:y|ed)|accident)\b.{0,80}\b(workplace|factory|machine)\b)/i, area: "employment_labour_safety", kw: ["workplace injury", "compensation", "safety"] },
+  { re: /\b(bus|car|danfo|truck|vehicle|driver)\b.{0,80}\b(hit|accident|crash|injur(?:y|ed))\b/i, area: "transport_traffic", kw: ["road accident", "driver", "compensation"] },
 
   // ── Consumer / defective products ──
   { re: /\b(defective|faulty|unsafe)\s+(product|goods?|item|appliance|generator|phone|device)\b/i, area: "consumer_rights", kw: ["defective goods", "consumer", "refund"] },
   { re: /\b(bought|purchased)\b.{0,80}\b(caught fire|exploded|stopped working|damaged|faulty|defective)\b/i, area: "consumer_rights", kw: ["defective goods", "consumer", "compensation"] },
   { re: /\b(refused|won'?t|will not)\s+(a\s+)?refund\b/i, area: "consumer_rights", kw: ["refund", "consumer"] },
+  { re: /\bloan app\b.{0,100}\b(harass|contacts?|photo|threat|message)\b/i, area: "consumer_rights", kw: ["loan app", "harassment", "privacy"] },
+  { re: /\b(private|intimate)\s+(photos?|images?)\b.{0,100}\b(posted|shared|threat|online)\b/i, area: "criminal_offences", kw: ["intimate images", "cyberstalking", "privacy"] },
+  { re: /\bland\b.{0,100}\b(sold to|multiple buyers|fraud|agent|payment)\b/i, area: "land_property", kw: ["land fraud", "title", "sale agreement"] },
 
   // ── Money / contract ──
   { re: /\bowe[sd]?\s+me\s+(money|n[0-9]+)\b/i, area: "contract", kw: ["debt", "money owed"] },
@@ -186,6 +197,12 @@ function buildFallbackClassification(text, detection) {
   const det = detection || detectLegalIntent(text) || { area: "general", keywords: [] };
   const area = det.area || "general";
   const keywords = det.keywords && det.keywords.length ? det.keywords : [text.split(/\s+/).slice(0, 6).join(" ")];
+  const raw = String(text || "").toLowerCase();
+  const keywordText = keywords.join(" ").toLowerCase();
+  const critical = /(death threat|scared for (?:my|our) life|tortur|beating me|beats?.{0,20}(?:child|son|daughter)|hospital now|coming to (?:my|our) (?:home|workplace|office)|missing after arrest)/.test(raw);
+  const high = critical
+    || /(threat|harass|injur|accident|\b(?:bus|car|danfo|truck|vehicle)\b.{0,30}\bhit\b|fraud|scam|child marriage|marry off|private photo|intimate image|unlawful detention|security operatives? raided)/.test(raw)
+    || /(land fraud|child protection|road accident|workplace injury|harassment|threat|safety)/.test(keywordText);
 
   return {
     is_legal_question: true,
@@ -193,10 +210,11 @@ function buildFallbackClassification(text, detection) {
     jurisdiction: "Federal",
     // State law varies for tenancy/family/land — ask. Criminal law is federal.
     jurisdiction_status: STATE_VARYING_AREAS.has(area) ? "unclear" : "clear",
-    urgency: HIGH_URGENCY_AREAS.has(area) ? "High" : "Medium",
+    urgency: critical ? "Critical" : (high || HIGH_URGENCY_AREAS.has(area) ? "High" : "Medium"),
     summary: String(text || "").slice(0, 200),
     keywords,
     key_issues: [],
+    needs_sourcing: true,
     complexity: "Medium",
     route: "simple",
     reasoning_approach: "Apply the relevant statute to the described incident.",
