@@ -149,6 +149,7 @@ function drain() {
       .catch((err) => console.error("[jobs] job crashed:", err && err.stack ? err.stack : err))
       .finally(() => {
         active--;
+        enqueuedIds.delete(job.jobId);
         drain();
       });
   }
