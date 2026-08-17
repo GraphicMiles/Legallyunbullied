@@ -1,5 +1,5 @@
 /**
- * POST /api/chat — the real Phase 1 pipeline.
+ * Canonical POST /api/chat legal-information pipeline.
  *
  * 1. Quick gate: is this a legal question, or casual chat?
  *    - Casual greetings, small talk, meta-questions → reply naturally and exit.
@@ -241,53 +241,6 @@ Respond with ONLY a JSON object (no prose, no markdown fences):
   "followUps": ["Question 1?", "Question 2?"]
 }`;
 
-const PLAN_SYSTEM_PROMPT = `You are a senior Nigerian legal analyst. Your task is to deeply analyze a legal question and the available statutory provisions to create a comprehensive response strategy.
-
-Given:
-- User's question and classification
-- Available statute excerpts from Nigerian law
-
-Perform the following analysis:
-
-1. **Legal Framework Analysis**: Identify the primary legal framework(s) that govern this question. What Acts, sections, and legal principles are most relevant?
-
-2. **Issue Decomposition**: Break down the user's question into specific legal sub-questions that need to be answered.
-
-3. **Provision Mapping**: For each sub-question, identify which specific statutory provisions address it. Note any gaps where the available provisions don't fully answer the question.
-
-4. **Application Strategy**: Determine how to apply the law to the user's specific facts. What elements need to be established? What tests or criteria must be met?
-
-5. **Remedies & Guidance**: Based on the law, what are the user's rights, obligations, and available remedies? What practical steps should they take?
-
-6. **Risk Assessment**: What are the potential risks, limitations, or complications? When should they seek professional legal help?
-
-Respond with a structured JSON object:
-
-{
-  "analysis": "2-3 sentence analysis of the core legal question and what needs to be determined",
-  "legal_framework": "Name the primary Act(s) and key sections that govern this issue",
-  "key_provisions": [
-    "Section X of [Act Name] - [brief description of what it establishes]",
-    "Section Y of [Act Name] - [brief description]"
-  ],
-  "sub_questions": [
-    "What are the statutory requirements for X?",
-    "Did the party comply with Y?",
-    "What remedies are available?"
-  ],
-  "application_to_facts": "1-2 sentences on how to apply the law to the user's specific situation",
-  "response_structure": "Outline of how to structure the answer (e.g., '1. Explain legal requirements, 2. Analyze compliance, 3. Outline remedies, 4. Provide practical next steps')",
-  "practical_steps": [
-    "Step 1: Do X",
-    "Step 2: File Y",
-    "Step 3: Contact Z"
-  ],
-  "gaps": ["Any aspects the available provisions don't fully address"],
-  "escalation_triggers": ["When should the user definitely consult a lawyer?"]
-}
-
-Be thorough but concise. This plan will guide the final response to ensure it's comprehensive, accurate, and actionable.`;
-
 // ── Relevance/sufficiency gate (retrieval-evidence check) ─────────────────
 // Runs BETWEEN search and draft. The critique step only checks grounding
 // ("did the draft cite from the given excerpts?") and writing quality — a
@@ -383,7 +336,7 @@ function detectHedging(result) {
   return HEDGE_PATTERNS.filter((p) => text.includes(p));
 }
 
-// ── Critique system prompt (V1 Phase 1+2) ──────────────────────────────
+// ── Critique system prompt ─────────────────────────────────────────────
 // Runs after draft to score quality + legal_safety. If scores are too low,
 // the draft is retried with critique feedback (max 2 iterations).
 const CRITIQUE_SYSTEM_PROMPT = `You are a legal response quality reviewer for a Nigerian legal-information assistant.
@@ -484,14 +437,14 @@ async function critiqueWithFallback(question, provisions, draft, classification)
   throw new Error("All critique providers failed");
 }
 
-// ── Question-level cache (V1 Phase 11) ──────────────────────────────────
+// ── Question-level cache ────────────────────────────────────────────────
 // Caches full pipeline results for identical questions to avoid re-running
 // the classify→search→draft→critique chain for repeated queries.
 const questionCache = new Map();
 const QUESTION_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 const QUESTION_CACHE_MAX = 200;
 
-// ── Pending safety acknowledgments (V1 Phase 3 — HITL on safety fail) ────
+// ── Pending user safety acknowledgments ─────────────────────────────────
 // When a high-risk answer fails critique after all retries, the response is
 // held until the user explicitly acknowledges the safety warning.
 //
@@ -575,76 +528,6 @@ function setCachedResult(key, data) {
     questionCache.delete(oldest);
   }
   questionCache.set(key, { data, timestamp: Date.now() });
-}
-
-async function planResponse(question, classification, provisions) {
-  const groqClient = getGroqClient();
-  const geminiClient = getGeminiClient();
-
-  const contextSummary = provisions.slice(0, 10).map(p => 
-    `[${p.act}${p.section ? ", s." + p.section : ""}]: ${p.text.slice(0, 200)}...`
-  ).join("\n\n");
-
-  const planningPrompt = `
-Question: ${question}
-
-Classification:
-- Practice Area: ${classification.practice_area}
-- Key Issues: ${classification.key_issues.join(", ")}
-- Complexity: ${classification.complexity}
-- Approach: ${classification.reasoning_approach}
-
-Available Legal Provisions:
-${contextSummary}
-
-Analyze this question and create a structured plan for answering it.`;
-
-  // Try Groq first
-  if (groqClient) {
-    try {
-      const completion = await callCompletion(
-        groqClient,
-        DRAFT_MODEL, // Use the more capable model for planning
-        [
-          { role: "system", content: PLAN_SYSTEM_PROMPT },
-          { role: "user", content: planningPrompt }
-        ],
-        { task: "planning", timeoutMs: 10000, temperature: 0.3, max_tokens: 800, response_format: { type: "json_object" } }
-      );
-      return { plan: completion.parsed, provider: "groq" };
-    } catch (err) {
-      console.warn(`[/api/chat] Groq planning failed: ${err.status || ""} ${err.message}`);
-    }
-  }
-
-  // Try Gemini
-  if (geminiClient) {
-    try {
-      const completion = await callCompletion(
-        geminiClient,
-        GEMINI_DRAFT_MODEL,
-        [
-          { role: "system", content: PLAN_SYSTEM_PROMPT },
-          { role: "user", content: planningPrompt }
-        ],
-        { task: "planning", timeoutMs: 10000, temperature: 0.3, max_tokens: 800, response_format: { type: "json_object" } }
-      );
-      return { plan: completion.parsed, provider: "gemini" };
-    } catch (err) {
-      console.warn(`[/api/chat] Gemini planning failed: ${err.status || ""} ${err.message}`);
-    }
-  }
-
-  // If planning fails, return a minimal plan and continue
-  return { 
-    plan: { 
-      analysis: "Analyzing the legal question and relevant provisions.",
-      key_provisions: [],
-      response_structure: "Review applicable law, apply to facts, provide guidance",
-      gaps: []
-    }, 
-    provider: "fallback" 
-  };
 }
 
 async function callCompletion(client, model, messages, options = {}) {
@@ -823,9 +706,6 @@ function markProviderFailure(key, err) {
   return kind;
 }
 
-function markProviderRateLimited(key) {
-  markProviderFailure(key, { status: 429, message: "rate limited" });
-}
 
 /**
  * Sanitize draft results to remove placeholder/hallucinated URLs and sources.
@@ -905,9 +785,6 @@ async function draftWithFallback(question, contextBlock, plan, classification, c
     return false;
   };
 
-  // Helper to delay before retry (rate limit recovery)
-  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
   // Build provider list — each is [providerKey, client, model]
   const providers = [];
   if (groqClient) {
@@ -924,9 +801,7 @@ async function draftWithFallback(question, contextBlock, plan, classification, c
     throw new Error("No LLM provider available for drafting. Set GROQ_API_KEY, OPENROUTER_API_KEY, CEREBRAS_API_KEY, or GEMINI_API_KEY.");
   }
 
-  let lastErr = null;
   let allSkipped = true;
-  let allRateLimited = true;
 
   for (const [key, client, model] of providers) {
     const cooldownKey = `${key}:${model}`;
@@ -942,7 +817,6 @@ async function draftWithFallback(question, contextBlock, plan, classification, c
       sanitizeDraftResult(result);
       return { result, model, provider: key };
     } catch (err) {
-      lastErr = err;
       markProviderFailure(cooldownKey, err);
       if (isRateLimitError(err)) {
         console.warn(`[/api/chat] ${key} rate-limited: ${err.message}`);
@@ -950,10 +824,8 @@ async function draftWithFallback(question, contextBlock, plan, classification, c
         console.warn(`[/api/chat] ${key} JSON parse failed, trying next provider: ${err.message}`);
       } else if (err.status === 404 || (err.message && err.message.includes('404'))) {
         console.warn(`[/api/chat] ${key} model unavailable (404): ${err.message}`);
-        allRateLimited = false;
       } else {
         console.warn(`[/api/chat] ${key} failed: ${err.status || ""} ${err.message}`);
-        allRateLimited = false;
       }
     }
   }
@@ -1625,12 +1497,12 @@ async function runChatPipeline(req) {
       evidence.citationVerification = citationVerification;
     }
 
-    // Step 6: Critique + iteration loop (V1 Phase 1+2)
+    // Step 6: Critique + bounded correction
     // Skip critique for providersBusy responses (they're fallback errors, not real answers)
     if (!draftResult.providersBusy && draftResult.result) {
       const MAX_CRITIQUE_RETRIES = 1;
 
-      // Phase 2: Category-specific thresholds — high-risk categories get a stricter bar.
+      // Category-specific thresholds — high-risk categories get a stricter bar.
       // Wrong advice in these areas could lead to arrest, deportation, loss of custody, etc.
       const practiceArea = (classification.practice_area || "").toLowerCase();
       const HIGH_RISK_AREAS = [
@@ -1708,10 +1580,10 @@ async function runChatPipeline(req) {
         }
       }
 
-      // Phase 3 escalation: If high-risk category STILL fails after all retries,
+      // If a high-risk category still fails after the bounded correction,
       // cache the response and require explicit user acknowledgment before delivering.
       if (isHighRisk && critiqueResult && !critiqueResult.passed) {
-        console.warn(`[/api/chat] HIGH-RISK category "${practiceArea}" failed critique after ${MAX_CRITIQUE_RETRIES + 1} attempts — requiring safety acknowledgment (HITL)`);
+        console.warn(`[/api/chat] HIGH-RISK category "${practiceArea}" failed critique after ${MAX_CRITIQUE_RETRIES + 1} attempts — requiring user safety acknowledgment`);
 
         const ackToken = generateAckToken();
         await setPendingAck(ackToken, {
@@ -1822,10 +1694,10 @@ async function runChatPipeline(req) {
     result: draftResult.result,
     draftModel: draftResult.model,
     draftProvider: draftResult.provider,
-    // Evidence quality from the relevance/sufficiency gate (V1 retrieval fix):
+    // Evidence quality from the relevance/sufficiency gate:
     // the client uses this to label confidence instead of hardcoding it.
     evidence,
-    // Critique scores (V1 Phase 2 — split scoring with category-specific thresholds)
+    // Critique scores with category-specific thresholds
     critique: critiqueResult ? {
       quality: critiqueResult.quality,
       legal_safety: critiqueResult.legal_safety,
@@ -1834,7 +1706,7 @@ async function runChatPipeline(req) {
       thresholds: critiqueResult.thresholds || null,
       isHighRisk: critiqueResult.isHighRisk || false,
     } : null,
-    // Safety flag for high-risk categories that failed critique (V1 Phase 2)
+    // Safety flag for high-risk categories that failed critique
     safetyFlag: draftResult.result?._safetyFlag || null,
     // Bug fix: forward providersBusy flag so client can render error state
     // instead of styling a fallback message as a confident legal answer
@@ -1968,199 +1840,6 @@ router.post("/api/chat/acknowledge", async (req, res) => {
   });
 });
 
-
-/**
- * GET /api/chat/stream — SSE endpoint with granular event-driven UI (V1 Phase 4).
- *
- * Emits sanitized structured events — no raw reasoning or prompts leaked:
- *   { event: "start" }
- *   { event: "classify_start" }
- *   { event: "classify_done", practiceArea, jurisdiction, urgency, route }
- *   { event: "needs_input", question, field }          ← HITL jurisdiction
- *   { event: "search_start" }
- *   { event: "search_done", sourceCount, sources[] }   ← sanitized labels only
- *   { event: "draft_start" }
- *   { event: "draft_done" }
- *   { event: "critique_start" }
- *   { event: "critique_done", quality, legal_safety, passed, isHighRisk }
- *   { event: "safety_flag", practiceArea, message, ackToken }  ← Phase 3 HITL
- *   { event: "complete", result, classification, critique, safetyFlag }
- *   { event: "casual", casualReply }
- *   { event: "corpus_empty", message }
- *   { event: "error", message }
- */
-router.get("/api/chat/stream", async (req, res) => {
-  const question = (req.query && req.query.question || "").toString().trim();
-  if (!question) {
-    res.writeHead(400, { "Content-Type": "text/event-stream" });
-    res.write(`data: ${JSON.stringify({ event: "error", message: "question is required" })}\n\n`);
-    return res.end();
-  }
-
-  res.writeHead(200, {
-    "Content-Type": "text/event-stream",
-    "Cache-Control": "no-cache",
-    "Connection": "keep-alive",
-    "X-Accel-Buffering": "no",
-  });
-
-  const emit = (data) => {
-    res.write(`data: ${JSON.stringify(data)}\n\n`);
-  };
-
-  // Handle client disconnect
-  let cancelled = false;
-  req.on("close", () => { cancelled = true; });
-
-  try {
-    const pipelineStart = Date.now();
-    emit({ event: "start" });
-
-    // ── Step 1: Classify ──
-    emit({ event: "classify_start" });
-    const forcedLegal = detectLegalIntent(question).legal;
-    const classifyResult = await classifyWithFallback(question, "", { forceLegal: forcedLegal });
-    if (cancelled) return res.end();
-    let classification = classifyResult.classification;
-
-    // Deterministic backstop — a described incident must not become casual.
-    if (forcedLegal && classification.is_legal_question === false) {
-      console.warn("[/api/chat/stream] Classifier said casual but deterministic gate detected a legal incident — forcing legal path");
-      classification = buildFallbackClassification(question);
-    }
-
-    emit({
-      event: "classify_done",
-      practiceArea: classification.practice_area,
-      jurisdiction: classification.jurisdiction,
-      urgency: classification.urgency,
-      route: classification.route || "simple",
-      elapsedMs: Date.now() - pipelineStart,
-    });
-
-    // Casual chat shortcut
-    if (classification.is_legal_question === false) {
-      emit({ event: "casual", casualReply: classification.casual_reply });
-      return res.end();
-    }
-
-    // HITL: Jurisdiction unclear
-    if (classification.jurisdiction_status === "unclear") {
-      emit({ event: "needs_input", question: "Which state did this happen in? The laws can differ by state.", field: "jurisdiction" });
-      return res.end();
-    }
-
-    // ── Step 2: Search legal sources ──
-    emit({ event: "search_start" });
-    let provisions;
-    try {
-      provisions = await findProvisions({
-        practiceArea: classification.practice_area,
-        jurisdiction: classification.jurisdiction,
-        keywords: classification.keywords,
-      });
-    } catch (err) {
-      emit({ event: "error", message: "Legal database unavailable." });
-      return res.end();
-    }
-    if (cancelled) return res.end();
-
-    if (!provisions.length) {
-      emit({ event: "corpus_empty", message: "No ingested legal sources match this area yet." });
-      return res.end();
-    }
-
-    // Sanitized source labels only — no raw excerpts leaked
-    const sanitizedSources = provisions.slice(0, 6).map(p => ({
-      label: `${p.act}${p.section ? ", s." + p.section : ""}`,
-    }));
-    emit({ event: "search_done", sourceCount: provisions.length, sources: sanitizedSources });
-
-    // ── Step 3: Draft ──
-    emit({ event: "draft_start" });
-    const contextBlock = provisions.map((p) => `[${p.act}${p.section ? ", s." + p.section : ""}]\n${p.text}`).join("\n\n---\n\n");
-    const draftResult = await draftWithFallback(question, contextBlock, null, classification);
-    if (cancelled) return res.end();
-
-    if (draftResult.providersBusy) {
-      emit({ event: "complete", providersBusy: true, retryAfter: draftResult.retryAfter || 30, result: draftResult.result });
-      return res.end();
-    }
-
-    emit({ event: "draft_done", elapsedMs: Date.now() - pipelineStart });
-
-    // ── Step 4: Critique (V1 Phase 1+2) ──
-    emit({ event: "critique_start" });
-    let critiqueResult = null;
-    const MAX_RETRIES = 2;
-    const practiceArea = (classification.practice_area || "").toLowerCase();
-    const HIGH_RISK = ["criminal_rights", "criminal_offences", "immigration_citizenship", "constitutional_rights", "family_law"];
-    const isHighRisk = HIGH_RISK.includes(practiceArea);
-    const QUALITY_T = 0.6;
-    const SAFETY_T = isHighRisk ? 0.7 : 0.6;
-
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      try {
-        critiqueResult = await critiqueWithFallback(question, provisions, draftResult.result, classification);
-        critiqueResult.passed = critiqueResult.quality >= QUALITY_T && critiqueResult.legal_safety >= SAFETY_T;
-        critiqueResult.thresholds = { quality: QUALITY_T, safety: SAFETY_T };
-        critiqueResult.isHighRisk = isHighRisk;
-
-        if (critiqueResult.passed || attempt === MAX_RETRIES) break;
-
-        // Retry draft with feedback
-        const feedback = `\n\nFIX THESE ISSUES: ${critiqueResult.issues.join("; ")}${isHighRisk ? " This is HIGH-RISK — accuracy is critical." : ""}`;
-        draftResult = await draftWithFallback(question, contextBlock + feedback, null, classification);
-        if (cancelled) return res.end();
-      } catch (err) {
-        critiqueResult = { quality: 0.5, legal_safety: 0.5, issues: ["critique_unavailable"], passed: true, thresholds: { quality: QUALITY_T, safety: SAFETY_T }, isHighRisk };
-        break;
-      }
-    }
-
-    emit({
-      event: "critique_done",
-      quality: critiqueResult.quality,
-      legal_safety: critiqueResult.legal_safety,
-      passed: critiqueResult.passed,
-      isHighRisk: critiqueResult.isHighRisk,
-      elapsedMs: Date.now() - pipelineStart,
-    });
-
-    // ── Phase 3: Safety HITL ──
-    if (isHighRisk && critiqueResult && !critiqueResult.passed) {
-      const ackToken = generateAckToken();
-      await setPendingAck(ackToken, { question, classification, draftResult, critiqueResult, route: classification.route });
-      emit({
-        event: "safety_flag",
-        practiceArea,
-        message: "This response covers a high-risk legal area and could not be verified to our standard.",
-        ackToken,
-      });
-      return res.end();
-    }
-
-    // ── Complete ──
-    emit({
-      event: "complete",
-      result: draftResult.result,
-      classification,
-      route: classification.route,
-      critique: {
-        quality: critiqueResult.quality,
-        legal_safety: critiqueResult.legal_safety,
-        passed: critiqueResult.passed,
-      },
-      totalElapsedMs: Date.now() - pipelineStart,
-    });
-    res.end();
-
-  } catch (err) {
-    console.error("[/api/chat/stream] Error:", err.message);
-    emit({ event: "error", message: "Something went wrong. Please try again." });
-    res.end();
-  }
-});
 
 /**
  * POST /api/generate-title — Generate a short contextual title for a conversation

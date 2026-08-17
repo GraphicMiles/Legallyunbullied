@@ -1,124 +1,104 @@
 # Legally Unbullied
 
-**Understand the law. Know your rights. Find help.**
+Evidence-grounded Nigerian legal-information assistant. The application classifies a user’s situation, retrieves Nigerian statutory provisions, ranks and validates the evidence, drafts an answer with provision-ID references, verifies displayed citations on the server, applies a safety review, and persists the conversation.
 
-AI-powered legal-information platform for Nigeria. This repo currently contains the **Phase 1 MVP** — the AI agent question/answer chat interface — served as a single Node/Express web service.
+> Legally Unbullied provides legal information, not legal advice. Urgent or high-risk matters should be reviewed by a qualified lawyer.
 
-## Structure
+## Production architecture
 
-- `server.js` — Express server. Serves the static front-end from `public/`, exposes `/healthz`, and mounts the real AI pipeline at `POST /api/chat` (see below).
-- `server/firebaseAdmin.js` — Firebase Admin SDK init (server-side only, from `FIREBASE_SERVICE_ACCOUNT_JSON`).
-- `server/groq.js` — Groq client (OpenAI-SDK compatible, open-weight models on fast inference hardware), configurable model IDs.
-- `server/chatRoute.js` — the pipeline itself: Groq classifies the question -> Firestore returns matching provisions -> Groq drafts the answer, instructed to cite only what it was given.
-- `scripts/pdf-to-text.js` / `scripts/ingest.js` — one-Act-at-a-time ingestion pipeline (see below).
-- `scripts/bulk-fetch-clean.js` / `scripts/lib/textClean.js` / `scripts/classify-acts.js` / `scripts/bulk-ingest-firestore.js` — the bulk pipeline used to index the ~550-Act PLAC "2004 Laws of Nigeria" federal compendium (see "Bulk-indexing the federal statute book" below).
-- `server/practiceAreas.js` — the shared practice-area taxonomy (19 categories) used by both the live classifier prompt and the ingestion scripts, so they can never drift out of sync.
-- `public/index.html` — app shell: sidebar (conversation history, plan status, account) + main chat area, mobile-responsive (sidebar collapses to an off-canvas drawer under 900px).
-- `public/app.js` — loaded as an ES module. Conversation store (persisted to `localStorage`), calls the real `POST /api/chat` endpoint, and renders the structured 3-part answer format from the PRD:
-  1. **What the law says** (streamed in live, with expandable sourced context cards)
-  2. **What you can do**
-  3. **Escalation verdict** — self-resolvable, or a static outbound link to the [NBA's Find a Lawyer directory](https://www.nigerianbar.org.ng/find-a-lawyer) when a question needs a professional.
+```text
+Browser (vanilla JS + Firebase Auth)
+  → authenticated POST /api/chat
+  → deterministic legal-intent guard
+  → LLM classification
+  → Firestore/local statutory retrieval
+  → deterministic ranking and broad search
+  → LLM relevance review
+  → deterministic response plan
+  → LLM draft using provision IDs
+  → server citation resolution
+  → LLM quality/safety critique
+  → high-risk acknowledgement when required
+  → Firestore persistence
+```
 
-  The "thinking" trace is a real timeline (not a spinner): per-step icons, a live elapsed timer, tool-call chips showing which sources were checked, and a collapsed "Thought for X.Xs" summary once done. The single real classify->retrieve->draft round trip is mapped onto that 4-step visual pacing, then the answer streams in section-by-section with live markdown rendering, then reveals expandable source cards, the verdict, follow-up question chips, and a copy/feedback action row.
+The main client uses the REST pipeline. The obsolete separate SSE implementation has been removed so there is only one legal-answer path.
 
-  Also handles: per-conversation clear/delete (kebab menu in the sidebar, plus a one-click clear icon in the topbar for the active chat) with a confirm dialog before anything destructive; and Firebase Auth (email/password + Google) via a modal, with a sidebar sign-in button that becomes a profile row once signed in, and a small avatar in the topbar.
-- `render.yaml` — Render Blueprint: deploys this repo as one Web Service (Node runtime, `npm install` / `npm start`).
+## Important files
 
-## The AI pipeline (`POST /api/chat`)
+- `server.js` — Express service, security middleware, routes, health check, worker startup.
+- `server/chatRoute.js` — canonical legal-answer pipeline and safety acknowledgement.
+- `server/legalCorpus.js` — raw category cache, lexical ranking, broad retrieval, Firestore circuit breaker.
+- `server/evidence.js` — provision-ID and displayed-citation verification.
+- `server/legalIntent.js` — deterministic legal-incident detection and fallback classification.
+- `server/jobRunner.js` — Firestore-backed, single-instance restart/replay worker.
+- `server/conversationRoute.js` — authenticated conversation/message API.
+- `server/providerHealth.js` — startup model availability checks.
+- `server/localLegalCorpus.js` — read-only checked-in corpus fallback.
+- `public/app.js` — client state, persistence sync, chat rendering and auth behavior.
+- `scripts/eval/runner100.js` — live 100-scenario runner.
+- `scripts/eval/scoring100.js` — deterministic evaluation scorer.
+- `docs/SYSTEM_REFERENCE.md` — complete current implementation reference and gap register.
+- `docs/INGESTION_STATUS.md` — legal corpus status and provenance limitations.
 
-No vector database. Retrieval is a Firestore filter by practice area + jurisdiction, narrowed further by a keyword pre-filter (extracted during classification) once a category has too many sections to hand an LLM in one go — see `server/legalCorpus.js`. Revisit with real vector search if a single practice area's corpus grows past what keyword filtering can reasonably narrow down.
+## Environment
 
-1. **Classify** — Groq (`GROQ_MODEL_CLASSIFY`, default `llama-3.1-8b-instant`) returns `{ practice_area, jurisdiction, urgency, summary }` as structured JSON.
-2. **Retrieve** — `server/legalCorpus.js` queries Firestore's `legal_provisions` collection for that practice area, keeping provisions that match the jurisdiction or are Federal/unscoped.
-3. **Empty-corpus guard** — if nothing's been ingested for that practice area yet, the endpoint says so explicitly (`corpusEmpty: true`) instead of letting the model invent an answer with no grounding.
-4. **Draft** — Groq (`GROQ_MODEL_DRAFT`, default `llama-3.3-70b-versatile`) drafts `{ lawMd, actionsMd, sources[], escalate, escalateReason }`, instructed to cite only the Acts/sections it was actually given.
+Copy `.env.example` to `.env` for local development. Required production values:
 
-(We evaluated xAI/Grok first, then briefly OpenAI, before landing on Groq — cheap, fast, and its JSON Object Mode is exactly what `chatRoute.js` already used, so no prompt/logic changes were needed, just the client config in `server/groq.js`. That file and `server/chatRoute.js`'s two model constants are the only things that would need to change to swap providers again.)
+- Firebase browser configuration (`FIREBASE_*`)
+- `FIREBASE_SERVICE_ACCOUNT_JSON`
+- at least one supported LLM provider key (`GROQ_API_KEY` or `GEMINI_API_KEY`)
 
-## Ingesting legal sources
+Never commit credentials. Rotate any key exposed in logs, chat, screenshots or source control.
 
-`legal_sources/` holds downloaded source documents, organized by category, with full provenance in `legal_sources/SOURCES.md`. There are two ingestion paths:
-
-**One Act at a time** (for a hand-picked, hand-reviewed source):
-1. Extract text from a source PDF:
-   ```bash
-   npm run pdf-to-text -- --file sources/tenancy-law-2011.pdf
-   ```
-   Review/clean the resulting `.txt` — this is the point to fix OCR noise, headers/footers, etc. before it becomes retrievable content.
-2. Ingest it into Firestore, split into per-section chunks:
-   ```bash
-   npm run ingest -- \
-     --file sources/tenancy-law-2011.txt \
-     --act "Lagos Tenancy Law 2011" \
-     --practice-area tenancy \
-     --jurisdiction "Lagos State" \
-     --source-url "https://..." \
-     --dry-run   # drop this flag once the parsed section preview looks right
-   ```
-   `practice-area` must be one of the 19 keys in `server/practiceAreas.js` — kept in sync with the classifier's categories in `server/chatRoute.js` automatically (both import the same module).
-
-Section splitting is a regex tuned to common Nigerian statute numbering (`13.—(1) ...`) — tune `SECTION_HEADER` in `scripts/ingest.js` per document if a source uses different formatting.
-
-## Bulk-indexing the federal statute book
-
-To go beyond a handful of hand-picked Acts, `scripts/bulk-fetch-clean.js` + `scripts/bulk-ingest-firestore.js` automate the whole PLAC "2004 Laws of Nigeria" compendium (~550 federal Acts, both PDF and HTML sources):
-
-1. `node scripts/classify-acts.js` — one-time bulk LLM classification of every Act *title* (not full text) into a `server/practiceAreas.js` category. Cheap relative to per-question classification since it's just titles, batched. Output: `legal_sources/manifest/placng_classified.json`.
-2. `node scripts/bulk-fetch-clean.js [--start N] [--limit N]` — downloads every Act (PDF or `print.php` HTML), converts to text, and runs it through `scripts/lib/textClean.js`'s generic auto-cleaner, which:
-   - Splits detected section-number headers into "runs" (a restart back down to 1/2 after climbing much higher marks a new run) to distinguish a repeated Arrangement-of-Sections ToC from the real body, using content density (ToC entries are short titles; real sections have substantive prose) to decide which run is which — this works across both PDF- and HTML-sourced text without depending on a specific markup convention.
-   - Additionally cuts at a bracketed `[Commencement]` clause when present (the conventional marker between a ToC and the real numbered sections in Nigerian statutes) and at explicit trailing markers (`SCHEDULE`, `ORDER <roman numeral>`, `APPENDIX`, `SUBSIDIARY LEGISLATION`, etc.) so Rules/Schedules that re-number from 1 don't collide with real section numbers.
-   - Writes one cleaned `.txt` per Act to `legal_sources/federal_acts_bulk/` plus per-doc stats (section count, whether numbering came out monotonic, first/last section number) into `legal_sources/manifest/staged.json`, so results can be spot-checked before anything touches Firestore. Raw downloads are cached under `legal_sources/federal_acts_bulk/_raw/` (git-ignored — regeneratable, not committed) so re-runs and `--reclean` (re-run the cleaner against cached raw files with zero network calls) are fast.
-3. `node scripts/bulk-ingest-firestore.js [--start N] [--limit N] [--dry-run]` — chunks each staged Act by section (same chunker as `scripts/ingest.js`) and batch-writes to Firestore, tagged `jurisdiction: "Federal"` and `bulk_source: "placng_2004_compendium"`. Resumable via `legal_sources/manifest/ingest_progress.json`.
-
-This is a fully automated, best-effort pipeline across ~550 structurally-inconsistent government documents from different eras/scanners — not the same level of individual hand-review given to the first 5 flagship Acts (Lagos Tenancy Law, Labour Act, ACJA 2015, National Industrial Court Act, Lagos Small Claims Practice Direction). Spot-checked quality: of 542 unique Acts successfully fetched (3 PDFs had no extractable text layer, likely scanned images needing OCR — logged, not ingested), roughly 84% produced a perfectly clean, monotonically-numbered section sequence starting at section 1; the rest still captured real section content but occasionally missed the Act's first section or two, or had a minor numbering hiccup, due to one-off formatting quirks in specific source documents. See `legal_sources/SOURCES.md` for exact current counts.
-
-## Design system
-
-Three-color theme (black / white / golden-yellow accent), defined entirely through CSS custom properties in `public/index.html` (`:root`) — colors, spacing, radius, and type scale are tokens, not hardcoded values, so the theme can be re-skinned centrally.
-
-## Environment variables
-
-Nothing sensitive is hardcoded or committed — everything below is read from environment variables, loaded via `.env` locally (already git-ignored) and set directly in Render's dashboard in production.
-
-Copy `.env.example` to `.env` and fill in:
-
-**Firebase web config** (`FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_PROJECT_ID`, `FIREBASE_STORAGE_BUCKET`, `FIREBASE_MESSAGING_SENDER_ID`, `FIREBASE_APP_ID`) — from Firebase Console → Project settings → General → Your apps. `server.js` exposes these to the browser at runtime through `GET /firebase-config.js`, which sets `window.__FIREBASE_CONFIG__` before `public/firebase-init.js` initializes the client SDK. Not secret by design (scoped by Firebase Security Rules + authorized domains), but still env-driven so the same code can point at different Firebase projects without a code change.
-
-**`GROQ_API_KEY`** — from [console.groq.com/keys](https://console.groq.com/keys). Used by `server/groq.js` for both classification and drafting calls.
-
-**`FIREBASE_SERVICE_ACCOUNT_JSON`** — genuinely secret. Generate at Firebase Console → Project Settings → Service Accounts → Generate new private key, then paste the entire downloaded JSON file as a single-line string. This grants full server-side Firestore/Auth/Storage access, bypassing security rules — never expose it to the client, never log it, never commit it. If it's ever pasted somewhere insecure (chat, a public repo, etc.), rotate it immediately from that same Service Accounts page.
-
-In Render, set all of these under the service's **Environment** tab, or via **Add from .env** if you have a local `.env` file to import. If deploying via the `render.yaml` Blueprint, Render will prompt for each one — they're declared with `sync: false` so values are never stored in the repo.
-
-Firebase Auth is wired up end-to-end: `public/app.js` is loaded as an ES module (see index.html) specifically so its auth imports and `firebase-init.js`'s own module execute in guaranteed document order — no race on `window.firebaseAuth` existing. Email/password sign-in/sign-up and Google sign-in both work against the real project (verified live: created and deleted a real test user via the Admin SDK). Conversation history/messages still live in `localStorage`, not Firestore — signing in currently only changes the sidebar/topbar identity UI, it doesn't yet sync conversations to a per-user Firestore document. That's the natural next step if cross-device history matters.
-
-## Running locally
+## Run
 
 ```bash
 npm install
 npm start
 ```
 
-Then open `http://localhost:3000`.
+Open `http://localhost:3000`.
 
-## Deploying to Render
+## Tests
 
-This repo includes a `render.yaml` Blueprint, so the easiest path is:
+Deterministic server/regression suite:
 
-1. Render Dashboard → **New → Blueprint**
-2. Connect this repo
-3. Render reads `render.yaml` and pre-fills a Web Service (Node, `npm install` / `npm start`, health check on `/healthz`), and prompts for the env vars listed above — click **Apply**
+```bash
+npm test
+```
 
-Or set it up manually as a **Web Service**:
-- Build Command: `npm install`
-- Start Command: `npm start`
-- Health Check Path: `/healthz`
+Focused V2 guardrails:
 
-## Status
+```bash
+npm run test:v2
+```
 
-- **V1 complete** — all 7 phases shipped (see `docs/ROADMAP.md`). The agent pipeline includes classify → search → plan → draft → critique → safety gate, with provider fallback across 5 LLM providers, category-specific safety thresholds, HITL escalation for high-risk answers, SSE event streaming, question caching, and full server-side conversation persistence.
-- **Security hardened** — CORS allowlist, rate limiting (60/min general, 20/min chat), Firebase ID token auth on all API endpoints, 50kb body limit, Firestore security rules with field validation, UUID v4 conversation IDs, ownership checks return 404 (prevents enumeration).
-- **Legal corpus** — **545 of 547 federal Acts** from the PLAC "2004 Laws of Nigeria" compendium are ingested into Firestore (~8,200 sections), plus 5 hand-reviewed flagship Acts and the Constitution. Only 2 low-relevance Acts remain in the staging queue. See `docs/INGESTION_STATUS.md` for details including 4 gap laws not in the PLAC compendium that need separate sourcing (VAPP Act, FCCPA, Recovery of Premises Act).
-- **Eval suite** — 35 real scenarios scored across 15+ dimensions (pass threshold 0.7, regression gate 0.65). Run with `npm run eval`.
-- **Auth + persistence** — Firebase Auth (email/password + Google) fully wired. Conversations persist to Firestore per-user, with localStorage migration on first sign-in and localStorage as write-behind cache.
-- **V2/V3 roadmap** — documented in `docs/ROADMAP.md`. Key V2 items: persistent memory, parallel tool execution, expanded eval (100+) with CI gating. V3: observability, audit logs, human-review dashboard, multi-tenant quotas.
+Playwright browser tests are stored as `test-chat-*.js` and require an installed Playwright browser plus its OS dependencies.
+
+## Evaluation
+
+Dry-run the 100-scenario plan:
+
+```bash
+npm run eval:dry
+```
+
+Run the critical 20 against a staging URL:
+
+```bash
+npm run eval:critical -- --base-url https://your-staging-service.onrender.com --delay 12000
+```
+
+Run all 100:
+
+```bash
+npm run eval:full -- --base-url https://your-staging-service.onrender.com --delay 12000
+npm run eval:report
+```
+
+The latest committed critical result covers 20 scenarios and 61 turns: 20/20 passed with zero critical failures. It used the checked-in local corpus after Firestore quota exhaustion; it is not a substitute for a fresh full-100 run against a healthy production-equivalent corpus and qualified-lawyer review.
+
+## Deployment
+
+`render.yaml` defines one Render web service with automatic deployment, `/healthz`, and environment-variable placeholders. The background worker runs inside the same process and is intentionally single-instance. See `docs/SYSTEM_REFERENCE.md` before scaling beyond one instance.
