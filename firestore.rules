@@ -25,7 +25,7 @@ service cloud.firestore {
         && data.keys().hasOnly([
           'userId', 'role', 'content', 'casualReply', 'status', 'createdAt',
           'startedAt', 'thinkingElapsedMs', 'traceOpen', 'classification',
-          'steps', 'result', 'plan', 'corpusEmptyMessage', 'errorMessage',
+          'classificationRaw', 'steps', 'result', 'plan', 'corpusEmptyMessage', 'errorMessage',
           'pipelineStatus', 'unread', 'evidence', 'critique',
           'needsInputQuestion', 'needsInputField', 'safetyAckQuestion',
           'safetyAckContext', 'safetyAckToken', 'providersBusyRetryAfter',

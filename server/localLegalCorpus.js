@@ -30,7 +30,7 @@ function splitSections(text) {
   return sections;
 }
 
-function addFile(store, { file, act, practiceArea, jurisdiction = "Federal", sourceUrl = null }) {
+function addFile(store, { file, act, practiceArea, jurisdiction = "Federal", sourceUrl = null, sourceVersion = null, sourceStatus = "unverified", reviewed = false }) {
   if (!fs.existsSync(file)) return;
   const text = fs.readFileSync(file, "utf8");
   for (const [index, section] of splitSections(text).entries()) {
@@ -45,6 +45,9 @@ function addFile(store, { file, act, practiceArea, jurisdiction = "Federal", sou
       practice_area: practiceArea,
       jurisdiction,
       source_url: sourceUrl,
+      source_version: sourceVersion,
+      source_status: sourceStatus,
+      reviewed,
       local_eval: true,
     };
     if (!store.has(practiceArea)) store.set(practiceArea, []);
@@ -64,6 +67,9 @@ function load() {
       act: item.act || item.name,
       practiceArea: item.practice_area || "general",
       sourceUrl: item.sourceUrl || null,
+      sourceVersion: "PLAC Laws of Nigeria 2004 compendium",
+      sourceStatus: "bulk_unverified",
+      reviewed: false,
     });
   }
 
@@ -84,7 +90,12 @@ function load() {
     ["state_laws/lagos-small-claims-practice-direction-cleaned.txt", "Lagos State Small Claims Court Practice Direction 2023", "contract", "Lagos State"],
   ];
   for (const [rel, act, practiceArea, jurisdiction] of extras) {
-    addFile(store, { file: path.join(ROOT, "legal_sources", rel), act, practiceArea, jurisdiction });
+    addFile(store, {
+      file: path.join(ROOT, "legal_sources", rel), act, practiceArea, jurisdiction,
+      sourceVersion: "Individually selected repository source (review date 2026-08-16)",
+      sourceStatus: "reviewed",
+      reviewed: true,
+    });
   }
   byArea = store;
   console.log(`[local-corpus] Loaded ${[...store.values()].reduce((n, rows) => n + rows.length, 0)} provisions across ${store.size} practice areas`);
