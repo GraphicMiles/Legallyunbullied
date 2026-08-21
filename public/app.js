@@ -816,8 +816,8 @@ import {
     } catch (err) {
       clearTimeout(timeoutId);
       if (err.name === 'AbortError') {
-        console.error('[callChatApi] Request timed out after 60 seconds');
-        throw new Error('Request timed out after 60 seconds. Please try again.');
+        console.error('[callChatApi] Request timed out after 180 seconds');
+        throw new Error('Request timed out after 3 minutes. Please try again.');
       }
       console.error('[callChatApi] Error:', err);
       throw err;
@@ -1748,15 +1748,18 @@ import {
   // Self-doubt phrases that prove a citation is weak. If the answer's own text
   // says a source "might be relevant" / "does not directly address", it must
   // never be labeled High confidence — even for legacy stored messages.
+  // Kept in sync with the server's HEDGE_PATTERNS (generic descriptors like
+  // "primarily deals with" are deliberately excluded — they routinely appear
+  // in perfectly grounded answers).
   const CLIENT_HEDGE_PATTERNS = [
     "might be relevant", "may be relevant", "could be relevant", "potentially relevant",
     "does not directly address", "do not directly address", "doesn't directly address",
     "don't directly address", "not directly address", "does not specifically address",
     "not directly related", "not directly applicable", "does not directly apply",
-    "primarily deals with", "for a more direct application",
+    "for a more direct application",
     "interpreted within that context",
     "not quite the right provision", "isn't quite the right", "not the right provision",
-    "only defines", "based on the provided excerpts", "based on the excerpts provided",
+    "only defines",
   ];
 
   function responseHasHedging(r) {
@@ -2812,12 +2815,32 @@ import {
     scrollChatToBottom();
   }
 
+  // Max total pipeline attempts for one message when every provider is busy.
+  // Without a cap the auto-retry rescheduled itself forever while quota was
+  // exhausted for the day — burning the (shared) API rate limit and stacking
+  // busy cards. After the cap the card is terminal; the user can resend.
+  const MAX_BUSY_RETRIES = 3;
+
+  // Render "- Step" lines safely: textContent only. Never innerHTML with
+  // strings that originate outside this file, even if today's are static.
+  function appendPlainSteps(container, md) {
+    String(md || "").split(/\n/).forEach((rawLine) => {
+      const text = rawLine.trim();
+      if (!text) return;
+      const row = document.createElement("div");
+      row.textContent = /^-\s+/.test(text) ? "• " + text.replace(/^-\s+/, "") : text;
+      container.appendChild(row);
+    });
+  }
+
   function renderProvidersBusy(agentMsg, response) {
     if (!live.refs || !live.refs.body) {
       console.warn('[renderProvidersBusy] live.refs.body not available');
       return;
     }
-    
+
+    const attempts = (agentMsg.providersBusyRetries = (agentMsg.providersBusyRetries || 0) + 1);
+    const willRetry = attempts < MAX_BUSY_RETRIES;
     const retryAfter = response.retryAfter || 30;
     const lawMd = response.result?.lawMd || 'All legal reasoning providers are currently busy.';
     const actionsMd = response.result?.actionsMd || '';
@@ -2837,7 +2860,9 @@ import {
     icon.style.cssText = "margin-bottom: 8px;";
     
     const title = document.createElement("p");
-    title.textContent = `Providers are busy — retry in ${retryAfter}s`;
+    title.textContent = willRetry
+      ? `Providers are busy — retrying in ${retryAfter}s (attempt ${attempts} of ${MAX_BUSY_RETRIES})`
+      : "Providers are busy — please try again in a few minutes";
     title.style.cssText = `
       font-size: 14px;
       color: var(--color-text, #f5f5f2);
@@ -2855,8 +2880,8 @@ import {
     `;
     
     if (actionsMd) {
-      const steps = document.createElement("p");
-      steps.innerHTML = actionsMd.replace(/\n/g, '<br>').replace(/^- /g, '• ');
+      const steps = document.createElement("div");
+      appendPlainSteps(steps, actionsMd);
       steps.style.cssText = `
         font-size: 13px;
         color: var(--color-text, #f5f5f2);
@@ -2875,15 +2900,22 @@ import {
     live.refs.body.appendChild(wrap);
     scrollChatToBottom();
     
-    // Auto-retry after cooldown. BUG FIX (two issues):
+    // Auto-retry after cooldown, capped at MAX_BUSY_RETRIES total attempts.
+    // BUG FIX (three issues):
     //   1. `lastUserText(agentMsg)` used to pass a MESSAGE object (no
     //      `.messages`), throwing "Cannot read properties of undefined" and
     //      silently killing the retry.
     //   2. `submitQuestion(lastQ)` would append a DUPLICATE user bubble.
-    //   Instead: read FRESH conversation state at fire time, verify the
+    //   3. There was no attempt cap: with providers down for the day the
+    //      retry rescheduled itself forever. (Fixed via `willRetry` above.)
+    //   On retry: read FRESH conversation state at fire time, verify the
     //   message is still the pending busy one (user hasn't moved on), then
     //   re-run the SAME agent message via mountLivePipeline (which reuses the
     //   existing user message and reads the question from the conversation).
+    if (!willRetry) {
+      console.log("[providersBusy] Attempt cap reached — leaving a terminal busy card");
+      return;
+    }
     cancelBusyRetry();
     live.busyRetryTimer = setTimeout(() => {
       live.busyRetryTimer = null;
@@ -3044,8 +3076,8 @@ import {
     wrap.appendChild(message);
 
     if (msg.providersBusyActionsMd) {
-      const steps = document.createElement("p");
-      steps.innerHTML = msg.providersBusyActionsMd.replace(/\n/g, "<br>").replace(/^- /g, "• ");
+      const steps = document.createElement("div");
+      appendPlainSteps(steps, msg.providersBusyActionsMd);
       steps.style.cssText = `font-size: 13px; color: var(--color-text, #f5f5f2); margin: 0;`;
       wrap.appendChild(steps);
     }

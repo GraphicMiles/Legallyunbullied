@@ -205,6 +205,48 @@ async function main() {
     assert.ok(verification.unverifiedInlineCitations.some((item) => item.includes("section:99")));
   });
 
+  await check("lettered sections (s. 25A) are not false-flagged by the inline citation check", async () => {
+    const provisions = [{ id: "p1", act: "Constitution of the Federal Republic of Nigeria 1999", section: "35A", text: "Derogation from fundamental rights.", jurisdiction: "Federal" }];
+    const result = {
+      lawMd: "Section 35A permits derogation from fundamental rights during a declared emergency [[p1]]",
+      actionsMd: "- Step 1: Seek advice",
+      provisionIds: ["p1"],
+      claims: [{ claimId: "claim-1", text: "Derogation is possible.", provisionIds: ["p1"] }],
+      sources: [], escalate: false, escalateReason: "", followUps: [],
+    };
+    const verification = verifyAndResolveCitations(result, provisions);
+    assert.deepStrictEqual(verification.unverifiedInlineCitations, [], "s. 35A matches retrieved section 35A");
+    assert.strictEqual(verification.valid, true, "lettered-section citation must verify");
+  });
+
+  await check("subsection-granularity citations of a retrieved section verify", async () => {
+    const provisions = [{ id: "p1", act: "Constitution of the Federal Republic of Nigeria 1999", section: "36(1)(a)", text: "Fair hearing.", jurisdiction: "Federal" }];
+    const result = {
+      lawMd: "Section 36 guarantees fair hearing [[p1]]",
+      actionsMd: "- Step 1: File a motion",
+      provisionIds: ["p1"],
+      claims: [{ claimId: "claim-1", text: "Fair hearing is guaranteed.", provisionIds: ["p1"] }],
+      sources: [], escalate: false, escalateReason: "", followUps: [],
+    };
+    const verification = verifyAndResolveCitations(result, provisions);
+    assert.deepStrictEqual(verification.unverifiedInlineCitations, [], "coarser citation of the same section is grounded");
+    assert.strictEqual(verification.valid, true);
+  });
+
+  await check("a genuinely different section is still flagged", async () => {
+    const provisions = [{ id: "p1", act: "Labour Act", section: "11", text: "Wages are payable.", jurisdiction: "Federal" }];
+    const result = {
+      lawMd: "Section 12 of the Labour Act says otherwise [[p1]]",
+      actionsMd: "- Keep records",
+      provisionIds: ["p1"],
+      claims: [{ claimId: "claim-1", text: "Wages are payable.", provisionIds: ["p1"] }],
+      sources: [], escalate: false, escalateReason: "", followUps: [],
+    };
+    const verification = verifyAndResolveCitations(result, provisions);
+    assert.ok(verification.unverifiedInlineCitations.some((item) => item.includes("section:12")), "s. 12 vs retrieved s. 11 must fail");
+    assert.strictEqual(verification.valid, false);
+  });
+
   console.log(failures === 0 ? "\nALL RETRIEVAL-EVIDENCE TESTS PASSED" : `\n${failures} TEST(S) FAILED`);
   process.exit(failures === 0 ? 0 : 1);
 }

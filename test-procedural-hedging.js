@@ -146,6 +146,51 @@ const LEGAL_CLASSIFY = {
 async function main() {
   console.log("\n=== Procedural + hedging tests ===\n");
 
+  // ── Test 0: the procedural prompt's JSON example must be intact ─────────
+  // Regression: a mangled edit truncated the example mid-string (no opening
+  // "{", no "lawMd" key), and since this is the only JSON-mode-less LLM call
+  // in the pipeline, real models frequently produced unparseable output and
+  // users got the canned note-taking fallback. Mocks can't catch prompt
+  // corruption, so assert on the source directly.
+  await check("PROCEDURAL_SYSTEM_PROMPT contains an intact JSON example", async () => {
+    const src = require("fs").readFileSync(require.resolve("./server/chatRoute"), "utf8");
+    const m = src.match(/const PROCEDURAL_SYSTEM_PROMPT = `([\s\S]*?)`;/);
+    assert.ok(m, "prompt must exist");
+    const prompt = m[1];
+    assert.ok(prompt.includes("PRACTICAL, PROCEDURAL"), "prompt header intact");
+    // The example uses true/false placeholders, so it is not literally
+    // parseable — assert structure instead: the instruction must be followed
+    // IMMEDIATELY by the opening brace of the example (the corruption bug
+    // spliced garbage between them and cut off the "lawMd" key), the example
+    // must end at the prompt's final "}", and every documented key present.
+    const after = prompt.slice(prompt.indexOf("Respond with ONLY a JSON object"));
+    const instructionEnd = after.indexOf(":") + 1;
+    assert.ok(/^\s*\{/.test(after.slice(instructionEnd)), "JSON example must open right after the instruction");
+    assert.ok(prompt.trimEnd().endsWith("}"), "prompt must end with the example's closing brace");
+    for (const key of ['"lawMd"', '"actionsMd"', '"sources"', '"escalate"', '"escalateReason"', '"followUps"']) {
+      assert.ok(prompt.includes(key), `example must include ${key}`);
+    }
+    assert.ok(!/fences\):\s*ge\b/.test(prompt), "the old mid-word truncation must not reappear");
+    assert.ok(src.includes("task: \"procedural\""), "procedural call site present");
+  });
+
+  // ── Test 0b: "What should I bring to the station?" stays procedural ─────
+  // Regression: the classifier prompt gives exactly this shape as a
+  // needs_sourcing:false example, but the deterministic guard's regex missed
+  // it, forcing the how-to question into the citation pipeline.
+  mockProvisions = [
+    { id: "p1", act: "Prevention of Crimes Act", section: "2", text: "defines crime...", jurisdiction: "Federal" },
+    { id: "p2", act: "Harmful Waste (Special Criminal Provisions) Act", section: "2", text: "parties to a crime...", jurisdiction: "Federal" },
+  ];
+  fakeClient = makeFakeClient({ ...LEGAL_CLASSIFY, needs_sourcing: false }, {});
+
+  await check("\"what should I bring to the station\" → procedural (no forced sourcing)", async () => {
+    const { status, json } = await postChat("What should I bring to the station?");
+    assert.strictEqual(status, 200, `expected 200, got ${status}`);
+    assert.strictEqual(json.evidence.noSourcing, true, "must stay on the no-sourcing procedural path");
+    assert.strictEqual((json.result.sources || []).length, 0, "no statute citations");
+  });
+
   // ── Test 1: procedural question bypasses the citation pipeline ──────────
   mockProvisions = [
     { id: "p1", act: "Prevention of Crimes Act", section: "2", text: "defines crime...", jurisdiction: "Federal" },

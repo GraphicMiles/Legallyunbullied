@@ -37,25 +37,38 @@ function makeMockDb() {
             writeLog.push({ path, data: { ...data } });
             store.set(path, { ...(store.get(path) || {}), ...data });
           },
+          delete: async () => { store.delete(path); },
           get: async () => ({ id, exists: store.has(path), data: () => store.get(path) || {} }),
           collection: (n) => coll([...fullSeg, n]),
         };
       },
-      where: (field, op, value) => ({
-        get: async () => {
+      where: (field, op, value) => {
+        const runGet = async () => {
           const prefix = segments.join("/") + "/";
           const docs = [];
           for (const [k, v] of store.entries()) {
             if (!k.startsWith(prefix)) continue;
             const rest = k.slice(prefix.length);
             if (rest.includes("/")) continue;
-            if (op === "==" && v[field] === value) {
+            const matches =
+              (op === "==" && v[field] === value) ||
+              (op === "<" && typeof v[field] === "number" && v[field] < value);
+            if (matches) {
               docs.push({ id: rest, data: () => v, ref: coll(segments).doc(rest) });
             }
           }
           return { docs, size: docs.length };
-        },
-      }),
+        };
+        return {
+          get: runGet,
+          limit: (n) => ({
+            get: async () => {
+              const full = await runGet();
+              return { ...full, docs: full.docs.slice(0, n) };
+            },
+          }),
+        };
+      },
     };
   }
 
@@ -223,6 +236,25 @@ async function main() {
     // the message was also persisted by runChatPipeline
     const msg = messageDoc("c1", "m1");
     assert.ok(msg && msg.status === "done" && msg.result, "message must be persisted done+result");
+  });
+
+  await check("sweeper deletes terminal jobs past retention; fresh ones untouched", async () => {
+    mockDb = makeMockDb();
+    require.cache[firebaseAdminPath].exports.getFirestore = () => mockDb.db;
+    jobRunner.__reset();
+    const DAY = 24 * 60 * 60 * 1000;
+    // terminal + old → must be deleted (done and failed alike, incl. PII payload)
+    await mockDb.db.collection("background_jobs").doc("old-done").set({ uid: "u1", messageId: "m1", question: "old q", status: "done", updatedAt: Date.now() - 2 * DAY });
+    await mockDb.db.collection("background_jobs").doc("old-failed").set({ uid: "u1", messageId: "m2", question: "old q2", status: "failed", updatedAt: Date.now() - 2 * DAY });
+    // terminal + recent → kept (still within the recovery window)
+    await mockDb.db.collection("background_jobs").doc("new-done").set({ uid: "u1", messageId: "m3", question: "new q", status: "done", updatedAt: Date.now() - 60 * 1000 });
+    // old but NOT terminal → never touched by cleanup
+    await mockDb.db.collection("background_jobs").doc("old-queued").set({ uid: "u1", messageId: "m4", question: "queued q", status: "queued", updatedAt: Date.now() - 2 * DAY });
+    await jobRunner.sweepOnce();
+    assert.ok(!jobDoc("old-done"), "stale done job must be deleted");
+    assert.ok(!jobDoc("old-failed"), "stale failed job must be deleted");
+    assert.ok(jobDoc("new-done"), "recent terminal job must be kept");
+    assert.ok(jobDoc("old-queued"), "non-terminal job must never be deleted");
   });
 
   await check("sweeper resets stale running job → worker replays it; fresh job untouched", async () => {
