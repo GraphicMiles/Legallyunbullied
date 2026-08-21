@@ -1,5 +1,7 @@
 const { getClient: getGroqClient, CLASSIFY_MODEL, REVIEW_MODEL, DRAFT_MODEL, DRAFT_MODEL_FALLBACK } = require("./groq");
 const { getClient: getGeminiClient, GEMINI_CLASSIFY_MODEL, GEMINI_DRAFT_MODEL } = require("./gemini");
+const { getClient: getCerebrasClient, CEREBRAS_CLASSIFY_MODEL, CEREBRAS_DRAFT_MODEL } = require("./cerebras");
+const { getClient: getOpenRouterClient, OPENROUTER_CLASSIFY_MODEL, OPENROUTER_DRAFT_MODEL } = require("./openrouter");
 
 const state = {
   checkedAt: null,
@@ -7,6 +9,8 @@ const state = {
   providers: {
     groq: { configured: !!process.env.GROQ_API_KEY, status: "unknown", models: {} },
     gemini: { configured: !!process.env.GEMINI_API_KEY, status: "unknown", models: {} },
+    cerebras: { configured: !!process.env.CEREBRAS_API_KEY, status: "unknown", models: {} },
+    openrouter: { configured: !!process.env.OPENROUTER_API_KEY, status: "unknown", models: {} },
   },
 };
 
@@ -56,6 +60,8 @@ async function probeProviders() {
     await Promise.all([
       probe("groq", getGroqClient(), [CLASSIFY_MODEL, REVIEW_MODEL, DRAFT_MODEL, DRAFT_MODEL_FALLBACK]),
       probe("gemini", getGeminiClient(), [GEMINI_CLASSIFY_MODEL, GEMINI_DRAFT_MODEL]),
+      probe("cerebras", getCerebrasClient(), [CEREBRAS_CLASSIFY_MODEL, CEREBRAS_DRAFT_MODEL]),
+      probe("openrouter", getOpenRouterClient(), [OPENROUTER_CLASSIFY_MODEL, OPENROUTER_DRAFT_MODEL]),
     ]);
     state.checkedAt = Date.now();
   } finally {

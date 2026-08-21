@@ -319,16 +319,19 @@ async function assessRelevanceForClient(client, model, question, classification,
 // ── Hedge detection (citation-fit self-doubt) ─────────────────────────────
 // The draft's own phrasing is a hard signal about citation quality. If it says
 // a source "might be relevant", "does not directly address", etc., the answer
-// must not be presented as high confidence. High-precision patterns only.
+// must not be presented as high confidence. High-precision patterns only —
+// deliberately EXCLUDED: generic descriptors like "primarily deals with" or
+// "based on the provided excerpts", which routinely appear in perfectly
+// grounded answers and caused spurious confidence downgrades.
 const HEDGE_PATTERNS = [
   "might be relevant", "may be relevant", "could be relevant", "potentially relevant",
   "does not directly address", "do not directly address", "doesn't directly address",
   "don't directly address", "not directly address", "does not specifically address",
   "not directly related", "not directly applicable", "does not directly apply",
-  "primarily deals with", "for a more direct application",
+  "for a more direct application",
   "interpreted within that context",
   "not quite the right provision", "isn't quite the right", "not the right provision",
-  "only defines", "based on the provided excerpts", "based on the excerpts provided",
+  "only defines",
 ];
 
 function detectHedging(result) {
@@ -539,6 +542,15 @@ function getCacheKey(uid, question, jurisdiction, practiceArea) {
   return `${uid || "anonymous"}::${(practiceArea || "general").toLowerCase()}::${(jurisdiction || "any").toLowerCase()}::${digest}`;
 }
 
+// Cache entries are deep-cloned on write AND on read. The live draftResult is
+// mutated after caching (applyDeterministicSafetyPolicy, evidence attachment),
+// and a cache hit hands the same object to a new request that mutates it —
+// sharing one reference corrupted later replays with a previous run's state.
+function cloneCacheEntry(entry) {
+  if (typeof structuredClone === "function") return structuredClone(entry);
+  return JSON.parse(JSON.stringify(entry));
+}
+
 function getCachedResult(key) {
   const entry = questionCache.get(key);
   if (!entry) return null;
@@ -546,7 +558,7 @@ function getCachedResult(key) {
     questionCache.delete(key);
     return null;
   }
-  return entry.data;
+  return cloneCacheEntry(entry.data);
 }
 
 function setCachedResult(key, data) {
@@ -555,24 +567,31 @@ function setCachedResult(key, data) {
     const oldest = questionCache.keys().next().value;
     questionCache.delete(oldest);
   }
-  questionCache.set(key, { data, timestamp: Date.now() });
+  questionCache.set(key, { data: cloneCacheEntry(data), timestamp: Date.now() });
 }
 
 async function callCompletion(client, model, messages, options = {}) {
   const LLM_TIMEOUT_MS = options.timeoutMs || 15000;
   const task = options.task || "llm";
   const startedAt = Date.now();
-  
+
+  // Abort the underlying SDK request when the timeout fires. Without this,
+  // Promise.race rejects but the HTTP request lives on until the SDK's own
+  // (much longer) default timeout — hung sockets pile up during outages.
+  const controller = new AbortController();
   const completionPromise = client.chat.completions.create({
     model,
     temperature: options.temperature ?? 0.2,
     max_tokens: options.max_tokens ?? 900,
     response_format: options.response_format || undefined,
     messages,
-  });
-  
+  }, { signal: controller.signal });
+  // The race settles first on timeout; swallow the late abort/error rejection
+  // of the underlying call so it never surfaces as an unhandled rejection.
+  completionPromise.catch(() => {});
+
   try {
-    const result = await withTimeout(completionPromise, LLM_TIMEOUT_MS, `LLM call to ${model}`);
+    const result = await withTimeout(completionPromise, LLM_TIMEOUT_MS, `LLM call to ${model}`, () => controller.abort());
     console.log(`[llm] task=${task} model=${model} ms=${Date.now() - startedAt} status=ok`);
     if (options.parseJson === false) return result;
     const parsed = extractJsonFromResponse(result.choices[0].message.content);
@@ -585,15 +604,23 @@ async function callCompletion(client, model, messages, options = {}) {
 }
 
 /**
- * Wraps a promise with a timeout
+ * Wraps a promise with a timeout. `onTimeout` runs synchronously when the
+ * deadline hits (e.g. to abort the underlying request); the timer is always
+ * cleared so it never keeps the event loop alive past the race.
  */
-function withTimeout(promise, ms, operation = "operation") {
+function withTimeout(promise, ms, operation = "operation", onTimeout) {
+  let timer;
   return Promise.race([
     promise,
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error(`${operation} timed out after ${ms}ms`)), ms)
-    ),
-  ]);
+    new Promise((_, reject) => {
+      timer = setTimeout(() => {
+        if (typeof onTimeout === "function") {
+          try { onTimeout(); } catch (_) { /* best-effort abort */ }
+        }
+        reject(new Error(`${operation} timed out after ${ms}ms`));
+      }, ms);
+    }),
+  ]).finally(() => clearTimeout(timer));
 }
 
 function validateClassification(value) {
@@ -786,17 +813,23 @@ function sanitizeDraftResult(result) {
     return PLACEHOLDER_DOMAINS.some(d => lower.includes(d));
   };
 
-  // Sanitize text fields — remove URLs that match placeholder domains
+  // Sanitize text fields — remove ALL URLs. The draft prompt forbids URLs
+  // outright (the backend resolves citation labels), so any URL in lawMd/
+  // actionsMd is by definition model-invented. Previously only placeholder
+  // domains (example.com etc.) were stripped — a hallucinated real-looking
+  // domain passed through, which is far worse in a legal product.
   const stripPlaceholderUrls = (text) => {
     if (!text) return text;
-    // Remove markdown links with placeholder domains: [text](https://example.com)
-    let cleaned = text.replace(/\[([^\]]*)\]\([^)]*example\.(?:com|org|net)[^)]*\)/gi, '$1');
-    // Remove bare URLs with placeholder domains
-    cleaned = cleaned.replace(/https?:\/\/(?:www\.)?example\.(?:com|org|net)[^\s)>"']*/gi, '');
-    // Remove any remaining "example.com" references
+    // Remove ANY markdown link, keeping only its label text: [text](url)
+    let cleaned = text.replace(/\[([^\]]*)\]\(\s*(?:https?:\/\/|www\.)?[^)]*\)/gi, '$1');
+    // Remove bare http(s) URLs
+    cleaned = cleaned.replace(/https?:\/\/(?:www\.)?[^\s)>"']+/gi, '');
+    // Remove remaining bare www.* references and placeholder domains
+    cleaned = cleaned.replace(/\bwww\.[^\s)>"']+/gi, '');
     cleaned = cleaned.replace(/\bexample\.(?:com|org|net)\b/gi, '');
-    // Clean up double spaces and dangling punctuation
-    cleaned = cleaned.replace(/  +/g, ' ').replace(/ ,/g, ',').replace(/\.\.+/g, '.');
+    // Clean up double spaces and dangling punctuation. Only collapse runs of
+    // 4+ dots — "…" / "..." is legitimate inside quoted statutory text.
+    cleaned = cleaned.replace(/  +/g, ' ').replace(/ ,/g, ',').replace(/\.{4,}/g, '...');
     return cleaned.trim();
   };
 
@@ -942,7 +975,9 @@ IMPORTANT:
 - "sources" MUST be an empty array [].
 - "escalate" is true only if the situation clearly needs a lawyer.
 
-Respond with ONLY a JSON object (no prose, no markdown fences):ge guidance for this practical task (2-4 sentences).",
+Respond with ONLY a JSON object (no prose, no markdown fences):
+{
+  "lawMd": "Your direct, practical guidance for this practical task (2-4 sentences).",
   "actionsMd": "- Step 1: ...\\n- Step 2: ...\\n- Step 3: ...",
   "sources": [],
   "escalate": true/false,
@@ -967,11 +1002,19 @@ async function answerProceduralWithFallback(question, classification, history) {
 
   let lastErr = null;
   for (const [name, client, model] of providers) {
+    // Same cooldown/failure discipline as every other fallback chain: a
+    // provider that just rate-limited or timed out is skipped, and a failure
+    // here opens its cooldown so the next procedural question skips it too.
+    const key = `${name}-procedural:${model}`;
+    if (isProviderOnCooldown(key)) {
+      console.log(`[/api/chat] Skipping "${key}" — on cooldown`);
+      continue;
+    }
     try {
       const completion = await callCompletion(client, model, [
         { role: "system", content: PROCEDURAL_SYSTEM_PROMPT },
         { role: "user", content: `${historyContext}\n\nUser: ${question}` },
-      ], { task: "procedural", timeoutMs: 12000, temperature: 0.3, max_tokens: 900 });
+      ], { task: "procedural", timeoutMs: 12000, temperature: 0.3, max_tokens: 900, response_format: { type: "json_object" } });
       const parsed = completion.parsed;
       if (parsed && (parsed.lawMd || parsed.actionsMd)) {
         parsed.sources = [];
@@ -980,6 +1023,7 @@ async function answerProceduralWithFallback(question, classification, history) {
       throw new Error("Procedural answer missing required fields");
     } catch (err) {
       lastErr = err;
+      markProviderFailure(key, err);
       console.warn(`[/api/chat] Procedural answer via ${model} failed: ${err.message}`);
     }
   }
@@ -1110,7 +1154,15 @@ function applyDeterministicSafetyPolicy(result, classification, question, histor
 
 function isClearlyProceduralQuestion(question) {
   const q = String(question || "").toLowerCase();
-  return /\b(how (?:do|can|should) i (?:contact|find|write|note|record|prepare|organise|organize|report)|what (?:documents?|papers?|evidence) should i bring|where (?:do|can|should) i (?:go|report|file)|which (?:police )?station|how do i find a lawyer)\b/.test(q);
+  return (
+    /\b(how (?:do|can|should) i (?:contact|find|write|note|record|prepare|organise|organize|report|reach|call|email|visit|go to)|what (?:documents?|papers?|evidence|things?|items?)\s+(?:else\s+)?should i bring|where (?:do|can|should) i (?:go|report|file)|which (?:police )?station|how do i find a lawyer)\b/.test(q) ||
+    // "What should I bring to the station?" — the classifier prompt itself
+    // gives this exact shape as a needs_sourcing:false example; the guard
+    // used to miss it and forced the how-to question into the citation
+    // pipeline. Require a legal destination so ordinary "what should I
+    // bring" small talk never matches.
+    /\bwhat should i bring (?:to|for)\b.{0,40}\b(police|station|court|lawyer|hearing|case|report|immigration|bail)\b/.test(q)
+  );
 }
 
 async function runChatPipeline(req) {
@@ -1571,7 +1623,7 @@ async function runChatPipeline(req) {
     console.log("[chat] Resuming from draft/critique checkpoint");
     // The previous attempt may have crashed before caching the result.
     if (cacheAllowed && !draftResult.providersBusy && draftResult.result && critiqueResult?.passed === true && evidence?.citationVerification?.valid === true) {
-      setCachedResult(cacheKey, { draftResult, critiqueResult });
+      setCachedResult(cacheKey, { draftResult, critiqueResult, citationVerification: evidence.citationVerification });
     }
   } else {
     if (cp.draftAndCritique) console.warn("[chat] Discarding invalid draft checkpoint");
@@ -1604,6 +1656,10 @@ async function runChatPipeline(req) {
       console.log(`[/api/chat] Cache HIT for standalone question (key: ${cacheKey.slice(0, 50)})`);
       draftResult = cached.draftResult;
       critiqueResult = cached.critiqueResult || null;
+      // The cached run verified citations before being stored; restore the
+      // verification on this run's evidence so the response shape matches a
+      // fresh pipeline run exactly.
+      if (cached.citationVerification) evidence.citationVerification = cached.citationVerification;
     } else {
     // Step 5a: Draft with fallback chain (plan is null for simple route)
     try {
@@ -1762,7 +1818,7 @@ async function runChatPipeline(req) {
 
       // Cache the result (only successful, non-busy responses)
       if (cacheAllowed && !draftResult.providersBusy && draftResult.result && critiqueResult?.passed === true && evidence.citationVerification?.valid === true) {
-        setCachedResult(cacheKey, { draftResult, critiqueResult });
+        setCachedResult(cacheKey, { draftResult, critiqueResult, citationVerification: evidence.citationVerification });
       }
     }
 
