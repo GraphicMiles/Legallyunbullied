@@ -25,6 +25,12 @@ const INSTANCE_ID = process.env.RENDER_INSTANCE_ID || randomUUID();
 const STALE_RUNNING_MS = 5 * 60 * 1000; // a pipeline never legitimately runs this long (client timeout is 180s)
 const SWEEP_INTERVAL_MS = 60 * 1000;
 const MAX_CONCURRENT = Math.max(1, parseInt(process.env.JOB_CONCURRENCY, 10) || 1);
+// Terminal job docs (which contain the user's question + history) are purged
+// after a day — they exist only for restart-and-complete recovery, so keeping
+// them forever was unbounded growth + indefinite PII retention.
+const JOB_RETENTION_MS = 24 * 60 * 60 * 1000;
+const JOB_CLEANUP_BATCH = 200;
+const TERMINAL_JOB_STATUSES = new Set(["done", "failed", "cancelled", "awaiting_input"]);
 
 const queue = [];
 const enqueuedIds = new Set();
@@ -227,6 +233,27 @@ async function sweepOnce() {
     if (added) console.log(`[jobs] Enqueued ${added} queued job(s)`);
   } catch (err) {
     console.warn("[jobs] sweep(queued) failed:", err.message);
+  }
+
+  // TTL cleanup: delete terminal job docs past the retention window. Uses a
+  // single-field range query (automatic index) and filters status in-process
+  // so no composite index is required. Bounded per sweep; degrades gracefully
+  // on minimal Firestore mocks that don't implement .limit().
+  try {
+    const cutoff = Date.now() - JOB_RETENTION_MS;
+    let staleQuery = d.collection("background_jobs").where("updatedAt", "<", cutoff);
+    if (typeof staleQuery.limit === "function") staleQuery = staleQuery.limit(JOB_CLEANUP_BATCH);
+    const stale = await staleQuery.get();
+    const toDelete = (stale.docs || [])
+      .filter((doc) => TERMINAL_JOB_STATUSES.has(((doc.data && doc.data()) || {}).status));
+    // Sequential bounded deletes (≤ JOB_CLEANUP_BATCH per sweep) — no batch()
+    // dependency, so this works identically on the Admin SDK and test mocks.
+    for (const doc of toDelete) {
+      try { await doc.ref.delete(); } catch (_) { /* next sweep retries */ }
+    }
+    if (toDelete.length) console.log(`[jobs] Cleaned up ${toDelete.length} terminal job doc(s) past retention`);
+  } catch (err) {
+    console.warn("[jobs] sweep(cleanup) failed:", err.message);
   }
 }
 

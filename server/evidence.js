@@ -108,10 +108,24 @@ function findUnverifiedInlineCitations(result, lookup) {
     }
   }
 
-  const sectionPattern = /\b(?:section|s\.)\s*(\d+(?:\s*\([a-z0-9]+\))*)/gi;
+  // Accept an optional letter suffix ("section 25A" — common in Nigerian
+  // statutes) plus parenthesised subsection levels. A citation matches when it
+  // is equal to a retrieved section OR differs only by subsection granularity
+  // ("s. 25" vs retrieved "25(1)(a)", and vice versa) — the retrieved
+  // provision's text contains those subsections, so citing a finer/coarser
+  // level of the SAME numbered section is still grounded. A different number
+  // never matches.
+  const sectionPattern = /\b(?:sections?|s\.)\s*(\d+[A-Za-z]?(?:\s*\([a-z0-9]+\))*)/gi;
+  const sectionGrounded = (candidate) => {
+    if (allowedSections.has(candidate)) return true;
+    for (const allowed of allowedSections) {
+      if (allowed.startsWith(candidate + " ") || candidate.startsWith(allowed + " ")) return true;
+    }
+    return false;
+  };
   for (const match of raw.matchAll(sectionPattern)) {
     const candidate = normalize(match[1]);
-    if (!allowedSections.has(candidate)) unknown.push(`section:${match[1].trim()}`);
+    if (!sectionGrounded(candidate)) unknown.push(`section:${match[1].trim()}`);
   }
   return [...new Set(unknown)];
 }

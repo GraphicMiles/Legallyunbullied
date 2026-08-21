@@ -27,6 +27,13 @@ const PUBLIC_DIR = path.join(__dirname, "public");
 
 app.disable("x-powered-by");
 
+// ── Proxy trust ────────────────────────────────────────────────────────────
+// Render (and most PaaS hosts) terminate TLS at a load balancer, so req.ip is
+// the proxy's address for EVERY user. Without this setting the rate limiters
+// key on that shared proxy IP — one user's 20 req/min chat budget becomes the
+// budget for the entire service. One trusted hop = the platform's LB only.
+app.set("trust proxy", 1);
+
 // ── CORS ──────────────────────────────────────────────────────────────────
 // Allow the Render deployment, localhost dev, and Firebase hosting preview.
 // Expand this list if you add custom domains.
@@ -138,7 +145,9 @@ app.get("/healthz", (req, res) => {
 });
 
 // ── Cache management (auth required) ──────────────────────────────────────
-app.get("/api/cache-stats", (req, res) => {
+// Stats leak operational intel (cache sizes, hit rates, whether the Firestore
+// circuit breaker is open) — same auth posture as the invalidate endpoint.
+app.get("/api/cache-stats", requireAuth, (req, res) => {
   const { getCacheStats } = require("./server/legalCorpus");
   res.json(getCacheStats());
 });
