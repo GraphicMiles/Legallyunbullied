@@ -66,6 +66,13 @@ app.use(cors({
 }));
 
 // ── Body size limits ──────────────────────────────────────────────────────
+// Route-specific parsers run BEFORE the global one (body-parser skips
+// already-parsed bodies). /api/chat carries an 18-message history window
+// with per-message classification context; /api/conversations/migrate
+// imports legacy localStorage histories in batches. Both are authenticated
+// per-user endpoints. Everything else stays at 50kb.
+app.use("/api/chat", express.json({ limit: "300kb" }));
+app.use("/api/conversations/migrate", express.json({ limit: "2mb" }));
 // 50kb is generous for chat messages + conversation history.
 // Prevents memory exhaustion from oversized payloads.
 app.use(express.json({ limit: "50kb" }));

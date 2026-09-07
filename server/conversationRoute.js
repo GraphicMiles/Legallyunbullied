@@ -500,14 +500,22 @@ router.post("/cleanup", async (req, res) => {
     const snapshot = await convoCollection(req.uid).get();
 
     // Collect empty conversations (no messages) with their timestamps.
+    // Counts run in parallel chunks — this endpoint runs right after sign-in
+    // and a serial loop meant one count round-trip per conversation.
     const empties = [];
-    for (const doc of snapshot.docs) {
-      const msgCount = await convoRef(req.uid, doc.id)
-        .collection("messages").count().get();
-      if (msgCount.data().count === 0) {
-        const data = doc.data();
-        empties.push({ ref: doc.ref, updatedAt: toMillis(data.updatedAt) });
-      }
+    const docs = snapshot.docs;
+    const COUNT_CHUNK = 20;
+    for (let i = 0; i < docs.length; i += COUNT_CHUNK) {
+      const results = await Promise.all(docs.slice(i, i + COUNT_CHUNK).map(async (doc) => {
+        const msgCount = await convoRef(req.uid, doc.id)
+          .collection("messages").count().get();
+        if (msgCount.data().count === 0) {
+          const data = doc.data();
+          return { ref: doc.ref, updatedAt: toMillis(data.updatedAt) };
+        }
+        return null;
+      }));
+      for (const r of results) if (r) empties.push(r);
     }
 
     // Nothing to clean up: 0 or 1 empty conversation is a valid state.
