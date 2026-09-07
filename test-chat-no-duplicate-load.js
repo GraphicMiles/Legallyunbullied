@@ -112,7 +112,7 @@ async function main() {
       const page = await setupPage(browser, { seedCache: true });
       let singleGets = 0;
       let listGets = 0;
-      await page.route("**/api/conversations?full=*", r => {
+      await page.route("**/api/conversations?limit=*", r => {
         listGets += 1;
         r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
           conversations: [{ id: "other-chat", title: "Other", createdAt: 1, updatedAt: 1, messages: [] }],
@@ -152,7 +152,7 @@ async function main() {
     {
       const page = await setupPage(browser, { seedCache: false });
       let singleGets = 0;
-      await page.route("**/api/conversations?full=*", r => {
+      await page.route("**/api/conversations?limit=*", r => {
         r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
           conversations: [{ id: "target-chat", title: "Target", createdAt: 1, updatedAt: 1, messages: [{ id: "m1", role: "user", content: "LIST_CONTENT", createdAt: 1 }] }],
           hasMore: false, nextCursor: null,

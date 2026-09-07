@@ -2,12 +2,12 @@
  * Browser tests for sidebar pagination + server-side search (Part 2).
  *
  * Verifies:
- *   1. Initial load requests the first page (?full=true&limit=25) and renders
+ *   1. Initial load requests the first page (?limit=25) and renders
  *      the page plus a "Load more" button when more exist.
  *   2. Clicking "Load more" requests the next page with the cursor and appends
  *      it (no replacement), removing the button at the end.
  *   3. The search box searches server-side across ALL conversations
- *      (?q=...&full=false), not just the loaded pages.
+ *      (?q=...), not just the loaded pages.
  *   4. Clicking a search result that isn't in the loaded list loads it via the
  *      single-chat endpoint and renders its messages.
  *   5. Clearing the search returns to the paginated list.
@@ -91,7 +91,7 @@ async function main() {
     await page.route("**/api/conversations/cleanup", (r) => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, deleted: 0 }) }));
 
     // Paginated list: page 1 = 25 chats (hasMore), page 2 = 5 more (end).
-    await page.route("**/api/conversations?full=*", (route) => {
+    await page.route("**/api/conversations?limit=*", (route) => {
       const url = route.request().url();
       listRequests.push(url);
       if (url.includes("cursor=")) {
@@ -127,7 +127,7 @@ async function main() {
 
     await check("initial load requests the first page with limit=25", () => {
       assert.ok(listRequests.length >= 1, "list request must have been made");
-      assert.ok(listRequests[0].includes("full=true&limit=25"), `first list request should paginate: ${listRequests[0]}`);
+      assert.ok(listRequests[0].includes("limit=25"), `first list request should paginate: ${listRequests[0]}`);
     });
 
     await check("'Load more' button appears when more pages exist", async () => {

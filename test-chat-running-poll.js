@@ -88,7 +88,7 @@ async function main() {
 
     // List: the conversation exists with a RUNNING message (so the fast path
     // renders "Still working" and starts polling).
-    await page.route("**/api/conversations?full=*", r =>
+    await page.route("**/api/conversations?limit=*", r =>
       r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
         conversations: [
           { id: "c1", title: "Witness", createdAt: 1, updatedAt: 1, messages: [

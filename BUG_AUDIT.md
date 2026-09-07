@@ -121,3 +121,28 @@ Cerebras and OpenRouter are never probed. A deployment running only Cerebras rep
 4. **H4** (AbortController) — medium; protects under load.
 5. **M1–M3** — pipeline consistency + false-positive rate of the safety layer.
 6. **M4–M8** and lows as follow-ups.
+
+---
+
+## Follow-up audit (sign-in & large histories) — user-reported
+
+**Symptoms:** after sign-in, accounts with old conversations took forever to load; even once loaded, sending a chat message errored with no response.
+
+**Root causes (all four compounding):**
+
+1. **Serial sign-in chain with an oversized migration POST.** `onAuthStateChanged` ran `migrateToServer → cleanupDuplicates → loadFromServer` strictly serially. Migration POSTed the ENTIRE localStorage state in one request against the global 50kb body cap — old accounts exceeded it, got **413 on every sign-in**, retried forever (`_migrationDone = false`), and blocked the sidebar load behind it each time.
+2. **`loadFromServer` used `?full=true`** — every message of the newest 25 conversations inlined into one response just to render sidebar titles. Large histories = multi-megabyte response over a cold Render instance.
+3. **Fat chat payloads.** The client sent the last 18 history entries with full content (up to 10k chars each) PLUS `evidence` blobs. Old threads exceeded the 50kb body cap on `/api/chat` → 413 → "errors, no response". (The server only ever reads `role`, `content`, `classification` from history — evidence was pure waste.)
+4. **Serial N+1 in `/api/conversations/cleanup`** — one count query per conversation, one at a time, right after sign-in.
+
+**Fixed:**
+
+- Sign-in is now: migration kicked off first (it snapshots the legacy localStorage synchronously), **summary-only** `loadFromServer` paints the sidebar immediately, and migrate → cleanup run in the background with a conditional refresh (only when something actually migrated/deleted — the common sign-in stays a single list request).
+- Migration uploads in size-capped batches (≤50 conversations, ≤120kb each); the server is idempotent per conversation ID, so partial migrations resume cleanly.
+- Sidebar loads summaries only (`GET /api/conversations?limit=25`); full threads load lazily per chat via the single-chat endpoint (`ensureConversationLoaded`), deduped in-flight, cached with `_messagesLoaded`, and awaited by the pipeline before building history so follow-ups still carry the real thread.
+- Chat history payload diet: content capped at 1,500 chars/entry, `evidence` dropped (server never used it). `/api/chat` body limit raised to 300kb and `/api/conversations/migrate` to 2mb via route-specific parsers ahead of the global 50kb one.
+- `cleanupDuplicates` counts now run in parallel chunks of 20.
+
+**Regression tests:** `test-chat-lazy-history.js` (summary list URL, exactly-once lazy fetch, chat body < 45kb with ≤18 trimmed entries and no evidence, migration batching of 60 legacy chats). `test-chat-auth-browser` ordering assertions updated to the new non-blocking contract; `test-chat-pagination` URL assertions updated.
+
+**Deliberately unchanged:** the server still supports `?full=true` for the single-page list endpoint (used by tests/power callers); write-behind localStorage cache semantics unchanged.

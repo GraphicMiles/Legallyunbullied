@@ -182,11 +182,79 @@ import {
       updatedAt: normMs(detail.updatedAt),
       _synced: true,
       _serverTitle: detail.title || "New question",
+      // Summary entries carry messageCount instead of messages; messages
+      // load lazily when the chat is opened.
+      messageCount: typeof detail.messageCount === "number" ? detail.messageCount : undefined,
+      _messagesLoaded: Array.isArray(detail.messages),
       messages: (detail.messages || []).map((m) => {
         const { userId, ...rest } = m;
         return { id: m.id, ...rest, _synced: true };
       }),
     };
+  }
+
+  // ── Lazy per-chat message loading ────────────────────────────────────────
+  // The sidebar list loads summaries only. When a chat with server-side
+  // messages is opened (or answered), its full thread is fetched once via
+  // the single-chat endpoint and merged into state.
+  const _lazyFetches = new Map(); // convoId -> in-flight promise
+
+  function needsLazyLoad(convo) {
+    return (
+      !!convo &&
+      convo._messagesLoaded !== true &&
+      ((convo.messages || []).length === 0) &&
+      (convo.messageCount || 0) > 0
+    );
+  }
+
+  async function ensureConversationLoaded(convoId) {
+    const convo = state.conversations.find((c) => c.id === convoId);
+    if (!convo) return;
+    if (convo._messagesLoaded === true) return;
+    // A write-behind cache (or messages already added this session) counts
+    // as loaded — never refetch over newer local messages.
+    if ((convo.messages || []).length > 0) {
+      convo._messagesLoaded = true;
+      return;
+    }
+    if (!isServerMode() || !needsLazyLoad(convo)) return;
+    if (_lazyFetches.has(convoId)) return _lazyFetches.get(convoId);
+
+    const fetchPromise = (async () => {
+      try {
+        const result = await fetchConversationById(convoId);
+        const cur = state.conversations.find((c) => c.id === convoId);
+        if (!cur) return;
+        if (result.notFound) {
+          // Chat was deleted server-side; reflect that instead of retrying.
+          cur._messagesLoaded = true;
+          cur.messageCount = 0;
+          saveState();
+          return;
+        }
+        // If messages arrived locally while we were fetching (user typed
+        // fast), keep the newer local thread untouched.
+        if ((cur.messages || []).length === 0) {
+          cur.messages = result.convo.messages;
+          cur.updatedAt = result.convo.updatedAt;
+        }
+        cur._messagesLoaded = true;
+        delete cur.messageCount;
+        saveState();
+        if (state.activeId === convoId && !state.isAgentBusy) {
+          renderHistory();
+          renderChat();
+          updateClearChatButtonState();
+        }
+      } catch (err) {
+        console.warn("[server-sync] Lazy chat load failed:", err.message);
+      } finally {
+        _lazyFetches.delete(convoId);
+      }
+    })();
+    _lazyFetches.set(convoId, fetchPromise);
+    return fetchPromise;
   }
 
   // Normalize a stored timestamp to epoch ms (mirrors the server's toMillis)
@@ -224,7 +292,10 @@ import {
   // backoff so a single upstream hiccup or deploy race doesn't leave the user
   // with an empty sidebar until the next reload. Loads the FIRST page only;
   // older conversations are paged in via loadMoreConversations().
-  async function loadFromServer() {
+  // Summary-only first paint: the sidebar needs titles, not full message
+  // histories (which for old accounts can be megabytes). Messages load
+  // lazily per chat via ensureConversationLoaded().
+  async function loadFromServer(opts = {}) {
     if (!isServerMode()) return;
     _isLoadingFromServer = true;
     const MAX_ATTEMPTS = 3;
@@ -236,7 +307,7 @@ import {
       for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
         let res;
         try {
-          res = await fetch(`/api/conversations?full=true&limit=${LIST_PAGE_SIZE}`, { headers });
+          res = await fetch(`/api/conversations?limit=${LIST_PAGE_SIZE}`, { headers });
         } catch (err) {
           // Network error — retry, then give up.
           if (attempt === MAX_ATTEMPTS) {
@@ -275,8 +346,9 @@ import {
       state.conversations = allConversations;
       _listHasMore = data.hasMore === true;
       _listCursor = data.nextCursor || null;
-      state.activeId = null; // let URL routing decide what's active
+      if (!opts.keepActiveId) state.activeId = null; // let URL routing decide what's active
       saveState(); // persist to localStorage as write-behind cache (won't trigger syncToServer because _isLoadingFromServer is true)
+      renderHistory();
       console.log(`[server-sync] Loaded ${allConversations.length} conversations from server (hasMore=${_listHasMore})`);
     } catch (err) {
       console.warn("[server-sync] loadFromServer failed:", err.message);
@@ -293,7 +365,7 @@ import {
     try {
       const headers = await getServerAuthHeaders();
       const res = await fetch(
-        `/api/conversations?full=true&limit=${LIST_PAGE_SIZE}&cursor=${encodeURIComponent(_listCursor)}`,
+        `/api/conversations?limit=${LIST_PAGE_SIZE}&cursor=${encodeURIComponent(_listCursor)}`,
         { headers }
       );
       if (!res.ok) {
@@ -366,6 +438,7 @@ import {
       updatedAt: normMs(detail.updatedAt),
       _synced: true,
       _serverTitle: detail.title || "New question",
+      _messagesLoaded: true,
       messages: (detail.messages || []).map((m) => {
         const { userId, ...rest } = m;
         return { id: m.id, ...rest, _synced: true };
@@ -531,20 +604,54 @@ import {
         };
       });
 
-      const res = await fetch("/api/conversations/migrate", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ conversations: cleanConvos }),
-      });
+      // Batch the upload: legacy localStorage state can be far larger than a
+      // single request body allows, and one oversized POST used to 413 on
+      // every sign-in (blocking the whole server load behind it). Chunks are
+      // size-capped and ordered; the server is idempotent per conversation ID,
+      // so a partially completed migration resumes cleanly next sign-in.
+      const batches = [];
+      let currentBatch = [];
+      let batchSize = 0;
+      for (const convo of cleanConvos) {
+        const convoSize = JSON.stringify(convo).length;
+        if (currentBatch.length > 0 && (batchSize + convoSize > 120000 || currentBatch.length >= 50)) {
+          batches.push(currentBatch);
+          currentBatch = [];
+          batchSize = 0;
+        }
+        currentBatch.push(convo);
+        batchSize += convoSize;
+      }
+      if (currentBatch.length > 0) batches.push(currentBatch);
 
-      if (res.ok) {
+      const mergedIdMap = {};
+      let migratedTotal = 0;
+      let skippedTotal = 0;
+      for (const batch of batches) {
+        const res = await fetch("/api/conversations/migrate", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ conversations: batch }),
+        });
+
+        if (!res.ok) {
+          console.warn("[server-sync] Migration failed:", res.status);
+          _migrationDone = false; // allow retry
+          return;
+        }
         const data = await res.json();
+        Object.assign(mergedIdMap, data.idMap || {});
+        migratedTotal += data.migrated || 0;
+        skippedTotal += data.skipped || 0;
+      }
+
+      {
         // Update local IDs to match server IDs
-        if (data.idMap) {
+        if (Object.keys(mergedIdMap).length > 0) {
           for (const convo of state.conversations) {
-            if (data.idMap[convo.id]) {
+            if (mergedIdMap[convo.id]) {
               const oldId = convo.id;
-              convo.id = data.idMap[oldId];
+              convo.id = mergedIdMap[oldId];
               convo._synced = true;
               if (state.activeId === oldId) state.activeId = convo.id;
             }
@@ -560,10 +667,8 @@ import {
         // re-running on every sign-in).
         localStorage.setItem(migrationFlagKey, "1");
         saveState();
-        console.log("[server-sync] Migration complete");
-      } else {
-        console.warn("[server-sync] Migration failed:", res.status);
-        _migrationDone = false; // allow retry
+        console.log(`[server-sync] Migration complete (${migratedTotal} migrated, ${skippedTotal} skipped, ${batches.length} batch(es))`);
+        return { migrated: migratedTotal, skipped: skippedTotal };
       }
     } catch (err) {
       console.warn("[server-sync] Migration error:", err.message);
@@ -599,6 +704,7 @@ import {
         if (data.deleted > 0) {
           console.log(`[server-sync] Cleaned up ${data.deleted} duplicate empty conversations`);
         }
+        return data;
       }
     } catch (e) {
       console.warn("[server-sync] Cleanup failed:", e.message);
@@ -1898,6 +2004,8 @@ import {
     renderHistory();
     renderChat();
     closeMobileSidebar();
+    // Summary-only sidebar: pull this chat's full thread in the background.
+    ensureConversationLoaded(id);
     // Clear the prompt bar when switching to a different chat
     if (window.promptBar) {
       window.promptBar.clear();
@@ -2175,6 +2283,11 @@ import {
     console.log('[runPipeline] Step 1: Classifying (calling API)');
     setStepActive(agentMsg, 1);
 
+    // If this chat was opened from the summary-only sidebar list, its full
+    // thread may still be lazily loading. Restore it first so follow-up
+    // questions carry the real history (an early HITL answer, etc.).
+    try { await ensureConversationLoaded(convo.id); } catch (_) {}
+
     let response;
     let requestError = null;
     try {
@@ -2185,14 +2298,19 @@ import {
       // replies in casualReply, and HITL clarifying questions in
       // needsInputQuestion. (Previously agent legal replies mapped to "" —
       // the window existed but the agent's own answers weren't in it.)
+      // Payload diet: the server only reads role, content and classification
+      // from history — evidence blobs are dropped and content is capped per
+      // message so an old, long thread can never exceed the request body
+      // limit and fail the whole chat.
       const recentMessages = convo.messages
         .filter(m => m.role === "user" || m.status === "done" || m.status === "casual" || m.status === "needsInput")
         .slice(-18)
         .map(m => ({
           role: m.role,
-          content: m.content || m.casualReply || (m.result && `${m.result.lawMd || ""}\n${m.result.actionsMd || ""}`) || m.needsInputQuestion || "",
+          content: String(
+            m.content || m.casualReply || (m.result && `${m.result.lawMd || ""}\n${m.result.actionsMd || ""}`) || m.needsInputQuestion || ""
+          ).slice(0, 1500),
           classification: m.classificationRaw || null,
-          evidence: m.evidence || m.result?.evidence || null,
         }));
       
       response = await callChatApi(question, recentMessages, {
@@ -3619,16 +3737,31 @@ import {
           // and resolve it — if the URL references a chat, show a loading
           // state until the server load finishes; if it's the plain base URL,
           // show the welcome landing screen immediately (never a chat).
+          //
+          // Order matters: migrateToServer() snapshots the legacy localStorage
+          // state synchronously before anything replaces it, the summary-only
+          // list load paints the sidebar fast (unblocking the UI), and
+          // migration + cleanup + a refresh run in the background.
           _serverLoadPending = true;
           resolveUrl();
-          migrateToServer()
-            .then(() => cleanupDuplicates())
-            .then(() => loadFromServer())
+          const migrationPromise = migrateToServer();
+          loadFromServer()
             .catch((err) => console.warn("[auth] Server load failed:", err.message))
             .then(() => {
               _serverLoadPending = false;
               resolveUrl();
             });
+          migrationPromise
+            .then((m) => cleanupDuplicates().then((c) => ({ m, c })))
+            .then(({ m, c }) => {
+              // Refresh the sidebar only when something actually changed —
+              // the common sign-in (already migrated, nothing to clean) must
+              // not issue a second list request.
+              if ((m && m.migrated > 0) || (c && c.deleted > 0)) {
+                return loadFromServer({ keepActiveId: true });
+              }
+            })
+            .catch((err) => console.warn("[auth] Background sync failed:", err.message));
         } else {
           // Signed out: a URL pointing at a server conversation is no longer
           // resolvable — return to the empty landing state. Never auto-create
@@ -3922,6 +4055,7 @@ import {
         _directFetchToken += 1; // cancel any in-flight direct fetch for another id
         state.activeId = convo.id; // use the persisted ID — never a new one
         markConversationRead(convo.id);
+        ensureConversationLoaded(convo.id);
         renderHistory();
         renderChat();
         updateClearChatButtonState();
