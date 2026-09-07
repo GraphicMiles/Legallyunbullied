@@ -9,7 +9,7 @@
  *   - Cache-invalidate endpoint locked behind auth
  */
 
-require("dotenv").config();
+require("dotenv").config({ quiet: true });
 
 const express = require("express");
 const path = require("path");
@@ -36,12 +36,14 @@ app.set("trust proxy", 1);
 
 // ── CORS ──────────────────────────────────────────────────────────────────
 // Allow the Render deployment, localhost dev, and Firebase hosting preview.
+// Local origins follow PORT so running `PORT=4000 node server.js` doesn't
+// get the app's own static assets blocked by its own CORS layer.
 // Expand this list if you add custom domains.
 const ALLOWED_ORIGINS = [
   "https://legally-unbullied.onrender.com",
-  "http://localhost:3000",
+  `http://localhost:${PORT}`,
+  `http://127.0.0.1:${PORT}`,
   "http://localhost:5173",
-  "http://127.0.0.1:3000",
   "http://127.0.0.1:5173",
 ];
 

@@ -17,7 +17,7 @@ const { chromium } = require("playwright");
 const { spawn } = require("child_process");
 const assert = require("assert");
 
-const PORT = 3000;
+const PORT = Number(process.env.TEST_PORT) || 3000;
 const BASE = `http://127.0.0.1:${PORT}`;
 
 function startServer() {
