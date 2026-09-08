@@ -2903,10 +2903,9 @@ import {
         const data = await res.json();
 
         if (data.acknowledged && data.result) {
-          // Remove the approval card
-          wrap.remove();
-
-          // Set the result on the agent message and render the answer
+          // finalizeAnswer already cleared live.refs after showing this card,
+          // so never append through it — rebuild from persisted message state
+          // the same way the reload/static path does.
           agentMsg.result = data.result;
           agentMsg.classificationRaw = data.classification || null;
           agentMsg.classification = normalizeClassification(data.classification);
@@ -2915,13 +2914,11 @@ import {
           if (data.critique) {
             agentMsg.critique = data.critique;
           }
-
-          // Render the answer block with safety banner
-          const answerBlock = buildAnswerBlock(agentMsg, { stream: false });
-          live.refs.body.appendChild(answerBlock);
           saveState();
+          const convo = getActiveConversation();
+          if (convo) syncMessageToServer(convo.id, agentMsg);
           renderHistory();
-          scrollChatToBottom();
+          renderChat();
         } else {
           confirmBtn.textContent = "Response unavailable";
           confirmBtn.style.opacity = "0.5";
