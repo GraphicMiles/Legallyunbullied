@@ -2040,7 +2040,9 @@ router.post("/api/chat/acknowledge", async (req, res) => {
   await deletePendingAck(ackToken);
   const { classification, draftResult, critiqueResult, evidence, route, planResult } = pending;
 
-  // Attach safety flag so the client can render the warning banner
+  // Attach safety flag so the client can render the warning banner.
+  // High-risk answers that failed critique must NEVER tell the user they
+  // can handle it themselves — the drafter's escalate=false is ignored.
   if (draftResult.result) {
     draftResult.result._safetyFlag = {
       practiceArea: critiqueResult.isHighRisk ? (classification.practice_area || "unknown") : "unknown",
@@ -2050,6 +2052,10 @@ router.post("/api/chat/acknowledge", async (req, res) => {
       message: "This response covers a high-risk legal area and could not be verified to our standard. Please consult a qualified lawyer for this matter.",
       acknowledged: true,
     };
+    draftResult.result.escalate = true;
+    if (!draftResult.result.escalateReason || /handle.*yourself|no lawyer/i.test(draftResult.result.escalateReason)) {
+      draftResult.result.escalateReason = "This is a high-risk legal area and should be reviewed by a qualified lawyer.";
+    }
   }
 
   // Persist the acknowledged terminal result server-side. The client is not

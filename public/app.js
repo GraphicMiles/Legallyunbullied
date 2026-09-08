@@ -1574,7 +1574,10 @@ import {
     // Only render the step trace for statuses that actually had one live.
     // Casual, HITL clarifying questions, safety approvals, and provider-busy
     // fallbacks never showed a trace, so don't invent one on reload.
-    const SHOW_TRACE = ["done", "corpusEmpty", "error", "stopped", "incomplete"].includes(msg.status);
+    // Safety-ack reveals also skip it — they never ran the 5-step UI, which
+    // otherwise renders as a bogus "Thought for 0.0s".
+    const fromSafetyAck = !!(msg.safetyAcknowledgedAt || (msg.result && msg.result._safetyFlag));
+    const SHOW_TRACE = !fromSafetyAck && ["done", "corpusEmpty", "error", "stopped", "incomplete"].includes(msg.status);
     if (SHOW_TRACE) {
       // Render the SAME thinking component the live pipeline uses, in static
       // (finished) mode, so a reloaded/reopened chat looks identical to the
@@ -1952,6 +1955,7 @@ import {
   }
 
   function confidenceFromEvidence(r) {
+    if (r && r._safetyFlag) return { label: "Limited evidence", signal: 1 };
     const ev = r && r.evidence;
     if (!ev) {
       // Legacy responses (pre-gate). Still apply the hedge rule uniformly.
@@ -1962,6 +1966,10 @@ import {
     // "clear practical guidance", not "legally sourced".
     if (ev.noSourcing) {
       return { label: "Practical guidance", signal: 2 };
+    }
+    // Unverified high-risk answers (safety-ack path) are never "Good option".
+    if (r._safetyFlag) {
+      return { label: "Limited evidence", signal: 1 };
     }
     // The server downgrades on hedging; also re-check locally for stored
     // messages that predate the server-side check.
@@ -1984,6 +1992,7 @@ import {
       // "consult a lawyer" recommendation, regardless of what the drafter said.
       const escalate =
         r.escalate ||
+        !!r._safetyFlag ||
         (r.evidence && (r.evidence.sufficient === false || r.evidence.hedged === true)) ||
         responseHasHedging(r);
 
@@ -2454,6 +2463,7 @@ import {
         agentMsg.safetyAckQuestion = response.question || "";
         agentMsg.safetyAckContext = response.context || null;
         agentMsg.safetyAckToken = response.ackToken || null;
+        agentMsg.thinkingElapsedMs = Date.now() - (agentMsg.startedAt || Date.now());
 
         renderSafetyApproval(agentMsg, response, token);
         finalizeAnswer(agentMsg, token);
@@ -2901,6 +2911,25 @@ import {
     return wrap;
   }
 
+  function applySafetyAckReveal(msg, data) {
+    msg.result = data.result;
+    if (msg.result) {
+      msg.result.escalate = true;
+      if (!msg.result._safetyFlag) {
+        msg.result._safetyFlag = data.safetyFlag || {
+          message: "This response covers a high-risk legal area and could not be verified to our standard. Please consult a qualified lawyer for this matter.",
+          acknowledged: true,
+        };
+      }
+    }
+    msg.classificationRaw = data.classification || null;
+    msg.classification = normalizeClassification(data.classification);
+    msg.evidence = data.evidence || null;
+    msg.status = "done";
+    msg.safetyAcknowledgedAt = Date.now();
+    if (data.critique) msg.critique = data.critique;
+  }
+
   // Safety acknowledgment UI — wired to HITL when high-risk answer fails critique
   function renderSafetyApproval(agentMsg, response, token) {
     if (!live.refs || !live.refs.body) return;
@@ -2979,14 +3008,7 @@ import {
           // finalizeAnswer already cleared live.refs after showing this card,
           // so never append through it — rebuild from persisted message state
           // the same way the reload/static path does.
-          agentMsg.result = data.result;
-          agentMsg.classificationRaw = data.classification || null;
-          agentMsg.classification = normalizeClassification(data.classification);
-          agentMsg.evidence = data.evidence || null;
-          agentMsg.status = "done";
-          if (data.critique) {
-            agentMsg.critique = data.critique;
-          }
+          applySafetyAckReveal(agentMsg, data);
           saveState();
           const convo = getActiveConversation();
           if (convo) syncMessageToServer(convo.id, agentMsg);
@@ -3215,12 +3237,7 @@ import {
         });
         const data = await res.json();
         if (data.acknowledged && data.result) {
-          msg.result = data.result;
-          msg.classificationRaw = data.classification || null;
-          msg.classification = normalizeClassification(data.classification);
-          msg.evidence = data.evidence || null;
-          msg.status = "done";
-          if (data.critique) msg.critique = data.critique;
+          applySafetyAckReveal(msg, data);
           saveState();
           renderChat();
         } else {
