@@ -178,6 +178,17 @@ import {
   let _directFetchUrlId = null;
 
   // Map a server conversation detail into the local message format.
+  function mapServerMessage(m) {
+    if (!m) return m;
+    const { userId, ...rest } = m;
+    return {
+      id: m.id,
+      ...rest,
+      createdAt: normMs(m.createdAt, 0),
+      _synced: true,
+    };
+  }
+
   function mapServerConvo(detail) {
     return {
       id: detail.id,
@@ -190,10 +201,7 @@ import {
       // load lazily when the chat is opened.
       messageCount: typeof detail.messageCount === "number" ? detail.messageCount : undefined,
       _messagesLoaded: Array.isArray(detail.messages),
-      messages: (detail.messages || []).map((m) => {
-        const { userId, ...rest } = m;
-        return { id: m.id, ...rest, _synced: true };
-      }),
+      messages: (detail.messages || []).map(mapServerMessage),
     };
   }
 
@@ -204,25 +212,56 @@ import {
   const _lazyFetches = new Map(); // convoId -> in-flight promise
 
   function needsLazyLoad(convo) {
-    return (
-      !!convo &&
-      convo._messagesLoaded !== true &&
-      ((convo.messages || []).length === 0) &&
-      (convo.messageCount || 0) > 0
-    );
+    if (!convo || convo._messagesLoaded === true) return false;
+    const localLen = (convo.messages || []).length;
+    const count = convo.messageCount;
+    if (typeof count === "number") return localLen < count || (count > 0 && localLen === 0);
+    // Server-known chats whose list row didn't include a count still need a
+    // fetch; brand-new local chats (_synced unset) do not.
+    return convo._synced === true;
+  }
+
+  // Union local + server threads by id so a partial cache, or a message the
+  // user just sent while the fetch was in flight, never hides the rest of
+  // the conversation.
+  function mergeMessages(local, server) {
+    const byId = new Map();
+    for (const m of server || []) {
+      if (!m || !m.id) continue;
+      byId.set(m.id, { ...m, _synced: true });
+    }
+    for (const m of local || []) {
+      if (!m || !m.id) continue;
+      const existing = byId.get(m.id);
+      if (!existing) {
+        byId.set(m.id, m);
+        continue;
+      }
+      if (m._synced === false) {
+        byId.set(m.id, { ...existing, ...m });
+        continue;
+      }
+      const localHasResult = !!(m.result && (m.result.lawMd || m.result.actionsMd));
+      const serverHasResult = !!(existing.result && (existing.result.lawMd || existing.result.actionsMd));
+      if (localHasResult && !serverHasResult) {
+        byId.set(m.id, { ...existing, ...m, _synced: true });
+      }
+    }
+    return [...byId.values()].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
   }
 
   async function ensureConversationLoaded(convoId) {
     const convo = state.conversations.find((c) => c.id === convoId);
     if (!convo) return;
     if (convo._messagesLoaded === true) return;
-    // A write-behind cache (or messages already added this session) counts
-    // as loaded — never refetch over newer local messages.
-    if ((convo.messages || []).length > 0) {
+    if (!isServerMode()) {
       convo._messagesLoaded = true;
       return;
     }
-    if (!isServerMode() || !needsLazyLoad(convo)) return;
+    if (!needsLazyLoad(convo)) {
+      convo._messagesLoaded = true;
+      return;
+    }
     if (_lazyFetches.has(convoId)) return _lazyFetches.get(convoId);
 
     const fetchPromise = (async () => {
@@ -231,18 +270,20 @@ import {
         const cur = state.conversations.find((c) => c.id === convoId);
         if (!cur) return;
         if (result.notFound) {
-          // Chat was deleted server-side; reflect that instead of retrying.
+          // Chat was deleted server-side; keep any local thread but stop retrying.
           cur._messagesLoaded = true;
-          cur.messageCount = 0;
           saveState();
+          if (state.activeId === convoId && !state.isAgentBusy) {
+            renderHistory();
+            renderChat();
+            updateClearChatButtonState();
+          }
           return;
         }
-        // If messages arrived locally while we were fetching (user typed
-        // fast), keep the newer local thread untouched.
-        if ((cur.messages || []).length === 0) {
-          cur.messages = result.convo.messages;
-          cur.updatedAt = result.convo.updatedAt;
-        }
+        cur.messages = mergeMessages(cur.messages, result.convo.messages);
+        if (result.convo.title) cur.title = result.convo.title;
+        if (result.convo.updatedAt) cur.updatedAt = result.convo.updatedAt;
+        cur._synced = true;
         cur._messagesLoaded = true;
         delete cur.messageCount;
         saveState();
@@ -253,6 +294,16 @@ import {
         }
       } catch (err) {
         console.warn("[server-sync] Lazy chat load failed:", err.message);
+        if (state.activeId === convoId && !state.isAgentBusy) {
+          const cur = state.conversations.find((c) => c.id === convoId);
+          if (cur && (cur.messages || []).length === 0) {
+            showChatStatus(
+              "Couldn't load this chat",
+              "Something went wrong while loading it. Please try again.",
+              { showRetry: true }
+            );
+          }
+        }
       } finally {
         _lazyFetches.delete(convoId);
       }
@@ -264,16 +315,16 @@ import {
   // Normalize a stored timestamp to epoch ms (mirrors the server's toMillis)
   // so direct single-chat fetches sort/display correctly regardless of how
   // Firestore serializes the field (number, ISO string, or Timestamp shape).
-  function normMs(v) {
-    if (v == null) return Date.now();
+  function normMs(v, fallback = Date.now()) {
+    if (v == null) return fallback;
     if (typeof v === "number") return v;
     if (typeof v === "string") {
       const t = Date.parse(v);
-      return Number.isNaN(t) ? Date.now() : t;
+      return Number.isNaN(t) ? fallback : t;
     }
     if (v._seconds != null) return v._seconds * 1000;
     if (typeof v.seconds === "number") return v.seconds * 1000;
-    return Date.now();
+    return fallback;
   }
 
   function isServerMode() {
@@ -345,8 +396,20 @@ import {
         return;
       }
 
-      // First page REPLACES local state (server is authoritative).
-      const allConversations = data.conversations.map(mapServerConvo);
+      // First page REPLACES local state (server is authoritative), but keep
+      // any thread already fetched for a listed chat so a background refresh
+      // doesn't wipe an open conversation.
+      const previous = new Map(state.conversations.map((c) => [c.id, c]));
+      const allConversations = data.conversations.map((detail) => {
+        const mapped = mapServerConvo(detail);
+        const prev = previous.get(mapped.id);
+        if (prev && prev._messagesLoaded === true) {
+          mapped.messages = mergeMessages(prev.messages, mapped.messages);
+          mapped._messagesLoaded = true;
+          delete mapped.messageCount;
+        }
+        return mapped;
+      });
       state.conversations = allConversations;
       _listHasMore = data.hasMore === true;
       _listCursor = data.nextCursor || null;
@@ -443,10 +506,7 @@ import {
       _synced: true,
       _serverTitle: detail.title || "New question",
       _messagesLoaded: true,
-      messages: (detail.messages || []).map((m) => {
-        const { userId, ...rest } = m;
-        return { id: m.id, ...rest, _synced: true };
-      }),
+      messages: (detail.messages || []).map(mapServerMessage),
     };
     return { convo };
   }
@@ -786,7 +846,7 @@ import {
 
 
   /* ------------------------------------------------------------------ */
-  /* Streaming enginarsing the
+  /* Streaming engine — reveals markdown text over time, re-parsing the
      accumulated substring each frame so formatting appears live.        */
   /* ------------------------------------------------------------------ */
   function streamText(container, fullText, { cps = 200, token, onDone } = {}) {
@@ -1407,7 +1467,20 @@ import {
     hideChatStatus();
     updateClearChatButtonState();
 
-    if (!convo || convo.messages.length === 0) {
+    if (!convo) {
+      el.emptyState.style.display = "flex";
+      renderTopbar();
+      return;
+    }
+
+    if ((convo.messages || []).length === 0 && needsLazyLoad(convo)) {
+      el.emptyState.style.display = "none";
+      renderLoadingChat();
+      renderTopbar();
+      return;
+    }
+
+    if (convo.messages.length === 0) {
       el.emptyState.style.display = "flex";
       renderTopbar();
       return;
@@ -4274,13 +4347,6 @@ import {
       cacheNames.forEach((cacheName) => {
         console.log('[cache] Deleting cache:', cacheName);
         caches.delete(cacheName);
-      });
-    });
-  }
-
-  init();
-})();
-e);
       });
     });
   }
