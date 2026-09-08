@@ -65,6 +65,10 @@ function sanitizeMessage(input, uid) {
   if (typeof clean.content === "string") clean.content = clean.content.slice(0, 10000);
   if (typeof clean.casualReply === "string") clean.casualReply = clean.casualReply.slice(0, 5000);
   if (typeof clean.errorMessage === "string") clean.errorMessage = clean.errorMessage.slice(0, 2000);
+  // User turns historically had no `status` (only agent messages did). The
+  // PUT/migrate validators require one, so default it rather than 400 and
+  // drop the question from persistence.
+  if (clean.role === "user" && !clean.status) clean.status = "sent";
   return clean;
 }
 
