@@ -106,6 +106,23 @@ function toMillis(v) {
   return 0;
 }
 
+// Unordered get + in-memory sort: Firestore orderBy("createdAt") silently
+// drops documents that never got the field, which made some turns vanish.
+async function loadConversationMessages(uid, convoId) {
+  const snap = await msgCollection(uid, convoId).get();
+  const messages = snap.docs.map((d) => {
+    const msgData = d.data() || {};
+    const { userId, ...rest } = msgData;
+    return {
+      id: d.id,
+      ...rest,
+      createdAt: toMillis(rest.createdAt) || toMillis(rest.startedAt),
+    };
+  });
+  messages.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+  return messages;
+}
+
 // ── GET /api/conversations — list summaries or full conversations ──────────
 // ?full=true returns conversations with all messages inline (avoids N+1
 // client round-trips). Messages are fetched in parallel chunks, and each
@@ -184,15 +201,7 @@ router.get("/", async (req, res) => {
         };
         if (includeFull) {
           try {
-            const msgSnapshot = await convoRef(req.uid, id)
-              .collection("messages")
-              .orderBy("createdAt", "asc")
-              .get();
-            base.messages = msgSnapshot.docs.map((d) => {
-              const msgData = d.data();
-              const { userId, ...rest } = msgData;
-              return { id: d.id, ...rest };
-            });
+            base.messages = await loadConversationMessages(req.uid, id);
           } catch (err) {
             console.warn(`[conversations] GET full: failed to load messages for ${id}:`, err.message);
             base.messages = [];
@@ -283,15 +292,7 @@ router.get("/:id", async (req, res) => {
       return res.status(404).json({ error: "not_found", message: "Conversation not found." });
     }
 
-    // Fetch all messages ordered by creation time
-    const msgSnapshot = await ref.collection("messages")
-      .orderBy("createdAt", "asc")
-      .get();
-
-    const messages = msgSnapshot.docs.map(d => {
-      const msgData = d.data();
-      return { id: d.id, ...msgData };
-    });
+    const messages = await loadConversationMessages(req.uid, req.params.id);
 
     res.json({
       id: doc.id,
@@ -376,6 +377,7 @@ router.put("/:id/messages/:msgId", async (req, res) => {
     if (!messageData.role || !messageData.status) {
       return res.status(400).json({ error: "invalid_message", message: "Message role and status are required." });
     }
+    if (!messageData.createdAt) messageData.createdAt = Date.now();
 
     await msgRef(req.uid, req.params.id, req.params.msgId).set(messageData, { merge: true });
 

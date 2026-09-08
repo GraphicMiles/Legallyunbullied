@@ -73,8 +73,9 @@ app.use(cors({
 // per-user endpoints. Everything else stays at 50kb.
 app.use("/api/chat", express.json({ limit: "300kb" }));
 app.use("/api/conversations/migrate", express.json({ limit: "2mb" }));
-// 50kb is generous for chat messages + conversation history.
-// Prevents memory exhaustion from oversized payloads.
+// Legal answers (sources, evidence, steps) routinely exceed 50kb; a tight
+// global cap made message PUTs 413 and those turns never reloaded.
+app.use("/api/conversations", express.json({ limit: "300kb" }));
 app.use(express.json({ limit: "50kb" }));
 
 // ── Rate limiting ─────────────────────────────────────────────────────────
