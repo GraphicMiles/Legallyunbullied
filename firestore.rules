@@ -20,7 +20,7 @@ service cloud.firestore {
         && data.status in [
           'thinking', 'streaming', 'running', 'done', 'casual', 'error',
           'stopped', 'corpusEmpty', 'incomplete', 'needsInput',
-          'safetyAck', 'providersBusy'
+          'safetyAck', 'providersBusy', 'sent'
         ]
         && data.keys().hasOnly([
           'userId', 'role', 'content', 'casualReply', 'status', 'createdAt',

@@ -47,6 +47,16 @@ function msgCollection(uid, convoId) {
   return convoRef(uid, convoId).collection("messages");
 }
 
+const WRITE_CHUNK = 400;
+
+async function deleteRefsInChunks(refs) {
+  for (let i = 0; i < refs.length; i += WRITE_CHUNK) {
+    const batch = db().batch();
+    refs.slice(i, i + WRITE_CHUNK).forEach((ref) => batch.delete(ref));
+    await batch.commit();
+  }
+}
+
 const MESSAGE_FIELDS = new Set([
   "role", "content", "casualReply", "status", "createdAt", "startedAt",
   "thinkingElapsedMs", "traceOpen", "classification", "classificationRaw", "steps", "result", "plan",
@@ -206,6 +216,8 @@ router.get("/", async (req, res) => {
             console.warn(`[conversations] GET full: failed to load messages for ${id}:`, err.message);
             base.messages = [];
           }
+        } else if (typeof data.messageCount === "number") {
+          base.messageCount = data.messageCount;
         } else {
           try {
             const countSnapshot = await convoRef(req.uid, id).collection("messages").count().get();
@@ -261,6 +273,7 @@ router.post("/", async (req, res) => {
       title: title || "New question",
       createdAt: now,
       updatedAt: now,
+      messageCount: 0,
     });
 
     res.status(201).json({
@@ -348,12 +361,8 @@ router.delete("/:id", async (req, res) => {
       return res.status(404).json({ error: "not_found", message: "Conversation not found." });
     }
 
-    // Delete all messages first (subcollection), then the conversation doc
     const msgSnapshot = await ref.collection("messages").get();
-    const batch = db().batch();
-    msgSnapshot.docs.forEach(d => batch.delete(d.ref));
-    batch.delete(ref);
-    await batch.commit();
+    await deleteRefsInChunks(msgSnapshot.docs.map((d) => d.ref).concat([ref]));
 
     res.json({ success: true });
   } catch (err) {
@@ -379,10 +388,16 @@ router.put("/:id/messages/:msgId", async (req, res) => {
     }
     if (!messageData.createdAt) messageData.createdAt = Date.now();
 
+    const existingMsg = await msgRef(req.uid, req.params.id, req.params.msgId).get();
+    const isNew = !existingMsg.exists;
     await msgRef(req.uid, req.params.id, req.params.msgId).set(messageData, { merge: true });
 
-    // Touch the conversation's updatedAt
-    await convoRef(req.uid, req.params.id).update({ updatedAt: Date.now() });
+    const convoUpdates = { updatedAt: Date.now() };
+    if (isNew) {
+      const current = Number((convoDoc.data() || {}).messageCount);
+      convoUpdates.messageCount = (Number.isFinite(current) ? current : 0) + 1;
+    }
+    await convoRef(req.uid, req.params.id).update(convoUpdates);
 
     res.json({ success: true });
   } catch (err) {
@@ -403,12 +418,8 @@ router.delete("/:id/messages", async (req, res) => {
     }
 
     const msgSnapshot = await msgCollection(req.uid, req.params.id).get();
-    const batch = db().batch();
-    msgSnapshot.docs.forEach(d => batch.delete(d.ref));
-    await batch.commit();
-
-    // Update the conversation timestamp
-    await convoRef(req.uid, req.params.id).update({ updatedAt: Date.now() });
+    await deleteRefsInChunks(msgSnapshot.docs.map((d) => d.ref));
+    await convoRef(req.uid, req.params.id).update({ updatedAt: Date.now(), messageCount: 0 });
 
     res.json({ success: true });
   } catch (err) {
