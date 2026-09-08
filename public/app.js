@@ -113,9 +113,13 @@ import {
 
           // Migrate: repair any agent messages missing the `steps` field
           // (from sessions saved before the steps/tracing feature was added).
+          // Also give user messages a status so server PUTs stop 400ing.
           for (const convo of state.conversations) {
             if (convo && Array.isArray(convo.messages)) {
               for (const msg of convo.messages) {
+                if (msg && msg.role === "user" && !msg.status) {
+                  msg.status = "sent";
+                }
                 if (msg && msg.role === "agent" && !msg.steps) {
                   msg.steps = STEP_DEFS.map((s, i) => ({
                     ...s,
@@ -782,7 +786,7 @@ import {
 
 
   /* ------------------------------------------------------------------ */
-  /* Streaming engine — reveals markdown text over time, re-parsing the
+  /* Streaming enginarsing the
      accumulated substring each frame so formatting appears live.        */
   /* ------------------------------------------------------------------ */
   function streamText(container, fullText, { cps = 200, token, onDone } = {}) {
@@ -2115,7 +2119,7 @@ import {
     ensureActiveConversation();
     const convo = getActiveConversation();
 
-    const userMsg = { id: uid(), role: "user", content: text, createdAt: Date.now() };
+    const userMsg = { id: uid(), role: "user", status: "sent", content: text, createdAt: Date.now() };
     convo.messages.push(userMsg);
     convo.updatedAt = Date.now(); // keep the sidebar ordering stable for local chats
 
@@ -4273,6 +4277,13 @@ import {
       cacheNames.forEach((cacheName) => {
         console.log('[cache] Deleting cache:', cacheName);
         caches.delete(cacheName);
+      });
+    });
+  }
+
+  init();
+})();
+e);
       });
     });
   }

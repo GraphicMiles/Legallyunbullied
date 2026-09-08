@@ -48,6 +48,7 @@
     return str
       .replace(/Bearer\s+[A-Za-z0-9._\-+=\/]+/gi, "Bearer [redacted]")
       .replace(/("?(?:authorization|password|idToken|api[_-]?key|token)"?\s*[:=]\s*")[^"]+/gi, "$1[redacted]")
+      .replace(/([?&](?:key|api[_-]?key)=)[^&]+/gi, "$1[redacted]")
       .replace(/ghp_[A-Za-z0-9]{20,}/g, "[redacted-token]");
   }
 
@@ -166,7 +167,16 @@
       function (res) {
         var ms = Date.now() - started;
         var level = res.ok ? "push" : "error";
-        addLog(level, "fetch", method + " " + url + " → " + res.status + " " + res.statusText, ms + "ms");
+        var summary = method + " " + url + " → " + res.status + " " + (res.statusText || "");
+        if (res.ok) {
+          addLog(level, "fetch", summary, ms + "ms");
+        } else {
+          res.clone().text().then(function (body) {
+            addLog(level, "fetch", summary, ms + "ms" + (body ? " · " + body.slice(0, 500) : ""));
+          }).catch(function () {
+            addLog(level, "fetch", summary, ms + "ms");
+          });
+        }
         return res;
       },
       function (err) {
