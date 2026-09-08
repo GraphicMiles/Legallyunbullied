@@ -262,7 +262,7 @@ Rules:
 - irrelevant: keyword-only overlap, different subject matter, or a definition torn from its governing context
 - If the model's own explanation of a provision would naturally say "this is not quite the right provision, but..." — it is irrelevant.
 
-sufficient: true ONLY if at least 2 provisions directly govern the situation. A single tangential provision is NOT sufficient.
+sufficient: true ONLY if at least MIN_SOURCES provisions directly govern the situation (MIN_SOURCES is given in the user message; it is 1 for simple factual questions and 2 otherwise). A single tangential provision is NOT sufficient when MIN_SOURCES is 2.
 
 Respond with ONLY a JSON object:
 {
@@ -274,7 +274,7 @@ Respond with ONLY a JSON object:
   "reason": "one sentence explaining the sufficiency decision"
 }`;
 
-async function assessRelevanceWithFallback(question, classification, provisions) {
+async function assessRelevanceWithFallback(question, classification, provisions, minSources = 2) {
   const providers = [];
   const groqClient = getGroqClient();
   const cerebrasClient = getCerebrasClient();
@@ -288,7 +288,7 @@ async function assessRelevanceWithFallback(question, classification, provisions)
     const key = `${name}-relevance:${model}`;
     if (isProviderOnCooldown(key)) continue;
     try {
-      const parsed = await assessRelevanceForClient(client, model, question, classification, provisions);
+      const parsed = await assessRelevanceForClient(client, model, question, classification, provisions, minSources);
       return { ...parsed, provider: name };
     } catch (err) {
       lastErr = err;
@@ -298,11 +298,11 @@ async function assessRelevanceWithFallback(question, classification, provisions)
   throw new Error(`All relevance-gate providers failed: ${lastErr ? lastErr.message : "none configured"}`);
 }
 
-async function assessRelevanceForClient(client, model, question, classification, provisions) {
+async function assessRelevanceForClient(client, model, question, classification, provisions, minSources = 2) {
   const candidateBlock = provisions.map((p, i) =>
     `[${i + 1}] ID=${p.provisionId || p.id} ${p.act}${p.section ? ", s." + p.section : ""}: ${(p.text || "").slice(0, 500)}`
   ).join("\n");
-  const userMsg = `Practice area: ${classification.practice_area || "unknown"}\nQuestion: ${question}\n\nCandidate provisions:\n${candidateBlock}\n\nJudge relevance and sufficiency.`;
+  const userMsg = `Practice area: ${classification.practice_area || "unknown"}\nQuestion: ${question}\nMIN_SOURCES: ${minSources}\n\nCandidate provisions:\n${candidateBlock}\n\nJudge relevance and sufficiency.`;
 
   const completion = await callCompletion(client, model, [
     { role: "system", content: RELEVANCE_SYSTEM_PROMPT },
@@ -1122,6 +1122,51 @@ function makeInsufficientEvidenceResult(evidence, urgent) {
   };
 }
 
+
+function makeProceduralFallback(question) {
+  const q = String(question || "").toLowerCase();
+  if (/\b(lawyer|attorney|solicitor|legal.?aid)\b/.test(q)) {
+    return {
+      lawMd: "You can find a verified Nigerian lawyer through the Nigerian Bar Association public directory. This app cannot assign or recommend a specific lawyer.",
+      actionsMd:
+        "- Step 1: Open the NBA Find a Lawyer directory.\\n" +
+        "- Step 2: Search by your state and the type of matter (criminal, tenancy, family, employment).\\n" +
+        "- Step 3: Write a one-page timeline of what happened and take copies of documents, photos, and medical reports.\\n" +
+        "- Step 4: If you cannot afford private fees, ask about legal aid in your state.",
+      sources: [],
+      escalate: true,
+      escalateReason: "A lawyer should handle this next step.",
+      followUps: ["What should I take to the lawyer?", "How do I report this to the police?"],
+    };
+  }
+  if (/\b(police|station|report (it|this)|file a report)\b/.test(q)) {
+    return {
+      lawMd: "Go to the nearest police station that covers where it happened. Ask for a station diary entry or extract. Keep your own copy of names, dates, and what you were told.",
+      actionsMd:
+        "- Step 1: Go with a trusted person if you can.\\n" +
+        "- Step 2: State the facts: who, what, when, where. Do not guess.\\n" +
+        "- Step 3: Ask for the diary number or extract and write down the officer's name and rank.\\n" +
+        "- Step 4: If they refuse to record it, note that refusal and speak to a lawyer.",
+      sources: [],
+      escalate: false,
+      escalateReason: "Reporting to the police is something you can start yourself; a lawyer can help if they refuse to record it.",
+      followUps: ["What should I bring to the station?", "How do I find a lawyer?"],
+    };
+  }
+  return {
+    lawMd: "Write the facts down while they are fresh: who, what, when, where. Keep it specific and keep a copy.",
+    actionsMd:
+      "- Step 1: Write down the key facts as soon as possible.\\n" +
+      "- Step 2: Keep it factual — what you saw or heard, not your opinion.\\n" +
+      "- Step 3: Save a dated copy (photo or written) for yourself.\\n" +
+      "- Step 4: Bring this record if you report to the police or meet a lawyer.",
+    sources: [],
+    escalate: false,
+    escalateReason: "This is a practical task you can handle yourself.",
+    followUps: [],
+  };
+}
+
 function applyDeterministicSafetyPolicy(result, classification, question, history) {
   if (!result) return;
   const area = String(classification?.practice_area || "").toLowerCase();
@@ -1130,12 +1175,15 @@ function applyDeterministicSafetyPolicy(result, classification, question, histor
   const urgent = urgency === "High" || urgency === "Critical";
   const context = `${history?.map((m) => m.content).join(" ") || ""} ${question}`.toLowerCase();
 
-  if (highRisk || urgent) {
+  const lockoutOrSelfHelp = /lock(?:ed)?\s*out|changed (?:the )?locks|self-?help eviction|forcible (?:entry|ejection)/i.test(context);
+  if (highRisk || urgent || lockoutOrSelfHelp) {
     result.escalate = true;
     if (!result.escalateReason || /handle.*yourself|no lawyer/i.test(result.escalateReason)) {
       result.escalateReason = urgent
         ? "The situation is urgent or high-risk and should be reviewed by a qualified lawyer or appropriate emergency authority."
-        : "This is a high-risk legal area and should be reviewed by a qualified lawyer.";
+        : lockoutOrSelfHelp
+          ? "A lockout or self-help eviction should be reviewed by a lawyer — do not try to force re-entry yourself."
+          : "This is a high-risk legal area and should be reviewed by a qualified lawyer.";
     }
   }
 
@@ -1330,6 +1378,7 @@ async function runChatPipeline(req) {
   if (classification.needs_sourcing === false) {
     try {
       const proc = await answerProceduralWithFallback(question, classification, history);
+      applyDeterministicSafetyPolicy(proc.result, classification, question, history);
       const procEvidence = {
         sufficient: true,
         relevanceScore: null,
@@ -1357,18 +1406,8 @@ async function runChatPipeline(req) {
       console.warn("[/api/chat] Procedural answer failed, using static guidance:", err.message);
       // Honest fallback: direct practical guidance with NO citations, never
       // routed back into the citation pipeline.
-      const fallbackResult = {
-        lawMd: "Here's straightforward guidance: write things down while they're fresh, keep it factual and specific, and keep a copy for yourself. If this relates to a legal or police matter, also note dates, names, and any documents.",
-        actionsMd:
-          "- Step 1: Write down the key facts (who, what, when, where) as soon as possible.\n" +
-          "- Step 2: Keep it factual — what you saw or heard, not your opinion.\n" +
-          "- Step 3: Save a dated copy (photo or written) for yourself.\n" +
-          "- Step 4: If it's for a legal or police matter, bring this record when you report or meet a lawyer.",
-        sources: [],
-        escalate: false,
-        escalateReason: "This is a practical task you can handle yourself.",
-        followUps: [],
-      };
+      const fallbackResult = makeProceduralFallback(question);
+      applyDeterministicSafetyPolicy(fallbackResult, classification, question, history);
       const procEvidence = {
         sufficient: true,
         relevanceScore: null,
@@ -1497,7 +1536,7 @@ async function runChatPipeline(req) {
     workingProvisions = provisions;
 
   try {
-    const gate = await timed("relevanceMs", () => assessRelevanceWithFallback(question, classification, provisions));
+    const gate = await timed("relevanceMs", () => assessRelevanceWithFallback(question, classification, provisions, MIN_SOURCES));
     const relevantIdx = new Set(
       Array.isArray(gate.relevant) ? gate.relevant.map((n) => Number(n) - 1).filter((i) => i >= 0 && i < provisions.length) : []
     );
@@ -1528,7 +1567,7 @@ async function runChatPipeline(req) {
       if (broad.provisions.some((p) => p.local_eval === true)) evidence.mode = "local_fallback";
 
       if (broad.provisions.length) {
-        const gate2 = await timed("relevanceMs", () => assessRelevanceWithFallback(question, classification, broad.provisions));
+        const gate2 = await timed("relevanceMs", () => assessRelevanceWithFallback(question, classification, broad.provisions, MIN_SOURCES));
         const relevantIdx2 = new Set(
           Array.isArray(gate2.relevant) ? gate2.relevant.map((n) => Number(n) - 1).filter((i) => i >= 0 && i < broad.provisions.length) : []
         );
@@ -2036,8 +2075,8 @@ router.post("/api/chat/acknowledge", async (req, res) => {
     });
   }
 
-  // User acknowledged — return the cached response with safety flag attached
-  await deletePendingAck(ackToken);
+  // User acknowledged — persist first, then drop the token so a persist
+  // failure does not leave the user with a dead button and no answer.
   const { classification, draftResult, critiqueResult, evidence, route, planResult } = pending;
 
   // Attach safety flag so the client can render the warning banner.
@@ -2082,6 +2121,7 @@ router.post("/api/chat/acknowledge", async (req, res) => {
         .catch((err) => console.warn("[ack] terminal persistence failed:", err.message));
     }
   }
+  await deletePendingAck(ackToken);
 
   // Safety-flagged responses are never globally cached, even after one user
   // acknowledges the warning.

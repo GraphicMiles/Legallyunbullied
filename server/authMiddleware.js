@@ -56,4 +56,20 @@ function requireAuth(req, res, next) {
     });
 }
 
-module.exports = { requireAuth };
+/**
+ * Cache/ops routes must not be callable by every signed-in user.
+ * Set ADMIN_UIDS to a comma-separated list of Firebase UIDs.
+ * If unset, these routes stay locked (403) rather than open to any account.
+ */
+function requireAdmin(req, res, next) {
+  const allowed = String(process.env.ADMIN_UIDS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (!req.uid || !allowed.includes(req.uid)) {
+    return res.status(403).json({ error: "forbidden", message: "Admin access required." });
+  }
+  next();
+}
+
+module.exports = { requireAuth, requireAdmin };

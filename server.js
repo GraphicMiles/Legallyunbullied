@@ -17,7 +17,7 @@ const cors = require("cors");
 const rateLimit = require("express-rate-limit");
 const chatRoute = require("./server/chatRoute");
 const conversationRoute = require("./server/conversationRoute");
-const { requireAuth } = require("./server/authMiddleware");
+const { requireAuth, requireAdmin } = require("./server/authMiddleware");
 const { sweepAndStart } = require("./server/jobRunner");
 const { probeProviders, getProviderHealth } = require("./server/providerHealth");
 
@@ -157,17 +157,15 @@ app.get("/healthz", (req, res) => {
 // ── Cache management (auth required) ──────────────────────────────────────
 // Stats leak operational intel (cache sizes, hit rates, whether the Firestore
 // circuit breaker is open) — same auth posture as the invalidate endpoint.
-app.get("/api/cache-stats", requireAuth, (req, res) => {
+app.get("/api/cache-stats", requireAuth, requireAdmin, (req, res) => {
   const { getCacheStats } = require("./server/legalCorpus");
   res.json(getCacheStats());
 });
 
-// Bug fix: cache-invalidate now requires authentication.
-// Previously anyone could wipe the legal corpus cache.
-app.post("/api/cache-invalidate", requireAuth, (req, res) => {
+app.post("/api/cache-invalidate", requireAuth, requireAdmin, (req, res) => {
   const { invalidateCache } = require("./server/legalCorpus");
   invalidateCache();
-  console.log(`[cache] Invalidated by user: ${req.uid}`);
+  console.log(`[cache] Invalidated by admin: ${req.uid}`);
   res.json({ success: true, message: "Cache invalidated" });
 });
 
@@ -195,7 +193,7 @@ app.use((err, req, res, next) => {
   }
   // Body parser errors (payload too large, malformed JSON)
   if (err.type === "entity.too.large") {
-    return res.status(413).json({ error: "payload_too_large", message: "Request body exceeds the 50kb limit." });
+    return res.status(413).json({ error: "payload_too_large", message: "Request body is too large." });
   }
   if (err.type === "entity.parse.failed") {
     return res.status(400).json({ error: "invalid_json", message: "Request body is not valid JSON." });

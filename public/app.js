@@ -946,6 +946,7 @@ import {
       // result into, so an answer computed after the tab closed isn't lost.
       if (options.conversationId) body.conversationId = options.conversationId;
       if (options.messageId) body.messageId = options.messageId;
+      live.abortController = controller;
       const res = await fetch("/api/chat", {
         method: "POST",
         headers,
@@ -1017,7 +1018,7 @@ import {
   const STEP_DEFS = [
     { key: "read", title: "Reading your question", detail: "Parsing the situation and extracting key facts.", icon: "read" },
     { key: "classify", title: "Classifying the issue", detail: "Identifying practice area, jurisdiction, and urgency.", icon: "classify" },
-    { key: "search", title: "Searching legal sources", detail: "Checking relevant statutes and case law.", icon: "search" },
+    { key: "search", title: "Searching legal sources", detail: "Checking relevant statutes.", icon: "search" },
     { key: "plan", title: "Planning the response", detail: "Analyzing provisions and structuring the answer.", icon: "bolt" },
     { key: "draft", title: "Drafting the answer", detail: "Structuring the response and the escalation verdict.", icon: "draft" },
   ];
@@ -1983,50 +1984,26 @@ import {
   }
 
   function buildVerdictEl(r) {
-    // Use BeUIRecommendationCard
-    if (window.BeUIRecommendationCard) {
-      const container = document.createElement("div");
-
-      const conf = confidenceFromEvidence(r);
-      // Insufficient evidence — including a hedging response — forces the
-      // "consult a lawyer" recommendation, regardless of what the drafter said.
-      const escalate =
-        r.escalate ||
-        !!r._safetyFlag ||
-        (r.evidence && (r.evidence.sufficient === false || r.evidence.hedged === true)) ||
-        responseHasHedging(r);
-
-      const recommendation = new window.BeUIRecommendationCard(container, {
-        options: [
-          {
-            body: escalate
-              ? "This situation likely requires professional legal assistance. A lawyer can help you navigate the legal process and protect your rights."
-              : "You can likely handle this yourself by following the steps outlined above. No lawyer needed for this situation.",
-            short: escalate ? "Consult a lawyer" : "Handle yourself",
-            signal: conf.signal,
-            tone: escalate ? "var(--color-accent)" : "var(--color-success)",
-            label: conf.label,
-            cta: escalate ? "Find lawyer" : "Got it",
-            ctaStyle: escalate ? "var(--color-accent)" : "var(--color-success)"
-          }
-        ]
-      });
-
-      return container;
-    }
-    
-    // Fallback to old verdict UI
+    const escalate =
+      !!(r && (r.escalate || r._safetyFlag)) ||
+      !!(r && r.evidence && (r.evidence.sufficient === false || r.evidence.hedged === true)) ||
+      responseHasHedging(r);
+    const reason = escalate
+      ? (r.escalateReason && !/handle.*yourself|no lawyer/i.test(r.escalateReason)
+          ? r.escalateReason
+          : "See a lawyer before you rely on this.")
+      : (r.escalateReason || "You can start with the steps above.");
     const verdict = document.createElement("div");
-    verdict.className = "verdict " + (r.escalate ? "verdict--escalate" : "verdict--self");
+    verdict.className = "verdict " + (escalate ? "verdict--escalate" : "verdict--self");
     verdict.innerHTML = `
       <div class="verdict__head">
         <div class="verdict__icon">
-          ${r.escalate ? ICONS.lawyer : '<i class="fa-solid fa-check"></i>'}
+          ${escalate ? ICONS.lawyer : '<i class="fa-solid fa-check"></i>'}
         </div>
-        <span class="verdict__title">${r.escalate ? "This likely needs a lawyer" : "You can likely handle this yourself"}</span>
+        <span class="verdict__title">${escalate ? "See a lawyer" : "You can do this yourself"}</span>
       </div>
-      <p class="verdict__text">${escapeHtml(r.escalateReason)}</p>
-      ${r.escalate ? `
+      <p class="verdict__text">${escapeHtml(reason)}</p>
+      ${escalate ? `
         <div class="verdict__actions">
           <a class="link-btn" href="${NBA_DIRECTORY_URL}" target="_blank" rel="noopener noreferrer">
             ${ICONS.external}
@@ -3647,6 +3624,8 @@ import {
     pipelineToken += 1;
     clearInterval(live.timerId);
     cancelBusyRetry();
+    try { if (live.abortController) live.abortController.abort(); } catch (_) {}
+    live.abortController = null;
     
     // Stop loading state if still active
     if (live.loadingState) {
@@ -4321,12 +4300,7 @@ import {
             stopGeneration();
           }
         },
-        sources: [
-          { key: "attach", name: "Add photos & files", desc: "Upload from your computer", glyph: "clip", attach: true },
-          { key: "legal-db", name: "Legal Database", desc: "Search Nigerian laws", glyph: "layers" },
-          { key: "cases", name: "Case Law", desc: "Search court decisions", glyph: "chart" },
-          { key: "web", name: "Web Search", desc: "Search the web", glyph: "globe" }
-        ],
+        sources: [],
         commands: [
           { key: "tenancy", name: "/tenancy", desc: "Ask about tenancy law" },
           { key: "employment", name: "/employment", desc: "Ask about employment law" },
@@ -4334,11 +4308,6 @@ import {
           { key: "family", name: "/family", desc: "Ask about family law" },
           { key: "business", name: "/business", desc: "Ask about business law" },
           { key: "constitutional", name: "/constitutional", desc: "Ask about constitutional rights" }
-        ],
-        models: [
-          { key: "groq", name: "Groq", tag: "Fast", icon: "fa-bolt" },
-          { key: "openrouter", name: "OpenRouter", tag: "35+ models", icon: "fa-globe" },
-          { key: "cerebras", name: "Cerebras", tag: "Ultra-fast", icon: "fa-rocket" }
         ]
       });
 
