@@ -60,6 +60,7 @@ function recordJobStart(req) {
     if (!uid || !conversationId || !messageId) return Promise.resolve();
     const d = db();
     if (!d) return Promise.resolve();
+    const now = Date.now();
     return d.collection("background_jobs").doc(messageId).set({
       uid,
       conversationId,
@@ -67,8 +68,12 @@ function recordJobStart(req) {
       question: body.question || "",
       history: Array.isArray(body.history) ? body.history : [],
       status: "running",
-      startedAt: Date.now(),
-      createdAt: Date.now(),
+      startedAt: now,
+      createdAt: now,
+      // Lease the live HTTP run so the sweeper does not enqueue a second
+      // pipeline while this process is still working.
+      leaseOwner: INSTANCE_ID,
+      leaseUntil: now + STALE_RUNNING_MS,
     }, { merge: true }).catch((err) => console.warn("[jobs] recordJobStart failed:", err.message));
   } catch (err) {
     console.warn("[jobs] recordJobStart failed:", err.message);
