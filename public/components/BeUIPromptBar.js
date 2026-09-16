@@ -53,7 +53,7 @@ class BeUIPromptBar {
     const submitBtn = document.createElement('button');
     submitBtn.type = 'button';
     submitBtn.className = 'beui-prompt-bar__button beui-prompt-bar__button--submit';
-    submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
+    submitBtn.innerHTML = '<i class="fa-solid fa-arrow-up"></i>';
     submitBtn.disabled = true;
     submitBtn.addEventListener('click', (e) => this.handleSubmitClick(e));
     
@@ -331,7 +331,7 @@ class BeUIPromptBar {
       this.submitButton.title = 'Stop generating';
     } else {
       // Restore send button
-      this.submitButton.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
+      this.submitButton.innerHTML = '<i class="fa-solid fa-arrow-up"></i>';
       this.submitButton.disabled = this.inputElement.value.trim().length === 0;
       this.submitButton.title = '';
     }
