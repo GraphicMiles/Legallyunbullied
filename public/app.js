@@ -1026,6 +1026,18 @@ import {
   /* ------------------------------------------------------------------ */
   /* Sidebar / history                                                   */
   /* ------------------------------------------------------------------ */
+  // Recency buckets for the grouped sidebar (Today / Yesterday / 7d / 30d / Older).
+  function historyBucket(ts) {
+    if (!ts) return "Older";
+    const now = new Date();
+    const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    if (ts >= startToday) return "Today";
+    if (ts >= startToday - 86400000) return "Yesterday";
+    if (ts >= startToday - 7 * 86400000) return "Previous 7 days";
+    if (ts >= startToday - 30 * 86400000) return "Previous 30 days";
+    return "Older";
+  }
+
   function renderHistory() {
     // Don't flash a stale localStorage cache while the authoritative server
     // data is still loading (or before auth has resolved). Show a loading
@@ -1078,9 +1090,22 @@ import {
       return;
     }
 
-    const list = document.createElement("ul");
-    sorted.forEach((c) => list.appendChild(buildHistoryRow(c)));
-    el.historyList.appendChild(list);
+    // Group by recency (Today / Yesterday / …) like mature AI products.
+    let currentBucket = null;
+    let groupList = null;
+    sorted.forEach((c) => {
+      const bucket = historyBucket(c.updatedAt || c.createdAt);
+      if (bucket !== currentBucket) {
+        currentBucket = bucket;
+        const heading = document.createElement("div");
+        heading.className = "history__heading";
+        heading.textContent = bucket;
+        el.historyList.appendChild(heading);
+        groupList = document.createElement("ul");
+        el.historyList.appendChild(groupList);
+      }
+      groupList.appendChild(buildHistoryRow(c));
+    });
 
     // ── Load more (older conversations) ────────────────────────────────────
     if (_listHasMore || _listLoadingMore) {

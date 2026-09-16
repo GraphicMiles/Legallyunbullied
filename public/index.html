@@ -15,18 +15,19 @@
      DESIGN TOKENS
      ============================================================ */
   :root{
-    /* --- color: three-color system (black / white / gold) --- */
-    --color-bg:            #0a0a0a;
-    --color-bg-raised:     #121212;
-    --color-surface:       #161616;
-    --color-surface-alt:   #1c1c1c;
-    --color-border:        #2a2a2a;
-    --color-border-soft:   #1f1f1f;
+    /* --- color: two-tone warm-neutral dark (sidebar a step below the canvas),
+         single gold accent used sparingly (brand, send, focus, active). --- */
+    --color-bg:            #1e1f22;   /* main canvas */
+    --color-bg-raised:     #17181a;   /* sidebar / recessed */
+    --color-surface:       #26272b;
+    --color-surface-alt:   #2c2d31;
+    --color-border:        #37383c;
+    --color-border-soft:   #2a2b2f;
 
-    --color-text:          #f5f5f2;
-    --color-text-muted:    #9a9a94;
-    /* 4.6:1 on --color-bg; kept for placeholders and fine print (AA). */
-    --color-text-faint:    #7b7b75;
+    --color-text:          #ececee;
+    --color-text-muted:    #b4b5ba;
+    /* 5:1 on --color-bg; fine print stays AA. */
+    --color-text-faint:    #8f9096;
 
     --color-accent:        #f2b705;
     --color-accent-hover:  #ffc61a;
@@ -47,10 +48,11 @@
     --space-7: 32px;
     --space-8: 40px;
 
-    /* --- radius scale (kept small/flat, no oversized pill everything) --- */
+    /* --- radius scale --- */
     --radius-sm: 6px;
     --radius-md: 10px;
-    --radius-lg: 14px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
     --radius-full: 999px;
 
     /* --- typography --- */
@@ -237,6 +239,17 @@
 
   .btn--block { width: 100%; }
 
+  /* Quiet enterprise action (sidebar new-question). Gold is reserved for
+     send / focus / active states; this stays neutral and lifts on hover. */
+  .btn--new {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+  }
+  .btn--new:hover { background: var(--color-surface-alt); border-color: var(--color-accent-border); }
+  .btn--new:active { transform: translateY(1px); }
+  .btn--new i { color: var(--color-accent); }
+
   .btn--icon-leading svg { width: 16px; height: 16px; }
   .btn--icon-leading i { font-size: 14px; }
 
@@ -278,8 +291,10 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--color-text-faint);
-    padding: var(--space-2) 0;
+    padding: var(--space-2) var(--space-4);
+    margin-top: var(--space-4);
   }
+  .history__heading:first-child { margin-top: var(--space-1); }
 
   /* history row: title (flex) + kebab (fixed, far right).
      The row — not a card — is the highlight unit. No rounded corners: the
@@ -687,7 +702,6 @@
     align-items: center;
     gap: var(--space-3);
     padding: 0 var(--space-5);
-    border-bottom: var(--border-width) solid var(--color-border-soft);
   }
 
   .icon-btn {
@@ -863,27 +877,34 @@
   }
   .prompt-card {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: flex-start;
+    gap: var(--space-3);
     text-align: left;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border-soft);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
     background: var(--color-surface);
     transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
   }
-  .prompt-card:hover { border-color: var(--color-accent-border); background: var(--color-accent-soft); transform: translateY(-1px); }
+  .prompt-card:hover { border-color: var(--color-border); background: var(--color-surface-alt); transform: translateY(-1px); }
   .prompt-card:active { transform: translateY(0); }
-  .prompt-card__label {
-    display: block;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+  .prompt-card__icon {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-md);
+    background: var(--color-surface-alt);
+    border: 1px solid var(--color-border-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: var(--color-accent);
-    font-weight: 700;
-    margin-bottom: 4px;
   }
-  .prompt-card__text { display: block; font-size: var(--fs-sm); color: var(--color-text); line-height: 1.45; }
+  .prompt-card__icon i { font-size: 14px; }
+  .prompt-card__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .prompt-card__title { font-size: var(--fs-sm); font-weight: 700; color: var(--color-text); }
+  .prompt-card__text { display: block; font-size: var(--fs-sm); color: var(--color-text-muted); line-height: 1.45; }
 
   /* Visible keyboard focus for every interactive element. */
   .btn:focus-visible, .icon-btn:focus-visible, .prompt-card:focus-visible,
@@ -1500,7 +1521,6 @@
      ------------------------------------------------------------ */
   .composer {
     flex-shrink: 0;
-    border-top: 1px solid var(--color-border-soft);
     padding: var(--space-3) var(--space-5) var(--space-4);
   }
   .composer__inner {
@@ -1712,7 +1732,7 @@
     </div>
 
     <div class="sidebar__body">
-      <button class="btn btn--primary btn--block btn--icon-leading" id="new-chat-btn">
+      <button class="btn btn--new btn--block btn--icon-leading" id="new-chat-btn">
         <i class="fa-solid fa-plus"></i>
         New question
       </button>
@@ -1722,9 +1742,7 @@
         <input id="history-search" type="text" placeholder="Search your questions" autocomplete="off" />
       </label>
 
-      <div class="history__heading">Recents</div>
-
-      <nav class="history" id="history-list"></nav>
+      <nav class="history" id="history-list" aria-label="Recents"></nav>
     </div>
 
     <div class="sidebar__footer">
@@ -1829,20 +1847,32 @@
 
           <div class="prompt-grid" aria-label="Try one of these">
             <button type="button" class="prompt-card" data-prompt="My landlord changed the locks and my things are still inside.">
-              <span class="prompt-card__label">Tenancy</span>
-              <span class="prompt-card__text">My landlord changed the locks and my things are still inside.</span>
+              <span class="prompt-card__icon"><i class="fa-solid fa-key"></i></span>
+              <span class="prompt-card__body">
+                <span class="prompt-card__title">Tenancy</span>
+                <span class="prompt-card__text">My landlord changed the locks and my things are still inside.</span>
+              </span>
             </button>
             <button type="button" class="prompt-card" data-prompt="My employer has not paid my salary for two months.">
-              <span class="prompt-card__label">Employment</span>
-              <span class="prompt-card__text">My employer has not paid my salary for two months.</span>
+              <span class="prompt-card__icon"><i class="fa-solid fa-briefcase"></i></span>
+              <span class="prompt-card__body">
+                <span class="prompt-card__title">Employment</span>
+                <span class="prompt-card__text">My employer has not paid my salary for two months.</span>
+              </span>
             </button>
             <button type="button" class="prompt-card" data-prompt="The police stopped me and are demanding money to let me go.">
-              <span class="prompt-card__label">Your rights</span>
-              <span class="prompt-card__text">The police stopped me and are demanding money to let me go.</span>
+              <span class="prompt-card__icon"><i class="fa-solid fa-scale-balanced"></i></span>
+              <span class="prompt-card__body">
+                <span class="prompt-card__title">Your rights</span>
+                <span class="prompt-card__text">The police stopped me and are demanding money to let me go.</span>
+              </span>
             </button>
             <button type="button" class="prompt-card" data-prompt="Someone posted my private photos online without my consent.">
-              <span class="prompt-card__label">Cyber</span>
-              <span class="prompt-card__text">Someone posted my private photos online without my consent.</span>
+              <span class="prompt-card__icon"><i class="fa-solid fa-user-shield"></i></span>
+              <span class="prompt-card__body">
+                <span class="prompt-card__title">Cyber</span>
+                <span class="prompt-card__text">Someone posted my private photos online without my consent.</span>
+              </span>
             </button>
           </div>
 
