@@ -53,7 +53,7 @@ class BeUIPromptBar {
     const submitBtn = document.createElement('button');
     submitBtn.type = 'button';
     submitBtn.className = 'beui-prompt-bar__button beui-prompt-bar__button--submit';
-    submitBtn.innerHTML = '<i class="fa-solid fa-arrow-up"></i>';
+    submitBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>';
     submitBtn.disabled = true;
     submitBtn.addEventListener('click', (e) => this.handleSubmitClick(e));
     
@@ -326,12 +326,12 @@ class BeUIPromptBar {
     this.submitButton.classList.toggle('is-stop', isSubmitting);
     if (isSubmitting) {
       // Show stop button — enabled so user can click to abort
-      this.submitButton.innerHTML = '<i class="fa-solid fa-stop"></i>';
+      this.submitButton.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>';
       this.submitButton.disabled = false;
       this.submitButton.title = 'Stop generating';
     } else {
       // Restore send button
-      this.submitButton.innerHTML = '<i class="fa-solid fa-arrow-up"></i>';
+      this.submitButton.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>';
       this.submitButton.disabled = this.inputElement.value.trim().length === 0;
       this.submitButton.title = '';
     }

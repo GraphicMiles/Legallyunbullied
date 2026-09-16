@@ -173,12 +173,22 @@ app.post("/api/cache-invalidate", requireAuth, requireAdmin, (req, res) => {
 // Auth is applied inside the route module itself.
 app.use("/api/conversations", conversationRoute);
 
+// ── Email OTP for the auth pages ──────────────────────────────────────────
+// Backs the /auth signup flow: 6-digit codes, pluggable email sender
+// (Resend/SendGrid via env, server log until a provider is configured).
+app.use("/api/otp", require("./server/otpRoute"));
+
 // ── Chat API (auth required + stricter rate limit) ────────────────────────
 // Each /api/chat call invokes LLM providers (Groq/Gemini/etc.) which cost
 // tokens and have their own rate limits. Require auth + apply stricter limit.
 app.use("/api/chat", chatLimiter, requireAuth);
 app.use("/api/generate-title", chatLimiter, requireAuth);
 app.use(chatRoute);
+
+// ── Auth pages (clean URL) ────────────────────────────────────────────────
+app.get("/auth", (req, res) => {
+  res.sendFile(path.join(PUBLIC_DIR, "auth.html"));
+});
 
 // ── SPA fallback ──────────────────────────────────────────────────────────
 app.get("*", (req, res) => {

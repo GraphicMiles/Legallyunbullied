@@ -246,9 +246,10 @@
     border: 1px solid var(--color-border);
     color: var(--color-text);
   }
+  .btn--new { border-radius: var(--radius-full); }
   .btn--new:hover { background: var(--color-surface-alt); border-color: var(--color-accent-border); }
   .btn--new:active { transform: translateY(1px); }
-  .btn--new i { color: var(--color-accent); }
+  .btn--new i, .btn--new svg { color: var(--color-accent); }
 
   .btn--icon-leading svg { width: 16px; height: 16px; }
   .btn--icon-leading i { font-size: 14px; }
@@ -258,10 +259,12 @@
     align-items: center;
     gap: var(--space-2);
     border: var(--border-width) solid var(--color-border);
-    border-radius: var(--radius-md);
-    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-full);
+    padding: var(--space-2) var(--space-4);
     background: var(--color-surface);
+    transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
   }
+  .sidebar__search:focus-within { border-color: var(--color-accent-border); background: var(--color-surface-alt); }
   .sidebar__search svg { width: 15px; height: 15px; color: var(--color-text-faint); }
   .sidebar__search i { font-size: 13px; color: var(--color-text-faint); }
   .sidebar__search input {
@@ -274,40 +277,36 @@
   .history {
     flex: 1;
     overflow-y: auto;
-    /* Full-bleed to the sidebar edges so the active-row highlight spans the
-       entire width of the list area, edge to edge. */
-    margin: 0 calc(var(--space-4) * -1);
-    padding: 0 0 var(--space-4);
+    /* Inset, rounded rows (ChatGPT-grade) instead of flat full-bleed bands. */
+    margin: 0;
+    padding: 0 var(--space-1) var(--space-4);
     min-height: 0;
   }
 
-  /* "Recents" section heading — sits outside the scrollable list, stable.
-     No horizontal padding: the sidebar body's own padding aligns it with the
-     row titles (which start at --space-4 inside the full-bleed list). */
+  /* Group heading (Today / Yesterday / ...) aligned with the inset rows. */
   .history__heading {
     flex-shrink: 0;
-    font-size: var(--fs-xs);
+    font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
     color: var(--color-text-faint);
-    padding: var(--space-2) var(--space-4);
+    padding: var(--space-1) var(--space-3);
     margin-top: var(--space-4);
   }
   .history__heading:first-child { margin-top: var(--space-1); }
 
-  /* history row: title (flex) + kebab (fixed, far right).
-     The row — not a card — is the highlight unit. No rounded corners: the
-     highlight is a flat, full-width surface. */
+  /* history row: rounded highlight unit; title (flex) + kebab (far right). */
   .history__row {
     display: flex;
     align-items: center;
+    border-radius: var(--radius-md);
+    transition: background var(--dur-fast) var(--ease);
   }
   .history__row:hover {
     background: var(--color-surface);
   }
-  /* Active chat: a flat, full-width light surface that reads as raised above
-     the dark sidebar background (neutral, not the accent tint). */
+  /* Active chat reads as a raised neutral surface on the dark sidebar. */
   .history__row.is-active,
   .history__row.is-active:hover {
     background: var(--color-surface-alt);
@@ -320,7 +319,7 @@
     flex: 1;
     min-width: 0;
     text-align: left;
-    padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
+    padding: 9px var(--space-1) 9px var(--space-3);
     color: var(--color-text-muted);
     font-size: var(--fs-sm);
     cursor: pointer;
@@ -352,21 +351,28 @@
      Its own click target; never triggers chat navigation. */
   .history__kebab {
     flex-shrink: 0;
-    width: 30px;
-    height: 30px;
-    margin-right: var(--space-3);
+    width: 28px;
+    height: 28px;
+    margin-right: var(--space-1);
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-sm);
     color: var(--color-text-faint);
-    transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+    opacity: 0;
+    transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease);
   }
+  .history__row:hover .history__kebab,
+  .history__row.is-active .history__kebab,
+  .history__kebab:focus-visible,
+  .history__kebab.is-open { opacity: 1; }
+  @media (hover: none) { .history__kebab { opacity: 1; } }
   .history__kebab:hover, .history__kebab.is-open {
     background: var(--color-surface-alt);
     color: var(--color-text);
   }
   .history__kebab i { font-size: 13px; }
+  .history__kebab svg { width: 15px; height: 15px; }
 
   /* small popover menu (history kebab) */
   .menu-popover {
@@ -409,13 +415,14 @@
     color: var(--color-text-faint);
   }
   .menu-popover__item-icon i { font-size: 12px; }
+  .menu-popover__item-icon svg { width: 14px; height: 14px; }
   .menu-popover__item--danger { color: #ff8b8e; }
   .menu-popover__item--danger:hover { background: rgba(229, 72, 77, 0.12); }
   .menu-popover__item--danger .menu-popover__item-icon { color: currentColor; }
   .history__empty {
     color: var(--color-text-faint);
     font-size: var(--fs-sm);
-    padding: var(--space-2) var(--space-4);
+    padding: var(--space-2) var(--space-3);
   }
 
   /* "Load more" affordance for the paginated sidebar list. */
@@ -429,7 +436,7 @@
     color: var(--color-text-muted);
     background: transparent;
     border: 0;
-    padding: var(--space-2) var(--space-4);
+    padding: var(--space-2) var(--space-3);
     cursor: pointer;
     transition: color var(--dur-fast) var(--ease);
   }
@@ -454,7 +461,7 @@
     gap: var(--space-2);
     width: 100%;
     padding: var(--space-3) var(--space-4);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-full);
     border: 1px solid var(--color-border);
     background: transparent;
     color: var(--color-text);
@@ -902,6 +909,7 @@
     color: var(--color-accent);
   }
   .prompt-card__icon i { font-size: 14px; }
+  .prompt-card__icon svg { width: 16px; height: 16px; }
   .prompt-card__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .prompt-card__title { font-size: var(--fs-sm); font-weight: 700; color: var(--color-text); }
   .prompt-card__text { display: block; font-size: var(--fs-sm); color: var(--color-text-muted); line-height: 1.45; }
@@ -1727,18 +1735,18 @@
         <span class="brand__name">Legally <em>Unbullied</em></span>
       </div>
       <button class="icon-btn sidebar__close" id="sidebar-close" aria-label="Close menu">
-        <i class="fa-solid fa-xmark"></i>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
     </div>
 
     <div class="sidebar__body">
       <button class="btn btn--new btn--block btn--icon-leading" id="new-chat-btn">
-        <i class="fa-solid fa-plus"></i>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/></svg>
         New question
       </button>
 
       <label class="sidebar__search" for="history-search">
-        <i class="fa-solid fa-magnifying-glass"></i>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         <input id="history-search" type="text" placeholder="Search your questions" autocomplete="off" />
       </label>
 
@@ -1817,20 +1825,20 @@
   <main class="main">
     <header class="topbar">
       <button class="icon-btn menu-toggle" id="menu-toggle" aria-label="Open menu">
-        <i class="fa-solid fa-bars"></i>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
       </button>
       <div class="topbar__meta">
         <span class="topbar__title" id="conversation-title">New question</span>
         <div class="badges" id="classification-badges"></div>
       </div>
       <button class="icon-btn" id="clear-chat-btn" aria-label="Clear this chat" title="Clear this chat" disabled>
-        <i class="fa-solid fa-broom"></i>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
       </button>
       <button class="icon-btn" id="copy-chat-btn" aria-label="Copy all messages" title="Copy all messages" disabled>
-        <i class="fa-solid fa-copy"></i>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
       </button>
       <button class="icon-btn new-chat-mobile" id="new-chat-mobile" aria-label="New question">
-        <i class="fa-solid fa-plus"></i>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
       </button>
       <button class="topbar__avatar" id="topbar-avatar" aria-label="Account" style="display:none;"></button>
     </header>
@@ -1847,28 +1855,28 @@
 
           <div class="prompt-grid" aria-label="Try one of these">
             <button type="button" class="prompt-card" data-prompt="My landlord changed the locks and my things are still inside.">
-              <span class="prompt-card__icon"><i class="fa-solid fa-key"></i></span>
+              <span class="prompt-card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg></span>
               <span class="prompt-card__body">
                 <span class="prompt-card__title">Tenancy</span>
                 <span class="prompt-card__text">My landlord changed the locks and my things are still inside.</span>
               </span>
             </button>
             <button type="button" class="prompt-card" data-prompt="My employer has not paid my salary for two months.">
-              <span class="prompt-card__icon"><i class="fa-solid fa-briefcase"></i></span>
+              <span class="prompt-card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg></span>
               <span class="prompt-card__body">
                 <span class="prompt-card__title">Employment</span>
                 <span class="prompt-card__text">My employer has not paid my salary for two months.</span>
               </span>
             </button>
             <button type="button" class="prompt-card" data-prompt="The police stopped me and are demanding money to let me go.">
-              <span class="prompt-card__icon"><i class="fa-solid fa-scale-balanced"></i></span>
+              <span class="prompt-card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg></span>
               <span class="prompt-card__body">
                 <span class="prompt-card__title">Your rights</span>
                 <span class="prompt-card__text">The police stopped me and are demanding money to let me go.</span>
               </span>
             </button>
             <button type="button" class="prompt-card" data-prompt="Someone posted my private photos online without my consent.">
-              <span class="prompt-card__icon"><i class="fa-solid fa-user-shield"></i></span>
+              <span class="prompt-card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1 1 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></span>
               <span class="prompt-card__body">
                 <span class="prompt-card__title">Cyber</span>
                 <span class="prompt-card__text">Someone posted my private photos online without my consent.</span>
