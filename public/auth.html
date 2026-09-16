@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign in · Legally Unbullied</title>
+  <meta name="description" content="Sign in or create an account to keep your legal questions synced across devices." />
+  <link rel="stylesheet" href="/styles/auth.css" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none'%3E%3Cpath d='M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z' stroke='%23f2b705' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='M11 15.5L14.2 18.7L21 11.5' stroke='%23f2b705' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <script src="/firebase-config.js"></script>
+  <script type="module" src="/firebase-init.js"></script>
+</head>
+<body data-view="signin">
+
+  <!-- Faded product preview behind the sign-up card -->
+  <div class="auth-bg" aria-hidden="true">
+    <div class="mock">
+      <div class="mock__side">
+        <div class="mock__bar mock__bar--brand"></div>
+        <div class="mock__bar mock__bar--pill"></div>
+        <div class="mock__bar mock__bar--pill"></div>
+        <div class="mock__bar w70"></div>
+        <div class="mock__bar w55"></div>
+        <div class="mock__bar w65"></div>
+        <div class="mock__bar w45"></div>
+        <div class="mock__bar w60"></div>
+      </div>
+      <div class="mock__main">
+        <div class="mock__bar mock__bar--title w30"></div>
+        <div class="mock__bubble mock__bubble--user w45"></div>
+        <div class="mock__bubble w70"></div>
+        <div class="mock__bubble w60"></div>
+        <div class="mock__bubble mock__bubble--user w35"></div>
+        <div class="mock__bubble w75"></div>
+        <div class="mock__bar mock__bar--composer"></div>
+      </div>
+    </div>
+  </div>
+
+  <header class="auth-top">
+    <a class="auth-brand" href="/" aria-label="Legally Unbullied home">
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M11 15.5L14.2 18.7L21 11.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Legally <em>Unbullied</em></span>
+    </a>
+    <a class="auth-top__link" href="/">Back to the app</a>
+  </header>
+
+  <main class="auth-main">
+
+    <!-- ============================ SIGN IN ============================ -->
+    <section class="auth-view" data-view="signin">
+      <h1 class="auth-title">Welcome back</h1>
+      <p class="auth-sub">Sign in to pick up your questions on any device.</p>
+
+      <button type="button" class="btn-social" id="google-signin">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#EA4335" d="M12 5.04c1.62 0 3.06.56 4.2 1.66l3.12-3.12C17.46 1.8 14.96.75 12 .75 7.62.75 3.84 3.27 2 6.94l3.66 2.84C6.52 7.1 9.04 5.04 12 5.04Z"/><path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.55-.2-2.28H12v4.51h6.44c-.28 1.48-1.12 2.74-2.4 3.58l3.7 2.87c2.16-2 3.75-4.94 3.75-8.68Z"/><path fill="#FBBC05" d="M5.66 14.22a7.05 7.05 0 0 1 0-4.44L2 6.94a11.26 11.26 0 0 0 0 10.12l3.66-2.84Z"/><path fill="#34A853" d="M12 23.25c3.04 0 5.6-1 7.46-2.72l-3.7-2.87c-1.02.68-2.34 1.09-3.76 1.09-2.96 0-5.48-2.06-6.34-4.74L2 16.85c1.84 3.68 5.62 6.4 10 6.4Z"/></svg>
+        Continue with Google
+      </button>
+
+      <div class="auth-divider"><span>or</span></div>
+
+      <form id="signin-form" novalidate>
+        <label class="field">
+          <span class="field__label">Email</span>
+          <input class="field__input" type="email" id="signin-email" autocomplete="email" placeholder="you@example.com" />
+        </label>
+        <label class="field">
+          <span class="field__label-row">
+            <span class="field__label">Password</span>
+            <a class="field__link" href="/auth?mode=forgot">Forgot your password?</a>
+          </span>
+          <span class="field__control">
+            <input class="field__input" type="password" id="signin-password" autocomplete="current-password" placeholder="Your password" />
+            <button type="button" class="field__eye" data-eye="signin-password" aria-label="Show password">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.06 12.35a1 1 0 0 1 0-.7C3.42 8.1 7.36 5 12 5s8.58 3.1 9.94 6.65a1 1 0 0 1 0 .7C20.58 15.9 16.64 19 12 19s-8.58-3.1-9.94-6.65Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </span>
+        </label>
+        <p class="auth-error" id="signin-error" role="alert" hidden></p>
+        <button type="submit" class="btn-primary" id="signin-submit" disabled>Sign in</button>
+      </form>
+
+      <p class="auth-swap">Don't have an account? <a href="/auth?mode=signup" data-goto="signup">Sign up</a></p>
+    </section>
+
+    <!-- ============================ SIGN UP ============================ -->
+    <section class="auth-view" data-view="signup" hidden>
+      <div class="auth-card">
+        <h1 class="auth-title">Create an account</h1>
+        <p class="auth-sub">Free forever. Your questions stay private.</p>
+
+        <button type="button" class="btn-social" id="google-signup">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#EA4335" d="M12 5.04c1.62 0 3.06.56 4.2 1.66l3.12-3.12C17.46 1.8 14.96.75 12 .75 7.62.75 3.84 3.27 2 6.94l3.66 2.84C6.52 7.1 9.04 5.04 12 5.04Z"/><path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.55-.2-2.28H12v4.51h6.44c-.28 1.48-1.12 2.74-2.4 3.58l3.7 2.87c2.16-2 3.75-4.94 3.75-8.68Z"/><path fill="#FBBC05" d="M5.66 14.22a7.05 7.05 0 0 1 0-4.44L2 6.94a11.26 11.26 0 0 0 0 10.12l3.66-2.84Z"/><path fill="#34A853" d="M12 23.25c3.04 0 5.6-1 7.46-2.72l-3.7-2.87c-1.02.68-2.34 1.09-3.76 1.09-2.96 0-5.48-2.06-6.34-4.74L2 16.85c1.84 3.68 5.62 6.4 10 6.4Z"/></svg>
+          Sign up with Google
+        </button>
+
+        <div class="auth-divider"><span>or</span></div>
+
+        <form id="signup-form" novalidate>
+          <label class="field">
+            <span class="field__label">Email</span>
+            <input class="field__input" type="email" id="signup-email" autocomplete="email" placeholder="you@example.com" />
+          </label>
+          <label class="field">
+            <span class="field__label">Password</span>
+            <span class="field__control">
+              <input class="field__input" type="password" id="signup-password" autocomplete="new-password" placeholder="Create a password" />
+              <button type="button" class="field__eye" data-eye="signup-password" aria-label="Show password">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.06 12.35a1 1 0 0 1 0-.7C3.42 8.1 7.36 5 12 5s8.58 3.1 9.94 6.65a1 1 0 0 1 0 .7C20.58 15.9 16.64 19 12 19s-8.58-3.1-9.94-6.65Z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </span>
+          </label>
+
+          <ul class="pw-rules" id="pw-rules" aria-label="Password requirements">
+            <li data-rule="length"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Minimum 8 characters</li>
+            <li data-rule="number"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>At least one number</li>
+            <li data-rule="special"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>At least one special character</li>
+          </ul>
+
+          <label class="check">
+            <input type="checkbox" id="signup-terms" />
+            <span class="check__box" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+            <span class="check__text">I agree to the Terms of Service and acknowledge the Privacy Policy.</span>
+          </label>
+
+          <p class="auth-error" id="signup-error" role="alert" hidden></p>
+          <button type="submit" class="btn-primary" id="signup-submit" disabled>Sign up</button>
+        </form>
+
+        <p class="auth-swap">Already registered? <a href="/auth?mode=signin" data-goto="signin">Sign in</a></p>
+      </div>
+    </section>
+
+    <!-- ============================== OTP ============================== -->
+    <section class="auth-view" data-view="otp" hidden>
+      <h1 class="auth-title">Check your email</h1>
+      <p class="auth-sub">We sent a 6-digit code to <strong id="otp-email-echo"></strong>. Enter it below to finish creating your account.</p>
+
+      <div class="otp-row" id="otp-row">
+        <input class="otp-box" inputmode="numeric" autocomplete="one-time-code" maxlength="1" aria-label="Digit 1" />
+        <input class="otp-box" inputmode="numeric" maxlength="1" aria-label="Digit 2" />
+        <input class="otp-box" inputmode="numeric" maxlength="1" aria-label="Digit 3" />
+        <input class="otp-box" inputmode="numeric" maxlength="1" aria-label="Digit 4" />
+        <input class="otp-box" inputmode="numeric" maxlength="1" aria-label="Digit 5" />
+        <input class="otp-box" inputmode="numeric" maxlength="1" aria-label="Digit 6" />
+      </div>
+
+      <p class="auth-error" id="otp-error" role="alert" hidden></p>
+      <button type="button" class="btn-primary" id="otp-submit" disabled>Verify and create account</button>
+
+      <p class="auth-swap">
+        <button type="button" class="link-btn" id="otp-resend" disabled>Resend code</button>
+        <span class="auth-swap__sep">·</span>
+        <button type="button" class="link-btn" data-goto="signup">Use a different email</button>
+      </p>
+    </section>
+
+    <!-- =========================== FORGOT ============================== -->
+    <section class="auth-view" data-view="forgot" hidden>
+      <h1 class="auth-title">Reset your password</h1>
+      <p class="auth-sub">Enter the email address on your account and we'll send you a link to set a new password.</p>
+
+      <form id="forgot-form" novalidate>
+        <label class="field">
+          <span class="field__label">Email</span>
+          <input class="field__input" type="email" id="forgot-email" autocomplete="email" placeholder="you@example.com" />
+        </label>
+        <p class="auth-error" id="forgot-error" role="alert" hidden></p>
+        <button type="submit" class="btn-primary" id="forgot-submit" disabled>Send email</button>
+      </form>
+
+      <p class="auth-swap">Return to <a href="/auth?mode=signin" data-goto="signin">Sign in</a></p>
+    </section>
+
+    <!-- ======================== FORGOT SENT ============================ -->
+    <section class="auth-view" data-view="forgot-sent" hidden>
+      <div class="auth-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+      </div>
+      <h1 class="auth-title">Check your inbox</h1>
+      <p class="auth-sub">If an account exists for <strong id="forgot-email-echo"></strong>, a reset link is on the way. It can take a minute or two to arrive.</p>
+      <button type="button" class="btn-primary" data-goto="signin">Return to sign in</button>
+    </section>
+
+  </main>
+
+  <footer class="auth-foot">
+    <p>Legally Unbullied provides legal information, not legal representation. For urgent matters, contact a lawyer or the police directly.</p>
+  </footer>
+
+  <script type="module" src="/auth.js"></script>
+</body>
+</html>

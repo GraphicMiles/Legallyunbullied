@@ -1185,7 +1185,7 @@ import {
     kebab.type = "button";
     kebab.className = "history__kebab";
     kebab.setAttribute("aria-label", "Chat options");
-    kebab.innerHTML = '<i class="fa-solid fa-ellipsis-vertical"></i>';
+    kebab.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>';
     if (state.isAgentBusy) kebab.disabled = true;
     kebab.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -1193,8 +1193,8 @@ import {
       showPopover(
         kebab,
         [
-          { label: "Clear chat", icon: "fa-broom", onClick: () => confirmClearConversation(c.id) },
-          { label: "Delete chat", icon: "fa-trash", danger: true, onClick: () => confirmDeleteConversation(c.id) },
+          { label: "Clear chat", svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>', onClick: () => confirmClearConversation(c.id) },
+          { label: "Delete chat", svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>', danger: true, onClick: () => confirmDeleteConversation(c.id) },
         ],
         { onClose: () => kebab.classList.remove("is-open") }
       );
@@ -1227,7 +1227,10 @@ import {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "menu-popover__item" + (item.danger ? " menu-popover__item--danger" : "");
-      btn.innerHTML = `<span class="menu-popover__item-icon"><i class="fa-solid ${item.icon}"></i></span><span>${escapeHtml(item.label)}</span>`;
+      const iconHtml = item.svg
+        ? `<span class="menu-popover__item-icon">${item.svg}</span>`
+        : `<span class="menu-popover__item-icon"><i class="fa-solid ${item.icon}"></i></span>`;
+      btn.innerHTML = `${iconHtml}<span>${escapeHtml(item.label)}</span>`;
       btn.addEventListener("click", () => {
         closePopover();
         item.onClick();
@@ -3926,18 +3929,16 @@ import {
     el.topbarAvatar.title = `${name} · Log out`;
     el.topbarAvatar.onclick = (e) => {
       showPopover(el.topbarAvatar, [
-        { label: "Log out", icon: "fa-right-from-bracket", danger: true, onClick: handleLogout },
+        { label: "Log out", svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>', danger: true, onClick: handleLogout },
       ]);
     };
   }
 
   function openAuthModal() {
-    authMode = "signin";
-    updateAuthModalMode();
-    el.authForm.reset();
-    el.authError.style.display = "none";
-    el.authModalOverlay.classList.add("is-visible");
-    setTimeout(() => el.authEmail.focus(), 60);
+    // Auth now lives on a dedicated full page (didit-grade flow) instead of a
+    // popup. Preserve the current hash so the user returns to the same view.
+    const next = "/" + window.location.hash;
+    window.location.href = "/auth?mode=signin&next=" + encodeURIComponent(next);
   }
 
   function closeAuthModal() {
