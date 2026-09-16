@@ -437,10 +437,11 @@
 
 .beui-prompt-bar {
   position: relative;
-  background: var(--color-bg-raised);
-  border: 1px solid var(--color-border);
-  border-radius: 14px;
-  transition: all var(--beui-duration-fast);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-xl, 20px);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  transition: border-color var(--beui-duration-fast), box-shadow var(--beui-duration-fast);
 }
 
 .beui-prompt-bar:focus-within {
@@ -453,7 +454,7 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 0;
-  padding: 12px;
+  padding: 12px 12px 12px 18px;
   width: 100%;
 }
 
@@ -507,12 +508,12 @@
 }
 
 .beui-prompt-bar__button--submit {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   flex: 0 0 auto;
   background: var(--color-accent);
   color: var(--color-accent-text);
-  border-radius: 10px;
+  border-radius: 999px;
 }
 
 .beui-prompt-bar__button--submit:hover {
