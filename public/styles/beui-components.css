@@ -516,6 +516,11 @@
   border-radius: 999px;
 }
 
+.beui-prompt-bar__button--submit svg {
+  width: 16px;
+  height: 16px;
+}
+
 .beui-prompt-bar__button--submit:hover {
   background: var(--color-accent-hover);
 }
