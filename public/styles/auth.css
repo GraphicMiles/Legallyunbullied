@@ -64,7 +64,6 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
   height: min(640px, 100%);
   display: grid;
   grid-template-columns: 260px 1fr;
-  border: 1px solid var(--border-soft);
   border-radius: 20px;
   overflow: hidden;
   filter: blur(2.5px);
@@ -74,7 +73,6 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
 
 .mock__side {
   background: var(--bg-raised);
-  border-right: 1px solid var(--border-soft);
   padding: 28px 20px;
   display: flex;
   flex-direction: column;
@@ -103,7 +101,6 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
   height: 52px;
   border-radius: 16px;
   background: var(--surface);
-  border: 1px solid var(--border-soft);
 }
 
 .mock__bubble {
@@ -152,12 +149,12 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
   font-size: 13.5px;
   font-weight: 500;
   padding: 8px 16px;
-  border: 1px solid var(--border);
+  background: var(--surface);
   border-radius: var(--radius-pill);
-  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  transition: color 0.2s, background 0.2s;
 }
 
-.auth-top__link:hover { color: var(--text); border-color: var(--faint); background: var(--surface); }
+.auth-top__link:hover { color: var(--text); background: var(--surface-alt); }
 
 .auth-main {
   position: relative;
@@ -222,12 +219,9 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
 .auth-card > *:nth-child(9) { animation-delay: 0.45s; }
 
 .auth-card {
-  background: color-mix(in srgb, var(--bg-raised) 88%, transparent);
-  backdrop-filter: blur(14px);
-  border: 1px solid var(--border-soft);
+  background: var(--bg-raised);
   border-radius: var(--radius-card);
   padding: 36px 32px 30px;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
   display: flex;
   flex-direction: column;
 }
@@ -253,23 +247,23 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
 
 .btn-social {
   display: flex;
+  border: 0;
   align-items: center;
   justify-content: center;
   gap: 10px;
   width: 100%;
   height: 48px;
   border-radius: var(--radius-pill);
-  border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
   font: inherit;
   font-size: 14.5px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  transition: background 0.2s, transform 0.15s;
 }
 
-.btn-social:hover { background: var(--surface-alt); border-color: var(--faint); }
+.btn-social:hover { background: var(--surface-alt); }
 .btn-social:active { transform: scale(0.985); }
 .btn-social svg { width: 17px; height: 17px; }
 
@@ -320,16 +314,16 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
 
 .field__input {
   width: 100%;
+  border: 0;
   height: 48px;
   padding: 0 20px;
   border-radius: var(--radius-pill);
-  border: 1px solid var(--border);
-  background: var(--bg-raised);
+  background: var(--surface);
   color: var(--text);
   font: inherit;
   font-size: 14.5px;
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  transition: background 0.2s;
 }
 
 .field__control .field__input { padding-right: 52px; }
@@ -337,8 +331,7 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
 .field__input::placeholder { color: var(--faint); }
 
 .field__input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  background: var(--surface-alt);
 }
 
 .field__eye {
@@ -374,8 +367,7 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
   font-weight: 700;
   letter-spacing: 0.01em;
   cursor: pointer;
-  transition: filter 0.2s, transform 0.15s, box-shadow 0.2s, background 0.2s, color 0.2s;
-  box-shadow: 0 8px 24px rgba(242, 183, 5, 0.18);
+  transition: filter 0.2s, transform 0.15s, background 0.2s, color 0.2s;
 }
 
 .btn-primary:hover:not(:disabled) { filter: brightness(1.07); transform: translateY(-1px); }
@@ -392,8 +384,7 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
   margin: -4px 0 12px;
   padding: 10px 16px;
   border-radius: 12px;
-  background: rgba(255, 107, 107, 0.1);
-  border: 1px solid rgba(255, 107, 107, 0.3);
+  background: rgba(255, 107, 107, 0.12);
   color: var(--danger);
   font-size: 13px;
 }
@@ -406,6 +397,7 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
 }
 
 .auth-swap a, .link-btn {
+  border: 0;
   color: var(--accent);
   font-weight: 600;
   text-decoration: none;
@@ -474,8 +466,7 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
   height: 18px;
   margin-top: 2px;
   border-radius: 6px;
-  border: 1.5px solid var(--border);
-  background: var(--bg-raised);
+  background: var(--surface-alt);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -487,12 +478,11 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
 
 .check input:checked + .check__box {
   background: var(--accent);
-  border-color: var(--accent);
   color: var(--accent-ink);
 }
 
 .check input:focus-visible + .check__box {
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  background: var(--surface);
 }
 
 .check__text { font-size: 12.5px; color: var(--muted); }
@@ -508,6 +498,7 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
 
 .otp-box {
   width: 50px;
+  border: 0;
   height: 56px;
   text-align: center;
   font: inherit;
@@ -515,21 +506,20 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--text);
-  background: var(--bg-raised);
-  border: 1px solid var(--border);
+  background: var(--surface);
   border-radius: 14px;
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+  transition: background 0.2s, transform 0.15s;
 }
 
 .otp-box:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  background: var(--surface-alt);
+  color: var(--accent);
   transform: translateY(-1px);
 }
 
 .otp-row.is-error .otp-box {
-  border-color: var(--danger);
+  background: rgba(255, 107, 107, 0.14);
   animation: shake 0.4s ease;
 }
 
@@ -546,7 +536,6 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
   margin: 0 auto 18px;
   border-radius: 18px;
   background: var(--accent-soft);
-  border: 1px solid rgba(242, 183, 5, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -577,4 +566,11 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
   .auth-bg { transition: none; }
   .otp-row.is-error .otp-box { animation: none; }
   .btn-primary:hover:not(:disabled), .btn-social:active { transform: none; }
+}
+
+/* Keyboard focus = tone lift, never an outline stroke. */
+.btn-social:focus-visible, .btn-primary:focus-visible, .link-btn:focus-visible,
+.auth-top__link:focus-visible, .field__eye:focus-visible {
+  outline: none;
+  background: var(--surface-alt);
 }
