@@ -323,6 +323,7 @@ class BeUIPromptBar {
   
   setSubmitting(isSubmitting) {
     this.isSubmitting = isSubmitting;
+    this.submitButton.classList.toggle('is-stop', isSubmitting);
     if (isSubmitting) {
       // Show stop button — enabled so user can click to abort
       this.submitButton.innerHTML = '<i class="fa-solid fa-stop"></i>';

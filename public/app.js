@@ -4272,6 +4272,7 @@ import {
     renderHistory();
     initAuth();       // auth first — more critical than composer
     initPromptBar();  // prompt bar before updateComposerState so it can delegate
+    bindStarterPrompts();
     updateComposerState();
   }
 
@@ -4315,6 +4316,21 @@ import {
     } catch (err) {
       console.error('[init] BeUIPromptBar initialization failed:', err);
     }
+  }
+
+  // Empty-state starter prompts: clicking a card drops the example into the
+  // composer and focuses it, so a first-time user can send with one more tap.
+  function bindStarterPrompts() {
+    document.querySelectorAll(".prompt-card[data-prompt]").forEach((card) => {
+      card.addEventListener("click", () => {
+        const text = card.getAttribute("data-prompt") || "";
+        if (!text || state.isAgentBusy) return;
+        if (window.promptBar && typeof window.promptBar.setValue === "function") {
+          window.promptBar.setValue(text);
+          if (window.promptBar.inputElement) window.promptBar.inputElement.focus();
+        }
+      });
+    });
   }
 
   // Unregister service workers and clear caches on load
