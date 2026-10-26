@@ -195,6 +195,7 @@ function verifyAndResolveCitations(result, provisions) {
 }
 
 module.exports = {
+  HIGH_RISK_AREAS,
   requiredSourceCount,
   validateDraftResult,
   verifyAndResolveCitations,
