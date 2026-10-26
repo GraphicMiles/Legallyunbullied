@@ -1474,6 +1474,16 @@
   .verdict--self .verdict__title { color: var(--color-success); }
   .verdict--escalate .verdict__title { color: var(--color-accent); }
   .verdict__text { font-size: var(--fs-base); color: var(--color-text); line-height: 1.6; }
+  /* Confidence chip inside the verdict card: right-aligned, hairline-mute,
+     tells the user how validated the answer is. */
+  .verdict__confidence {
+    margin-left: auto;
+    align-self: center;
+    font-size: var(--fs-xxs, 10px);
+    font-weight: 500;
+    color: var(--color-text-faint);
+    white-space: nowrap;
+  }
   .verdict__actions { display: flex; gap: var(--space-3); flex-wrap: wrap; }
 
   .link-btn {
