@@ -141,7 +141,7 @@ Provide:
 - "practice_area": Single best-fitting category from the list above
 - "jurisdiction": Specific jurisdiction (e.g., "Lagos State", "Federal", "Rivers State", "Federal Capital Territory" for Abuja/FCT). If unclear from the question, set to "Federal" as default.
 - "jurisdiction_status": "clear" if the state/jurisdiction is explicitly stated or strongly implied, "unclear" if it's missing and the answer could differ by state (e.g., tenancy, land, family law vary by state; criminal law, labour law, constitutional law are mostly federal)
-- "urgency": ["Low", "Medium", "High", "Critical"] — based on time sensitivity and potential harm
+- "urgency": ["Low", "Medium", "High", "Critical"] — based on time sensitivity and potential harm. High/Critical is for physical danger, detention/arrest, violence, child safety, or a matter that becomes unrecoverable within days (deadline about to lapse, eviction happening now). Everyday civil claims — unpaid salary for weeks/months, deposits held, debts owed, contract breaches, tenancy clutter — are Medium at most, even when the user is distressed, UNLESS there is also violence, threats, or an imminent deadline.
 - "summary": 1-2 sentence summary of the legal situation
 - "keywords": 4-8 specific legal/factual terms likely in relevant statutes (procedural terms, timeframes, named concepts)
 - "key_issues": Array of 3-5 specific legal issues or questions that need to be addressed
@@ -1164,21 +1164,77 @@ function validDraftCheckpoint(value, provisions) {
   return verifyAndResolveCitations(value.draftResult.result, provisions || []).valid;
 }
 
-function makeInsufficientEvidenceResult(evidence, urgent) {
+/**
+ * True only when the matter described involves physical danger, violence, or
+ * detention — the cases where "get to safety / call the police first" is the
+ * right protective step. Urgency alone (High/Critical) is NOT enough: an
+ * unpaid-salary claim is urgent livelihood-wise but there is no attacker, no
+ * imminent bodily danger, and telling that user to "move to a safe public
+ * place" is nonsense. Checked on the question text and classifier summary.
+ */
+function isPersonalHarmContext(contextText) {
+  return /(assault|attack(?:ed|s)?\b|beat(?:en|ing|s)?\b|hit me|slap(?:ped)?\b|threat(?:en|ed|s|ening)?\b|kill(?:ed|s|ing)?\b|murder|rape(?:d|s)?|defil\w*|sexual|abus(?:e|ed|ing)|violent|violence|domestic|weapon|gun|knife|machete|stab(?:bed)?|shoot|shot|injur(?:e|ed|y|ies)|hospital|bleed(?:ing)?|tortur(?:e|ed)|detain(?:ed|tion)?|arrest(?:ed|s)?\b|kidnap(?:ped)?|abduct(?:ed|ion)|danger(?:ous|s)?\b|afraid for (?:my|our)|scared for (?:my|our)|self[- ]?harm|suicid(?:e|al)|death threat|locked me in|held me)/i.test(String(contextText || ""));
+}
+
+// Civil/livelihood matters whose protection steps follow the same shape:
+// document the claim, demand in writing, use the right channel, see a lawyer
+// quickly. These never need the "get to a safe place" template.
+const LIVELIHOOD_AREAS = new Set([
+  "employment", "tenancy", "contract", "consumer_rights",
+  "company_business", "land_property", "intellectual_property",
+  "tax_finance", "environment",
+]);
+
+function makeInsufficientEvidenceResult(evidence, urgent, classification, question) {
+  const area = String(classification?.practice_area || "");
+  const dangerous = urgent && isPersonalHarmContext(`${classification?.summary || ""} ${question || ""}`);
+  const livelihood = !dangerous && (
+    LIVELIHOOD_AREAS.has(area) ||
+    /(salary|wage|pay\w*|owe\w*|debt|rent|deposit|refund|invoice|contract|loan|allowance|pension|gratuity)/i.test(String(question || ""))
+  );
+
+  if (dangerous) {
+    return {
+      lawMd: "I cannot safely confirm the controlling provision from the available evidence right now. Your immediate safety matters more than forcing a weak citation, so take protective action first and get case-specific legal help as soon as possible.",
+      actionsMd: "- Step 1: If you or anyone with you is in immediate danger, move to a safe public place and call the police or local emergency service now.\n- Step 2: Contact a trusted person and preserve messages, photographs, medical records, names, dates, and other evidence.\n- Step 3: Do not confront the person alone or take an action that could put you at greater risk.\n- Step 4: Contact a qualified lawyer or legal-aid organisation urgently for advice based on your location and facts.",
+      sources: [],
+      provisionIds: [],
+      claims: [],
+      escalate: true,
+      escalateReason: "The situation may involve immediate harm and the controlling law could not be verified from the retrieved evidence.",
+      followUps: [],
+      evidence,
+    };
+  }
+
+  if (livelihood) {
+    // Honest about the citation gap, but still useful: civil claims are won or
+    // lost on records + a correctly-routed demand, and delay harms the claimant.
+    const employmentSteps = "- Step 1: Gather the proof of what you are owed — your appointment letter or employment contract, payslips, bank statements showing the missed payments, and any letters, emails or messages about the unpaid salary.\n- Step 2: Send your employer a written demand for the outstanding salary (letter or email) stating the months and the total amount owed, and keep a copy and proof it was received.\n- Step 3: If the employer still does not pay or respond, you can report to the Ministry of Labour, involve your workers' union if you have one, or file a claim at the National Industrial Court of Nigeria.\n- Step 4: Speak with a qualified lawyer promptly — especially if your employer is threatening dismissal or the arrears are still growing.\n- Step 5: Do not stop working without advice first — walking out can be twisted into you abandoning your job.";
+    const genericSteps = "- Step 1: Preserve every record of the deal or dispute — contracts, receipts, transfer alerts, messages, photographs, names, and dates.\n- Step 2: Put your demand or complaint in writing (letter or email), stating exactly what you want and by when, and keep a copy with proof it was received.\n- Step 3: If there is no satisfactory response, escalate through the right channel for the matter — the appropriate court, tribunal, regulator, or trade/dispute body.\n- Step 4: See a qualified lawyer without delay; some claims have strict time limits and waiting can harm your position.";
+    return {
+      lawMd: "I could not verify the exact provision that controls this from the available evidence, and I will not quote a section of an Act I cannot confirm. Your position is still worth protecting — act on the steps below while you get case-specific legal help.",
+      actionsMd: area === "employment" ? employmentSteps : genericSteps,
+      sources: [],
+      provisionIds: [],
+      claims: [],
+      escalate: true,
+      escalateReason: urgent
+        ? "The matter may be time-sensitive and the controlling provision could not be verified from the retrieved evidence."
+        : "The controlling provision could not be verified from the retrieved evidence.",
+      followUps: [],
+      evidence,
+    };
+  }
+
   return {
-    lawMd: urgent
-      ? "I cannot safely confirm the controlling provision from the available evidence right now. Your immediate safety matters more than forcing a weak citation, so take protective action first and get case-specific legal help as soon as possible."
-      : "The available evidence does not clearly establish which provision controls these facts. I will not guess or present a weak citation as settled law; a qualified lawyer should review the exact circumstances.",
-    actionsMd: urgent
-      ? "- Step 1: If you or anyone with you is in immediate danger, move to a safe public place and call the police or local emergency service now.\n- Step 2: Contact a trusted person and preserve messages, photographs, medical records, names, dates, and other evidence.\n- Step 3: Do not confront the person alone or take an action that could put you at greater risk.\n- Step 4: Contact a qualified lawyer or legal-aid organisation urgently for advice based on your location and facts."
-      : "- Step 1: Preserve contracts, receipts, messages, photographs, names, and dates.\n- Step 2: Write a clear timeline of what happened and what outcome you want.\n- Step 3: If the matter involves threats, violence, fraud, a child at risk, or another possible crime, move to safety where necessary and report it to the appropriate police or protection authority.\n- Step 4: Consult a qualified lawyer for advice tied to the applicable state and complete facts.",
+    lawMd: "The available evidence does not clearly establish which provision controls these facts. I will not guess or present a weak citation as settled law; a qualified lawyer should review the exact circumstances.",
+    actionsMd: "- Step 1: Preserve contracts, receipts, messages, photographs, names, and dates.\n- Step 2: Write a clear timeline of what happened and what outcome you want.\n- Step 3: If the matter involves threats, violence, fraud, a child at risk, or another possible crime, move to safety where necessary and report it to the appropriate police or protection authority.\n- Step 4: Consult a qualified lawyer for advice tied to the applicable state and complete facts.",
     sources: [],
     provisionIds: [],
     claims: [],
     escalate: true,
-    escalateReason: urgent
-      ? "The situation may involve immediate harm and the controlling law could not be verified from the retrieved evidence."
-      : "The controlling provision could not be verified from the retrieved evidence.",
+    escalateReason: "The controlling provision could not be verified from the retrieved evidence.",
     followUps: [],
     evidence,
   };
@@ -1190,8 +1246,8 @@ function makeInsufficientEvidenceResult(evidence, urgent) {
  * two paths into this (still-insufficient after broadening, and broadened
  * corpus empty) and they were two verbatim copies; keep one.
  */
-function insufficientEvidenceResponse(classification, route, evidence, urgent) {
-  const insuffResult = makeInsufficientEvidenceResult(evidence, urgent);
+function insufficientEvidenceResponse(classification, route, evidence, urgent, question) {
+  const insuffResult = makeInsufficientEvidenceResult(evidence, urgent, classification, question);
   return {
     result: insuffResult,
     body: {
@@ -1315,7 +1371,12 @@ function applyDeterministicSafetyPolicy(result, classification, question, histor
     }
   }
 
-  if (urgent) {
+  // The physical-safety first step is prepended only when the situation is
+  // both urgent AND actually involves bodily danger (violence, injury,
+  // detention, threats). A High-urgency livelihood claim — unpaid salary,
+  // locked-in deposit, looming deadline — must not be told to "move to a
+  // safe public place": there is no attacker, and the step is nonsense there.
+  if (urgent && isPersonalHarmContext(context)) {
     const actions = String(result.actionsMd || "");
     const hasImmediateStep = /(safe place|immediate danger|emergency|medical|hospital|call the police|report to the police|protect)/i.test(actions);
     if (!hasImmediateStep) {
@@ -1736,7 +1797,7 @@ async function runChatPipeline(req) {
             console.log(`[/api/chat] Broadened search: ${relevantProvisions2.length} relevant provisions — sufficient`);
           } else {
             console.log(`[/api/chat] Broadened search still insufficient (${relevantProvisions2.length} relevant). Returning insufficient-evidence response.`);
-            const term = insufficientEvidenceResponse(classification, route, evidence, urgentSafety);
+            const term = insufficientEvidenceResponse(classification, route, evidence, urgentSafety, question);
             await serverPersistMessage(req, { status: "done", result: term.result, pipelineStatus: "done", unread: true });
             return res.json(term.body);
           }
@@ -1748,7 +1809,7 @@ async function runChatPipeline(req) {
             await tryProceduralRescue();
             return;
           }
-          const term = insufficientEvidenceResponse(classification, route, evidence, urgentSafety);
+          const term = insufficientEvidenceResponse(classification, route, evidence, urgentSafety, question);
           await serverPersistMessage(req, { status: "done", result: term.result, pipelineStatus: "done", unread: true });
           return res.json(term.body);
         }

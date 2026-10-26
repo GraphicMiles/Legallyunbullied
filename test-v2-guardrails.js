@@ -28,11 +28,11 @@ const fakeClient = {
     const json = (o) => ({ choices: [{ message: { content: JSON.stringify(o) } }] });
     if (sys.includes("determine if this is a legal question or casual")) {
       if (mode === "all-providers-fail") throw new Error("classifier unavailable");
-      return json(["high-critique-failure", "high-pass"].includes(mode) ? HIGH_RISK : STANDARD);
+      return json(["high-critique-failure", "high-pass", "conflicting-highrisk"].includes(mode) ? HIGH_RISK : STANDARD);
     }
     if (sys.includes("legal retrieval relevance judge")) {
       if (["relevance-failure", "all-providers-fail"].includes(mode)) throw new Error("judge unavailable");
-      const conflicts = mode === "conflicting-evidence" ? ["Federal and state provisions conflict"] : [];
+      const conflicts = mode === "conflicting-evidence" || mode === "conflicting-highrisk" ? ["Federal and state provisions conflict"] : [];
       return json({ relevant: ["high-critique-failure", "high-pass"].includes(mode) ? [1, 2] : [1], irrelevant: [], relevance_score: 0.95, sufficient: true, conflicts, reason: conflicts.length ? "material conflict" : "direct authority" });
     }
     if (sys.includes("quality reviewer")) {
@@ -189,6 +189,35 @@ async function check(name, fn) {
     assert.ok(response.body.evidence.conflicts.length > 0);
     assert.strictEqual(response.body.result.escalate, true);
     assert.strictEqual(draftCalls, 0);
+  });
+
+  await check("unpaid-salary insufficient evidence uses livelihood steps, never police/safety copy", async () => {
+    // Regression: an urgent civil/livelihood claim that fails the evidence gate
+    // used to land on the physical-safety template ("move to a safe public
+    // place / call the police"), which is nonsense for unpaid wages. The honest
+    // limited-evidence response must instead give record-keeping + written
+    // demand + right-channel steps.
+    chatRoute.__testing.clearQuestionCache(); chatRoute.__testing.clearProviderCooldowns(); mode = "conflicting-evidence"; draftCalls = 0;
+    const response = await post({ question: "My employer has not paid my salary for two months.", history: [] });
+    assert.strictEqual(response.status, 200);
+    assert.strictEqual(response.body.result.escalate, true);
+    assert.doesNotMatch(response.body.result.lawMd, /safe public place|move to a safe place/i);
+    assert.doesNotMatch(response.body.result.actionsMd, /safe public place|call the police|immediate danger/i);
+    assert.match(response.body.result.actionsMd, /(proof|records|evidence).*(owed|salary)/is, "steps must guide evidence preservation for wage arrears");
+    assert.match(response.body.result.actionsMd, /written demand/i, "livelihood steps should include a written demand");
+    assert.doesNotMatch(
+      (response.body.result.escalateReason || "").toLowerCase(),
+      /immediate harm/,
+      "escalateReason must not allege bodily harm for a wage claim"
+    );
+  });
+
+  await check("genuine violence keeps the protective-safety insufficient-evidence copy", async () => {
+    chatRoute.__testing.clearQuestionCache(); chatRoute.__testing.clearProviderCooldowns(); mode = "conflicting-highrisk"; draftCalls = 0;
+    const response = await post({ question: "My husband beat me again and threatened to kill me", history: [] });
+    assert.strictEqual(response.status, 200);
+    assert.strictEqual(response.body.result.escalate, true);
+    assert.match(response.body.result.actionsMd, /(safe place|safe public place|police|emergency)/i);
   });
 
   await check("malformed draft JSON/schema becomes provider-busy, never a legal answer", async () => {
