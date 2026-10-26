@@ -1215,6 +1215,21 @@ function makeProceduralEvidence() {
 
 function makeProceduralFallback(question) {
   const q = String(question || "").toLowerCase();
+  if (/\b(cac|corporate affairs|register (a|my|an? )?(business|company|ngo|enterprise|business name)|business name registration|incorporat)\b/.test(q)) {
+    return {
+      lawMd: "Business registration in Nigeria is done through the Corporate Affairs Commission (CAC). For a private company you register online at pre.cac.gov.ng (or at any CAC office); a business name is simpler and cheaper. The online sequence is: reserve the name, wait for approval, then file the incorporation forms and pay the statutory fee.",
+      actionsMd:
+        "- Step 1: Reserve your business or company name on the CAC pre-incorporation portal (pre.cac.gov.ng) — provide two name options, an email, and your ID.\n" +
+        "- Step 2: Wait for the name-approval email (typically 24–48 hours).\n" +
+        "- Step 3: Log back in and complete the registration forms: principal place of business, proprietors/directors, share capital (for companies), and objectives.\n" +
+        "- Step 4: Upload your ID and signature, then pay the filing fee (business name and company fees differ; the portal shows the current figure).\n" +
+        "- Step 5: Download the certificate of registration and the status report once CAC approves.",
+      sources: [],
+      escalate: false,
+      escalateReason: "CAC registration is a routine administrative process you can complete yourself online; a lawyer is only needed if structures or shareholdings are complex.",
+      followUps: ["Business name vs limited company — which should I pick?", "How long does CAC registration take?", "What documents do I need for CAC registration?"],
+    };
+  }
   if (/\b(lawyer|attorney|solicitor|legal.?aid)\b/.test(q)) {
     return {
       lawMd: "You can find a verified Nigerian lawyer through the Nigerian Bar Association public directory. This app cannot assign or recommend a specific lawyer.",
@@ -1288,6 +1303,20 @@ function applyDeterministicSafetyPolicy(result, classification, question, histor
       result.actionsMd = `${first}\n${actions}`.trim();
     }
   }
+}
+
+// Administrative how-tos (CAC/business-name/company/NGO/trademark registration,
+// licences, passports, permits): answered with practical steps, never by
+// citation shopping through statutes. Dispute or incident wording is excluded
+// deliberately — those must keep the evidence pipeline.
+function isAdministrativeHowto(question) {
+  const q = String(question || "").toLowerCase();
+  if (/\b(arrest|divorce|custody|sue\w*|assault|slap\w*|beat\w*|evict\w*|bail|murder|rape|theft|stole\w*|owes|debt|dispute|police detained|detention|harass\w*)/.test(q)) return false;
+  return /\bregister(?:ing|ation)?\s+(?:a|an|my|the|your)?\s*(?:business|company|business name|enterprise|ngo|non[- ]?government|trade ?mark)\b/.test(q)
+    || /\bcac\s*(?:registration|registr(?:e|y|ing|ed))\b/.test(q)
+    || /\b(?:how|what|where|steps?)\b.{0,25}\b(register|apply for|obtain|renew|incorporate)\s+(?:a|an|my|the|your)?\s*(business name|company|ngo|trademark|trade mark|passport|driver'?s? licen[cs]e|permit|nin|tin)\b/.test(q)
+    || /\b(?:cac|corporate affairs commission)\b.{0,30}\b(register|apply|incorporat)/.test(q)
+    || /\bregister\b.{0,20}\bcac\b/.test(q);
 }
 
 function isClearlyProceduralQuestion(question) {
@@ -1453,6 +1482,16 @@ async function runChatPipeline(req) {
       casualReply,
       provider: classifyProvider,
     });
+  }
+
+  // Administrative how-to (CAC/company/business-name registration, licence
+  // renewals, etc.): these are answered correctly with practical steps and NO
+  // statute citation. Route them out of the retrieval pipeline even if the
+  // classifier asked for sourcing — searching statutes wastes 10–30s and ends
+  // with an unhelpful "could not verify" wall.
+  if (classification.is_legal_question !== false && classification.needs_sourcing !== false && isAdministrativeHowto(question)) {
+    classification.needs_sourcing = false;
+    classification.sourcing_override = "deterministic_administrative_howto";
   }
 
   // Step 2a: Practical/procedural follow-up — answer directly, no citations.
