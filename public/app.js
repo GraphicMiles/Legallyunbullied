@@ -2111,13 +2111,15 @@ import {
       reason = "Have a qualified lawyer review this before you rely on it.";
     }
     const verdict = document.createElement("div");
-    verdict.className = "verdict " + (escalate ? "verdict--escalate" : "verdict--self");
+    verdict.className = "verdict beui-recommendation-card " + (escalate ? "verdict--escalate" : "verdict--self");
+    const confidence = confidenceFromEvidence(r);
     verdict.innerHTML = `
       <div class="verdict__head">
         <div class="verdict__icon">
           ${escalate ? ICONS.lawyer : '<i class="fa-solid fa-check"></i>'}
         </div>
         <span class="verdict__title">${escalate ? "See a lawyer" : "You can do this yourself"}</span>
+        <span class="verdict__confidence">${confidence.label}</span>
       </div>
       <p class="verdict__text">${escapeHtml(reason)}</p>
       ${escalate ? `
