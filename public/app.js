@@ -331,6 +331,35 @@ import {
     return !!(window.firebaseAuth && window.firebaseAuth.currentUser);
   }
 
+  // Signed-out = Firebase auth exists (so chat requires it) but nobody is
+  // signed in yet. While auth is still settling _authSettled is false and we
+  // deliberately don't lock the composer (avoids a false lock fliap on load).
+  function isSignedOut() {
+    return !!(_authSettled && window.firebaseAuth && !window.firebaseAuth.currentUser);
+  }
+
+  // Keep a signed-out user's question across the sign-in round trip so they
+  // don't lose what they typed.
+  function stashPendingQuestion(text) {
+    try {
+      if (text && text.trim()) sessionStorage.setItem("lu.pendingQuestion", text);
+    } catch (e) { /* private mode — non-fatal */ }
+  }
+
+  function restorePendingQuestion() {
+    if (!window.firebaseAuth || !state.user) return;
+    let q = null;
+    try {
+      q = sessionStorage.getItem("lu.pendingQuestion");
+      if (q) sessionStorage.removeItem("lu.pendingQuestion");
+    } catch (e) { return; }
+    if (!q) return;
+    if (window.promptBar && typeof window.promptBar.setValue === "function") {
+      window.promptBar.setValue(q);
+      if (window.promptBar.inputElement) window.promptBar.inputElement.focus();
+    }
+  }
+
   async function getServerAuthHeaders() {
     const headers = { "Content-Type": "application/json" };
     try {
@@ -820,8 +849,17 @@ import {
   /* ------------------------------------------------------------------ */
   function inlineMd(text) {
     let t = escapeHtml(text);
-    t = t.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-    t = t.replace(/\*(.+?)\*/g, "<em>$1</em>");
+    // Pair emphasis within a single line only: a "**" left dangling by a \n
+    // break must never mis-pair with the next bold run much later in the text.
+    t = t.replace(/\*\*\*([^*\n]+?)\*\*\*/g, "<strong><em>$1</em></strong>");
+    t = t.replace(/\*\*([^*\n]+?)\*\*/g, "<strong>$1</strong>");
+    t = t.replace(/\*([^*\n]+?)\*/g, "<em>$1</em>");
+    // Drop leftover stray asterisks so raw "**" never leaks into the DOM.
+    t = t.replace(/\*+/g, "");
+    // Citation tokens are resolved server-side; any that somehow reach the
+    // client raw must never be displayed to the user.
+    t = t.replace(/\s?([^.])\s?\[\[[^\]]{1,64}\]\]/g, "$1");
+    t = t.replace(/\[\[[^\]]{1,64}\]\]/g, "");
     t = t.replace(/\[(.+?)\]\(.+?\)/g, "$1"); // Strip markdown links, keep text
     t = t.replace(/`(.+?)`/g, "<code>$1</code>");
     // Bug fix: strip placeholder/example URLs that LLM may hallucinate
@@ -831,17 +869,59 @@ import {
     return t;
   }
 
+  // The answer cards already show one "legal information, not legal advice"
+  // line in the footer meta. LLMs love to append the same disclaimer inside
+  // the body copy, which reads as padding — cut those sentences out.
+  function stripLawDisclaimer(lawMd) {
+    if (!lawMd) return lawMd;
+    return String(lawMd).replace(
+      /(?:^|\n+)(?:\*\*)?(?:important|note|disclaimer)[:\s\u2013\u2014-]*(?:\*\*)?[^\n]{0,400}?(?:not formal legal advice|not legal advice|not a substitute for[^\n.]*legal advice)[^\n]{0,300}?(?=\n|$)/gi,
+      "\n"
+    ).replace(/\n{3,}/g, "\n\n").trim();
+  }
+
   function renderMarkdown(raw) {
     if (!raw) return "";
+    // Each *line* chooses its own element so mixed blocks never jam into one
+    // long paragraph: single-newline bullets become real list items, a lone
+    // bold line becomes a subhead, and prose lines become paragraphs.
     const blocks = raw.split(/\n\n+/);
     return blocks.map((block) => {
-      const lines = block.split("\n").filter((l) => l.length);
-      const allBullets = lines.length > 0 && lines.every((l) => /^-\s/.test(l.trim()));
-      if (allBullets) {
-        return `<ul>${lines.map((l) => `<li>${inlineMd(l.trim().replace(/^-\s/, ""))}</li>`).join("")}</ul>`;
+      const lines = block.split("\n").map((l) => l.trim()).filter((l) => l.length);
+      const out = [];
+      let pendingBullets = [];
+      let pendingProse = [];
+      const flushBullets = () => {
+        if (pendingBullets.length) {
+          out.push(`<ul>${pendingBullets.map((it) => `<li>${inlineMd(it)}</li>`).join("")}</ul>`);
+          pendingBullets = [];
+        }
+      };
+      const flushProse = () => {
+        if (pendingProse.length) {
+          out.push(`<p>${inlineMd(pendingProse.join(" "))}</p>`);
+          pendingProse = [];
+        }
+      };
+      for (const line of lines) {
+        const bullet = line.match(/^[-*•]\s+(.+)$/);
+        const subhead = !bullet && line.match(/^\*\*[^*\n]{1,120}\*\*[:\s]*$/);
+        if (bullet) {
+          flushProse();
+          pendingBullets.push(bullet[1]);
+        } else if (subhead) {
+          flushBullets();
+          pendingProse.push(line);
+          flushProse();
+        } else {
+          flushBullets();
+          pendingProse.push(line);
+        }
       }
-      return `<p>${inlineMd(block)}</p>`;
-    }).join("");
+      flushProse();
+      flushBullets();
+      return out.join("");
+    }).filter((html) => html.length).join("");
   }
 
 
@@ -1634,7 +1714,9 @@ import {
     } else if (msg.status === "corpusEmpty") {
       body.appendChild(buildCorpusEmptyEl(msg.corpusEmptyMessage || "No ingested legal sources match this yet.", msg.createdAt));
     } else if (msg.status === "error") {
-      body.appendChild(buildErrorEl(msg.errorMessage || "Something went wrong."));
+      body.appendChild(buildErrorEl(msg.errorMessage || "Something went wrong.", {
+        retryText: findRetryQuestion(getActiveConversation(), msg),
+      }));
     } else if (msg.status === "needsInput") {
       // Completed clarifying question — re-render the (still answerable) card.
       body.appendChild(buildNeedsInputCard(
@@ -1759,29 +1841,31 @@ import {
     wrap.className = "answer-block-plain";
     const r = msg.result;
 
-    // Safety flag — warn user when high-risk answer couldn't be verified
+    // Safety flag — tonal warning (not alarm styling): the verdict card below
+    // already carries the escalation CTA, so this banner just names the issue.
     if (r._safetyFlag) {
       const banner = document.createElement("div");
       banner.className = "safety-flag-banner";
       banner.style.cssText = `
-        background: rgba(229, 72, 77, 0.12);
-        border: 1px solid rgba(229, 72, 77, 0.4);
+        background: var(--color-surface, #1a1a1a);
+        border: 1px solid var(--color-border, #2a2a2a);
+        border-left: 3px solid var(--color-accent, #f2b705);
         border-radius: 8px;
-        padding: 12px 14px;
+        padding: 10px 14px;
         margin-bottom: 16px;
         display: flex;
         gap: 10px;
         align-items: flex-start;
       `;
       banner.innerHTML = `
-        <div style="flex-shrink:0; color: var(--color-danger, #e5484d); font-size: 18px; margin-top: 1px;">
-          <i class="fa-solid fa-triangle-exclamation"></i>
+        <div style="flex-shrink:0; color: var(--color-accent, #f2b705); font-size: 14px; margin-top: 2px;">
+          <i class="fa-solid fa-circle-exclamation"></i>
         </div>
         <div>
-          <div style="font-weight: 600; font-size: 13px; color: var(--color-danger, #e5484d); margin-bottom: 4px;">
-            High-risk legal area — please verify with a lawyer
+          <div style="font-weight: 600; font-size: 13px; color: var(--color-text, #f5f5f2); margin-bottom: 2px;">
+            Treat this carefully — high-risk area
           </div>
-          <div style="font-size: 13px; color: var(--color-text-muted, #9a9a94); line-height: 1.5;">
+          <div style="font-size: 12.5px; color: var(--color-text-muted, #9a9a94); line-height: 1.45;">
             ${escapeHtml(r._safetyFlag.message || "This response covers a sensitive legal area and could not be fully verified.")}
           </div>
         </div>
@@ -1803,7 +1887,7 @@ import {
     if (stream) {
       // Empty container for streaming
     } else {
-      lawTextEl.innerHTML = renderMarkdown(r.lawMd);
+      lawTextEl.innerHTML = renderMarkdown(stripLawDisclaimer(r.lawMd));
       appendContextCards(wrap, r.sources);
     }
 
@@ -2016,11 +2100,16 @@ import {
       !!(r && (r.escalate || r._safetyFlag)) ||
       !!(r && r.evidence && (r.evidence.sufficient === false || r.evidence.hedged === true)) ||
       responseHasHedging(r);
-    const reason = escalate
+    let reason = escalate
       ? (r.escalateReason && !/handle.*yourself|no lawyer/i.test(r.escalateReason)
           ? r.escalateReason
           : "See a lawyer before you rely on this.")
       : (r.escalateReason || "You can start with the steps above.");
+    // Dedupe: when the safety banner already explains the verification
+    // failure, the verdict card should not echo the same sentence.
+    if (r && r._safetyFlag && /citations? could not( all)?( be verified| be confirmed)|could not be verified to our standard/i.test(reason)) {
+      reason = "Have a qualified lawyer review this before you rely on it.";
+    }
     const verdict = document.createElement("div");
     verdict.className = "verdict " + (escalate ? "verdict--escalate" : "verdict--self");
     verdict.innerHTML = `
@@ -2201,6 +2290,14 @@ import {
   /* ------------------------------------------------------------------ */
   function submitQuestion(text) {
     if (state.isAgentBusy) return;
+    if (isSignedOut()) {
+      // Chat requires auth — never even create the message. Stash the
+      // question so it survives the sign-in redirect and is restored into
+      // the composer afterwards.
+      stashPendingQuestion(text);
+      openAuthModal();
+      return;
+    }
     cancelBusyRetry(); // a manual send supersedes any pending auto-retry
     _runningPolls = 0; // new pipeline → reset the bounded running-job poll budget
     ensureActiveConversation();
@@ -3382,16 +3479,59 @@ import {
     }, _runningPollIntervalMs);
   }
 
-  function buildErrorEl(message) {
+  // Find the user's question that preceded a failed agent reply so the
+  // error card can offer a real way forward (retry / sign in).
+  function findRetryQuestion(convo, agentMsg) {
+    if (!convo) return null;
+    const msgs = convo.messages || [];
+    const idx = msgs.findIndex((m) => m === agentMsg || m.id === agentMsg.id);
+    for (let i = (idx === -1 ? msgs.length : idx) - 1; i >= 0; i -= 1) {
+      if (msgs[i].role === "user" && msgs[i].content) return msgs[i].content;
+    }
+    return null;
+  }
+
+  function buildErrorEl(message, opts = {}) {
     const wrap = document.createElement("div");
-    wrap.className = "verdict verdict--error";
+    wrap.className = "notice-card";
+    const isAuthError = /sign in|session may have expired|401/i.test(message || "");
+    const title = isAuthError ? "You're signed out" : "Something went wrong";
+
     wrap.innerHTML = `
-      <div class="verdict__head">
-        <div class="verdict__icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        <span class="verdict__title">Something went wrong</span>
+      <div class="notice-card__head">
+        <div class="notice-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg></div>
+        <span class="notice-card__title">${escapeHtml(title)}</span>
       </div>
-      <p class="verdict__text">${escapeHtml(message)}</p>
+      <p class="notice-card__text">${escapeHtml(message)}</p>
     `;
+
+    const actions = document.createElement("div");
+    actions.className = "notice-card__actions";
+
+    if (isAuthError && opts.retryText) {
+      // Sign in → the question survives the redirect and lands back in the composer.
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "link-btn";
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg> Sign in to continue';
+      btn.addEventListener("click", () => {
+        stashPendingQuestion(opts.retryText);
+        openAuthModal();
+      });
+      actions.appendChild(btn);
+    } else if (opts.retryText) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "link-btn";
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Try again';
+      btn.addEventListener("click", () => {
+        if (isSignedOut()) { stashPendingQuestion(opts.retryText); openAuthModal(); return; }
+        submitQuestion(opts.retryText);
+      });
+      actions.appendChild(btn);
+    }
+
+    if (actions.children.length) wrap.appendChild(actions);
     return wrap;
   }
 
@@ -3439,7 +3579,9 @@ import {
       `;
     }
 
-    live.refs.body.appendChild(buildErrorEl(message));
+    live.refs.body.appendChild(buildErrorEl(message, {
+      retryText: findRetryQuestion(convo, agentMsg),
+    }));
     scrollChatToBottom();
 
     agentMsg.result = null;
@@ -3476,7 +3618,7 @@ import {
 
     refs.lawSection.el.classList.add("is-live");
 
-    streamWithBeUI(refs.lawSection.textEl, r.lawMd, {
+    streamWithBeUI(refs.lawSection.textEl, stripLawDisclaimer(r.lawMd), {
       onDone: () => {
         if (token !== pipelineToken) return;
         const stickAfterLaw = isNearBottom();
@@ -3484,7 +3626,7 @@ import {
         // Replace the raw streamed text with the SAME markdown rendering the
         // reload path uses, so the completed live message matches the static
         // render (bullets, bold) instead of keeping the unformatted stream.
-        refs.lawSection.textEl.innerHTML = renderMarkdown(r.lawMd);
+        refs.lawSection.textEl.innerHTML = renderMarkdown(stripLawDisclaimer(r.lawMd));
         appendContextCards(refs.lawSection.el, r.sources);
         scrollChatToBottom(stickAfterLaw);
 
@@ -3604,18 +3746,39 @@ import {
   function updateComposerState() {
     // --- New BeUIPromptBar path (composer-form was replaced by prompt-bar-container) ---
     if (window.promptBar) {
-      if (state.isAgentBusy) {
+      if (isSignedOut() && !state.isAgentBusy) {
+        // Locked, not broken: the composer explains the gate and a single
+        // click/tap on it routes to sign-in (see container listener in
+        // initPromptBar).
+        window.promptBar.setSubmitting(false);
+        window.promptBar.setDisabled(true);
+        window.promptBar.inputElement.placeholder = "Sign in to ask a question\u2026";
+        window.promptBar.element.classList.add("is-gated");
+      } else if (state.isAgentBusy) {
         window.promptBar.setDisabled(false);
         window.promptBar.setSubmitting(true);
+        window.promptBar.element.classList.remove("is-gated");
       } else {
         window.promptBar.setSubmitting(false);
         window.promptBar.setDisabled(false);
+        window.promptBar.inputElement.placeholder = "Describe your legal situation\u2026";
+        window.promptBar.element.classList.remove("is-gated");
       }
     }
 
     // --- Legacy composer path (kept as fallback if old HTML is ever restored) ---
     if (el.composerInput && el.sendBtn) {
       const hasText = el.composerInput.value.trim().length > 0;
+
+      if (isSignedOut() && !state.isAgentBusy) {
+        el.sendBtn.disabled = true;
+        el.composerInput.disabled = true;
+        el.composerInput.placeholder = "Sign in to ask a question\u2026";
+        el.newChatBtn.disabled = state.isAgentBusy;
+        el.newChatMobile.disabled = state.isAgentBusy;
+        updateClearChatButtonState();
+        return;
+      }
 
       if (state.isAgentBusy) {
         el.sendBtn.disabled = false;
@@ -3876,6 +4039,11 @@ import {
       }
       
       renderAuthSection(user);
+      // A signed-out user who was sent to /auth mid-question gets their
+      // text back here, ready to resend.
+      restorePendingQuestion();
+      // The composer gate (and its placeholder) react to sign-in/out.
+      updateComposerState();
     });
   } // end setupAuth()
 
@@ -4308,6 +4476,12 @@ import {
       console.warn('[init] Prompt bar container not found');
       return;
     }
+
+    // Gated-state affordance: while signed out the input is disabled, so a
+    // tap anywhere on the composer is the sign-in shortcut.
+    container.addEventListener("click", () => {
+      if (isSignedOut() && !state.isAgentBusy) openAuthModal();
+    });
     
     if (!window.BeUIPromptBar) {
       console.warn('[init] BeUIPromptBar not available');
@@ -4351,6 +4525,12 @@ import {
       card.addEventListener("click", () => {
         const text = card.getAttribute("data-prompt") || "";
         if (!text || state.isAgentBusy) return;
+        if (isSignedOut()) {
+          // Same gate as a typed question: stash it and come back with it.
+          stashPendingQuestion(text);
+          openAuthModal();
+          return;
+        }
         if (window.promptBar && typeof window.promptBar.setValue === "function") {
           window.promptBar.setValue(text);
           if (window.promptBar.inputElement) window.promptBar.inputElement.focus();

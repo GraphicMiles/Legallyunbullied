@@ -956,3 +956,18 @@
     transform: translateY(-1px) scale(1);
   }
 }
+
+/* Signed-out composer gate: visually quiet, one tap routes to sign-in. */
+.beui-prompt-bar.is-gated {
+  cursor: pointer;
+}
+.beui-prompt-bar.is-gated .beui-prompt-bar__input {
+  cursor: pointer;
+  color: var(--color-text-faint);
+}
+.beui-prompt-bar.is-gated .beui-prompt-bar__input::placeholder {
+  color: var(--color-text-faint);
+}
+.beui-prompt-bar.is-gated .beui-prompt-bar__button--submit {
+  display: none;
+}
