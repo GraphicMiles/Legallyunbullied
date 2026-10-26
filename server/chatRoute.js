@@ -88,7 +88,15 @@ First, determine if this is a legal question or casual conversation.
 
 CRITICAL RULE: A described INCIDENT always counts as a legal question, no matter how short, casual, or emotional the wording is. If the user describes something that happened to them — an assault ("someone slapped me", "I was beaten"), a theft ("someone stole my phone"), threats, an arrest, an eviction, being fired, a landlord dispute, a family/divorce issue, money owed, or any other real legal situation — "is_legal_question" MUST be true, and you MUST provide the full legal classification. Casual chat applies ONLY to greetings, thanks, identity questions, and clearly non-legal small talk (weather, jokes). When in doubt between casual and legal for a described event, classify it as LEGAL.
 
-PRACTICAL FOLLOW-UP RULE: A practical, procedural how-to question inside a legal conversation — e.g. "how do I note down the key facts", "how do I contact the police", "what should I bring to the station", "how do I find a lawyer" — is a legal-context question ("is_legal_question" true) but does NOT require statutory citations: set "needs_sourcing": false and still provide practice_area/jurisdiction/etc. Do NOT set needs_sourcing false for questions about what the law itself says or requires.
+YOU ROUTE EACH REQUEST TO THE RIGHT PATH BY SEMANTIC INTENT, NOT KEYWORD. Three intents:
+
+1. **casual** — greetings, thanks, how-are-you, identity, jokes, small talk → is_legal_question: false.
+2. **procedural / administrative how-to** — the user wants concrete practical steps, not a statute lookup: registering a company or business name with the CAC, filing for a trademark, renewing a licence, applying for a passport/NIN/TIN, what documents to bring, how to contact the police, how to find a lawyer, how to note down facts, what to wear to court, filing fees and office hours, portals to visit → is_legal_question: true, needs_sourcing: FALSE. These questions are answered correctly from procedural knowledge alone — forcing an irrelevant statute search onto them produces broken answers for the user. If answering correctly does not depend on what a specific statute says, this is the right intent.
+3. **legal (sourced)** — anything that depends on what the law actually says, requires, or forbids → is_legal_question: true, needs_sourcing: TRUE (we will verify against retrieved statutes).
+
+An "INCIDENT" (assault, landlord dispute, eviction, arrest…) is always intent 3 regardless of how it's phrased. A pure how-to like "how do I register a CAC" is intent 2, even though it is legal-flavoured — answering needs steps and portals, not sections of an Act.
+
+PRACTICAL FOLLOW-UP RULE: A practical, procedural how-to question inside a legal conversation — e.g. "how do I note down the key facts", "how do I contact the police", "what should I bring to the station", "how do I find a lawyer" — is a needs_sourcing:false question. Do NOT set needs_sourcing false for questions about what the law itself says or requires.
 
 If it's NOT a legal question, respond naturally based on the context:
 
@@ -137,7 +145,7 @@ Provide:
 - "summary": 1-2 sentence summary of the legal situation
 - "keywords": 4-8 specific legal/factual terms likely in relevant statutes (procedural terms, timeframes, named concepts)
 - "key_issues": Array of 3-5 specific legal issues or questions that need to be addressed
-- "needs_sourcing": true/false — whether answering this question actually requires citing specific statutory provisions. Set FALSE for practical/procedural how-to questions that can be answered correctly WITHOUT a statute (e.g. "how do I note down key facts", "how do I contact the police", "what should I bring to the police station", "how do I find a lawyer"). Set TRUE when the answer depends on what a specific law says.
+- "needs_sourcing": true/false — the routing decision. Set FALSE when the correct answer is a sequence of practical steps, addresses, portals, or documents (company/CAC registration, licence renewals, passport/NIN applications, "what should I bring", "how do I find a lawyer", "how do I note down facts"). Set TRUE when the answer depends on what a specific law says (rights, penalties, offences, what is legal, who is liable).
 - "complexity": ["Low", "Medium", "High"] — Low: straightforward single issue, Medium: multiple issues or interpretation needed, High: complex multi-party/constitutional/novel questions
 - "route": ["simple", "complex"] — simple: direct factual lookup that can be answered from a single statute lookup (e.g. "What is the minimum wage in Nigeria?", "What is the legal drinking age?"). complex: a described situation requiring investigation, multi-step analysis, or interpretation of how law applies to facts.
 - "reasoning_approach": Detailed 2-3 sentence description of how to systematically answer this question, including what legal framework to establish, how to apply it to the facts, and what remedies/guidance to provide
@@ -1230,6 +1238,21 @@ function makeProceduralFallback(question) {
       followUps: ["Business name vs limited company — which should I pick?", "How long does CAC registration take?", "What documents do I need for CAC registration?"],
     };
   }
+  if (/\b(passport|driver'?s? licen[cs]e|permit|nin|national id|tin|tax id|licen[cs]e renewal|renew (my|the|a))\b/.test(q)) {
+    return {
+      lawMd: "Applications and renewals of Nigerian government documents are administrative procedures handled by the issuing agency itself, usually online. The exact portal and fee depend on the document, but the shape of the process is the same: apply on the agency's official site or office, submit your identification and supporting documents, pay the official fee, and collect or download the finished document.",
+      actionsMd:
+        "- Step 1: Identify the issuing agency (e.g. Nigeria Immigration Service for a passport, FRSC for a driver licence, NIMC for NIN, FIRS/JTB for TIN).\n" +
+        "- Step 2: Visit the agency's official online portal and register an account with the same name and email you will use on the application.\n" +
+        "- Step 3: Complete the application form and upload your ID, photo, and any supporting documents.\n" +
+        "- Step 4: Pay the official fee through the portal — avoid agents who promise shortcuts at inflated prices.\n" +
+        "- Step 5: Book or attend any biometric/verification appointment, then collect or download the finished document.",
+      sources: [],
+      escalate: false,
+      escalateReason: "This is an administrative process you can start yourself; a lawyer only becomes necessary if an application is refused unfairly.",
+      followUps: ["What documents do I need for this application?", "What fees does the agency charge for this?"],
+    };
+  }
   if (/\b(lawyer|attorney|solicitor|legal.?aid)\b/.test(q)) {
     return {
       lawMd: "You can find a verified Nigerian lawyer through the Nigerian Bar Association public directory. This app cannot assign or recommend a specific lawyer.",
@@ -1484,15 +1507,28 @@ async function runChatPipeline(req) {
     });
   }
 
-  // Administrative how-to (CAC/company/business-name registration, licence
-  // renewals, etc.): these are answered correctly with practical steps and NO
-  // statute citation. Route them out of the retrieval pipeline even if the
-  // classifier asked for sourcing — searching statutes wastes 10–30s and ends
-  // with an unhelpful "could not verify" wall.
-  if (classification.is_legal_question !== false && classification.needs_sourcing !== false && isAdministrativeHowto(question)) {
-    classification.needs_sourcing = false;
-    classification.sourcing_override = "deterministic_administrative_howto";
-  }
+  // Rescue: this question is a procedural/administrative how-to even if the
+  // classifier marked it as needing statutes. The evidence pipeline isn't
+  // the right tool for it — return a direct procedural answer instead of
+  // the "could not verify sources" dead-end.
+  const tryProceduralRescue = async () => {
+    try {
+      const proc = await answerProceduralWithFallback(question, classification, history);
+      applyDeterministicSafetyPolicy(proc.result, classification, question, history);
+      const procEvidence = makeProceduralEvidence();
+      await serverPersistMessage(req, { status: "done", result: { ...proc.result, evidence: procEvidence }, pipelineStatus: "done", unread: true });
+      return res.json({ classification, route: "simple", plan: null, result: proc.result, draftModel: proc.model, draftProvider: proc.provider, critique: null, evidence: procEvidence, providersBusy: false, retryAfter: null });
+    } catch (err) {
+      if (err && err.__chatResponse) throw err;
+      console.warn("[/api/chat] Procedural rescue failed, using static guidance:", err.message);
+      const staticResult = makeProceduralFallback(question);
+      applyDeterministicSafetyPolicy(staticResult, classification, question, history);
+      const procEvidence = makeProceduralEvidence();
+      await serverPersistMessage(req, { status: "done", result: { ...staticResult, evidence: procEvidence }, pipelineStatus: "done", unread: true });
+      return res.json({ classification, route: "simple", plan: null, result: staticResult, draftModel: null, draftProvider: null, critique: null, evidence: procEvidence, providersBusy: false, retryAfter: null });
+    }
+  };
+  const shouldTryProceduralRescue = () => isClearlyProceduralQuestion(question) || isAdministrativeHowto(question);
 
   // Step 2a: Practical/procedural follow-up — answer directly, no citations.
   // "How do I note down key facts" is correct without any statute, so skip the
@@ -1628,6 +1664,15 @@ async function runChatPipeline(req) {
     evidence.mode = provisions.some((p) => p.local_eval === true) ? "local_fallback" : "firestore";
 
     if (!provisions.length) {
+      // The corpus has nothing for this area. If this is a procedural how-to,
+      // absence of statutes is exactly the expected case — answer it directly
+      // instead of telling the user the corpus is empty.
+      if (isClearlyProceduralQuestion(question) || isAdministrativeHowto(question)) {
+        console.log("[/api/chat] Corpus empty for a procedural/admin question — answering procedurally.");
+        evidence.proceduralRescue = true;
+        await tryProceduralRescue();
+        return; // res.json inside tryProceduralRescue throws the sentinel to bail out
+      }
       const corpusEmptyMessage =
         `No ingested legal sources match "${classification.practice_area}" yet. ` +
         "Run the ingestion script for this practice area before this endpoint can answer it.";
@@ -1696,7 +1741,13 @@ async function runChatPipeline(req) {
             return res.json(term.body);
           }
         } else {
-          // Broadened search found nothing either — same honest outcome.
+          // Broadened search found nothing either — but if this was a
+          // procedural how-to, the absence of statutes is the expected case; answer it.
+          if (shouldTryProceduralRescue()) {
+            evidence.proceduralRescue = true;
+            await tryProceduralRescue();
+            return;
+          }
           const term = insufficientEvidenceResponse(classification, route, evidence, urgentSafety);
           await serverPersistMessage(req, { status: "done", result: term.result, pipelineStatus: "done", unread: true });
           return res.json(term.body);
@@ -1704,6 +1755,14 @@ async function runChatPipeline(req) {
       }
     } catch (err) {
       if (err && err.__chatResponse) throw err;
+      // If the question is a procedural/administrative how-to, a dead evidence
+      // gate is the wrong terminal — answer it directly instead.
+      if (shouldTryProceduralRescue()) {
+        console.warn("[/api/chat] Evidence gate failed for a procedural question — rescuing procedurally:", err.message);
+        evidence.proceduralRescue = true;
+        await tryProceduralRescue();
+        return;
+      }
       // Legal evidence verification fails closed. Candidate quantity is not proof
       // of relevance, so an unavailable judge must never become "sufficient".
       console.warn("[/api/chat] Relevance gate unavailable — withholding sourced answer:", err.message);
