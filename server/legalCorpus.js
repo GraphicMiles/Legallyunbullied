@@ -35,7 +35,7 @@ const ADJACENT_AREAS = {
   employment: ["employment_labour_safety", "contract"],
   employment_labour_safety: ["employment"],
   consumer_rights: ["contract"],
-  contract: ["consumer_rights", "company_business"],
+  contract: ["consumer_rights", "company_business", "employment"],
   family_law: ["constitutional_rights"],
 };
 
