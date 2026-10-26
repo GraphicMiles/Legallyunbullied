@@ -119,7 +119,7 @@ async function main() {
       await check("noSourcing message shows 'Practical guidance' + self-handle body", async () => {
         const text = await verdictState(page);
         assert.ok(text.includes("Practical guidance"), `expected 'Practical guidance', got: ${text}`);
-        assert.ok(text.includes("handle this yourself"), "practical answer should not force a lawyer recommendation");
+        assert.ok(text.includes("do this yourself"), "practical answer should not force a lawyer recommendation");
         assert.ok(!text.includes("High confidence"), "no-sourcing answers must not claim High confidence");
       });
       await page.close();

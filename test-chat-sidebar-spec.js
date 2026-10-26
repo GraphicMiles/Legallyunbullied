@@ -3,9 +3,10 @@
  *
  * Verifies the structure and interaction pattern without touching the
  * conversation architecture:
- *   1. A stable "Recents" heading sits above the scrollable list.
+ *   1. Recency group headings (Today / Yesterday / …) label the scrollable list.
  *   2. Rows are flat (no card border/shadow), full-width.
- *   3. The active row gets a full-width highlight (edge-to-edge, not a pill).
+ *   3. The active row reads as a raised tonal surface (rounded, tone-lifted —
+ *      never the golden accent).
  *   4. The kebab menu is anchored at the far right of every row at the same
  *      horizontal position, and clicking it does NOT navigate.
  *   5. Long titles truncate with an ellipsis.
@@ -66,18 +67,15 @@ async function main() {
     await page.waitForFunction(() => document.querySelectorAll(".history__row").length === 3, null, { timeout: 10000 });
     await page.waitForTimeout(300);
 
-    await check("'Recents' heading exists outside the scrollable list", async () => {
+    await check("recency group headings label the scrollable list (Today/Older/…)", async () => {
       const info = await page.evaluate(() => {
-        const heading = document.querySelector(".history__heading");
+        const headings = [...document.querySelectorAll(".history__heading")].map((h) => h.textContent.trim());
         const list = document.getElementById("history-list");
-        return {
-          text: heading ? heading.textContent.trim() : null,
-          insideList: heading ? list.contains(heading) : null,
-          listScrollable: list ? getComputedStyle(list).overflowY : null,
-        };
+        return { headings, listScrollable: list ? getComputedStyle(list).overflowY : null };
       });
-      assert.strictEqual(info.text, "Recents", "heading text must be 'Recents'");
-      assert.strictEqual(info.insideList, false, "heading must sit outside the scrollable list (stable)");
+      // All three seeded conversations are from 1970, so a single "Older" group.
+      assert.ok(info.headings.length >= 1, "at least one recency group heading must render");
+      assert.strictEqual(info.headings[0], "Older", "epoch-seeded conversations land in the 'Older' group");
       assert.ok(["auto", "scroll"].includes(info.listScrollable), "list must be the scroll container");
     });
 
@@ -92,41 +90,28 @@ async function main() {
       assert.strictEqual(info.shadow, "none", "rows must have no shadow");
     });
 
-    await check("active row highlight is full-width (edge to edge, not a pill)", async () => {
+    await check("active row reads as a raised tonal surface on the dark sidebar", async () => {
       const info = await page.evaluate(() => {
         const row = document.querySelector(".history__row.is-active");
-        const list = document.getElementById("history-list");
-        const rowRect = row.getBoundingClientRect();
-        const listRect = list.getBoundingClientRect();
+        const inactive = document.querySelector(".history__row:not(.is-active)");
         const rowStyle = getComputedStyle(row);
         return {
           activeIsRow: row.classList.contains("is-active"),
           background: rowStyle.backgroundColor,
+          inactiveBackground: getComputedStyle(inactive).backgroundColor,
           radius: rowStyle.borderRadius,
-          rowWidth: rowRect.width,
-          listWidth: listRect.width,
-          rowLeft: rowRect.left,
-          listLeft: listRect.left,
         };
       });
       assert.strictEqual(info.activeIsRow, true, "active state must be on the row");
       assert.notStrictEqual(info.background, "rgba(0, 0, 0, 0)", "active row must have a highlight");
-      // No rounded corners — the highlight is a flat, full-width surface.
-      assert.strictEqual(info.radius, "0px", "active highlight must have no border-radius");
-      // Highlight is a light surface (surface-alt), not the dark background or
-      // the accent tint.
-      assert.notStrictEqual(info.background, "rgb(18, 18, 18)", "highlight must differ from the dark sidebar background");
+      assert.notStrictEqual(
+        info.background, info.inactiveBackground,
+        "active row must read as a tone lift from sibling rows"
+      );
+      // Tonal design: the highlight is a rounded surface tinted from the
+      // neutrals, never the golden brand accent.
+      assert.notStrictEqual(info.radius, "0px", "active highlight uses rounded row surfaces");
       assert.ok(!info.background.startsWith("rgba(242, 183, 5"), "highlight must not be the golden accent tint");
-      // Full-width: the highlight should span essentially the whole list width
-      // (allow a tiny tolerance for sub-pixel rounding).
-      assert.ok(
-        Math.abs(info.rowWidth - info.listWidth) <= 1,
-        `active highlight must span the list width (row ${info.rowWidth}px vs list ${info.listWidth}px)`
-      );
-      assert.ok(
-        Math.abs(info.rowLeft - info.listLeft) <= 1,
-        "active highlight must touch the list's left edge"
-      );
     });
 
     await check("kebab menu is anchored at the same far-right position on every row", async () => {
