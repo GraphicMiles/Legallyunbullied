@@ -998,6 +998,26 @@
     letter-spacing: 0.03em;
   }
 
+  /* Rendered answer body: calm typographic hierarchy */
+  .answer-text-block p { margin: 0 0 10px; }
+  .answer-text-block p:last-child { margin-bottom: 0; }
+  .answer-text-block ul {
+    margin: 4px 0 12px;
+    padding-left: 18px;
+  }
+  .answer-text-block ul:last-child { margin-bottom: 0; }
+  .answer-text-block li { margin-bottom: 5px; line-height: 1.55; }
+  .answer-text-block li::marker { color: var(--color-text-faint); }
+  /* Inline statute citations: visually quiet so they read as legal
+     references, not shouting. Keep colour neutral — accent is reserved
+     for actions. */
+  .answer-text-block strong {
+    font-weight: 600;
+    color: var(--color-text);
+  }
+  /* Safety banner keeps tonal (non-alarm) styling, aligned with notice-card */
+  .safety-flag-banner { box-shadow: none !important; }
+
   /* Plain casual reply */
   .casual-reply-plain {
     background: transparent !important;
@@ -1376,14 +1396,48 @@
     animation: sectionIn 0.3s var(--ease) both;
   }
   .verdict--self {
-    background: rgba(76, 174, 107, 0.12);
+    background: rgba(76, 174, 107, 0.10);
   }
+  /* Tonal, not a yellow alarm block: same surface as notice-card, with the
+     accent confined to the small icon and the title. */
   .verdict--escalate {
-    background: var(--color-accent-soft);
+    background: var(--color-surface-alt);
+    box-shadow: none;
   }
-  .verdict--error {
-    background: rgba(229, 72, 77, 0.12);
+  /* Error / auth-gate card: tonal, not a red alarm. One calm surface, a small
+     muted icon, sentence-case title, and a concrete next step. */
+  .notice-card {
+    background: var(--color-surface-alt);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    animation: sectionIn 0.3s var(--ease) both;
   }
+  .notice-card__head { display: flex; align-items: flex-start; gap: var(--space-2); }
+  .notice-card__icon {
+    width: 20px; height: 20px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+    background: var(--color-surface);
+    color: var(--color-accent);
+  }
+  .notice-card__icon svg { width: 12px; height: 12px; }
+  .notice-card__title {
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    line-height: 20px;
+    color: var(--color-text);
+  }
+  .notice-card__text {
+    font-size: var(--fs-base);
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    margin: 0;
+  }
+  .notice-card__actions { display: flex; gap: var(--space-3); flex-wrap: wrap; margin-top: 2px; }
+  .notice-card__actions .link-btn { font-family: inherit; }
   .verdict__head { display: flex; align-items: flex-start; gap: var(--space-2); }
   .verdict__icon {
     width: 20px; height: 20px; border-radius: 50%;
@@ -1393,8 +1447,6 @@
   }
   .verdict--self .verdict__icon { background: rgba(76,174,107,0.18); color: var(--color-success); }
   .verdict--escalate .verdict__icon { background: rgba(242,183,5,0.2); color: var(--color-accent); }
-  .verdict--error .verdict__icon { background: rgba(229,72,77,0.18); color: var(--color-danger); }
-  .verdict--error .verdict__title { color: var(--color-danger); }
 
   /* Casual reply — plain inline text, NO bubble/card styling.
      Rendered differently from legal responses (which use .answer-block-plain).
@@ -1417,8 +1469,6 @@
   .verdict__title {
     font-size: var(--fs-sm);
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
     line-height: 20px;
   }
   .verdict--self .verdict__title { color: var(--color-success); }

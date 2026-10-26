@@ -27,7 +27,7 @@ const { detectLegalIntent, buildFallbackClassification } = require("./legalInten
 const { PRACTICE_AREAS: PRACTICE_AREA_DEFS, PRACTICE_AREA_KEYS } = require("./practiceAreas");
 const { getFirestore } = require("./firebaseAdmin");
 const { recordJobStart, recordJobEnd } = require("./jobRunner");
-const { requiredSourceCount, validateDraftResult, verifyAndResolveCitations } = require("./evidence");
+const { HIGH_RISK_AREAS, requiredSourceCount, validateDraftResult, verifyAndResolveCitations } = require("./evidence");
 
 const PRACTICE_AREAS = PRACTICE_AREA_KEYS;
 const STATE_VARYING_AREAS = new Set(["tenancy", "family_law", "land_property"]);
@@ -59,6 +59,24 @@ function extractJsonFromResponse(content) {
     
     return null;
   }
+}
+
+/**
+ * One canonical User:/Agent: history formatter. The classification context
+ * annotates each turn with its [case: area/jurisdiction/urgency] metadata so
+ * follow-ups inherit context; the draft/procedural prompts use the plain
+ * variant. Both were hand-written three times before.
+ */
+function formatHistoryForPrompt(history, { withCaseTags = false } = {}) {
+  return (history || []).map((msg) => {
+    const role = msg && msg.role === "user" ? "User" : "Agent";
+    let caseLine = "";
+    if (withCaseTags) {
+      const c = msg && msg.classification && typeof msg.classification === "object" ? msg.classification : null;
+      caseLine = c ? ` [case: area=${c.practice_area || "unknown"}; jurisdiction=${c.jurisdiction || "unknown"}; jurisdiction_status=${c.jurisdiction_status || "unknown"}; urgency=${c.urgency || "unknown"}]` : "";
+    }
+    return `${role}${caseLine}: ${msg.content}`;
+  }).join("\n");
 }
 
 const PRACTICE_AREA_BULLETS = PRACTICE_AREA_DEFS.map((p) => `- "${p.key}": ${p.description}`).join("\n");
@@ -282,20 +300,15 @@ async function assessRelevanceWithFallback(question, classification, provisions,
   if (geminiClient) providers.push(["gemini", geminiClient, GEMINI_CLASSIFY_MODEL]);
   if (groqClient) providers.push(["groq", groqClient, GROQ_REVIEW_MODEL]);
   if (cerebrasClient) providers.push(["cerebras", cerebrasClient, CEREBRAS_CLASSIFY_MODEL]);
+  const entries = providers.map(([name, client, model]) => ({ name, key: `${name}-relevance:${model}`, client, model }));
 
-  let lastErr = null;
-  for (const [name, client, model] of providers) {
-    const key = `${name}-relevance:${model}`;
-    if (isProviderOnCooldown(key)) continue;
-    try {
-      const parsed = await assessRelevanceForClient(client, model, question, classification, provisions, minSources);
-      return { ...parsed, provider: name };
-    } catch (err) {
-      lastErr = err;
-      markProviderFailure(key, err);
-    }
+  try {
+    const { value, name } = await runProviderChain(entries, ({ client, model }) =>
+      assessRelevanceForClient(client, model, question, classification, provisions, minSources));
+    return { ...value, provider: name };
+  } catch (err) {
+    throw new Error(`All relevance-gate providers failed: ${err.message}`);
   }
-  throw new Error(`All relevance-gate providers failed: ${lastErr ? lastErr.message : "none configured"}`);
 }
 
 async function assessRelevanceForClient(client, model, question, classification, provisions, minSources = 2) {
@@ -453,18 +466,15 @@ async function critiqueWithFallback(question, provisions, draft, classification)
   if (providers.length === 0) {
     throw new Error("No LLM provider available for critique");
   }
+  const entries = providers.map(([name, client, model]) => ({ name, key: `${name}-critique:${model}`, client, model }));
 
-  for (const [name, client, model] of providers) {
-    const key = `${name}-critique:${model}`;
-    if (isProviderOnCooldown(key)) continue;
-    try {
-      return await critiqueDraft(client, model, question, provisions, draft);
-    } catch (err) {
-      markProviderFailure(key, err);
-    }
+  try {
+    const { value } = await runProviderChain(entries, ({ client, model }) =>
+      critiqueDraft(client, model, question, provisions, draft));
+    return value;
+  } catch {
+    throw new Error("All critique providers failed");
   }
-
-  throw new Error("All critique providers failed");
 }
 
 // ── Question-level cache ────────────────────────────────────────────────
@@ -535,6 +545,24 @@ async function deletePendingAck(token) {
       console.warn("[ack] delete failed:", err.message);
     }
   }
+}
+
+/**
+ * Single serializer for critique results — the response payload, the
+ * persisted message, and the safety-ack response were all built by three
+ * hand-copied object literals that could drift out of sync.
+ */
+function serializeCritique(critiqueResult) {
+  if (!critiqueResult) return null;
+  return {
+    quality: critiqueResult.quality,
+    legal_safety: critiqueResult.legal_safety,
+    passed: critiqueResult.passed,
+    issues: critiqueResult.issues,
+    claimSupport: critiqueResult.claimSupport || [],
+    thresholds: critiqueResult.thresholds || null,
+    isHighRisk: critiqueResult.isHighRisk || false,
+  };
 }
 
 function getCacheKey(uid, question, jurisdiction, practiceArea) {
@@ -650,27 +678,52 @@ function checkpointClassification(value) {
   return validateClassification(classification).valid ? classification : null;
 }
 
+const CASUAL_GREETING_PATTERN = /^\s*(hi|hello|hey|good (morning|afternoon|evening)|how (are|r) (you|u)|what'?s up|sup|yo|ok(ay)?|bye|goodbye|who are you|what are you|thank(s| you)( (so|very) much)?)\s*[!.?]*\s*$/i;
+
+const CASUAL_REPLIES = [
+  "Hello! Tell me what's happening — an arrest, unpaid salary, a landlord problem — and I'll walk you through what Nigerian law says.",
+  "Hi there. I'm here for any Nigerian legal question. What's on your mind — police, landlord, work, family?",
+  "Hello! If this is about a legal matter, just describe it plainly and I'll break down the law and your next steps.",
+  "Hey! Quick questions, big questions — if it's about Nigerian law, I'm ready when you are.",
+  "Good day! Ask me anything about your rights under Nigerian law and I'll explain it simply.",
+];
+
+// Casual replies keyed by greeting type, so "thanks" gets a warm close, not a greeting.
+function pickCasualReply(question) {
+  const text = String(question || "");
+  if (/(thanks|thank you)/i.test(text)) {
+    return "You're welcome. If something else comes up later, just ask.";
+  }
+  if (/(bye|goodbye)/i.test(text)) {
+    return "Goodbye for now — and if a legal question comes up anytime, you know where to find me.";
+  }
+  return CASUAL_REPLIES[Math.floor(Math.random() * CASUAL_REPLIES.length)];
+}
+
+function casualClassification(question) {
+  return { is_legal_question: false, casual_reply: pickCasualReply(question) };
+}
+
 async function classifyWithFallback(question, conversationContext, options = {}) {
+  // Fast path: pure greetings never need an LLM round-trip.
+  if (CASUAL_GREETING_PATTERN.test(question) && !options.forceLegal) {
+    return { classification: casualClassification(question), provider: "deterministic-fast-path" };
+  }
+
   const providers = [
     ["gemini-classify", getGeminiClient(), GEMINI_CLASSIFY_MODEL],
     ["groq-classify", getGroqClient(), CLASSIFY_MODEL],
     ["openrouter-classify", getOpenRouterClient(), OPENROUTER_CLASSIFY_MODEL],
     ["cerebras-classify", getCerebrasClient(), CEREBRAS_CLASSIFY_MODEL],
-  ].filter(([, client]) => client);
+  ].filter(([, client]) => client)
+   .map(([name, client, model]) => ({ name, key: `${name}:${model}`, client, model }));
 
   const forceLegalNote = options.forceLegal
     ? `\n\n[SYSTEM OVERRIDE — DO NOT IGNORE]: This message describes a real incident or legal matter. "is_legal_question" MUST be true. Do NOT classify it as casual chat. Provide the full legal classification.`
     : "";
   const userContent = (conversationContext ? `${conversationContext}\n\nUser: ${question}` : question) + forceLegalNote;
-  let lastErr = null;
-
-  for (const [name, client, model] of providers) {
-    const key = `${name}:${model}`;
-    if (isProviderOnCooldown(key)) {
-      console.log(`[/api/chat] Skipping ${key} — cooldown`);
-      continue;
-    }
-    try {
+  try {
+    const { value, name } = await runProviderChain(providers, async ({ client, model }) => {
       const completion = await callCompletion(client, model, [
         { role: "system", content: CLASSIFY_SYSTEM_PROMPT },
         { role: "user", content: userContent },
@@ -678,16 +731,15 @@ async function classifyWithFallback(question, conversationContext, options = {})
       const c = completion.parsed;
       const validation = validateClassification(c);
       if (!validation.valid) throw new Error(`Classification returned an invalid schema: ${validation.errors.join(", ")}`);
-      return { classification: c, provider: name.replace(/-classify$/, "") };
-    } catch (err) {
-      lastErr = err;
-      markProviderFailure(key, err);
-    }
+      return c;
+    });
+    return { classification: value, provider: name.replace(/-classify$/, "") };
+  } catch {
+    // Every provider failed or was skipped — fall through to deterministic fallbacks.
   }
 
-  const casual = /^\s*(hi|hello|hey|good (morning|afternoon|evening)|thanks|thank you|who are you|what are you)\s*[!.?]*\s*$/i.test(question);
-  if (casual && !options.forceLegal) {
-    return { classification: { is_legal_question: false, casual_reply: "Hello! I’m here to help with Nigerian legal-information questions." }, provider: "deterministic-fallback" };
+  if (CASUAL_GREETING_PATTERN.test(question) && !options.forceLegal) {
+    return { classification: casualClassification(question), provider: "deterministic-fallback" };
   }
   console.warn("[/api/chat] Classification providers unavailable; using deterministic fail-closed classification");
   const currentDetection = detectLegalIntent(question);
@@ -702,14 +754,11 @@ async function classifyWithFallback(question, conversationContext, options = {})
 async function draftWithModel(client, model, question, contextBlock, plan, classification, conversationHistory) {
   // Build comprehensive context from classification and plan
   let enhancedContext = "";
-  
+
   // Prepend conversation history if available
   let historyContext = "";
   if (conversationHistory && conversationHistory.length > 0) {
-    const formattedHistory = conversationHistory.map(msg => {
-      const role = msg.role === "user" ? "User" : "Agent";
-      return `${role}: ${msg.content}`;
-    }).join("\n");
+    const formattedHistory = formatHistoryForPrompt(conversationHistory);
     historyContext = `\n\nPREVIOUS CONVERSATION CONTEXT:\n${formattedHistory}\n\nUse this context to understand the user's current question. Don't re-ask for information already provided. If the user is answering a question you asked, incorporate their answer directly.`;
   }
   
@@ -755,9 +804,9 @@ Follow this plan to structure your response. Be comprehensive and address all su
   return completion.parsed;
 }
 
-// Per-provider cooldown map — skip providers that recently returned 429
+// Per-provider cooldown map — skip providers that recently failed.
+// Cooldown DURATIONS live in markProviderFailure, keyed by failure kind.
 const providerCooldowns = new Map(); // providerKey -> cooldownUntil (timestamp)
-const COOLDOWN_MS = 30000; // 30 second cooldown after rate limit
 
 function isProviderOnCooldown(key) {
   const until = providerCooldowns.get(key);
@@ -767,6 +816,50 @@ function isProviderOnCooldown(key) {
     return false;
   }
   return true;
+}
+
+/**
+ * The one provider-fallback scaffold used by every stage (classify,
+ * relevance, critique, draft, procedural). Before this, each stage
+ * hand-copied the cooldown/try/markFailed/next loop and they had drifted
+ * apart (audit M1: the procedural chain skipped cooldown bookkeeping).
+ *
+ * `entries` items: { name, key, client, model } — `key` is the cooldown key,
+ * built by the caller so each task keeps its own namespace
+ * ("gemini-classify:x", "groq-relevance:y", ...).
+ *
+ * Returns { value, name, key, model } on the first success. When every entry
+ * fails or is skipped, throws the last error with `err.allSkipped` set true
+ * if nothing was even attempted (all cooldowns) — callers keep their own
+ * failure semantics (deterministic fallback, honest insufficiency,
+ * providersBusy) on top of that.
+ * `onFailure(err, entry, kind)` is an optional per-failure log hook.
+ */
+async function runProviderChain(entries, attempt, { onFailure } = {}) {
+  let lastErr = null;
+  let allSkipped = true;
+  for (const entry of entries) {
+    if (isProviderOnCooldown(entry.key)) {
+      console.log(`[/api/chat] Skipping "${entry.key}" — on cooldown`);
+      continue;
+    }
+    allSkipped = false;
+    try {
+      const value = await attempt(entry);
+      return { value, name: entry.name, key: entry.key, model: entry.model };
+    } catch (err) {
+      lastErr = err;
+      const kind = markProviderFailure(entry.key, err);
+      if (typeof onFailure === "function") onFailure(err, entry, kind);
+    }
+  }
+  if (lastErr) {
+    lastErr.allSkipped = false; // an error exists ⇒ at least one attempt ran
+    throw lastErr;
+  }
+  const none = new Error("All providers skipped — none attempted (all on cooldown or none configured)");
+  none.allSkipped = true;
+  throw none;
 }
 
 function classifyProviderError(err) {
@@ -856,26 +949,44 @@ function sanitizeDraftResult(result) {
   return result;
 }
 
+/**
+ * One providersBusy result factory — both terminal states (every provider
+ * attempted-and-failed vs. every provider on cooldown) render through this so
+ * the client sees one consistent shape.
+ */
+function makeProvidersBusyResult(allSkipped) {
+  const retrySeconds = 30;
+  const result = allSkipped
+    ? {
+        lawMd: "All legal reasoning providers are currently busy. Please wait a moment and try again.",
+        actionsMd: "- Step 1: Wait 30 seconds and resend your question.\n- Step 2: If the issue persists, try rephrasing your question.",
+        sources: [],
+        escalate: false,
+        escalateReason: "System under load — retry needed.",
+        followUps: [],
+      }
+    : {
+        lawMd: "Our legal reasoning providers are temporarily unavailable. Please try again in a moment.",
+        actionsMd: `- Step 1: Wait ${retrySeconds} seconds and resend your question.\n- Step 2: If the issue persists, try rephrasing your question.\n- Step 3: For urgent matters, contact a lawyer directly.`,
+        sources: [],
+        escalate: false,
+        escalateReason: "System temporarily unavailable — retry needed.",
+        followUps: [],
+      };
+  return {
+    result,
+    model: "fallback",
+    provider: allSkipped ? "all-busy" : "all-failed",
+    providersBusy: true,
+    retryAfter: retrySeconds,
+  };
+}
+
 async function draftWithFallback(question, contextBlock, plan, classification, conversationHistory) {
   const groqClient = getGroqClient();
   const openRouterClient = getOpenRouterClient();
   const cerebrasClient = getCerebrasClient();
   const geminiClient = getGeminiClient();
-
-  // Helper to check if error is a rate limit
-  const isRateLimitError = (err) => {
-    if (err.status === 429 || err.status === 413) return true;
-    if (err.message && err.message.includes('429')) return true;
-    if (err.message && (err.message.includes('rate limit') || err.message.includes('rate-limited'))) return true;
-    return false;
-  };
-
-  // Helper to check if error is a JSON parse failure (retryable on next provider)
-  const isParseError = (err) => {
-    if (err.message && err.message.includes('Failed to parse JSON')) return true;
-    if (err.message && err.message.includes('Unexpected')) return true;
-    return false;
-  };
 
   // Build provider list — each is [providerKey, client, model]
   const providers = [];
@@ -893,70 +1004,22 @@ async function draftWithFallback(question, contextBlock, plan, classification, c
     throw new Error("No LLM provider available for drafting. Set GROQ_API_KEY, OPENROUTER_API_KEY, CEREBRAS_API_KEY, or GEMINI_API_KEY.");
   }
 
-  let allSkipped = true;
+  const entries = providers.map(([name, client, model]) => ({ name, key: `${name}:${model}`, client, model }));
 
-  for (const [key, client, model] of providers) {
-    const cooldownKey = `${key}:${model}`;
-    if (isProviderOnCooldown(cooldownKey)) {
-      console.log(`[/api/chat] Skipping "${cooldownKey}" — on cooldown`);
-      continue;
-    }
-    allSkipped = false; // at least one was attempted
-
-    try {
-      const result = await draftWithModel(client, model, question, contextBlock, plan, classification, conversationHistory);
+  let chainErr = null;
+  try {
+    const { value, name, model } = await runProviderChain(entries, async ({ client, model: m }) => {
+      const result = await draftWithModel(client, m, question, contextBlock, plan, classification, conversationHistory);
       // Sanitize: strip placeholder URLs (e.g. example.com) that the LLM might hallucinate
       sanitizeDraftResult(result);
-      return { result, model, provider: key };
-    } catch (err) {
-      markProviderFailure(cooldownKey, err);
-      if (isRateLimitError(err)) {
-        console.warn(`[/api/chat] ${key} rate-limited: ${err.message}`);
-      } else if (isParseError(err)) {
-        console.warn(`[/api/chat] ${key} JSON parse failed, trying next provider: ${err.message}`);
-      } else if (err.status === 404 || (err.message && err.message.includes('404'))) {
-        console.warn(`[/api/chat] ${key} model unavailable (404): ${err.message}`);
-      } else {
-        console.warn(`[/api/chat] ${key} failed: ${err.status || ""} ${err.message}`);
-      }
-    }
+      return result;
+    }, { onFailure: (err, entry, kind) =>
+      console.warn(`[/api/chat] ${entry.name} draft failed (${kind}): ${err.message}`) });
+    return { result: value, model, provider: name };
+  } catch (err) {
+    chainErr = err;
   }
-
-  // All providers attempted and failed — return graceful fallback
-  if (!allSkipped) {
-    const retrySeconds = 30;
-    console.log(`[/api/chat] All providers failed, returning providersBusy fallback`);
-    return {
-      result: {
-        lawMd: "Our legal reasoning providers are temporarily unavailable. Please try again in a moment.",
-        actionsMd: `- Step 1: Wait ${retrySeconds} seconds and resend your question.\n- Step 2: If the issue persists, try rephrasing your question.\n- Step 3: For urgent matters, contact a lawyer directly.`,
-        sources: [],
-        escalate: false,
-        escalateReason: "System temporarily unavailable — retry needed.",
-        followUps: [],
-      },
-      model: "fallback",
-      provider: "all-failed",
-      providersBusy: true,
-      retryAfter: retrySeconds,
-    };
-  }
-
-  // All providers were on cooldown
-  return {
-    result: {
-      lawMd: "All legal reasoning providers are currently busy. Please wait a moment and try again.",
-      actionsMd: "- Step 1: Wait 30 seconds and resend your question.\n- Step 2: If the issue persists, try rephrasing your question.",
-      sources: [],
-      escalate: false,
-      escalateReason: "System under load — retry needed.",
-      followUps: [],
-    },
-    model: "fallback",
-    provider: "all-busy",
-    providersBusy: true,
-    retryAfter: COOLDOWN_MS / 1000,
-  };
+  return makeProvidersBusyResult(chainErr.allSkipped === true);
 }
 
 // ── Procedural/practical answers (no statutory sourcing) ───────────────────
@@ -997,20 +1060,13 @@ async function answerProceduralWithFallback(question, classification, history) {
 
   let historyContext = "";
   if (history && history.length > 0) {
-    historyContext = `\n\nPREVIOUS CONVERSATION CONTEXT:\n${history.map(m => `${m.role === "user" ? "User" : "Agent"}: ${m.content}`).join("\n")}`;
+    historyContext = `\n\nPREVIOUS CONVERSATION CONTEXT:\n${formatHistoryForPrompt(history)}`;
   }
 
-  let lastErr = null;
-  for (const [name, client, model] of providers) {
-    // Same cooldown/failure discipline as every other fallback chain: a
-    // provider that just rate-limited or timed out is skipped, and a failure
-    // here opens its cooldown so the next procedural question skips it too.
-    const key = `${name}-procedural:${model}`;
-    if (isProviderOnCooldown(key)) {
-      console.log(`[/api/chat] Skipping "${key}" — on cooldown`);
-      continue;
-    }
-    try {
+  const entries = providers.map(([name, client, model]) => ({ name, key: `${name}-procedural:${model}`, client, model }));
+
+  try {
+    const { value, name, model } = await runProviderChain(entries, async ({ client, model }) => {
       const completion = await callCompletion(client, model, [
         { role: "system", content: PROCEDURAL_SYSTEM_PROMPT },
         { role: "user", content: `${historyContext}\n\nUser: ${question}` },
@@ -1018,16 +1074,14 @@ async function answerProceduralWithFallback(question, classification, history) {
       const parsed = completion.parsed;
       if (parsed && (parsed.lawMd || parsed.actionsMd)) {
         parsed.sources = [];
-        return { result: parsed, model, provider: name };
+        return parsed;
       }
       throw new Error("Procedural answer missing required fields");
-    } catch (err) {
-      lastErr = err;
-      markProviderFailure(key, err);
-      console.warn(`[/api/chat] Procedural answer via ${model} failed: ${err.message}`);
-    }
+    }, { onFailure: (err, entry) => console.warn(`[/api/chat] Procedural answer via ${entry.model} failed: ${err.message}`) });
+    return { result: value, model, provider: name };
+  } catch (err) {
+    throw new Error(`All procedural-answer providers failed: ${err ? err.message : "none configured"}`);
   }
-  throw new Error(`All procedural-answer providers failed: ${lastErr ? lastErr.message : "none configured"}`);
 }
 
 // ── Recoverable-request persistence ────────────────────────────────────────
@@ -1123,15 +1177,51 @@ function makeInsufficientEvidenceResult(evidence, urgent) {
 }
 
 
+/**
+ * Terminal payload for every "evidence insufficient" outcome. The gate has
+ * two paths into this (still-insufficient after broadening, and broadened
+ * corpus empty) and they were two verbatim copies; keep one.
+ */
+function insufficientEvidenceResponse(classification, route, evidence, urgent) {
+  const insuffResult = makeInsufficientEvidenceResult(evidence, urgent);
+  return {
+    result: insuffResult,
+    body: {
+      classification,
+      route,
+      plan: null,
+      result: insuffResult,
+      critique: null,
+      evidence,
+      providersBusy: false,
+      retryAfter: null,
+    },
+  };
+}
+
+// Procedural/practical answers carry NO statute citations by design — one
+// evidence shape, shared by the LLM path and the static fallback path.
+function makeProceduralEvidence() {
+  return {
+    sufficient: true,
+    relevanceScore: null,
+    sourceCount: 0,
+    retrievedFrom: [],
+    reason: "Practical/procedural question — no statute required.",
+    minSources: 0,
+    noSourcing: true,
+  };
+}
+
 function makeProceduralFallback(question) {
   const q = String(question || "").toLowerCase();
   if (/\b(lawyer|attorney|solicitor|legal.?aid)\b/.test(q)) {
     return {
       lawMd: "You can find a verified Nigerian lawyer through the Nigerian Bar Association public directory. This app cannot assign or recommend a specific lawyer.",
       actionsMd:
-        "- Step 1: Open the NBA Find a Lawyer directory.\\n" +
-        "- Step 2: Search by your state and the type of matter (criminal, tenancy, family, employment).\\n" +
-        "- Step 3: Write a one-page timeline of what happened and take copies of documents, photos, and medical reports.\\n" +
+        "- Step 1: Open the NBA Find a Lawyer directory.\n" +
+        "- Step 2: Search by your state and the type of matter (criminal, tenancy, family, employment).\n" +
+        "- Step 3: Write a one-page timeline of what happened and take copies of documents, photos, and medical reports.\n" +
         "- Step 4: If you cannot afford private fees, ask about legal aid in your state.",
       sources: [],
       escalate: true,
@@ -1143,9 +1233,9 @@ function makeProceduralFallback(question) {
     return {
       lawMd: "Go to the nearest police station that covers where it happened. Ask for a station diary entry or extract. Keep your own copy of names, dates, and what you were told.",
       actionsMd:
-        "- Step 1: Go with a trusted person if you can.\\n" +
-        "- Step 2: State the facts: who, what, when, where. Do not guess.\\n" +
-        "- Step 3: Ask for the diary number or extract and write down the officer's name and rank.\\n" +
+        "- Step 1: Go with a trusted person if you can.\n" +
+        "- Step 2: State the facts: who, what, when, where. Do not guess.\n" +
+        "- Step 3: Ask for the diary number or extract and write down the officer's name and rank.\n" +
         "- Step 4: If they refuse to record it, note that refusal and speak to a lawyer.",
       sources: [],
       escalate: false,
@@ -1156,9 +1246,9 @@ function makeProceduralFallback(question) {
   return {
     lawMd: "Write the facts down while they are fresh: who, what, when, where. Keep it specific and keep a copy.",
     actionsMd:
-      "- Step 1: Write down the key facts as soon as possible.\\n" +
-      "- Step 2: Keep it factual — what you saw or heard, not your opinion.\\n" +
-      "- Step 3: Save a dated copy (photo or written) for yourself.\\n" +
+      "- Step 1: Write down the key facts as soon as possible.\n" +
+      "- Step 2: Keep it factual — what you saw or heard, not your opinion.\n" +
+      "- Step 3: Save a dated copy (photo or written) for yourself.\n" +
       "- Step 4: Bring this record if you report to the police or meet a lawyer.",
     sources: [],
     escalate: false,
@@ -1171,7 +1261,7 @@ function applyDeterministicSafetyPolicy(result, classification, question, histor
   if (!result) return;
   const area = String(classification?.practice_area || "").toLowerCase();
   const urgency = classification?.urgency;
-  const highRisk = ["criminal_rights", "criminal_offences", "immigration_citizenship", "constitutional_rights", "family_law"].includes(area);
+  const highRisk = HIGH_RISK_AREAS.has(area);
   const urgent = urgency === "High" || urgency === "Critical";
   const context = `${history?.map((m) => m.content).join(" ") || ""} ${question}`.toLowerCase();
 
@@ -1286,13 +1376,7 @@ async function runChatPipeline(req) {
   let conversationContext = "";
   if (history && history.length > 0) {
     // Safety cap mirrors the client's 18-message window (no extra trimming).
-    const recent = history.slice(-18);
-    conversationContext = recent.map(msg => {
-      const role = msg.role === "user" ? "User" : "Agent";
-      const c = msg.classification && typeof msg.classification === "object" ? msg.classification : null;
-      const caseLine = c ? ` [case: area=${c.practice_area || "unknown"}; jurisdiction=${c.jurisdiction || "unknown"}; jurisdiction_status=${c.jurisdiction_status || "unknown"}; urgency=${c.urgency || "unknown"}]` : "";
-      return `${role}${caseLine}: ${msg.content}`;
-    }).join("\n");
+    conversationContext = formatHistoryForPrompt(history.slice(-18), { withCaseTags: true });
   }
 
   // Step 1: Classify (and detect casual chat)
@@ -1379,15 +1463,7 @@ async function runChatPipeline(req) {
     try {
       const proc = await answerProceduralWithFallback(question, classification, history);
       applyDeterministicSafetyPolicy(proc.result, classification, question, history);
-      const procEvidence = {
-        sufficient: true,
-        relevanceScore: null,
-        sourceCount: 0,
-        retrievedFrom: [],
-        reason: "Practical/procedural question — no statute required.",
-        minSources: 0,
-        noSourcing: true,
-      };
+      const procEvidence = makeProceduralEvidence();
       await serverPersistMessage(req, { status: "done", result: { ...proc.result, evidence: procEvidence }, pipelineStatus: "done", unread: true });
       return res.json({
         classification,
@@ -1408,15 +1484,7 @@ async function runChatPipeline(req) {
       // routed back into the citation pipeline.
       const fallbackResult = makeProceduralFallback(question);
       applyDeterministicSafetyPolicy(fallbackResult, classification, question, history);
-      const procEvidence = {
-        sufficient: true,
-        relevanceScore: null,
-        sourceCount: 0,
-        retrievedFrom: [],
-        reason: "Practical/procedural question — no statute required.",
-        minSources: 0,
-        noSourcing: true,
-      };
+      const procEvidence = makeProceduralEvidence();
       await serverPersistMessage(req, { status: "done", result: { ...fallbackResult, evidence: procEvidence }, pipelineStatus: "done", unread: true });
       return res.json({
         classification,
@@ -1535,108 +1603,90 @@ async function runChatPipeline(req) {
 
     workingProvisions = provisions;
 
-  try {
-    const gate = await timed("relevanceMs", () => assessRelevanceWithFallback(question, classification, provisions, MIN_SOURCES));
-    const relevantIdx = new Set(
-      Array.isArray(gate.relevant) ? gate.relevant.map((n) => Number(n) - 1).filter((i) => i >= 0 && i < provisions.length) : []
-    );
-    const relevantProvisions = provisions.filter((_, i) => relevantIdx.has(i));
+    try {
+      const gate = await timed("relevanceMs", () => assessRelevanceWithFallback(question, classification, provisions, MIN_SOURCES));
+      const relevantIdx = new Set(
+        Array.isArray(gate.relevant) ? gate.relevant.map((n) => Number(n) - 1).filter((i) => i >= 0 && i < provisions.length) : []
+      );
+      const relevantProvisions = provisions.filter((_, i) => relevantIdx.has(i));
 
-    evidence.relevanceScore = typeof gate.relevance_score === "number" ? gate.relevance_score : null;
-    evidence.reason = gate.reason || "";
-    evidence.conflicts = Array.isArray(gate.conflicts) ? gate.conflicts.filter(Boolean) : [];
-    evidence.sourceCount = relevantProvisions.length;
+      evidence.relevanceScore = typeof gate.relevance_score === "number" ? gate.relevance_score : null;
+      evidence.reason = gate.reason || "";
+      evidence.conflicts = Array.isArray(gate.conflicts) ? gate.conflicts.filter(Boolean) : [];
+      evidence.sourceCount = relevantProvisions.length;
 
-    const sufficient = gate.sufficient === true && relevantProvisions.length >= MIN_SOURCES && evidence.conflicts.length === 0;
-    if (sufficient) {
-      workingProvisions = relevantProvisions;
-      evidence.sufficient = true;
-      console.log(`[/api/chat] Relevance gate: ${relevantProvisions.length}/${provisions.length} provisions relevant — sufficient`);
-    } else {
-      console.log(`[/api/chat] Relevance gate: insufficient (${relevantProvisions.length} relevant of ${provisions.length}). Broadening search...`);
-      // Broaden into adjacent categories (e.g. the "general" bucket for the
-      // Criminal Code) and re-run the gate.
-      const broad = await findProvisionsBroad({
-        practiceArea: classification.practice_area,
-        jurisdiction: classification.jurisdiction,
-        keywords: classification.keywords || [],
-        minSources: MIN_SOURCES,
-        force: true,
-      });
-      evidence.retrievedFrom = broad.categories || [classification.practice_area];
-      if (broad.provisions.some((p) => p.local_eval === true)) evidence.mode = "local_fallback";
-
-      if (broad.provisions.length) {
-        const gate2 = await timed("relevanceMs", () => assessRelevanceWithFallback(question, classification, broad.provisions, MIN_SOURCES));
-        const relevantIdx2 = new Set(
-          Array.isArray(gate2.relevant) ? gate2.relevant.map((n) => Number(n) - 1).filter((i) => i >= 0 && i < broad.provisions.length) : []
-        );
-        const relevantProvisions2 = broad.provisions.filter((_, i) => relevantIdx2.has(i));
-
-        evidence.relevanceScore = typeof gate2.relevance_score === "number" ? gate2.relevance_score : evidence.relevanceScore;
-        evidence.reason = gate2.reason || evidence.reason;
-        evidence.conflicts = Array.isArray(gate2.conflicts) ? gate2.conflicts.filter(Boolean) : [];
-        evidence.sourceCount = relevantProvisions2.length;
-
-        if (gate2.sufficient === true && relevantProvisions2.length >= MIN_SOURCES && evidence.conflicts.length === 0) {
-          workingProvisions = relevantProvisions2;
-          evidence.sufficient = true;
-          console.log(`[/api/chat] Broadened search: ${relevantProvisions2.length} relevant provisions — sufficient`);
-        } else {
-          console.log(`[/api/chat] Broadened search still insufficient (${relevantProvisions2.length} relevant). Returning insufficient-evidence response.`);
-          const insuffResult = makeInsufficientEvidenceResult(evidence, urgentSafety);
-          await serverPersistMessage(req, { status: "done", result: insuffResult, pipelineStatus: "done", unread: true });
-          return res.json({
-            classification,
-            route,
-            plan: null,
-            result: insuffResult,
-            critique: null,
-            evidence,
-            providersBusy: false,
-            retryAfter: null,
-          });
-        }
+      const sufficient = gate.sufficient === true && relevantProvisions.length >= MIN_SOURCES && evidence.conflicts.length === 0;
+      if (sufficient) {
+        workingProvisions = relevantProvisions;
+        evidence.sufficient = true;
+        console.log(`[/api/chat] Relevance gate: ${relevantProvisions.length}/${provisions.length} provisions relevant — sufficient`);
       } else {
-        // Broadened search found nothing either — same honest outcome.
-        const insuffResult = makeInsufficientEvidenceResult(evidence, urgentSafety);
-        await serverPersistMessage(req, { status: "done", result: insuffResult, pipelineStatus: "done", unread: true });
-        return res.json({
-          classification,
-          route,
-          plan: null,
-          result: insuffResult,
-          critique: null,
-          evidence,
-          providersBusy: false,
-          retryAfter: null,
+        console.log(`[/api/chat] Relevance gate: insufficient (${relevantProvisions.length} relevant of ${provisions.length}). Broadening search...`);
+        // Broaden into adjacent categories (e.g. the "general" bucket for the
+        // Criminal Code) and re-run the gate.
+        const broad = await findProvisionsBroad({
+          practiceArea: classification.practice_area,
+          jurisdiction: classification.jurisdiction,
+          keywords: classification.keywords || [],
+          minSources: MIN_SOURCES,
+          force: true,
         });
+        evidence.retrievedFrom = broad.categories || [classification.practice_area];
+        if (broad.provisions.some((p) => p.local_eval === true)) evidence.mode = "local_fallback";
+
+        if (broad.provisions.length) {
+          const gate2 = await timed("relevanceMs", () => assessRelevanceWithFallback(question, classification, broad.provisions, MIN_SOURCES));
+          const relevantIdx2 = new Set(
+            Array.isArray(gate2.relevant) ? gate2.relevant.map((n) => Number(n) - 1).filter((i) => i >= 0 && i < broad.provisions.length) : []
+          );
+          const relevantProvisions2 = broad.provisions.filter((_, i) => relevantIdx2.has(i));
+
+          evidence.relevanceScore = typeof gate2.relevance_score === "number" ? gate2.relevance_score : evidence.relevanceScore;
+          evidence.reason = gate2.reason || evidence.reason;
+          evidence.conflicts = Array.isArray(gate2.conflicts) ? gate2.conflicts.filter(Boolean) : [];
+          evidence.sourceCount = relevantProvisions2.length;
+
+          if (gate2.sufficient === true && relevantProvisions2.length >= MIN_SOURCES && evidence.conflicts.length === 0) {
+            workingProvisions = relevantProvisions2;
+            evidence.sufficient = true;
+            console.log(`[/api/chat] Broadened search: ${relevantProvisions2.length} relevant provisions — sufficient`);
+          } else {
+            console.log(`[/api/chat] Broadened search still insufficient (${relevantProvisions2.length} relevant). Returning insufficient-evidence response.`);
+            const term = insufficientEvidenceResponse(classification, route, evidence, urgentSafety);
+            await serverPersistMessage(req, { status: "done", result: term.result, pipelineStatus: "done", unread: true });
+            return res.json(term.body);
+          }
+        } else {
+          // Broadened search found nothing either — same honest outcome.
+          const term = insufficientEvidenceResponse(classification, route, evidence, urgentSafety);
+          await serverPersistMessage(req, { status: "done", result: term.result, pipelineStatus: "done", unread: true });
+          return res.json(term.body);
+        }
       }
+    } catch (err) {
+      if (err && err.__chatResponse) throw err;
+      // Legal evidence verification fails closed. Candidate quantity is not proof
+      // of relevance, so an unavailable judge must never become "sufficient".
+      console.warn("[/api/chat] Relevance gate unavailable — withholding sourced answer:", err.message);
+      evidence.sourceCount = 0;
+      evidence.sufficient = false;
+      evidence.validationUnavailable = true;
+      evidence.reason = "Evidence relevance could not be verified at this time.";
+      evidence.relevanceScore = null;
+      const unavailableResult = {
+        lawMd: "I found possible legal material, but I could not verify that it directly applies to your situation. Rather than give you a potentially mismatched legal answer, I am marking this as unverified.",
+        actionsMd: "- Step 1: Keep a written record of the important facts and dates.\n- Step 2: If there is immediate danger or a crime, contact the appropriate emergency or police service.\n- Step 3: Consult a qualified lawyer for advice based on your exact circumstances.",
+        sources: [],
+        provisionIds: [],
+        claims: [],
+        escalate: true,
+        escalateReason: "The system could not verify that the retrieved provisions apply to this situation.",
+        followUps: [],
+        evidence,
+      };
+      await serverPersistMessage(req, { status: "done", result: unavailableResult, evidence, pipelineStatus: "done", unread: true });
+      return res.json({ classification, route, plan: null, result: unavailableResult, critique: null, evidence, providersBusy: false, retryAfter: null });
     }
-  } catch (err) {
-    if (err && err.__chatResponse) throw err;
-    // Legal evidence verification fails closed. Candidate quantity is not proof
-    // of relevance, so an unavailable judge must never become "sufficient".
-    console.warn("[/api/chat] Relevance gate unavailable — withholding sourced answer:", err.message);
-    evidence.sourceCount = 0;
-    evidence.sufficient = false;
-    evidence.validationUnavailable = true;
-    evidence.reason = "Evidence relevance could not be verified at this time.";
-    evidence.relevanceScore = null;
-    const unavailableResult = {
-      lawMd: "I found possible legal material, but I could not verify that it directly applies to your situation. Rather than give you a potentially mismatched legal answer, I am marking this as unverified.",
-      actionsMd: "- Step 1: Keep a written record of the important facts and dates.\n- Step 2: If there is immediate danger or a crime, contact the appropriate emergency or police service.\n- Step 3: Consult a qualified lawyer for advice based on your exact circumstances.",
-      sources: [],
-      provisionIds: [],
-      claims: [],
-      escalate: true,
-      escalateReason: "The system could not verify that the retrieved provisions apply to this situation.",
-      followUps: [],
-      evidence,
-    };
-    await serverPersistMessage(req, { status: "done", result: unavailableResult, evidence, pipelineStatus: "done", unread: true });
-    return res.json({ classification, route, plan: null, result: unavailableResult, critique: null, evidence, providersBusy: false, retryAfter: null });
-  }
 
     await saveCheckpoint("retrieval", { workingProvisions, evidence });
   }
@@ -1700,160 +1750,157 @@ async function runChatPipeline(req) {
       // fresh pipeline run exactly.
       if (cached.citationVerification) evidence.citationVerification = cached.citationVerification;
     } else {
-    // Step 5a: Draft with fallback chain (plan is null for simple route)
-    try {
-      draftResult = await timed("draftMs", () => draftWithFallback(question, contextBlock, planResult.plan, classification, history));
-    } catch (err) {
-      console.error("[/api/chat] drafting failed:", err.status || "", err.message);
-      await serverPersistMessage(req, { status: "error", errorMessage: "The drafting model failed to respond. " + (err.message || ""), pipelineStatus: "failed", unread: true });
-      return res.status(502).json({
-        error: "drafting_failed",
-        message: "The drafting model failed to respond. " + (err.message || ""),
-      });
-    }
+      // Step 5a: Draft with fallback chain (plan is null for simple route)
+      try {
+        draftResult = await timed("draftMs", () => draftWithFallback(question, contextBlock, planResult.plan, classification, history));
+      } catch (err) {
+        console.error("[/api/chat] drafting failed:", err.status || "", err.message);
+        await serverPersistMessage(req, { status: "error", errorMessage: "The drafting model failed to respond. " + (err.message || ""), pipelineStatus: "failed", unread: true });
+        return res.status(502).json({
+          error: "drafting_failed",
+          message: "The drafting model failed to respond. " + (err.message || ""),
+        });
+      }
 
-    // The model selects evidence by ID; the server resolves all public labels
-    // and excerpts from this run's retrieved records. Unknown IDs never reach
-    // the user as citations.
-    if (!draftResult.providersBusy && draftResult.result) {
-      const citationVerification = verifyAndResolveCitations(draftResult.result, workingProvisions);
-      evidence.citationVerification = citationVerification;
-    }
+      // The model selects evidence by ID; the server resolves all public labels
+      // and excerpts from this run's retrieved records. Unknown IDs never reach
+      // the user as citations.
+      if (!draftResult.providersBusy && draftResult.result) {
+        const citationVerification = verifyAndResolveCitations(draftResult.result, workingProvisions);
+        evidence.citationVerification = citationVerification;
+      }
 
-    // Step 6: Critique + bounded correction
-    // Skip critique for providersBusy responses (they're fallback errors, not real answers)
-    if (!draftResult.providersBusy && draftResult.result) {
-      const MAX_CRITIQUE_RETRIES = 1;
+      // Step 6: Critique + bounded correction
+      // Skip critique for providersBusy responses (they're fallback errors, not real answers)
+      if (!draftResult.providersBusy && draftResult.result) {
+        const MAX_CRITIQUE_RETRIES = 1;
 
-      // Category-specific thresholds — high-risk categories get a stricter bar.
-      // Wrong advice in these areas could lead to arrest, deportation, loss of custody, etc.
-      const practiceArea = (classification.practice_area || "").toLowerCase();
-      const HIGH_RISK_AREAS = [
-        "criminal_rights", "criminal_offences", "immigration_citizenship",
-        "constitutional_rights", "family_law",
-      ];
-      const isHighRisk = HIGH_RISK_AREAS.includes(practiceArea);
-      const QUALITY_THRESHOLD = 0.6;
-      const SAFETY_THRESHOLD = isHighRisk ? 0.7 : 0.6;
+        // Category-specific thresholds — high-risk categories get a stricter bar.
+        // Wrong advice in these areas could lead to arrest, deportation, loss of custody, etc.
+        // HIGH_RISK_AREAS is defined once in evidence.js; do not fork the list.
+        const practiceArea = (classification.practice_area || "").toLowerCase();
+        const isHighRisk = HIGH_RISK_AREAS.has(practiceArea);
+        const QUALITY_THRESHOLD = 0.6;
+        const SAFETY_THRESHOLD = isHighRisk ? 0.7 : 0.6;
 
-      for (let attempt = 0; attempt <= MAX_CRITIQUE_RETRIES; attempt++) {
-        try {
-          critiqueResult = await timed("critiqueMs", () => critiqueWithFallback(
-            question, workingProvisions, draftResult.result, classification
-          ));
+        for (let attempt = 0; attempt <= MAX_CRITIQUE_RETRIES; attempt++) {
+          try {
+            critiqueResult = await timed("critiqueMs", () => critiqueWithFallback(
+              question, workingProvisions, draftResult.result, classification
+            ));
 
-          // Override the critique's own "passed" with our category-specific thresholds
-          const claimsSupported = critiqueResult.claimSupport.every((item) => item.status === "supported");
-          critiqueResult.passed = critiqueResult.quality >= QUALITY_THRESHOLD
-                               && critiqueResult.legal_safety >= SAFETY_THRESHOLD
-                               && claimsSupported;
-          if (!claimsSupported) {
-            critiqueResult.issues = [...new Set([...(critiqueResult.issues || []), "claim_support_not_verified"])];
-          }
-          critiqueResult.thresholds = { quality: QUALITY_THRESHOLD, safety: SAFETY_THRESHOLD };
-          critiqueResult.isHighRisk = isHighRisk;
+            // Override the critique's own "passed" with our category-specific thresholds
+            const claimsSupported = critiqueResult.claimSupport.every((item) => item.status === "supported");
+            critiqueResult.passed = critiqueResult.quality >= QUALITY_THRESHOLD
+                                 && critiqueResult.legal_safety >= SAFETY_THRESHOLD
+                                 && claimsSupported;
+            if (!claimsSupported) {
+              critiqueResult.issues = [...new Set([...(critiqueResult.issues || []), "claim_support_not_verified"])];
+            }
+            critiqueResult.thresholds = { quality: QUALITY_THRESHOLD, safety: SAFETY_THRESHOLD };
+            critiqueResult.isHighRisk = isHighRisk;
 
-          console.log(`[/api/chat] Critique ${attempt + 1}/${MAX_CRITIQUE_RETRIES + 1} [${isHighRisk ? "HIGH-RISK" : "standard"}]: quality=${critiqueResult.quality.toFixed(2)}>=${QUALITY_THRESHOLD}, safety=${critiqueResult.legal_safety.toFixed(2)}>=${SAFETY_THRESHOLD} → ${critiqueResult.passed ? "PASS" : "FAIL"}`);
+            console.log(`[/api/chat] Critique ${attempt + 1}/${MAX_CRITIQUE_RETRIES + 1} [${isHighRisk ? "HIGH-RISK" : "standard"}]: quality=${critiqueResult.quality.toFixed(2)}>=${QUALITY_THRESHOLD}, safety=${critiqueResult.legal_safety.toFixed(2)}>=${SAFETY_THRESHOLD} → ${critiqueResult.passed ? "PASS" : "FAIL"}`);
 
-          if (critiqueResult.passed || attempt === MAX_CRITIQUE_RETRIES || !isHighRisk) {
+            if (critiqueResult.passed || attempt === MAX_CRITIQUE_RETRIES || !isHighRisk) {
+              break;
+            }
+
+            // Critique failed — retry draft with feedback
+            console.log(`[/api/chat] Re-drafting with feedback: ${critiqueResult.issues.join("; ").slice(0, 100)}`);
+            const feedbackContext = `\n\nIMPORTANT FEEDBACK FROM PREVIOUS DRAFT REVIEW (attempt ${attempt + 1} failed):\n${critiqueResult.issues.map(i => "- " + i).join("\n")}\n\nFix ALL of these issues. ${isHighRisk ? "This is a HIGH-RISK legal area — accuracy and safety are critical." : ""}`;
+
+            draftResult = await timed("draftMs", () => draftWithFallback(
+              question, contextBlock + feedbackContext, planResult.plan, classification, history
+            ));
+            if (!draftResult.providersBusy && draftResult.result) {
+              evidence.citationVerification = verifyAndResolveCitations(draftResult.result, workingProvisions);
+            }
+          } catch (err) {
+            // Verification failure is not a pass. High-risk answers flow into the
+            // acknowledgment gate; standard answers are visibly downgraded.
+            console.warn(`[/api/chat] Critique ${attempt + 1} unavailable: ${err.message}`);
+            critiqueResult = { quality: 0.5, legal_safety: 0.5, issues: ["critique_unavailable"], passed: false, unavailable: true, thresholds: { quality: QUALITY_THRESHOLD, safety: SAFETY_THRESHOLD }, isHighRisk };
+            evidence.sufficient = false;
+            evidence.safetyValidationUnavailable = true;
+            evidence.reason = "Response safety review could not be completed.";
+            if (!isHighRisk && draftResult.result) {
+              draftResult.result.escalate = true;
+              draftResult.result.escalateReason = "This response could not complete safety review; consult a qualified lawyer before relying on it.";
+            }
             break;
           }
+        }
 
-          // Critique failed — retry draft with feedback
-          console.log(`[/api/chat] Re-drafting with feedback: ${critiqueResult.issues.join("; ").slice(0, 100)}`);
-          const feedbackContext = `\n\nIMPORTANT FEEDBACK FROM PREVIOUS DRAFT REVIEW (attempt ${attempt + 1} failed):\n${critiqueResult.issues.map(i => "- " + i).join("\n")}\n\nFix ALL of these issues. ${isHighRisk ? "This is a HIGH-RISK legal area — accuracy and safety are critical." : ""}`;
-
-          draftResult = await timed("draftMs", () => draftWithFallback(
-            question, contextBlock + feedbackContext, planResult.plan, classification, history
-          ));
-          if (!draftResult.providersBusy && draftResult.result) {
-            evidence.citationVerification = verifyAndResolveCitations(draftResult.result, workingProvisions);
-          }
-        } catch (err) {
-          // Verification failure is not a pass. High-risk answers flow into the
-          // acknowledgment gate; standard answers are visibly downgraded.
-          console.warn(`[/api/chat] Critique ${attempt + 1} unavailable: ${err.message}`);
-          critiqueResult = { quality: 0.5, legal_safety: 0.5, issues: ["critique_unavailable"], passed: false, unavailable: true, thresholds: { quality: QUALITY_THRESHOLD, safety: SAFETY_THRESHOLD }, isHighRisk };
+        // Citation integrity is deterministic and overrides model self-review.
+        const citationOk = evidence.citationVerification?.valid === true;
+        if (!citationOk) {
           evidence.sufficient = false;
-          evidence.safetyValidationUnavailable = true;
-          evidence.reason = "Response safety review could not be completed.";
-          if (!isHighRisk && draftResult.result) {
+          evidence.reason = evidence.citationVerification?.reason || "Citations could not be verified.";
+          critiqueResult = critiqueResult || { quality: 0.5, legal_safety: 0.5, issues: [], passed: false, thresholds: { quality: QUALITY_THRESHOLD, safety: SAFETY_THRESHOLD }, isHighRisk };
+          critiqueResult.passed = false;
+          critiqueResult.issues = Array.from(new Set([...(critiqueResult.issues || []), "citation_integrity_failed"]));
+          if (draftResult.result) {
             draftResult.result.escalate = true;
-            draftResult.result.escalateReason = "This response could not complete safety review; consult a qualified lawyer before relying on it.";
+            draftResult.result.escalateReason = "The response's citations could not all be verified against retrieved legal text.";
           }
-          break;
+        }
+
+        if (!isHighRisk && critiqueResult && !critiqueResult.passed) {
+          evidence.sufficient = false;
+          evidence.reason = `Response review did not pass: ${(critiqueResult.issues || []).join("; ") || "quality or safety threshold not met"}`;
+          if (draftResult.result) {
+            draftResult.result.escalate = true;
+            draftResult.result.escalateReason = "This draft did not pass the response review threshold; consult a qualified lawyer before relying on it.";
+          }
+        }
+
+        // If a high-risk category still fails after the bounded correction,
+        // cache the response and require explicit user acknowledgment before delivering.
+        if (isHighRisk && critiqueResult && !critiqueResult.passed) {
+          console.warn(`[/api/chat] HIGH-RISK category "${practiceArea}" failed critique after ${MAX_CRITIQUE_RETRIES + 1} attempts — requiring user safety acknowledgment`);
+
+          const ackToken = generateAckToken();
+          await setPendingAck(ackToken, {
+            uid: req.uid,
+            conversationId: req.body?.conversationId || null,
+            messageId: req.body?.messageId || null,
+            question,
+            classification,
+            draftResult,
+            critiqueResult,
+            evidence,
+            route,
+            planResult,
+            cacheKey,
+            cacheAllowed,
+          });
+
+          // Return HITL response — client shows ApprovalCard for safety acknowledgment
+          const ackQuestion = `This question involves ${practiceArea.replace(/_/g, " ")} — a high-risk legal area. Our quality review could not fully verify the response accuracy.`;
+          const ackContext = {
+            practiceArea,
+            quality: critiqueResult.quality,
+            legal_safety: critiqueResult.legal_safety,
+            issues: critiqueResult.issues,
+            message: "This response covers a high-risk legal area and could not be verified to our standard. Do you still want to see the response? We strongly recommend consulting a qualified lawyer.",
+          };
+          // Persist the card state AND the token (now Firestore-durable) so a
+          // reopened chat re-renders a WORKING "I understand, show me" button —
+          // even across a server restart.
+          await serverPersistMessage(req, { status: "safetyAck", safetyAckQuestion: ackQuestion, safetyAckContext: ackContext, safetyAckToken: ackToken, pipelineStatus: "awaiting_input", unread: true });
+          res.json({
+            needsInput: true,
+            safetyAck: true,
+            ackToken,
+            question: ackQuestion,
+            field: "safety_acknowledgment",
+            context: ackContext,
+            provider: draftResult.provider,
+          });
+          return;
         }
       }
-
-      // Citation integrity is deterministic and overrides model self-review.
-      const citationOk = evidence.citationVerification?.valid === true;
-      if (!citationOk) {
-        evidence.sufficient = false;
-        evidence.reason = evidence.citationVerification?.reason || "Citations could not be verified.";
-        critiqueResult = critiqueResult || { quality: 0.5, legal_safety: 0.5, issues: [], passed: false, thresholds: { quality: QUALITY_THRESHOLD, safety: SAFETY_THRESHOLD }, isHighRisk };
-        critiqueResult.passed = false;
-        critiqueResult.issues = Array.from(new Set([...(critiqueResult.issues || []), "citation_integrity_failed"]));
-        if (draftResult.result) {
-          draftResult.result.escalate = true;
-          draftResult.result.escalateReason = "The response's citations could not all be verified against retrieved legal text.";
-        }
-      }
-
-      if (!isHighRisk && critiqueResult && !critiqueResult.passed) {
-        evidence.sufficient = false;
-        evidence.reason = `Response review did not pass: ${(critiqueResult.issues || []).join("; ") || "quality or safety threshold not met"}`;
-        if (draftResult.result) {
-          draftResult.result.escalate = true;
-          draftResult.result.escalateReason = "This draft did not pass the response review threshold; consult a qualified lawyer before relying on it.";
-        }
-      }
-
-      // If a high-risk category still fails after the bounded correction,
-      // cache the response and require explicit user acknowledgment before delivering.
-      if (isHighRisk && critiqueResult && !critiqueResult.passed) {
-        console.warn(`[/api/chat] HIGH-RISK category "${practiceArea}" failed critique after ${MAX_CRITIQUE_RETRIES + 1} attempts — requiring user safety acknowledgment`);
-
-        const ackToken = generateAckToken();
-        await setPendingAck(ackToken, {
-          uid: req.uid,
-          conversationId: req.body?.conversationId || null,
-          messageId: req.body?.messageId || null,
-          question,
-          classification,
-          draftResult,
-          critiqueResult,
-          evidence,
-          route,
-          planResult,
-          cacheKey,
-          cacheAllowed,
-        });
-
-        // Return HITL response — client shows ApprovalCard for safety acknowledgment
-        const ackQuestion = `This question involves ${practiceArea.replace(/_/g, " ")} — a high-risk legal area. Our quality review could not fully verify the response accuracy.`;
-        const ackContext = {
-          practiceArea,
-          quality: critiqueResult.quality,
-          legal_safety: critiqueResult.legal_safety,
-          issues: critiqueResult.issues,
-          message: "This response covers a high-risk legal area and could not be verified to our standard. Do you still want to see the response? We strongly recommend consulting a qualified lawyer.",
-        };
-        // Persist the card state AND the token (now Firestore-durable) so a
-        // reopened chat re-renders a WORKING "I understand, show me" button —
-        // even across a server restart.
-        await serverPersistMessage(req, { status: "safetyAck", safetyAckQuestion: ackQuestion, safetyAckContext: ackContext, safetyAckToken: ackToken, pipelineStatus: "awaiting_input", unread: true });
-        res.json({
-          needsInput: true,
-          safetyAck: true,
-          ackToken,
-          question: ackQuestion,
-          field: "safety_acknowledgment",
-          context: ackContext,
-          provider: draftResult.provider,
-        });
-        return;
-      }
-    }
 
       // Cache the result (only successful, non-busy responses)
       if (cacheAllowed && !draftResult.providersBusy && draftResult.result && critiqueResult?.passed === true && evidence.citationVerification?.valid === true) {
@@ -1902,15 +1949,7 @@ async function runChatPipeline(req) {
       status: "done",
       result: draftResult.result,
       classification,
-      critique: critiqueResult ? {
-        quality: critiqueResult.quality,
-        legal_safety: critiqueResult.legal_safety,
-        passed: critiqueResult.passed,
-        issues: critiqueResult.issues,
-        claimSupport: critiqueResult.claimSupport || [],
-        thresholds: critiqueResult.thresholds || null,
-        isHighRisk: critiqueResult.isHighRisk || false,
-      } : null,
+      critique: serializeCritique(critiqueResult),
       evidence,
       pipelineStatus: "done",
       unread: true,
@@ -1931,15 +1970,7 @@ async function runChatPipeline(req) {
     // the client uses this to label confidence instead of hardcoding it.
     evidence,
     // Critique scores with category-specific thresholds
-    critique: critiqueResult ? {
-      quality: critiqueResult.quality,
-      legal_safety: critiqueResult.legal_safety,
-      passed: critiqueResult.passed,
-      issues: critiqueResult.issues,
-      claimSupport: critiqueResult.claimSupport || [],
-      thresholds: critiqueResult.thresholds || null,
-      isHighRisk: critiqueResult.isHighRisk || false,
-    } : null,
+    critique: serializeCritique(critiqueResult),
     // Safety flag for high-risk categories that failed critique
     safetyFlag: draftResult.result?._safetyFlag || null,
     // Bug fix: forward providersBusy flag so client can render error state
@@ -2135,15 +2166,7 @@ router.post("/api/chat/acknowledge", async (req, res) => {
     draftModel: draftResult.model,
     draftProvider: draftResult.provider,
     evidence: evidence || draftResult.result?.evidence || null,
-    critique: {
-      quality: critiqueResult.quality,
-      legal_safety: critiqueResult.legal_safety,
-      passed: critiqueResult.passed,
-      issues: critiqueResult.issues,
-      claimSupport: critiqueResult.claimSupport || [],
-      thresholds: critiqueResult.thresholds || null,
-      isHighRisk: critiqueResult.isHighRisk || false,
-    },
+    critique: serializeCritique(critiqueResult),
     safetyFlag: draftResult.result?._safetyFlag || null,
     providersBusy: false,
     retryAfter: null,
