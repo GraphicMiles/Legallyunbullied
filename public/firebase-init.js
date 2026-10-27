@@ -41,7 +41,8 @@ if (!hasConfig) {
     window.firebaseAuth = getAuth(app);
     window.firebaseDb = getFirestore(app);
     window.dispatchEvent(new CustomEvent("firebase-ready"));
-    console.info("[firebase-init] Firebase initialized for project:", config.projectId);
+    // Boot-path noise stays out of the console; the debug panel records it.
+    try { window.LUDebug && window.LUDebug.chatEvent("auth.firebase_ready", { project: config.projectId }); } catch (_) {}
   } catch (err) {
     console.error("[firebase-init] Failed to initialize Firebase:", err);
   }

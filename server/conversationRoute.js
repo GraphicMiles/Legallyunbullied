@@ -507,57 +507,10 @@ router.post("/migrate", async (req, res) => {
   }
 });
 
-// ── POST /api/conversations/cleanup — delete duplicate empty conversations ──
-// Removes redundant empty conversations left over from the old sync-loop bug.
-// Keeps the most recently updated empty conversation (a user's current,
-// just-created "New question" chat is legitimate and must never be wiped).
-// Conversations with messages are always kept.
-router.post("/cleanup", async (req, res) => {
-  try {
-    const snapshot = await convoCollection(req.uid).get();
-
-    // Collect empty conversations (no messages) with their timestamps.
-    // Counts run in parallel chunks — this endpoint runs right after sign-in
-    // and a serial loop meant one count round-trip per conversation.
-    const empties = [];
-    const docs = snapshot.docs;
-    const COUNT_CHUNK = 20;
-    for (let i = 0; i < docs.length; i += COUNT_CHUNK) {
-      const results = await Promise.all(docs.slice(i, i + COUNT_CHUNK).map(async (doc) => {
-        const msgCount = await convoRef(req.uid, doc.id)
-          .collection("messages").count().get();
-        if (msgCount.data().count === 0) {
-          const data = doc.data();
-          return { ref: doc.ref, updatedAt: toMillis(data.updatedAt) };
-        }
-        return null;
-      }));
-      for (const r of results) if (r) empties.push(r);
-    }
-
-    // Nothing to clean up: 0 or 1 empty conversation is a valid state.
-    if (empties.length <= 1) {
-      return res.json({ success: true, deleted: 0, message: "Nothing to clean up" });
-    }
-
-    // Keep the newest empty conversation; delete the older duplicates.
-    empties.sort((a, b) => b.updatedAt - a.updatedAt);
-    const toDelete = empties.slice(1).map((e) => e.ref);
-
-    // Delete in batches of 400 (Firestore limit is 500)
-    for (let i = 0; i < toDelete.length; i += 400) {
-      const batch = db().batch();
-      const chunk = toDelete.slice(i, i + 400);
-      chunk.forEach(ref => batch.delete(ref));
-      await batch.commit();
-    }
-
-    console.log(`[conversations] Cleanup: deleted ${toDelete.length} duplicate empty conversations for user ${req.uid}`);
-    res.json({ success: true, deleted: toDelete.length });
-  } catch (err) {
-    console.error("[conversations] Cleanup failed:", err.message);
-    res.status(500).json({ error: "cleanup_failed", message: err.message });
-  }
-});
+// The /api/conversations/cleanup endpoint was retired: the sync-loop bug that
+// created duplicate empty conversations has been fixed for a long time, and a
+// 2-3s maintenance round-trip on every page load was pure boot-path noise.
+// The "cleanup" ID stays in RESERVED_CONVO_IDS so no real conversation can
+// ever re-use it.
 
 module.exports = router;
