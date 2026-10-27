@@ -16,3 +16,9 @@ legal_sources/federal_acts_bulk/_raw/
 server/eval/results100.jsonl
 __pycache__/
 *.pyc
+
+# local agent skill installs (npx skills add)
+.agents/
+agent/
+skills/
+skills-lock.json
