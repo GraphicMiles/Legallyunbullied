@@ -452,7 +452,11 @@
   padding: var(--beui-spacing-sm);
   background: transparent;
   border: none;
-  font-size: 14px;
+  /* 16px is the iOS Safari threshold: below it, focusing a field triggers
+     the platform auto-zoom that scrambled the whole layout. This must NOT
+     go below 16px. */
+  font-size: 16px;
+  line-height: 1.45;
   color: var(--color-text);
   resize: none;
   font-family: inherit;

@@ -4570,7 +4570,7 @@ import {
     renderHistory();
     initAuth();       // auth first — more critical than composer
     initPromptBar();  // prompt bar before updateComposerState so it can delegate
-    bindStarterPrompts();
+    initDisclaimerPop();
     bindConnectivityRecovery();
     // If we booted while already offline, surface it immediately instead of
     // letting the first failed fetch discover it.
@@ -4580,6 +4580,24 @@ import {
       dbgChat("net.offline", { atBoot: true });
     }
     updateComposerState();
+  }
+
+  // The legal-information disclaimer is a one-time popup, not a permanent
+  // footer. It appears on the first visit and disappears forever once the
+  // user dismisses it (persisted to localStorage).
+  function initDisclaimerPop() {
+    const POP_KEY = "lu.disclaimer.dismissed";
+    const pop = document.getElementById("disclaimer-pop");
+    const closeBtn = document.getElementById("disclaimer-pop-close");
+    if (!pop || !closeBtn) return;
+    let dismissed = false;
+    try { dismissed = localStorage.getItem(POP_KEY) === "1"; } catch (_e) { /* private mode */ }
+    if (dismissed) return;
+    pop.hidden = false;
+    closeBtn.addEventListener("click", () => {
+      pop.hidden = true;
+      try { localStorage.setItem(POP_KEY, "1"); } catch (_e) { /* private mode */ }
+    });
   }
 
   function initPromptBar() {
@@ -4627,27 +4645,6 @@ import {
     } catch (err) {
       console.error('[init] BeUIPromptBar initialization failed:', err);
     }
-  }
-
-  // Empty-state starter prompts: clicking a card drops the example into the
-  // composer and focuses it, so a first-time user can send with one more tap.
-  function bindStarterPrompts() {
-    document.querySelectorAll(".prompt-card[data-prompt]").forEach((card) => {
-      card.addEventListener("click", () => {
-        const text = card.getAttribute("data-prompt") || "";
-        if (!text || state.isAgentBusy) return;
-        if (isSignedOut()) {
-          // Same gate as a typed question: stash it and come back with it.
-          stashPendingQuestion(text);
-          openAuthModal();
-          return;
-        }
-        if (window.promptBar && typeof window.promptBar.setValue === "function") {
-          window.promptBar.setValue(text);
-          if (window.promptBar.inputElement) window.promptBar.inputElement.focus();
-        }
-      });
-    });
   }
 
   // Unregister service workers and clear caches on load
