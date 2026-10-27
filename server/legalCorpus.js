@@ -81,18 +81,63 @@ function rankProvisions(provisions, { keywords = [], jurisdiction } = {}) {
   const terms = cleanKeywords(keywords);
   const wantedJurisdiction = normalize(jurisdiction);
 
+  // Act-name relevance: for "how do I register a company", the Companies and
+  // Allied Matters Act must beat a "Registered Insurance Brokers Act" merely
+  // because the broker act repeats the word "register". A provision whose ACT
+  // title shares a key term with the question is topically aligned; match on
+  // 5-char stems so "company" catches "Companies…" and "register" catches
+  // "Registration…".
+  // Rarity-weight the stems: "register(ed)" appears in dozens of act titles,
+  // "compan[ies]" in a handful. The rare term is the topic signal; the common
+  // term is noise. IDF-style: a stem matching most acts earns near zero.
+  const stems = terms
+    .filter((t) => !t.includes(" "))
+    .map((t) => t.slice(0, 5))
+    .filter((t) => t.length >= 5);
+
+  const distinctActs = new Map(); // actName -> true
+  for (const p of provisions || []) distinctActs.set(normalize(p.act), true);
+  const totalActs = Math.max(1, distinctActs.size);
+  const stemWeight = new Map();
+  for (const stem of stems) {
+    let matchedActs = 0;
+    for (const actName of distinctActs.keys()) if (actName.includes(stem)) matchedActs++;
+    const rarity = 1 - matchedActs / totalActs; // 1 = matches no act, 0 = matches all
+    stemWeight.set(stem, 8 + Math.round(34 * rarity)); // 8..42
+  }
+
   return (provisions || []).map((p, originalIndex) => {
+    const actName = normalize(p.act);
     const title = normalize(`${p.act || ""} ${p.title || ""} ${p.heading || ""}`);
     const text = normalize(p.text);
     const provisionJurisdiction = normalize(p.jurisdiction);
     let score = 0;
     let matchedTerms = 0;
 
+    for (const stem of stems) {
+      if (actName.includes(stem)) { score += stemWeight.get(stem); break; }
+    }
+
     for (const term of terms) {
       let matched = false;
       if (title.includes(term)) { score += 12; matched = true; }
+      else if (!term.includes(" ") && term.length >= 5 && title.includes(term.slice(0, 5))) {
+        // Heading-level stem match: "company" hits "Companies and Allied
+        // Matters Act", "registration" hits "Registration duty". Singular
+        // vs plural must not stand between the question and its statute.
+        score += 6; matched = true;
+      }
       if (text.includes(term)) {
-        score += term.includes(" ") ? 9 : 5;
+        // Frequency matters: one passing mention ("the register kept by the
+        // council") is not the topic; an act whose sections repeat the term
+        // is. Capped so a fat keyword-dense section can't swamp everything.
+        if (term.includes(" ")) {
+          score += 9;
+        } else {
+          let occurrences = 0, idx = text.indexOf(term);
+          while (idx !== -1 && occurrences < 10) { occurrences++; idx = text.indexOf(term, idx + 1); }
+          score += 3 + occurrences * 2; // 5 .. 23
+        }
         matched = true;
       } else if (term.includes(" ")) {
         // The classifier's keywords are model-generated phrases ("unpaid

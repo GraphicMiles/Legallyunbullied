@@ -31,7 +31,14 @@ function splitSections(text) {
 }
 
 function addFile(store, { file, act, practiceArea, jurisdiction = "Federal", sourceUrl = null, sourceVersion = null, sourceStatus = "unverified", reviewed = false }) {
-  if (!fs.existsSync(file)) return;
+  if (!fs.existsSync(file)) {
+    // Silent skips were how CAMA (566 sections, the whole company-registration
+    // answer) vanished from retrieval while the manifest still claimed it was
+    // staged. Missing source data must always be loud.
+    console.error(`[local-corpus] MISSING FILE for staged act "${act}": ${file}`);
+    addFile.missing = (addFile.missing || 0) + 1;
+    return;
+  }
   const text = fs.readFileSync(file, "utf8");
   for (const [index, section] of splitSections(text).entries()) {
     const seed = `${act}|${section.section}|${index}`;
@@ -117,7 +124,7 @@ function load() {
     });
   }
   byArea = store;
-  console.log(`[local-corpus] Loaded ${[...store.values()].reduce((n, rows) => n + rows.length, 0)} provisions across ${store.size} practice areas`);
+  console.log(`[local-corpus] Loaded ${[...store.values()].reduce((n, rows) => n + rows.length, 0)} provisions across ${store.size} practice areas${addFile.missing ? ` — WARNING: ${addFile.missing} staged act file(s) MISSING on disk` : ""}`);
   return store;
 }
 

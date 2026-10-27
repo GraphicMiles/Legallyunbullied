@@ -15,6 +15,8 @@ const tests = [
   "test-job-queue.js",
   "test-safety-ack-restart.js",
   "test-v2-guardrails.js",
+  "test-corpus-coverage.js",
+  "test-facts-sufficiency-gate.js",
 ];
 
 let failed = 0;
