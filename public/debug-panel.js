@@ -418,7 +418,7 @@
       ".dbg-msg{color:#f5f5f2;word-break:break-word;white-space:pre-wrap;}",
       ".dbg-extra{display:block;color:#6b6b66;margin-top:2px;}",
       ".dbg-empty{color:#6b6b66;padding:24px 12px;text-align:center;}",
-      "@media (max-width:600px){.dbg-row{grid-template-columns:72px 40px 1fr;}.dbg-src{display:none;}#lu-debug-panel{right:8px;left:8px;width:auto;bottom:136px;}}",
+      "@media (max-width:600px){.dbg-row{grid-template-columns:72px 40px 1fr;}.dbg-src{display:none;}#lu-debug-panel{right:8px;left:8px;width:auto;bottom:136px;}#lu-debug-fab{bottom:186px;}}",
     ].join("");
     document.head.appendChild(style);
 

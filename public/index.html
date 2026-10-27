@@ -71,10 +71,50 @@
     --composer-max-width: 780px;
     --border-width: 1px;
 
-    /* --- motion --- */
-    --ease: cubic-bezier(0.4, 0, 0.2, 1);
-    --dur-fast: 120ms;
-    --dur-base: 180ms;
+    /* --- motion ---
+       Spring-derived curves (apple-design): critically damped settle is the
+       default, a hint of overshoot only for pop/pill arrivals, and a mirrored
+       in-out curve for reversible, gesture-like transitions (drawers, sheets).
+       Interaction feedback must land on pointer-down, not after release. --- */
+    --ease:        cubic-bezier(0.4, 0, 0.2, 1);        /* legacy, prefer tokens below */
+    --ease-out:     cubic-bezier(0.22, 0.61, 0.36, 1);  /* fast exit, gentle settle */
+    --ease-spring:  cubic-bezier(0.34, 1.4, 0.64, 1);   /* hair of overshoot — tiny pops only */
+    --ease-inout:   cubic-bezier(0.42, 0, 0.58, 1);     /* mirrored, reversible paths */
+    --ease-press:   cubic-bezier(0.33, 0, 0.67, 0);     /* snap into press, fast */
+    --dur-press: 90ms;
+    --dur-fast:  120ms;
+    --dur-base:  180ms;
+    --dur-med:   240ms;
+    --dur-slow:  320ms;
+  }
+
+  /* Global press feedback (apple-design §1: respond on pointer-down, instant).
+     Every tappable control compresses ~3% the moment it is touched. */
+  .btn:not([disabled]):active, .icon-btn:not([disabled]):active,
+  .chat-status__home:active, .disclaimer-pop__close:active,
+  .modal-card__close:active, .msg-action-btn:active,
+  .followup-chip:active, .history__kebab:active,
+  .auth-signin-btn:active, .modal-card__tab:active {
+    transform: scale(0.965);
+    transition-property: transform;
+    transition-duration: var(--dur-press);
+    transition-timing-function: var(--ease-press);
+  }
+
+  /* Reduced motion (apple-design §14): motion is replaced by gentle
+     cross-fades; no translation, no overshoot, no looping oscillation. */
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto !important; }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: var(--dur-fast) !important;
+      transition-timing-function: ease !important;
+    }
+  }
+  /* Reduced transparency: frosted surfaces fall back to solid. */
+  @media (prefers-reduced-transparency: reduce) {
+    :root { --color-translucent-topbar: var(--color-bg); }
   }
 
   /* ============================================================
@@ -205,7 +245,11 @@
     border-radius: var(--radius-md);
     padding: var(--space-3) var(--space-4);
     cursor: pointer;
-    transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+    transition: background var(--dur-fast) var(--ease-out),
+                border-color var(--dur-fast) var(--ease-out),
+                color var(--dur-fast) var(--ease-out),
+                transform var(--dur-press) var(--ease-press),
+                box-shadow var(--dur-base) var(--ease-out);
     white-space: nowrap;
   }
 
@@ -382,10 +426,10 @@
     flex-direction: column;
     gap: 2px;
     z-index: 80;
-    animation: menuIn 0.12s var(--ease) both;
+    animation: menuIn var(--dur-fast) var(--ease-spring) both;
   }
   @keyframes menuIn {
-    from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+    from { opacity: 0; transform: translateY(-4px) scale(0.96); }
     to { opacity: 1; transform: translateY(0) scale(1); }
   }
   .menu-popover__item {
@@ -559,9 +603,12 @@
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
     z-index: 30;
   }
-  .scrim.is-visible { display: block; }
+  .scrim.is-visible { display: block; animation: scrimFade var(--dur-base) var(--ease-out) both; }
+  @keyframes scrimFade { from { opacity: 0; } to { opacity: 1; } }
 
   /* ------------------------------------------------------------
      MODALS (auth + confirm dialogs)
@@ -576,7 +623,7 @@
     justify-content: center;
     padding: var(--space-5);
   }
-  .modal-overlay.is-visible { display: flex; }
+  .modal-overlay.is-visible { display: flex; animation: scrimFade var(--dur-base) var(--ease-out) both; }
 
   .modal-card {
     width: 100%;
@@ -585,7 +632,7 @@
     border-radius: var(--radius-lg);
     padding: var(--space-6);
     position: relative;
-    animation: menuIn 0.15s var(--ease) both;
+    animation: menuIn var(--dur-base) var(--ease-spring) both;
   }
   .modal-card--small { max-width: 320px; text-align: center; }
 
@@ -698,6 +745,23 @@
     align-items: center;
     gap: var(--space-3);
     padding: 0 var(--space-5);
+    /* Floating material (apple-design §12): content scrolls under a frosted
+       layer, edges fade instead of a hard 1px divider. */
+    background: var(--color-translucent-topbar, rgba(30, 31, 34, 0.78));
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    position: relative;
+    z-index: 5;
+  }
+  .topbar::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0;
+    bottom: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent, rgba(236, 236, 238, 0.08) 20%,
+      rgba(236, 236, 238, 0.08) 80%, transparent);
   }
 
   .icon-btn {
@@ -708,7 +772,9 @@
     height: 34px;
     border-radius: var(--radius-md);
     color: var(--color-text-muted);
-    transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+    transition: background var(--dur-fast) var(--ease-out),
+                color var(--dur-fast) var(--ease-out),
+                transform var(--dur-press) var(--ease-press);
     flex-shrink: 0;
   }
   .icon-btn:hover { background: var(--color-surface); color: var(--color-text); }
@@ -879,11 +945,11 @@
     display: flex;
     gap: var(--space-3);
     max-width: 100%;
-    animation: msgIn 0.24s var(--ease) both;
+    animation: msgIn var(--dur-med) var(--ease-spring) both;
   }
   @keyframes msgIn {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateY(10px) scale(0.985); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
   }
   .msg--user { justify-content: flex-end; }
 
@@ -924,6 +990,8 @@
     border-radius: var(--radius-lg) var(--radius-lg) var(--space-1) var(--radius-lg);
     padding: 9px 13px;
     color: var(--color-text);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+    transition: transform var(--dur-fast) var(--ease-out);
   }
 
   .msg--agent .msg__body { max-width: min(620px, 88%); }
@@ -1138,13 +1206,13 @@
     background: var(--color-bg-raised);
     border-radius: var(--radius-full);
     padding: 3px 9px 3px 7px;
-    animation: chipIn 0.28s var(--ease) both;
+    animation: chipIn var(--dur-med) var(--ease-spring) both;
   }
   .trace-chip svg { width: 10px; height: 10px; color: var(--color-accent); }
   .trace-chip i { font-size: 9px; color: var(--color-accent); }
   @keyframes chipIn {
-    from { opacity: 0; transform: translateY(3px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateY(6px) scale(0.92); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
   }
 
   .spinner {
@@ -1253,7 +1321,7 @@
   @keyframes cursorBlink { 50% { opacity: 0; } }
 
   .answer-section {
-    animation: sectionIn 0.3s var(--ease) both;
+    animation: sectionIn var(--dur-med) var(--ease-out) both;
   }
   @keyframes sectionIn {
     from { opacity: 0; transform: translateY(8px); }
@@ -1285,7 +1353,7 @@
     border-radius: var(--radius-md);
     background: var(--color-bg-raised);
     overflow: hidden;
-    animation: chipIn 0.3s var(--ease) both;
+    animation: chipIn var(--dur-med) var(--ease-spring) both;
   }
   .context-card__head {
     display: flex;
@@ -1359,7 +1427,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    animation: sectionIn 0.3s var(--ease) both;
+    animation: sectionIn var(--dur-med) var(--ease-out) both;
   }
   .verdict--self {
     background: rgba(76, 174, 107, 0.10);
@@ -1379,7 +1447,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
-    animation: sectionIn 0.3s var(--ease) both;
+    animation: sectionIn var(--dur-med) var(--ease-out) both;
   }
   .notice-card__head { display: flex; align-items: flex-start; gap: var(--space-2); }
   .notice-card__icon {
@@ -1474,7 +1542,7 @@
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    animation: sectionIn 0.3s var(--ease) both;
+    animation: sectionIn var(--dur-med) var(--ease-out) both;
   }
   .msg__meta-text { flex: 1; min-width: 0; }
   .msg-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
@@ -1499,7 +1567,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);
-    animation: sectionIn 0.3s var(--ease) both;
+    animation: sectionIn var(--dur-med) var(--ease-out) both;
   }
   .followup-chip {
     display: flex;
@@ -1536,9 +1604,13 @@
     align-items: flex-end;
     gap: var(--space-2);
     border-radius: var(--radius-lg);
-    background: var(--color-surface);
+    background: rgba(38, 39, 43, 0.92);
+    backdrop-filter: blur(20px) saturate(170%);
+    -webkit-backdrop-filter: blur(20px) saturate(170%);
     padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
-    transition: border-color var(--dur-fast) var(--ease);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+    transition: border-color var(--dur-fast) var(--ease),
+                box-shadow var(--dur-base) var(--ease-out);
   }
   .composer__form:focus-within { border-color: var(--color-accent-border); }
   .composer__input {
@@ -1622,11 +1694,16 @@
       bottom: 0;
       width: min(300px, 84vw);
       z-index: 40;
+      /* Reversible path (apple-design §7): in == out, mirrored easing curve. */
       transform: translateX(-100%);
-      transition: transform var(--dur-base) var(--ease);
+      transition: transform var(--dur-med) var(--ease-inout);
       box-shadow: none;
+      will-change: transform;
     }
-    .sidebar.is-open { transform: translateX(0); }
+    .sidebar.is-open {
+      transform: translateX(0);
+      box-shadow: 12px 0 40px rgba(0, 0, 0, 0.45);
+    }
     .sidebar__close { display: inline-flex; }
     .menu-toggle { display: inline-flex; }
     .new-chat-mobile { display: inline-flex; }
