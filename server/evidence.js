@@ -101,10 +101,19 @@ function findUnverifiedInlineCitations(result, lookup) {
   const unknown = [];
 
   const actPattern = /\b([A-Z][A-Za-z0-9()'’&., -]{2,100}?\s(?:Act|Law|Constitution)(?:\s+\d{4})?)\b/g;
+  // Anaphoric references — "the Act", "this Act", "the said Act" — always
+  // denote the act already named in the same passage. They are not fresh
+  // citations of a new act, so the verifier must not count them as unknown.
+  // The greedy pattern previously swallowed whole sentences ending in "the
+  // Act" (e.g. "... must comply with the provisions of the Act") as a bogus
+  // act name.
+  const ANAPHORIC_ACT = /(?:^|[^\w])(?:the|this|the said|such|same)\s+(?:act|law|constitution)$/i;
   for (const match of raw.matchAll(actPattern)) {
-    const candidate = normalize(match[1]);
-    if (!allowedActs.some((act) => act === candidate || act.includes(candidate) || candidate.includes(act))) {
-      unknown.push(`act:${match[1].trim()}`);
+    const candidate = match[1].trim();
+    if (ANAPHORIC_ACT.test(candidate)) continue;
+    const norm = normalize(candidate);
+    if (!allowedActs.some((act) => act === norm || act.includes(norm) || norm.includes(act))) {
+      unknown.push(`act:${candidate}`);
     }
   }
 
@@ -123,6 +132,11 @@ function findUnverifiedInlineCitations(result, lookup) {
     }
     return false;
   };
+  // No anaphoric exemption for numbered sections: a bare "section 36 of the
+  // Act" still asserts content about a specific section. If s.36 wasn't
+  // retrieved for this run, that assertion is ungrounded and MUST be flagged
+  // — strictness here is the only thing standing between the user and
+  // plausible-sounding invented statute text.
   for (const match of raw.matchAll(sectionPattern)) {
     const candidate = normalize(match[1]);
     if (!sectionGrounded(candidate)) unknown.push(`section:${match[1].trim()}`);

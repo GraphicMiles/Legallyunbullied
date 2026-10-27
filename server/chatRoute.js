@@ -413,8 +413,12 @@ Respond with ONLY a JSON object:
 Return one claim_support item for every draft claim. "passed" is true only if quality >= 0.6, legal_safety >= 0.6, and no claim is unsupported or uncertain.`;
 
 async function critiqueDraft(client, model, question, provisions, draft) {
-  const provisionSummary = (provisions || []).slice(0, 14).map(p =>
-    `[${p.act}${p.section ? ", s." + p.section : ""}]: ${p.text.slice(0, 150)}...`
+  // The critic must see the SAME excerpts the drafter was given — a shorter
+  // view (the old 150-char slice vs the drafter's 700) made it flag grounded
+  // claims as "not in excerpt" (e.g. CAMA s.35(2)'s postal-box proviso sits
+  // past char 290: cited correctly, critic screamed hallucination anyway).
+  const provisionSummary = (provisions || []).map(p =>
+    `[${p.act}${p.section ? ", s." + p.section : ""}]: ${p.text.slice(0, 700)}...`
   ).join("\n");
 
   const userMsg = `Question: ${question}
