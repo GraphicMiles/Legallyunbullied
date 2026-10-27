@@ -151,6 +151,8 @@ Provide:
 - "reasoning_approach": Detailed 2-3 sentence description of how to systematically answer this question, including what legal framework to establish, how to apply it to the facts, and what remedies/guidance to provide
 - "stakeholders": Array of parties involved (e.g., ["tenant", "landlord", "court"])
 - "potential_remedies": Array of 2-4 possible legal remedies or outcomes to explore
+- "facts_sufficient": true/false. FALSE only when the correct IN-THE-LAW answer genuinely forks on a fact the user did not provide (entity type, state, contract existence, dates — where each branch of the law differs). Questions that need general guidance are facts_sufficient: true — answer from the general position instead of stalling.
+- "clarifying_question": when facts_sufficient is false, ONE short plain-language question asking for exactly that fact (e.g. "Do you have a written tenancy agreement, or was everything by word of mouth?"). Otherwise omit or set to null.
 
 Example (use realistic values, don't copy):
 {
@@ -680,6 +682,8 @@ function validateClassification(value) {
   if (!["simple", "complex"].includes(value.route)) errors.push("invalid_route");
   if (!Array.isArray(value.stakeholders)) errors.push("stakeholders_array_required");
   if (!Array.isArray(value.potential_remedies)) errors.push("potential_remedies_array_required");
+  if (value.facts_sufficient != null && typeof value.facts_sufficient !== "boolean") errors.push("facts_sufficient_boolean_invalid");
+  if (value.facts_sufficient === false && (typeof value.clarifying_question !== "string" || !value.clarifying_question.trim())) errors.push("clarifying_question_required_when_facts_missing");
   return { valid: errors.length === 0, errors };
 }
 
@@ -1656,6 +1660,25 @@ async function runChatPipeline(req) {
         retryAfter: busy.retryAfter,
       });
     }
+  }
+
+  // Step 2a: HITL — essential facts missing. The agent must not guess facts
+  // that fork the answer — a "register a company" question without the
+  // business structure is exactly the weak-answer trap. Ask once, then the
+  // pipeline re-runs with the clarified facts in history.
+  if (classification.facts_sufficient === false && classification.clarifying_question) {
+    await serverPersistMessage(req, { status: "needsInput", needsInputQuestion: classification.clarifying_question, needsInputField: "facts", pipelineStatus: "awaiting_input", unread: true });
+    console.log(`[/api/chat] facts_sufficient=false → asking: "${classification.clarifying_question}"`);
+    return res.json({
+      needsInput: true,
+      question: classification.clarifying_question,
+      field: "facts",
+      context: {
+        practice_area: classification.practice_area,
+        urgency: classification.urgency,
+      },
+      provider: classifyProvider,
+    });
   }
 
   // Step 2b: HITL — if jurisdiction is unclear and the answer depends on state,
