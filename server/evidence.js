@@ -82,7 +82,7 @@ function collectRequestedIds(result, lookup) {
 }
 
 function resolveCitationTokens(text, lookup, used, unknown) {
-  return String(text || "").replace(/\[\[([^\]]+)\]\]/g, (_, rawId) => {
+  const resolved = String(text || "").replace(/\[\[([^\]]+)\]\]/g, (_, rawId) => {
     const id = String(rawId || "").trim();
     const p = lookup.byId.get(id);
     if (!p) {
@@ -92,6 +92,13 @@ function resolveCitationTokens(text, lookup, used, unknown) {
     used.add(id);
     return `**${officialLabel(p)}**`;
   });
+  // The drafter prompt says "never type Act labels yourself" but small models
+  // sometimes emit `**Act, s.X** [[token]]` anyway — replacing the token then
+  // renders the same label twice ("...s.40** **...s.40**"). Collapse adjacent
+  // duplicates idempotently. A different label back-to-back is left alone —
+  // that is a deliberate double citation (e.g. "...s.89** and **ACJA 2015,
+  // s.112**") of different provisions.
+  return resolved.replace(/\*\*([^*]+)\*\*\s*\*\*\1\*\*/g, "**$1**");
 }
 
 function findUnverifiedInlineCitations(result, lookup) {
