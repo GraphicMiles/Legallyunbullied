@@ -999,7 +999,6 @@
     border-radius: var(--radius-lg) var(--radius-lg) var(--space-1) var(--radius-lg);
     padding: 9px 13px;
     color: var(--color-text);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
     transition: transform var(--dur-fast) var(--ease-out);
   }
 
@@ -1590,9 +1589,11 @@
     border-radius: var(--radius-md);
     padding: 8px 12px;
     background: var(--color-surface);
-    transition: color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+    transition: color var(--dur-fast) var(--ease),
+                background var(--dur-fast) var(--ease),
+                transform var(--dur-press) var(--ease-press);
   }
-  .followup-chip:hover { color: var(--color-text); background: var(--color-accent-soft); }
+  .followup-chip:hover { color: var(--color-text); background: var(--color-accent-soft); transform: translateY(-1px); }
   .followup-chip svg { width: 11px; height: 11px; margin-top: 3px; color: var(--color-text-faint); flex-shrink: 0; }
   .followup-chip i { font-size: 10px; margin-top: 3px; color: var(--color-text-faint); flex-shrink: 0; }
   .followup-chip span { flex: 1; min-width: 0; line-height: 1.4; }
@@ -1617,9 +1618,7 @@
     backdrop-filter: blur(20px) saturate(170%);
     -webkit-backdrop-filter: blur(20px) saturate(170%);
     padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
-    transition: border-color var(--dur-fast) var(--ease),
-                box-shadow var(--dur-base) var(--ease-out);
+    transition: border-color var(--dur-fast) var(--ease);
   }
   .composer__form:focus-within { border-color: var(--color-accent-border); }
   .composer__input {

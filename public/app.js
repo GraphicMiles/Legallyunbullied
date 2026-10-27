@@ -361,11 +361,24 @@ import {
     }
   }
 
+  // In-flight token promise: concurrent API callers (sync, delete, chat…)
+  // used to each kick off their OWN securetoken POST, which is what those
+  // duplicate "securetoken.googleapis.com/v1/token" log pairs were. Everyone
+  // joins the same refresh instead.
+  let _idTokenInflight = null;
+  function idTokenShared(forceRefresh) {
+    if (!_idTokenInflight) {
+      _idTokenInflight = getIdToken(window.firebaseAuth.currentUser, forceRefresh)
+        .finally(() => { _idTokenInflight = null; });
+    }
+    return _idTokenInflight;
+  }
+
   async function getServerAuthHeaders() {
     const headers = { "Content-Type": "application/json" };
     if (!window.firebaseAuth || !window.firebaseAuth.currentUser) return headers;
     try {
-      const token = await getIdToken(window.firebaseAuth.currentUser);
+      const token = await idTokenShared(false);
       if (token) headers["Authorization"] = `Bearer ${token}`;
       return headers;
     } catch (e) {
@@ -376,13 +389,24 @@ import {
       dbgChatError("auth.token_refresh_failed", { phase: "first", message: e.message });
     }
     try {
-      const token = await getIdToken(window.firebaseAuth.currentUser, /* forceRefresh */ true);
+      const token = await idTokenShared(true);
       if (token) headers["Authorization"] = `Bearer ${token}`;
     } catch (e) {
       dbgChatError("auth.token_refresh_failed", { phase: "forced", message: e.message });
       console.warn("[server-sync] Auth token refresh failed twice — request will be unauthenticated:", e.message);
     }
     return headers;
+  }
+
+  // Sync fetches must never hang open-ended: without a timeout, a stalled
+  // request (cold start, captive portal, backgrounded tab) sat until the OS
+  // gave up — that 12s DELETE in the log. 10s ceiling keeps failures quick
+  // and retryable instead of blocking the queue.
+  function syncFetch(url, options = {}, timeoutMs = 10000) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(new Error(`Sync request timed out after ${timeoutMs}ms`)), timeoutMs);
+    return fetch(url, { ...options, signal: controller.signal })
+      .finally(() => clearTimeout(timer));
   }
 
   // Fetch all conversations from server and merge into local state.
@@ -578,7 +602,7 @@ import {
             // conversation under that exact document ID. The server only mints
             // a new ID when none was provided — never for a conversation that
             // already has one.
-            const createRes = await fetch("/api/conversations", {
+            const createRes = await syncFetch("/api/conversations", {
               method: "POST",
               headers,
               body: JSON.stringify({ id: convo.id, title: convo.title || "New question" }),
@@ -613,7 +637,7 @@ import {
           // the conversation was first created (this was never synced before).
           if (convo._serverTitle !== convo.title) {
             try {
-              const titleRes = await fetch(`/api/conversations/${convo.id}`, {
+              const titleRes = await syncFetch(`/api/conversations/${convo.id}`, {
                 method: "PUT",
                 headers,
                 body: JSON.stringify({ title: convo.title || "New question" }),
@@ -632,7 +656,7 @@ import {
           for (const msg of convo.messages) {
             if (msg._synced) continue;
             try {
-              const msgRes = await fetch(`/api/conversations/${convo.id}/messages/${msg.id}`, {
+              const msgRes = await syncFetch(`/api/conversations/${convo.id}/messages/${msg.id}`, {
                 method: "PUT",
                 headers,
                 body: JSON.stringify(msg),
@@ -668,7 +692,7 @@ import {
     if (!isServerMode()) return;
     try {
       const headers = await getServerAuthHeaders();
-      const res = await fetch(`/api/conversations/${convoId}/messages/${message.id}`, {
+      const res = await syncFetch(`/api/conversations/${convoId}/messages/${message.id}`, {
         method: "PUT",
         headers,
         body: JSON.stringify(message),
@@ -739,7 +763,7 @@ import {
       let migratedTotal = 0;
       let skippedTotal = 0;
       for (const batch of batches) {
-        const res = await fetch("/api/conversations/migrate", {
+        const res = await syncFetch("/api/conversations/migrate", {
           method: "POST",
           headers,
           body: JSON.stringify({ conversations: batch }),
@@ -792,7 +816,7 @@ import {
     if (!isServerMode()) return;
     try {
       const headers = await getServerAuthHeaders();
-      await fetch(`/api/conversations/${convoId}`, { method: "DELETE", headers });
+      await syncFetch(`/api/conversations/${convoId}`, { method: "DELETE", headers });
     } catch (e) {
       console.warn(`[server-sync] Failed to delete conversation ${convoId}:`, e.message);
     }

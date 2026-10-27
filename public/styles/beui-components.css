@@ -521,12 +521,10 @@
 .beui-prompt-bar__button--submit:hover {
   background: var(--color-accent-hover);
   transform: scale(1.06);
-  box-shadow: 0 0 0 4px var(--color-accent-soft);
 }
 
 .beui-prompt-bar__button--submit:not(:disabled):active {
   transform: scale(0.94);
-  box-shadow: none;
 }
 
 .beui-prompt-bar__button--submit:disabled {
@@ -623,7 +621,6 @@
   border-radius: var(--beui-radius-lg);
   padding: var(--beui-spacing-lg);
   margin: var(--beui-spacing-md) 0;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
 }
 
 .beui-recommendation__header {
