@@ -914,6 +914,15 @@
    MOBILE RESPONSIVE
    ========================================================================== */
 
+/* Coarse-pointer (touch) targets: hit the 44px floor on touch devices
+   without changing the compact desktop layout. */
+@media (pointer: coarse) {
+  .beui-prompt-bar__button {
+    width: 44px;
+    height: 44px;
+  }
+}
+
 @media (max-width: 768px) {
   .beui-recommendation {
     padding: var(--beui-spacing-md);
@@ -961,6 +970,17 @@
   }
 }
 
+@keyframes spring-in {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @keyframes pop-in {
   0% {
     opacity: 0;
@@ -985,4 +1005,113 @@
 }
 .beui-prompt-bar.is-gated .beui-prompt-bar__button--submit {
   display: none;
+}
+
+/* ==========================================================================
+   SAFETY APPROVAL (high-risk gate card)
+   One stylesheet implementation shared by the live card and the reload-time
+   static re-render. Was previously two copies of the same inline styles in
+   app.js; kept in one place so live and reload paths cannot diverge.
+   ========================================================================== */
+
+.safety-approval {
+  background: rgba(229, 72, 77, 0.08);
+  border: 1px solid rgba(229, 72, 77, 0.35);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 12px 0;
+  animation: spring-in 320ms cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.safety-approval__row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.safety-approval__icon {
+  flex-shrink: 0;
+  color: var(--color-danger, #e5484d);
+  font-size: 20px;
+  margin-top: 2px;
+}
+
+.safety-approval__title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--color-danger, #e5484d);
+  margin-bottom: 6px;
+  letter-spacing: 0.01em;
+}
+
+.safety-approval__body {
+  font-size: 13px;
+  color: var(--color-text-muted, #9a9a94);
+  line-height: 1.55;
+}
+
+.safety-approval__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.safety-approval__btn {
+  padding: 10px 16px;
+  min-height: 44px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 120ms ease, opacity 120ms ease, background 120ms ease;
+}
+
+.safety-approval__btn--cancel {
+  background: transparent;
+  border: 1px solid var(--color-border, #2a2a2a);
+  color: var(--color-text-muted, #9a9a94);
+}
+
+.safety-approval__btn--cancel:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text);
+}
+
+.safety-approval__btn--confirm {
+  background: var(--color-danger, #e5484d);
+  border: none;
+  color: white;
+  font-weight: 600;
+}
+
+.safety-approval__btn--confirm:hover {
+  filter: brightness(1.08);
+}
+
+.safety-approval__btn:active {
+  transform: scale(0.97);
+  opacity: 0.88;
+}
+
+.safety-approval__btn:focus-visible {
+  outline: 2px solid var(--color-focus, #7fb4ff);
+  outline-offset: 2px;
+}
+
+.safety-approval__btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .safety-approval {
+    animation: none;
+  }
+  .safety-approval__btn {
+    transition: none;
+  }
+  .safety-approval__btn:active {
+    transform: none;
+  }
 }
