@@ -3113,48 +3113,43 @@ import {
     if (data.critique) msg.critique = data.critique;
   }
 
-  // Safety acknowledgment UI — wired to HITL when high-risk answer fails critique
-  function renderSafetyApproval(agentMsg, response, token) {
-    if (!live.refs || !live.refs.body) return;
 
+  // One builder for the high-risk gate card, used by BOTH the live card and
+  // the reload-time static re-render. They used to be two near-identical
+  // inline-styled blocks that drifted apart. Styling lives in
+  // beui-components.css (.safety-approval*) — no duplicated inline cssText.
+  function buildSafetyApprovalCard({ message, cancelLabel }) {
     const wrap = document.createElement("div");
     wrap.className = "safety-approval";
-    wrap.style.cssText = `
-      background: rgba(229, 72, 77, 0.08);
-      border: 1px solid rgba(229, 72, 77, 0.35);
-      border-radius: 10px;
-      padding: 16px;
-      margin: 12px 0;
-    `;
-
     wrap.innerHTML = `
-      <div style="display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px;">
-        <div style="flex-shrink:0; color: var(--color-danger, #e5484d); font-size: 20px; margin-top: 2px;">
+      <div class="safety-approval__row">
+        <div class="safety-approval__icon" aria-hidden="true">
           <i class="fa-solid fa-triangle-exclamation"></i>
         </div>
         <div>
-          <div style="font-weight: 600; font-size: 14px; color: var(--color-danger, #e5484d); margin-bottom: 6px;">
+          <div class="safety-approval__title">
             High-risk legal area — review required
           </div>
-          <div style="font-size: 13px; color: var(--color-text-muted, #9a9a94); line-height: 1.5;">
-            ${escapeHtml(response.context?.message || response.question || "This response could not be fully verified.")}
+          <div class="safety-approval__body">
+            ${escapeHtml(message || "This response could not be fully verified.")}
           </div>
         </div>
       </div>
-      <div style="display: flex; gap: 8px; justify-content: flex-end;">
-        <button class="safety-ack-cancel" style="
-          padding: 8px 16px; background: transparent;
-          border: 1px solid var(--color-border, #2a2a2a);
-          border-radius: 6px; color: var(--color-text-muted, #9a9a94);
-          font-size: 13px; cursor: pointer;
-        ">Cancel</button>
-        <button class="safety-ack-confirm" style="
-          padding: 8px 16px; background: var(--color-danger, #e5484d);
-          border: none; border-radius: 6px; color: white;
-          font-size: 13px; font-weight: 600; cursor: pointer;
-        ">I understand, show me</button>
+      <div class="safety-approval__actions">
+        <button class="safety-approval__btn safety-approval__btn--cancel safety-ack-cancel">${escapeHtml(cancelLabel)}</button>
+        <button class="safety-approval__btn safety-approval__btn--confirm safety-ack-confirm">I understand, show me</button>
       </div>
     `;
+    return wrap;
+  }
+
+  // Safety acknowledgment UI — wired to HITL when high-risk answer fails critique
+  function renderSafetyApproval(agentMsg, response, token) {
+    if (!live.refs || !live.refs.body) return;
+    const wrap = buildSafetyApprovalCard({
+      message: response.context?.message || response.question,
+      cancelLabel: "Cancel",
+    });
 
     // Cancel — dismiss the card
     wrap.querySelector(".safety-ack-cancel").addEventListener("click", () => {
@@ -3363,44 +3358,10 @@ import {
   // on reload instead of being misread as "incomplete".
 
   function buildSafetyApprovalStatic(msg) {
-    const wrap = document.createElement("div");
-    wrap.className = "safety-approval";
-    wrap.style.cssText = `
-      background: rgba(229, 72, 77, 0.08);
-      border: 1px solid rgba(229, 72, 77, 0.35);
-      border-radius: 10px;
-      padding: 16px;
-      margin: 12px 0;
-    `;
-    const message = (msg.safetyAckContext && msg.safetyAckContext.message) || msg.safetyAckQuestion || "This response could not be fully verified.";
-    wrap.innerHTML = `
-      <div style="display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px;">
-        <div style="flex-shrink:0; color: var(--color-danger, #e5484d); font-size: 20px; margin-top: 2px;">
-          <i class="fa-solid fa-triangle-exclamation"></i>
-        </div>
-        <div>
-          <div style="font-weight: 600; font-size: 14px; color: var(--color-danger, #e5484d); margin-bottom: 6px;">
-            High-risk legal area — review required
-          </div>
-          <div style="font-size: 13px; color: var(--color-text-muted, #9a9a94); line-height: 1.5;">
-            ${escapeHtml(message)}
-          </div>
-        </div>
-      </div>
-      <div style="display: flex; gap: 8px; justify-content: flex-end;">
-        <button class="safety-ack-cancel" style="
-          padding: 8px 16px; background: transparent;
-          border: 1px solid var(--color-border, #2a2a2a);
-          border-radius: 6px; color: var(--color-text-muted, #9a9a94);
-          font-size: 13px; cursor: pointer;
-        ">Dismiss</button>
-        <button class="safety-ack-confirm" style="
-          padding: 8px 16px; background: var(--color-danger, #e5484d);
-          border: none; border-radius: 6px; color: white;
-          font-size: 13px; font-weight: 600; cursor: pointer;
-        ">I understand, show me</button>
-      </div>
-    `;
+    const wrap = buildSafetyApprovalCard({
+      message: (msg.safetyAckContext && msg.safetyAckContext.message) || msg.safetyAckQuestion,
+      cancelLabel: "Dismiss",
+    });
 
     wrap.querySelector(".safety-ack-cancel").addEventListener("click", () => {
       wrap.style.opacity = "0.5";

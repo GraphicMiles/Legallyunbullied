@@ -481,6 +481,24 @@
 
   loadPersisted();
 
+  // Developer tooling: hidden from regular users. Enable with ?debug=1 once
+  // (persisted to localStorage) or flip lu_debug=1 in devtools directly.
+  // ?debug=0 turns it back off.
+  var debugEnabled = (function () {
+    try {
+      var params = new URLSearchParams(window.location.search);
+      if (params.get("debug") === "1") {
+        localStorage.setItem("lu_debug", "1");
+      } else if (params.get("debug") === "0") {
+        localStorage.removeItem("lu_debug");
+      }
+      return localStorage.getItem("lu_debug") === "1";
+    } catch (e) {
+      return false;
+    }
+  })();
+  if (!debugEnabled) return;
+
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", mount);
   } else {
