@@ -20,6 +20,8 @@ const conversationRoute = require("./server/conversationRoute");
 const { requireAuth, requireAdmin } = require("./server/authMiddleware");
 const { sweepAndStart } = require("./server/jobRunner");
 const { probeProviders, getProviderHealth } = require("./server/providerHealth");
+const debugLog = require("./server/debugLog");
+debugLog.attach();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -167,6 +169,14 @@ app.post("/api/cache-invalidate", requireAuth, requireAdmin, (req, res) => {
   invalidateCache();
   console.log(`[cache] Invalidated by admin: ${req.uid}`);
   res.json({ success: true, message: "Cache invalidated" });
+});
+
+// ── Server debug logs (admin only) ────────────────────────────────────────
+// The in-app debug panel pulls this on demand so a bug report can carry the
+// server-side pipeline trace too. Admin-gated like the cache intel above —
+// log lines can reveal provider state and internal stage timings.
+app.get("/api/debug/server-logs", requireAuth, requireAdmin, (req, res) => {
+  res.json({ entries: debugLog.snapshot(req.query.limit), captured: true });
 });
 
 // ── Conversation persistence API ──────────────────────────────────────────
