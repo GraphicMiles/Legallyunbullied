@@ -244,8 +244,11 @@ async function main() {
       await page.close();
     });
 
-    // ── 5. Sign-in automatically runs the legacy cleanup ──────────────────
-    await check("sign-in automatically runs the safe legacy cleanup", async () => {
+    // ── 5. Retired legacy cleanup never runs on sign-in ───────────────────
+    // The every-load POST /api/conversations/cleanup was maintenance for the
+    // long-fixed sync-loop bug. It was retired — sign-in must no longer call
+    // it at all (it used to cost a 2-3s server round-trip on every load).
+    await check("sign-in no longer runs the retired legacy cleanup", async () => {
       const page = await setupPage(browser);
       let cleanupCalls = 0;
       const order = [];
@@ -256,7 +259,7 @@ async function main() {
       await page.route("**/api/conversations/cleanup", (route) => {
         cleanupCalls += 1;
         order.push("cleanup");
-        route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, deleted: 3 }) });
+        route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, deleted: 0 }) });
       });
       await page.route("**/api/conversations?limit=*", (route) => {
         order.push("load");
@@ -269,16 +272,12 @@ async function main() {
       await page.waitForFunction(() => document.querySelector(".history__item"), null, { timeout: 8000 });
       await page.waitForTimeout(400);
 
-      assert.strictEqual(cleanupCalls, 1, "cleanup must run exactly once on sign-in");
-      assert.ok(order.indexOf("migrate") < order.indexOf("cleanup"), "cleanup must run after migration");
-      // The summary list load now paints immediately (in parallel with the
-      // migrate -> cleanup chain) so sign-in never blocks on legacy cleanup.
-      assert.ok(order.indexOf("load") === 0, "the first summary load must not wait for migration/cleanup");
+      assert.strictEqual(cleanupCalls, 0, "retired cleanup endpoint must never be called");
 
       const info = await page.evaluate(() => ({
         historyItems: [...document.querySelectorAll(".history__item")].map((b) => b.dataset.id),
       }));
-      assert.deepStrictEqual(info.historyItems, ["kept-chat"], "sidebar reflects the post-cleanup server state");
+      assert.deepStrictEqual(info.historyItems, ["kept-chat"], "sidebar reflects the server state");
       await page.close();
     });
 

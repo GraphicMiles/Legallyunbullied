@@ -6,7 +6,7 @@
  *   2. POST /api/conversations is idempotent for the same ID.
  *   3. POST /api/conversations/migrate preserves original IDs.
  *   4. POST /api/conversations/migrate is idempotent (never duplicates).
- *   5. POST /api/conversations/cleanup keeps the newest empty conversation.
+ *   5. The retired POST /api/conversations/cleanup route is gone (404).
  *   6. Ownership checks return 404 for foreign users.
  *
  * Run: node test-conversation-identity.js
@@ -237,32 +237,17 @@ async function main() {
     assert.ok(mapped && mapped !== "not a valid id!", "invalid ID should be remapped to a generated ID");
   });
 
-  await check("cleanup keeps the newest empty conversation", async () => {
-    // Reset uid-specific store by using a fresh uid
+  await check("retired cleanup endpoint no longer exists", async () => {
+    // Maintenance for the long-fixed sync-loop bug was retired — the client
+    // never calls it and the route is gone. A manual POST must 404.
     CURRENT_UID = "cleanup-user";
     const app = makeApp();
     await request(app, "POST", "/api/conversations", { id: "old-1", title: "New question" });
-    await request(app, "POST", "/api/conversations", { id: "old-2", title: "New question" });
     await request(app, "POST", "/api/conversations", { id: "newest", title: "New question" });
-    // Simulate differing updatedAt
-    mockDb._store.get("users/cleanup-user/conversations/old-1").updatedAt = 1000;
-    mockDb._store.get("users/cleanup-user/conversations/old-2").updatedAt = 2000;
-    mockDb._store.get("users/cleanup-user/conversations/newest").updatedAt = 3000;
-
     const res = await request(app, "POST", "/api/conversations/cleanup", {});
-    assert.strictEqual(res.json.deleted, 2);
-    assert.ok(!mockDb._store.get("users/cleanup-user/conversations/old-1"), "old-1 should be deleted");
-    assert.ok(!mockDb._store.get("users/cleanup-user/conversations/old-2"), "old-2 should be deleted");
-    assert.ok(mockDb._store.get("users/cleanup-user/conversations/newest"), "newest empty chat must survive");
-  });
-
-  await check("cleanup with a single empty conversation deletes nothing", async () => {
-    CURRENT_UID = "cleanup-solo-user";
-    const app = makeApp();
-    await request(app, "POST", "/api/conversations", { id: "solo", title: "New question" });
-    const res = await request(app, "POST", "/api/conversations/cleanup", {});
-    assert.strictEqual(res.json.deleted, 0);
-    assert.ok(mockDb._store.get("users/cleanup-solo-user/conversations/solo"), "solo empty chat must survive");
+    assert.strictEqual(res.status, 404, "retired cleanup route must 404");
+    assert.ok(mockDb._store.get("users/cleanup-user/conversations/old-1"), "no data may be deleted by a retired route");
+    assert.ok(mockDb._store.get("users/cleanup-user/conversations/newest"), "no data may be deleted by a retired route");
   });
 
   await check("ownership: foreign user gets 404 (not the data)", async () => {
