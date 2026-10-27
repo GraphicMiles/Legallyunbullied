@@ -1925,26 +1925,15 @@ import {
     if (r._safetyFlag) {
       const banner = document.createElement("div");
       banner.className = "safety-flag-banner";
-      banner.style.cssText = `
-        background: var(--color-surface, #1a1a1a);
-        border: 1px solid var(--color-border, #2a2a2a);
-        border-left: 3px solid var(--color-accent, #f2b705);
-        border-radius: 8px;
-        padding: 10px 14px;
-        margin-bottom: 16px;
-        display: flex;
-        gap: 10px;
-        align-items: flex-start;
-      `;
       banner.innerHTML = `
-        <div style="flex-shrink:0; color: var(--color-accent, #f2b705); font-size: 14px; margin-top: 2px;">
+        <div class="safety-flag-banner__icon">
           <i class="fa-solid fa-circle-exclamation"></i>
         </div>
         <div>
-          <div style="font-weight: 600; font-size: 13px; color: var(--color-text, #f5f5f2); margin-bottom: 2px;">
+          <div class="safety-flag-banner__title">
             Treat this carefully — high-risk area
           </div>
-          <div style="font-size: 12.5px; color: var(--color-text-muted, #9a9a94); line-height: 1.45;">
+          <div class="safety-flag-banner__body">
             ${escapeHtml(r._safetyFlag.message || "This response covers a sensitive legal area and could not be fully verified.")}
           </div>
         </div>
@@ -1998,23 +1987,14 @@ import {
     followUps.className = "answer-followups";
     if (r.followUps && r.followUps.length > 0) {
       const fuTitle = document.createElement("div");
-      fuTitle.style.cssText = "font-size: 11px; font-weight: 600; color: var(--color-text-faint, #6b6b66); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;";
+      fuTitle.className = "answer-followups__title";
       fuTitle.textContent = "Related questions";
       followUps.appendChild(fuTitle);
       r.followUps.forEach((q) => {
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.style.cssText = `
-          display: block; width: 100%; text-align: left;
-          padding: 8px 12px; margin-bottom: 4px;
-          background: var(--color-surface, #1a1a1a);
-          border: 1px solid var(--color-border, #2a2a2a);
-          border-radius: 8px; color: var(--color-text-muted, #9a9a94);
-          font-size: 13px; cursor: pointer; transition: background 0.15s;
-        `;
+        btn.className = "followup-chip";
         btn.textContent = q;
-        btn.addEventListener("mouseenter", () => { btn.style.background = "var(--color-border, #2a2a2a)"; });
-        btn.addEventListener("mouseleave", () => { btn.style.background = "var(--color-surface, #1a1a1a)"; });
         btn.addEventListener("click", () => {
           if (el.composerInput) { el.composerInput.value = q; el.composerInput.focus(); }
           if (window.promptBar && window.promptBar.setValue) window.promptBar.setValue(q);
@@ -2062,51 +2042,25 @@ import {
     // Simple inline citation list - no card styling
     const list = document.createElement("div");
     list.className = "answer-sources";
-    list.style.cssText = `
-      margin-top: 12px;
-      padding: 8px 0;
-      border-top: 1px solid var(--color-border-soft, #1f1f1f);
-    `;
+
     
     const label = document.createElement("div");
-    label.style.cssText = `
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--color-text-faint, #6b6b66);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 6px;
-    `;
+    label.className = "answer-sources__label";
     label.textContent = "Sources";
     list.appendChild(label);
     
     sources.forEach((src) => {
       const item = document.createElement("div");
-      item.style.cssText = `
-        font-size: 12px;
-        color: var(--color-text-muted, #9a9a94);
-        margin-bottom: 4px;
-        padding-left: 12px;
-        border-left: 2px solid var(--color-accent-border, rgba(242, 183, 5, 0.35));
-      `;
+      item.className = "answer-sources__item";
       
       const name = document.createElement("span");
-      name.style.cssText = `
-        font-weight: 600;
-        color: var(--color-text, #f5f5f2);
-      `;
+      name.className = "answer-sources__name";
       name.textContent = src.label || "Unknown Source";
       item.appendChild(name);
       
       if (src.excerpt) {
         const excerpt = document.createElement("span");
-        excerpt.style.cssText = `
-          display: block;
-          margin-top: 2px;
-          font-style: italic;
-          color: var(--color-text-faint, #6b6b66);
-          line-height: 1.4;
-        `;
+        excerpt.className = "answer-sources__excerpt";
         // Truncate long excerpts
         const maxLen = 200;
         excerpt.textContent = src.excerpt.length > maxLen 
@@ -2473,14 +2427,13 @@ import {
         
         // Simple reasoning text display
         const reasoningText = document.createElement("span");
-        reasoningText.className = "reasoning-text";
+        reasoningText.className = "trace__reasoning";
         reasoningText.textContent = "Thinking";
-        reasoningText.style.cssText = "font-size: 12px; color: var(--color-text-muted);";
         statusSpan.appendChild(reasoningText);
         
         // Progress timer
         const progressText = document.createElement("span");
-        progressText.style.cssText = "margin-left: 0.5em; font-size: 12px; color: var(--color-text-faint); font-variant-numeric: tabular-nums;";
+        progressText.className = "trace__progress";
         progressText.textContent = "0s";
         statusSpan.appendChild(progressText);
         
@@ -2974,12 +2927,7 @@ import {
     wrap.className = "casual-reply-plain";
     
     const textContainer = document.createElement("div");
-    textContainer.style.cssText = `
-      font-size: 14px;
-      line-height: 1.6;
-      color: var(--color-text, #f5f5f2);
-      background: transparent;
-    `;
+    textContainer.className = "casual-reply-plain__text";
     
     wrap.appendChild(textContainer);
     live.refs.body.appendChild(wrap);
@@ -3025,55 +2973,27 @@ import {
   function buildNeedsInputCard(question, field, onAnswer) {
     const wrap = document.createElement("div");
     wrap.className = "needs-input";
-    wrap.style.cssText = `
-      background: var(--color-surface, #1a1a1a);
-      border: 1px solid var(--color-accent-border, rgba(242, 183, 5, 0.35));
-      border-radius: 10px;
-      padding: 14px;
-      margin: 12px 0;
-    `;
+
 
     const icon = document.createElement("div");
-    icon.innerHTML = '<i class="fa-solid fa-circle-question" style="color: var(--color-accent, #f2b705); font-size: 18px;"></i>';
-    icon.style.cssText = "margin-bottom: 8px;";
+    icon.className = "needs-input__icon";
+    icon.innerHTML = '<i class="fa-solid fa-circle-question"></i>';
 
     const q = document.createElement("p");
     q.textContent = question || "Can you clarify?";
-    q.style.cssText = `
-      font-size: 14px;
-      color: var(--color-text, #f5f5f2);
-      margin: 0 0 12px 0;
-      font-weight: 500;
-    `;
+    q.className = "needs-input__question";
 
     const inputRow = document.createElement("div");
-    inputRow.style.cssText = "display: flex; gap: 8px;";
+    inputRow.className = "needs-input__row";
 
     const input = document.createElement("input");
     input.type = "text";
     input.placeholder = field === "jurisdiction" ? "e.g., Lagos State" : "Your answer";
-    input.style.cssText = `
-      flex: 1;
-      padding: 8px 12px;
-      background: var(--color-bg, #0a0a0a);
-      border: 1px solid var(--color-border, #2a2a2a);
-      border-radius: 6px;
-      color: var(--color-text, #f5f5f2);
-      font-size: 14px;
-      outline: none;
-    `;
+    input.className = "needs-input__field";
 
     const submitBtn = document.createElement("button");
     submitBtn.textContent = "Send";
-    submitBtn.style.cssText = `
-      padding: 8px 16px;
-      background: var(--color-accent, #f2b705);
-      color: var(--color-accent-text, #14120a);
-      border: none;
-      border-radius: 6px;
-      font-weight: 600;
-      cursor: pointer;
-    `;
+    submitBtn.className = "needs-input__send";
 
     submitBtn.addEventListener("click", () => {
       const answer = input.value.trim();
@@ -3240,46 +3160,25 @@ import {
     
     const wrap = document.createElement("div");
     wrap.className = "providers-busy";
-    wrap.style.cssText = `
-      background: var(--color-surface, #1a1a1a);
-      border: 1px solid var(--color-border, #2a2a2a);
-      border-radius: 10px;
-      padding: 14px;
-      margin: 12px 0;
-    `;
     
     const icon = document.createElement("div");
-    icon.innerHTML = '<i class="fa-solid fa-hourglass-half" style="color: var(--color-accent, #f2b705); font-size: 18px;"></i>';
-    icon.style.cssText = "margin-bottom: 8px;";
+    icon.className = "providers-busy__icon";
+    icon.innerHTML = '<i class="fa-solid fa-hourglass-half"></i>';
     
     const title = document.createElement("p");
     title.textContent = willRetry
       ? `Providers are busy — retrying in ${retryAfter}s (attempt ${attempts} of ${MAX_BUSY_RETRIES})`
       : "Providers are busy — please try again in a few minutes";
-    title.style.cssText = `
-      font-size: 14px;
-      color: var(--color-text, #f5f5f2);
-      margin: 0 0 8px 0;
-      font-weight: 600;
-    `;
+    title.className = "providers-busy__title";
     
     const message = document.createElement("p");
     message.textContent = lawMd;
-    message.style.cssText = `
-      font-size: 13px;
-      color: var(--color-text-muted, #9a9a94);
-      margin: 0 0 8px 0;
-      line-height: 1.5;
-    `;
+    message.className = "providers-busy__body";
     
     if (actionsMd) {
       const steps = document.createElement("div");
       appendPlainSteps(steps, actionsMd);
-      steps.style.cssText = `
-        font-size: 13px;
-        color: var(--color-text, #f5f5f2);
-        margin: 0;
-      `;
+      steps.className = "providers-busy__steps";
       wrap.appendChild(icon);
       wrap.appendChild(title);
       wrap.appendChild(message);
@@ -3403,27 +3302,20 @@ import {
   function buildProvidersBusyStatic(msg) {
     const wrap = document.createElement("div");
     wrap.className = "providers-busy";
-    wrap.style.cssText = `
-      background: var(--color-surface, #1a1a1a);
-      border: 1px solid var(--color-border, #2a2a2a);
-      border-radius: 10px;
-      padding: 14px;
-      margin: 12px 0;
-    `;
     const retryAfter = msg.providersBusyRetryAfter || 30;
     const lawMd = msg.providersBusyLawMd || "All legal reasoning providers are currently busy.";
 
     const icon = document.createElement("div");
-    icon.innerHTML = '<i class="fa-solid fa-hourglass-half" style="color: var(--color-accent, #f2b705); font-size: 18px;"></i>';
-    icon.style.cssText = "margin-bottom: 8px;";
+    icon.className = "providers-busy__icon";
+    icon.innerHTML = '<i class="fa-solid fa-hourglass-half"></i>';
 
     const title = document.createElement("p");
     title.textContent = `Providers were busy — try again`;
-    title.style.cssText = `font-size: 14px; color: var(--color-text, #f5f5f2); margin: 0 0 8px 0; font-weight: 600;`;
+    title.className = "providers-busy__title";
 
     const message = document.createElement("p");
     message.textContent = lawMd;
-    message.style.cssText = `font-size: 13px; color: var(--color-text-muted, #9a9a94); margin: 0 0 8px 0; line-height: 1.5;`;
+    message.className = "providers-busy__body";
 
     wrap.appendChild(icon);
     wrap.appendChild(title);
@@ -3432,7 +3324,7 @@ import {
     if (msg.providersBusyActionsMd) {
       const steps = document.createElement("div");
       appendPlainSteps(steps, msg.providersBusyActionsMd);
-      steps.style.cssText = `font-size: 13px; color: var(--color-text, #f5f5f2); margin: 0;`;
+      steps.className = "providers-busy__steps";
       wrap.appendChild(steps);
     }
 
@@ -4519,11 +4411,7 @@ import {
     const pill = document.createElement("div");
     pill.id = "lu-offline-pill";
     pill.setAttribute("role", "status");
-    pill.style.cssText =
-      "position:fixed;top:calc(var(--topbar-height, 56px) + 8px);left:50%;transform:translateX(-50%);" +
-      "z-index:60;background:#2a1a04;color:#f2b705;border:1px solid rgba(242,183,5,.35);" +
-      "border-radius:999px;padding:6px 14px;font-size:12px;font-weight:600;font-family:inherit;" +
-      "pointer-events:none;";
+    pill.className = "lu-offline-pill";
     pill.textContent = "You're offline — conversations will load when you're back online.";
     document.body.appendChild(pill);
   }
