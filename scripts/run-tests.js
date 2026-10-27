@@ -17,6 +17,7 @@ const tests = [
   "test-v2-guardrails.js",
   "test-corpus-coverage.js",
   "test-facts-sufficiency-gate.js",
+  "test-anaphoric-citations.js",
 ];
 
 let failed = 0;
