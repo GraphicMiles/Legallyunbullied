@@ -36,12 +36,16 @@ const mockDb = {
 
 let fakeClassify = null;
 let draftCalls = 0;
+let proceduralClient = false; // case 3: judge answers insufficient so the rescue path must fire
 const fakeClient = {
   chat: { completions: { create: async ({ messages }) => {
     const sys = (messages && messages[0] && messages[0].content) || "";
     const json = (o) => ({ choices: [{ message: { content: JSON.stringify(o) } }] });
     if (sys.includes("determine if this is a legal question or casual")) return json(fakeClassify);
-    if (sys.includes("legal retrieval relevance judge")) return json({ relevant: [1], irrelevant: [], relevance_score: 0.9, sufficient: true, conflicts: [], reason: "" });
+    if (sys.includes("legal retrieval relevance judge")) {
+      if (proceduralClient) return json({ relevant: [], irrelevant: [1], relevance_score: 0.05, sufficient: false, conflicts: [], reason: "tangential keyword overlap only" });
+      return json({ relevant: [1], irrelevant: [], relevance_score: 0.9, sufficient: true, conflicts: [], reason: "" });
+    }
     if (sys.includes("quality reviewer")) return json({ quality: 0.9, legal_safety: 0.9, issues: [], claim_support: [{ claimId: "claim-1", status: "supported", supportingQuote: "x", reason: "" }], passed: true });
     draftCalls++;
     return json({
@@ -125,6 +129,22 @@ const BASE_CLASSIFY = {
   assert.strictEqual(r2.status === 200 && r2.json.needsInput !== true, true, `expected full answer, got ${r2.status} ${JSON.stringify(r2.json).slice(0,120)}`);
   assert.ok(draftCalls >= 1, "draft must run for sufficient-facts question");
   console.log("  ok  facts sufficient → full pipeline, draft ran");
+
+  // Case 3: procedural/admin how-to where the evidence gate rejects whatever
+  // the corpus returned — must land on the practical answer, never the
+  // "insufficient evidence" dead-end. (Registration classifier now routes
+  // sourced, but the broadened gate can still say insufficient when its
+  // judge misfires.)
+  fakeClassify = { ...BASE_CLASSIFY, needs_sourcing: true };
+  proceduralClient = true;
+  const r3 = await postChat({ question: "how do i register a company with cac", jurisdiction: "Federal", conversationId: "c3", messageId: "m3" });
+  proceduralClient = false;
+  assert.strictEqual(r3.status, 200);
+  const ev3 = r3.json.evidence || {};
+  assert.ok(ev3.proceduralRescue === true, "procedural rescue must be flagged, got " + JSON.stringify(ev3).slice(0, 200));
+  assert.ok(ev3.noSourcing === true, "rescued answer must be marked noSourcing");
+  assert.ok(!/insufficient|could not verify|couldn't verify/i.test(JSON.stringify(r3.json.result || {})), "must not emit an insufficient-evidence template");
+  console.log("  ok  gate-insufficient procedural question → practical answer, not dead-end");
 
   console.log("\nfacts-sufficiency-gate PASS");
 })().catch((e) => { console.error(e); process.exit(1); });
