@@ -1341,6 +1341,12 @@ import {
     const menu = document.createElement("div");
     menu.className = "menu-popover";
     items.forEach((item) => {
+      if (item.divider) {
+        const div = document.createElement("div");
+        div.className = "menu-popover__divider";
+        menu.appendChild(div);
+        return;
+      }
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "menu-popover__item" + (item.danger ? " menu-popover__item--danger" : "");
@@ -1348,6 +1354,7 @@ import {
         ? `<span class="menu-popover__item-icon">${item.svg}</span>`
         : `<span class="menu-popover__item-icon"><i class="fa-solid ${item.icon}"></i></span>`;
       btn.innerHTML = `${iconHtml}<span>${escapeHtml(item.label)}</span>`;
+      btn.disabled = !!item.disabled;
       btn.addEventListener("click", () => {
         closePopover();
         item.onClick();
@@ -4132,9 +4139,19 @@ import {
 
     el.topbarAvatar.style.display = "flex";
     el.topbarAvatar.innerHTML = avatarInner;
-    el.topbarAvatar.title = `${name} · Log out`;
+    el.topbarAvatar.title = `${name} · Chat options`;
     el.topbarAvatar.onclick = (e) => {
+      const toolsDisabled = el.clearChatBtn.disabled; // mirrors hasMessages || isAgentBusy
       showPopover(el.topbarAvatar, [
+        { label: "Copy all messages",
+          svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
+          disabled: toolsDisabled,
+          onClick: () => { if (state.activeId && !state.isAgentBusy) copyConversationToClipboard(state.activeId); } },
+        { label: "Clear this chat",
+          svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>',
+          disabled: toolsDisabled, danger: true,
+          onClick: () => { if (state.activeId && !state.isAgentBusy) confirmClearConversation(state.activeId); } },
+        { divider: true },
         { label: "Log out", svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>', danger: true, onClick: handleLogout },
       ]);
     };
