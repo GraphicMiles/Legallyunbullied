@@ -18,6 +18,7 @@ const tests = [
   "test-corpus-coverage.js",
   "test-facts-sufficiency-gate.js",
   "test-anaphoric-citations.js",
+  "scripts/check-safety-card.js",
 ];
 
 let failed = 0;
