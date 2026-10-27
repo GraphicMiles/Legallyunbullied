@@ -445,7 +445,7 @@ import {
       if (!opts.keepActiveId) state.activeId = null; // let URL routing decide what's active
       saveState(); // persist to localStorage as write-behind cache (won't trigger syncToServer because _isLoadingFromServer is true)
       renderHistory();
-      console.log(`[server-sync] Loaded ${allConversations.length} conversations from server (hasMore=${_listHasMore})`);
+      dbgChat("sync.loaded", { count: allConversations.length, hasMore: !!_listHasMore });
     } catch (err) {
       console.warn("[server-sync] loadFromServer failed:", err.message);
     } finally {
@@ -682,7 +682,7 @@ import {
       const parsed = JSON.parse(raw);
       if (!parsed.conversations || parsed.conversations.length === 0) return;
 
-      console.log(`[server-sync] Migrating ${parsed.conversations.length} conversations to server...`);
+      dbgChat("sync.migrating", { count: parsed.conversations.length });
       const headers = await getServerAuthHeaders();
 
       // Clean _synced flags before sending
@@ -760,7 +760,7 @@ import {
         // re-running on every sign-in).
         localStorage.setItem(migrationFlagKey, "1");
         saveState();
-        console.log(`[server-sync] Migration complete (${migratedTotal} migrated, ${skippedTotal} skipped, ${batches.length} batch(es))`);
+        dbgChat("sync.migrated", { migrated: migratedTotal, skipped: skippedTotal, batches: batches.length });
         return { migrated: migratedTotal, skipped: skippedTotal };
       }
     } catch (err) {
@@ -777,31 +777,6 @@ import {
       await fetch(`/api/conversations/${convoId}`, { method: "DELETE", headers });
     } catch (e) {
       console.warn(`[server-sync] Failed to delete conversation ${convoId}:`, e.message);
-    }
-  }
-
-  // Automatic legacy cleanup: safely dedupe empty conversations left over from
-  // the old sync-loop bug. Runs once per page load after sign-in (idempotent —
-  // the server only deletes EMPTY conversations and always keeps the most
-  // recently updated one). Conversations with messages are never touched, and
-  // a user's current "New question" chat is never wiped.
-  let _cleanupDone = false;
-  async function cleanupDuplicates() {
-    if (!isServerMode() || _cleanupDone) return;
-    _cleanupDone = true;
-    try {
-      const headers = await getServerAuthHeaders();
-      const res = await fetch("/api/conversations/cleanup", { method: "POST", headers });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.deleted > 0) {
-          console.log(`[server-sync] Cleaned up ${data.deleted} duplicate empty conversations`);
-        }
-        return data;
-      }
-    } catch (e) {
-      console.warn("[server-sync] Cleanup failed:", e.message);
-      _cleanupDone = false; // allow retry
     }
   }
 
@@ -1024,7 +999,8 @@ import {
   }
 
   async function callChatApi(question, history, options = {}) {
-    console.log('[callChatApi] Starting API call to /api/chat');
+    // Boot/pipeline noise lives in the structured debug events, not console —
+    // console stays for genuine anomalies only.
     dbgChat("chat.send", {
       questionLength: String(question || "").length,
       historyLength: Array.isArray(history) ? history.length : 0,
@@ -1052,15 +1028,13 @@ import {
       });
       
       clearTimeout(timeoutId);
-      console.log('[callChatApi] Response received, status:', res.status);
-      
+
       let data = null;
-      try { 
-        data = await res.json(); 
-        console.log('[callChatApi] Response parsed successfully');
-      } catch (e) { 
+      try {
+        data = await res.json();
+      } catch (e) {
         console.error('[callChatApi] Failed to parse response:', e);
-        /* fall through to error below */ 
+        /* fall through to error below */
       }
       
       if (!res.ok) {
@@ -1080,7 +1054,6 @@ import {
         throw new Error("The server returned an unexpected empty response.");
       }
 
-      console.log('[callChatApi] Returning data:', { isCasual: data.isCasual, hasResult: !!data.result });
       dbgChat("chat.response", {
         status: res.status,
         isCasual: !!data.isCasual,
@@ -3993,9 +3966,7 @@ import {
     if (window.firebaseAuth) {
       setupAuth();
     } else {
-      console.log("[auth] Waiting for Firebase to initialize...");
       window.addEventListener("firebase-ready", () => {
-        console.log("[auth] Firebase ready, setting up auth");
         setupAuth();
       }, { once: true });
       
@@ -4031,7 +4002,6 @@ import {
       
       // If user changed (sign-in, sign-out, or account switch), reload conversations
       if (previousUserId !== newUserId) {
-        console.log("[auth] User changed, reloading conversations");
         dbgChat("auth.user", { signedIn: !!newUserId, changed: true });
         
         // Reset state for the new user
@@ -4063,12 +4033,12 @@ import {
               resolveUrl();
             });
           migrationPromise
-            .then((m) => cleanupDuplicates().then((c) => ({ m, c })))
-            .then(({ m, c }) => {
-              // Refresh the sidebar only when something actually changed —
-              // the common sign-in (already migrated, nothing to clean) must
-              // not issue a second list request.
-              if ((m && m.migrated > 0) || (c && c.deleted > 0)) {
+            .then((m) => {
+              // Refresh the sidebar only when something actually changed — the
+              // common sign-in (already migrated) must not issue a second list
+              // request. (Legacy empty-conversation cleanup was retired: the
+              // sync-loop bug that created them is fixed.)
+              if (m && m.migrated > 0) {
                 return loadFromServer({ keepActiveId: true });
               }
             })
@@ -4562,7 +4532,6 @@ import {
         ]
       });
 
-      console.log('[init] BeUIPromptBar initialized successfully');
     } catch (err) {
       console.error('[init] BeUIPromptBar initialization failed:', err);
     }
