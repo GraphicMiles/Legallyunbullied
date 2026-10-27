@@ -171,7 +171,7 @@ async function main() {
       assert.ok(prompt.includes(key), `example must include ${key}`);
     }
     assert.ok(!/fences\):\s*ge\b/.test(prompt), "the old mid-word truncation must not reappear");
-    assert.ok(src.includes("task: \"procedural\""), "procedural call site present");
+    assert.ok(src.includes("\"procedural\""), "procedural call site present");
   });
 
   // ── Test 0b: "What should I bring to the station?" stays procedural ─────

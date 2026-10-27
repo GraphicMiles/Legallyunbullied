@@ -68,6 +68,14 @@ function cleanKeywords(keywords) {
     .slice(0, 12);
 }
 
+// Words that add no retrieval signal when a multi-word phrase misses.
+const PHRASE_STOPWORDS = new Set([
+  "when", "what", "where", "which", "while", "have", "has", "with",
+  "from", "that", "this", "they", "them", "their", "about", "into",
+  "your", "under", "must", "shall", "should", "would", "could",
+  "against", "between",
+]);
+
 /** Deterministic lexical rank used both for primary and broadened retrieval. */
 function rankProvisions(provisions, { keywords = [], jurisdiction } = {}) {
   const terms = cleanKeywords(keywords);
@@ -86,6 +94,17 @@ function rankProvisions(provisions, { keywords = [], jurisdiction } = {}) {
       if (text.includes(term)) {
         score += term.includes(" ") ? 9 : 5;
         matched = true;
+      } else if (term.includes(" ")) {
+        // The classifier's keywords are model-generated phrases ("unpaid
+        // salary arrears") that seldom appear verbatim in statutory text.
+        // Give partial credit for the phrase's informative tokens so recall
+        // improves before the LLM relevance judge filters semantics.
+        const toks = term.split(" ").filter((t) => t.length >= 4 && !PHRASE_STOPWORDS.has(t));
+        const hits = toks.filter((t) => title.includes(t) || text.includes(t)).length;
+        if (hits > 0) {
+          score += Math.min(2 * hits, 4);
+          if (hits >= Math.ceil(toks.length / 2)) matched = true;
+        }
       }
       if (matched) matchedTerms += 1;
     }

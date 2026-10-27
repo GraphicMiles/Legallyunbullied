@@ -44,6 +44,27 @@ const fakeClient = {
     if (sys.includes("Generate a very short title")) {
       return { choices: [{ message: { content: "Unpaid salary claim" } }] };
     }
+    if (sys.includes("could NOT verify the exact provision")) {
+      // Limited-coverage path (insufficient evidence): model-written, uncited.
+      const userText = messages?.[1]?.content || "";
+      const violent = /beat|kill|threat/i.test(userText);
+      // The violent branch DELIBERATELY omits any physical-safety step — the
+      // test asserts the deterministic safety policy repairs that gap.
+      return json({
+        lawMd: violent
+          ? "What happened to you is serious and I'm sorry. I could not confirm the exact provision that applies, so I will not quote a section I cannot verify. Please still act quickly while you get case-specific legal help."
+          : "I hear you — being owed two months of salary is frustrating. I could not confirm the exact section that covers your case, so I will not quote a section I cannot verify. Your position is still worth protecting while you get case-specific help.",
+        actionsMd: violent
+          ? "- Step 1: Preserve any evidence of what happened — photos, messages, witness details.\n- Step 2: See a lawyer promptly for advice tied to your facts.\n- Step 3: Keep a written timeline of events."
+          : "- Step 1: Gather all proof of what you are owed — payslips, bank statements showing the missed payments, and messages about the unpaid salary.\n- Step 2: Send your employer a written demand for the outstanding salary and keep proof it was received.\n- Step 3: If unpaid, escalate through the right channel — Ministry of Labour or the National Industrial Court.\n- Step 4: See a qualified lawyer promptly.",
+        sources: [],
+        provisionIds: ["should-be-stripped"],
+        claims: [{ claimId: "claim-1", text: "should-be-stripped", provisionIds: ["should-be-stripped"] }],
+        escalate: true,
+        escalateReason: "The exact provision could not be verified.",
+        followUps: ["How do I write the demand letter?", "Which court handles unpaid salary?"],
+      });
+    }
     draftCalls += 1;
     if (mode === "idempotency") await new Promise((resolve) => setTimeout(resolve, 50));
     if (mode === "malformed-draft") return json({ lawMd: "incomplete" });
@@ -188,23 +209,31 @@ async function check(name, fn) {
     assert.strictEqual(response.body.evidence.sufficient, false);
     assert.ok(response.body.evidence.conflicts.length > 0);
     assert.strictEqual(response.body.result.escalate, true);
-    assert.strictEqual(draftCalls, 0);
+    assert.strictEqual(draftCalls, 0, "insufficient evidence must never reach the cited drafting path");
+    // Limited-coverage path: model-written, honest, uncited.
+    assert.strictEqual(response.body.result.limitedCoverage, true);
+    assert.strictEqual(response.body.result.sources.length, 0, "no citations can be forced into an unverified answer");
+    assert.strictEqual((response.body.result.provisionIds || []).length, 0, "model-invented provisionIds must be stripped");
+    assert.strictEqual((response.body.result.claims || []).length, 0, "model-invented claims must be stripped");
+    assert.ok(response.body.result.followUps.length > 0, "limited-coverage answers must offer next-step follow-ups");
   });
 
-  await check("unpaid-salary insufficient evidence uses livelihood steps, never police/safety copy", async () => {
+  await check("unpaid-salary insufficient evidence answers from the model, never safety-template copy", async () => {
     // Regression: an urgent civil/livelihood claim that fails the evidence gate
     // used to land on the physical-safety template ("move to a safe public
-    // place / call the police"), which is nonsense for unpaid wages. The honest
-    // limited-evidence response must instead give record-keeping + written
-    // demand + right-channel steps.
+    // place / call the police"), which is nonsense for unpaid wages. The
+    // limited-coverage answer is now MODEL-WRITTEN (not a seeded template):
+    // personalized, honest, uncited, escalating, with follow-ups.
     chatRoute.__testing.clearQuestionCache(); chatRoute.__testing.clearProviderCooldowns(); mode = "conflicting-evidence"; draftCalls = 0;
     const response = await post({ question: "My employer has not paid my salary for two months.", history: [] });
     assert.strictEqual(response.status, 200);
     assert.strictEqual(response.body.result.escalate, true);
+    assert.strictEqual(response.body.result.limitedCoverage, true, "must be the model-written limited-coverage path, not a seeded template");
     assert.doesNotMatch(response.body.result.lawMd, /safe public place|move to a safe place/i);
     assert.doesNotMatch(response.body.result.actionsMd, /safe public place|call the police|immediate danger/i);
     assert.match(response.body.result.actionsMd, /(proof|records|evidence).*(owed|salary)/is, "steps must guide evidence preservation for wage arrears");
     assert.match(response.body.result.actionsMd, /written demand/i, "livelihood steps should include a written demand");
+    assert.ok(response.body.result.followUps.length > 0, "must offer follow-up questions so the conversation continues");
     assert.doesNotMatch(
       (response.body.result.escalateReason || "").toLowerCase(),
       /immediate harm/,
@@ -212,7 +241,10 @@ async function check(name, fn) {
     );
   });
 
-  await check("genuine violence keeps the protective-safety insufficient-evidence copy", async () => {
+  await check("genuine violence gets a safety-repaired limited-coverage answer", async () => {
+    // The model mock DELIBERATELY omits the physical-safety first step; the
+    // deterministic safety policy is a fail-closed backstop that must prepend
+    // it for urgent personal-harm contexts.
     chatRoute.__testing.clearQuestionCache(); chatRoute.__testing.clearProviderCooldowns(); mode = "conflicting-highrisk"; draftCalls = 0;
     const response = await post({ question: "My husband beat me again and threatened to kill me", history: [] });
     assert.strictEqual(response.status, 200);
