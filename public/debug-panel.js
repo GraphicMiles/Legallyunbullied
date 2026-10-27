@@ -197,6 +197,7 @@
     if (filter === "error") return entry.level === "error";
     if (filter === "warn") return entry.level === "warn" || entry.level === "error";
     if (filter === "push") return entry.level === "push" || entry.source === "fetch";
+    if (filter === "chat") return entry.source === "chat" || entry.source === "server";
     return true;
   }
 
@@ -299,6 +300,89 @@
     renderList();
   }
 
+  /* ------------------------------------------------------------------ */
+  /* Server log pull (admin-gated endpoint)                              */
+  /* ------------------------------------------------------------------ */
+  var serverPullBusy = false;
+  function pullServerLogs() {
+    if (serverPullBusy) return;
+    serverPullBusy = true;
+    setFilter("chat");
+    addLog("info", "server", "Pulling server logs…");
+    var headers = {};
+    // Reuse the app's auth helper if present; otherwise try the global
+    // firebase auth object directly.
+    var headerPromise;
+    if (typeof window.LUGetAuthHeaders === "function") {
+      headerPromise = window.LUGetAuthHeaders();
+    } else if (window.firebase && window.firebase.auth && window.firebase.auth().currentUser) {
+      headerPromise = window.firebase.auth().currentUser.getIdToken().then(function (t) {
+        return { Authorization: "Bearer " + t, "Content-Type": "application/json" };
+      });
+    } else {
+      headerPromise = Promise.resolve(headers);
+    }
+    headerPromise
+      .then(function (h) {
+        return orig.fetch("/api/debug/server-logs?limit=200", { headers: h });
+      })
+      .then(function (res) {
+        if (!res.ok) {
+          return res.json().then(function (b) {
+            throw new Error("server-logs " + res.status + ": " + ((b && b.message) || res.statusText));
+          });
+        }
+        return res.json();
+      })
+      .then(function (data) {
+        var entries = (data && data.entries) || [];
+        addLog("info", "server", "Pulled " + entries.length + " server log entr" + (entries.length === 1 ? "y" : "ies"));
+        for (var i = 0; i < entries.length; i++) {
+          var e = entries[i];
+          addLog(e.level === "error" ? "error" : e.level === "warn" ? "warn" : "info", "server", e.message, e.ts);
+        }
+      })
+      .catch(function (err) {
+        addLog("warn", "server", "Server log pull failed: " + (err && err.message ? err.message : err), "needs an admin account; see docs/pipeline-audit.md");
+      })
+      .finally(function () {
+        serverPullBusy = false;
+      });
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Public API: window.LUDebug                                          */
+  /* Lets app.js and other scripts emit structured events without going   */
+  /* through console.* (which would double-log). Non-enumerable feel: it  */
+  /* is safe to call with nothing wired up.                               */
+  /* ------------------------------------------------------------------ */
+  window.LUDebug = {
+    /** log(level, source, message, extra) — level: info|warn|error|push */
+    log: function (level, source, message, extra) {
+      return addLog(level || "info", source || "app", message, extra);
+    },
+    /** chatEvent(name, data) — structured chat-pipeline event. */
+    chatEvent: function (name, data) {
+      var extra = "";
+      if (data != null) {
+        try { extra = JSON.stringify(data); } catch (e) { extra = "[unserializable]"; }
+      }
+      return addLog("info", "chat", String(name || "event"), extra);
+    },
+    chatError: function (name, data) {
+      var extra = "";
+      if (data != null) {
+        try { extra = JSON.stringify(data); } catch (e) { extra = "[unserializable]"; }
+      }
+      return addLog("error", "chat", String(name || "error"), extra);
+    },
+    open: function () { setOpen(true); },
+    close: function () { setOpen(false); },
+    clear: clearLogs,
+    pullServerLogs: pullServerLogs,
+    getLogs: function () { return logs.slice(); },
+  };
+
   function mount() {
     if (document.getElementById("lu-debug-root")) return;
 
@@ -306,11 +390,12 @@
     style.textContent = [
       "#lu-debug-root{position:fixed;z-index:99999;font-family:var(--font-sans,system-ui,sans-serif);pointer-events:none;}",
       "#lu-debug-root *{box-sizing:border-box;}",
-      "#lu-debug-fab{pointer-events:auto;position:fixed;right:16px;bottom:16px;width:40px;height:40px;border-radius:10px;border:1px solid #2a2a2a;background:#161616;color:#f2b705;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.45);}",
+      "#lu-debug-fab{pointer-events:auto;position:fixed;right:16px;bottom:96px;width:40px;height:40px;border-radius:10px;border:1px solid #2a2a2a;background:#161616;color:#f2b705;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.45);opacity:.72;transition:opacity .15s ease;}",
+      "#lu-debug-fab:hover{opacity:1;}",
       "#lu-debug-fab:hover{border-color:rgba(242,183,5,.45);background:#1c1c1c;}",
       "#lu-debug-fab i{font-size:15px;}",
       "#lu-debug-badge{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#e5484d;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;}",
-      "#lu-debug-panel{pointer-events:auto;position:fixed;right:16px;bottom:64px;width:min(560px,calc(100vw - 24px));height:min(380px,calc(100vh - 96px));display:none;flex-direction:column;background:#121212;border:1px solid #2a2a2a;border-radius:12px;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.55);}",
+      "#lu-debug-panel{pointer-events:auto;position:fixed;right:16px;bottom:144px;width:min(560px,calc(100vw - 24px));height:min(420px,calc(100vh - 200px));display:none;flex-direction:column;background:#121212;border:1px solid #2a2a2a;border-radius:12px;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.55);}",
       "#lu-debug-root.is-open #lu-debug-panel{display:flex;}",
       ".dbg-head{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #1f1f1f;background:#161616;}",
       ".dbg-title{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#f5f5f2;}",
@@ -333,7 +418,7 @@
       ".dbg-msg{color:#f5f5f2;word-break:break-word;white-space:pre-wrap;}",
       ".dbg-extra{display:block;color:#6b6b66;margin-top:2px;}",
       ".dbg-empty{color:#6b6b66;padding:24px 12px;text-align:center;}",
-      "@media (max-width:600px){.dbg-row{grid-template-columns:72px 40px 1fr;}.dbg-src{display:none;}#lu-debug-panel{right:8px;left:8px;width:auto;bottom:60px;}}",
+      "@media (max-width:600px){.dbg-row{grid-template-columns:72px 40px 1fr;}.dbg-src{display:none;}#lu-debug-panel{right:8px;left:8px;width:auto;bottom:136px;}}",
     ].join("");
     document.head.appendChild(style);
 
@@ -348,6 +433,7 @@
         '<div class="dbg-head">' +
           '<span class="dbg-title">Debug</span>' +
           '<span class="dbg-stat" id="dbg-stat"></span>' +
+          '<button type="button" id="dbg-server" title="Pull recent server-side pipeline logs (admin)">Server</button>' +
           '<button type="button" id="dbg-copy">Copy</button>' +
           '<button type="button" id="dbg-clear">Clear</button>' +
           '<button type="button" id="dbg-close" aria-label="Close">Close</button>' +
@@ -357,6 +443,7 @@
           '<button type="button" data-filter="error">Errors</button>' +
           '<button type="button" data-filter="warn">Warn</button>' +
           '<button type="button" data-filter="push">Push / net</button>' +
+          '<button type="button" data-filter="chat">Chat</button>' +
         "</div>" +
         '<div class="dbg-list" id="dbg-list"></div>' +
       "</div>";
@@ -373,6 +460,7 @@
     document.getElementById("dbg-close").addEventListener("click", function () { setOpen(false); });
     document.getElementById("dbg-copy").addEventListener("click", copyLogs);
     document.getElementById("dbg-clear").addEventListener("click", clearLogs);
+    document.getElementById("dbg-server").addEventListener("click", pullServerLogs);
     filterEl.addEventListener("click", function (ev) {
       var btn = ev.target.closest("[data-filter]");
       if (!btn) return;
@@ -388,7 +476,7 @@
 
     setFilter(filter);
     setOpen(open);
-    addLog("info", "debug", "Debug panel attached — logging errors, console, and fetch.");
+    addLog("info", "debug", "Debug panel attached — logging errors, console, fetch, and chat pipeline events (window.LUDebug).");
   }
 
   loadPersisted();
