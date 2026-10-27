@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
@@ -794,30 +794,32 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    gap: var(--space-5);
-    padding: var(--space-7) 0;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-3);
+    max-width: 480px;
+    margin: 0 auto;
   }
   .empty-state__mark {
-    width: 52px;
-    height: 52px;
+    width: 44px;
+    height: 44px;
     border-radius: var(--radius-lg);
     display: flex;
     align-items: center;
     justify-content: center;
     background: var(--color-surface);
   }
-  .empty-state__mark svg { width: 26px; height: 26px; color: var(--color-accent); }
+  .empty-state__mark svg { width: 22px; height: 22px; color: var(--color-accent); }
   .empty-state__title {
-    font-size: clamp(24px, 4vw, 32px);
+    font-size: clamp(20px, 3.4vw, 26px);
     font-weight: 700;
     letter-spacing: -0.02em;
     margin: 0;
   }
   .empty-state__subtitle {
-    font-size: var(--fs-md);
+    font-size: var(--fs-base);
     color: var(--color-text-muted);
-    max-width: 480px;
-    line-height: 1.6;
+    max-width: 400px;
+    line-height: 1.55;
     margin: 0;
   }
 
@@ -861,45 +863,9 @@
     background: var(--color-accent-soft);
   }
 
-  .prompt-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0,1fr));
-    gap: var(--space-3);
-    width: 100%;
-    max-width: 620px;
-  }
-  .prompt-card {
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    gap: var(--space-3);
-    text-align: left;
-    border-radius: var(--radius-lg);
-    padding: var(--space-4);
-    background: var(--color-surface);
-    transition: background var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
-  }
-  .prompt-card:hover { background: var(--color-surface-alt); transform: translateY(-1px); }
-  .prompt-card:active { transform: translateY(0); }
-  .prompt-card__icon {
-    flex-shrink: 0;
-    width: 34px;
-    height: 34px;
-    border-radius: var(--radius-md);
-    background: var(--color-bg-raised);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--color-accent);
-  }
-  .prompt-card__icon i { font-size: 14px; }
-  .prompt-card__icon svg { width: 16px; height: 16px; }
-  .prompt-card__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .prompt-card__title { font-size: var(--fs-sm); font-weight: 700; color: var(--color-text); }
-  .prompt-card__text { display: block; font-size: var(--fs-sm); color: var(--color-text-muted); line-height: 1.45; }
 
   /* Keyboard focus is a tone lift, never an outline stroke. */
-  .btn:focus-visible, .icon-btn:focus-visible, .prompt-card:focus-visible,
+  .btn:focus-visible, .icon-btn:focus-visible,
   .followup-chip:focus-visible, .history__item:focus-visible, .history__kebab:focus-visible,
   .link-btn:focus-visible, .auth-signin-btn:focus-visible, .modal-card__tab:focus-visible,
   .chat-status__home:focus-visible, .msg-action-btn:focus-visible, .context-card__head:focus-visible {
@@ -1603,11 +1569,43 @@
   .composer__send svg { width: 15px; height: 15px; }
   .composer__send i { font-size: 14px; }
 
-  .composer__disclaimer {
-    text-align: center;
-    font-size: 11px;
-    color: var(--color-text-faint);
+  /* --- disclaimer: shown once on first visit, dismisses permanently --- */
+  .disclaimer-pop {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
     margin: var(--space-2) 0 0;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    animation: disclaimer-pop-in var(--dur-base) var(--ease);
+  }
+  .disclaimer-pop[hidden] { display: none; }
+  .disclaimer-pop__text {
+    flex: 1;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+  .disclaimer-pop__close {
+    flex-shrink: 0;
+    align-self: center;
+    width: 26px;
+    height: 26px;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-faint);
+    cursor: pointer;
+    transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+  }
+  .disclaimer-pop__close:hover {
+    background: var(--color-surface-alt);
+    color: var(--color-text);
+  }
+  .disclaimer-pop__close i { font-size: 12px; }
+  @keyframes disclaimer-pop-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: none; }
   }
 
   /* ============================================================
@@ -1636,8 +1634,6 @@
     .topbar__title { max-width: 46vw; }
     .badges .badge:nth-child(n+3) { display: none; }
     .topbar { gap: var(--space-2); padding: 0 var(--space-4); }
-
-    .prompt-grid { grid-template-columns: 1fr; }
     .msg__body, .msg--agent .msg__body { max-width: 100%; }
     .chat__inner { padding: var(--space-3) var(--space-4) 32px; }
     .composer { padding: var(--space-2) var(--space-4) var(--space-3); }
@@ -1880,38 +1876,7 @@
             <svg viewBox="0 0 32 32" fill="none"><path d="M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M11 15.5L14.2 18.7L21 11.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
           <h1 class="empty-state__title">What's the legal situation?</h1>
-          <p class="empty-state__subtitle">Describe it in plain language. The agent classifies the issue, checks it against Nigerian law, and tells you exactly what to do next, including when you actually need a lawyer.</p>
-
-          <div class="prompt-grid" aria-label="Try one of these">
-            <button type="button" class="prompt-card" data-prompt="My landlord changed the locks and my things are still inside.">
-              <span class="prompt-card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg></span>
-              <span class="prompt-card__body">
-                <span class="prompt-card__title">Tenancy</span>
-                <span class="prompt-card__text">My landlord changed the locks and my things are still inside.</span>
-              </span>
-            </button>
-            <button type="button" class="prompt-card" data-prompt="My employer has not paid my salary for two months.">
-              <span class="prompt-card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg></span>
-              <span class="prompt-card__body">
-                <span class="prompt-card__title">Employment</span>
-                <span class="prompt-card__text">My employer has not paid my salary for two months.</span>
-              </span>
-            </button>
-            <button type="button" class="prompt-card" data-prompt="The police stopped me and are demanding money to let me go.">
-              <span class="prompt-card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg></span>
-              <span class="prompt-card__body">
-                <span class="prompt-card__title">Your rights</span>
-                <span class="prompt-card__text">The police stopped me and are demanding money to let me go.</span>
-              </span>
-            </button>
-            <button type="button" class="prompt-card" data-prompt="Someone posted my private photos online without my consent.">
-              <span class="prompt-card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1 1 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></span>
-              <span class="prompt-card__body">
-                <span class="prompt-card__title">Cyber</span>
-                <span class="prompt-card__text">Someone posted my private photos online without my consent.</span>
-              </span>
-            </button>
-          </div>
+          <p class="empty-state__subtitle">Describe it in plain language. The agent classifies it against Nigerian law and tells you what to do next.</p>
 
 
         </div>
@@ -1942,7 +1907,12 @@
       <div class="composer__inner">
         <!-- BeUIPromptBar will be initialized here -->
         <div id="prompt-bar-container"></div>
-        <p class="composer__disclaimer">Legally Unbullied gives legal information, not legal advice. For urgent matters, contact a lawyer or the police directly.</p>
+        <div class="disclaimer-pop" id="disclaimer-pop" role="note" hidden>
+          <p class="disclaimer-pop__text">Legally Unbullied gives legal information, not legal advice. For urgent matters, contact a lawyer or the police directly.</p>
+          <button type="button" class="disclaimer-pop__close" id="disclaimer-pop-close" aria-label="Dismiss">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
       </div>
     </footer>
   </main>
