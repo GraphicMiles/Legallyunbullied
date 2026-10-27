@@ -1011,9 +1011,26 @@ import {
     }
     return headers;
   }
+  // Exposed for the debug panel's server-log pull.
+  window.LUGetAuthHeaders = getAuthHeaders;
+
+  // Tiny safe wrapper: emit structured pipeline events to the debug panel
+  // when it's loaded. No-op otherwise — never throws into the app.
+  function dbgChat(name, data) {
+    try { window.LUDebug && window.LUDebug.chatEvent(name, data); } catch (_) {}
+  }
+  function dbgChatError(name, data) {
+    try { window.LUDebug && window.LUDebug.chatError(name, data); } catch (_) {}
+  }
 
   async function callChatApi(question, history, options = {}) {
     console.log('[callChatApi] Starting API call to /api/chat');
+    dbgChat("chat.send", {
+      questionLength: String(question || "").length,
+      historyLength: Array.isArray(history) ? history.length : 0,
+      conversationId: options.conversationId || null,
+      messageId: options.messageId || null,
+    });
     
     // Add timeout to fetch call
     const controller = new AbortController();
@@ -1059,18 +1076,47 @@ import {
       }
       if (!data) {
         console.error('[callChatApi] Empty response');
+        dbgChatError("chat.empty_response", { status: res.status });
         throw new Error("The server returned an unexpected empty response.");
       }
-      
+
       console.log('[callChatApi] Returning data:', { isCasual: data.isCasual, hasResult: !!data.result });
+      dbgChat("chat.response", {
+        status: res.status,
+        isCasual: !!data.isCasual,
+        corpusEmpty: !!data.corpusEmpty,
+        providersBusy: !!data.providersBusy,
+        retryAfter: data.retryAfter || null,
+        safetyAck: !!data.safetyAck,
+        route: data.route || null,
+        practiceArea: data.classification && data.classification.practice_area ? data.classification.practice_area : null,
+        urgency: data.classification && data.classification.urgency ? data.classification.urgency : null,
+        draftProvider: data.draftProvider || null,
+        draftModel: data.draftModel || null,
+        evidence: data.evidence ? {
+          sufficient: data.evidence.sufficient,
+          sourceCount: data.evidence.sourceCount,
+          relevanceScore: data.evidence.relevanceScore,
+          mode: data.evidence.mode || null,
+          conflicts: (data.evidence.conflicts || []).length,
+          proceduralRescue: !!data.evidence.proceduralRescue,
+        } : null,
+        critique: data.critique ? { attempts: data.critique.attempts, quality: data.critique.quality, safety: data.critique.safety } : null,
+        timings: data.timings || null,
+        limitedCoverage: !!(data.result && data.result.limitedCoverage),
+        escalate: !!(data.result && data.result.escalate),
+        followUps: data.result && Array.isArray(data.result.followUps) ? data.result.followUps.length : 0,
+      });
       return data;
     } catch (err) {
       clearTimeout(timeoutId);
       if (err.name === 'AbortError') {
         console.error('[callChatApi] Request timed out after 180 seconds');
+        dbgChatError("chat.timeout", { seconds: 180 });
         throw new Error('Request timed out after 3 minutes. Please try again.');
       }
       console.error('[callChatApi] Error:', err);
+      dbgChatError("chat.error", { message: err && err.message ? err.message : String(err) });
       throw err;
     }
   }
@@ -3160,6 +3206,7 @@ import {
     const attempts = (agentMsg.providersBusyRetries = (agentMsg.providersBusyRetries || 0) + 1);
     const willRetry = attempts < MAX_BUSY_RETRIES;
     const retryAfter = response.retryAfter || 30;
+    dbgChat("chat.providersBusy", { attempt: attempts, willRetry, retryAfterSeconds: retryAfter, maxRetries: MAX_BUSY_RETRIES });
     const lawMd = response.result?.lawMd || 'All legal reasoning providers are currently busy.';
     const actionsMd = response.result?.actionsMd || '';
     
@@ -3985,6 +4032,7 @@ import {
       // If user changed (sign-in, sign-out, or account switch), reload conversations
       if (previousUserId !== newUserId) {
         console.log("[auth] User changed, reloading conversations");
+        dbgChat("auth.user", { signedIn: !!newUserId, changed: true });
         
         // Reset state for the new user
         state.conversations = [];

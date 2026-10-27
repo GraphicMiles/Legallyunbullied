@@ -134,7 +134,45 @@ POST /api/chat
 - Citation verification math in `server/evidence.js` — integrity check on
   model output, not intent matching.
 
-## 5. Tests
+## 5. Debug observability (debug panel)
+
+An in-app debug panel (`public/debug-panel.js`, loaded before `app.js` in
+`index.html`) makes every client-visible event inspectable without leaving
+the app. Toggle with the bug FAB (bottom-right, above the composer) or
+`Ctrl/Cmd+Shift+D`.
+
+**What it captures automatically** (no code changes needed in callers):
+
+- every `console.log/warn/error/info` (with args serialized + redacted),
+- every `window.fetch` call: method, URL, status, latency, error body,
+- uncaught errors (`window.error`) and unhandled promise rejections,
+- persists across reloads for the tab session (sessionStorage, last 200),
+- secret redaction is mandatory-in-code: bearer tokens, `api_key`/`token`
+  fields, query-string keys, and GitHub PAT-shaped strings never persist.
+
+**Structured chat-pipeline events** come from `window.LUDebug`:
+
+- `app.js` emits `chat.send` (question/history size, IDs),
+  `chat.response` (route, practice area, urgency, evidence stats, critique
+  scores, per-stage `timings` map, providersBusy/retryAfter,
+  limitedCoverage/escalate/followUp counts), `chat.providersBusy`
+  (retry attempt bookkeeping), `chat.timeout` / `chat.error`,
+  and `auth.user` (sign-in/out changes).
+- Any other script can call `LUDebug.log(level, source, message, extra)`,
+  `LUDebug.chatEvent(name, data)`, or `LUDebug.chatError(name, data)`.
+
+**Server-side tracing**: `server/debugLog.js` is a redacted in-memory ring
+buffer of the last 500 `console.*` lines, attached at boot in `server.js`
+and exposed at `GET /api/debug/server-logs` behind `requireAuth +
+requireAdmin` (same posture as `/api/cache-stats` — log lines reveal
+provider state). The panel's **Server** button pulls that trace into the
+chat timeline so a bug report can carry both client and server context.
+
+UI: filters (All / Errors / Warn / Push-net / Chat), error-count badge on
+the FAB, copy/clear buttons, and a mobile layout that stays clear of the
+composer.
+
+### Tests (this area + the de-seeding refactor)
 
 - `test-v2-guardrails.js` — the conflicting-evidence tests now exercise the
   limited-coverage LLM path: assert `limitedCoverage: true`, sources/
