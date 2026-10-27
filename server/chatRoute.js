@@ -195,10 +195,12 @@ Example 2 (unclear jurisdiction — no state mentioned):
 
 Respond with ONLY a JSON object, no prose, no markdown.`;
 
-const DRAFT_SYSTEM_PROMPT = `You are Legally Unbullied, an expert Nigerian legal-information assistant. You provide clear, comprehensive, and actionable legal information based ONLY on the statute excerpts provided.
+const DRAFT_SYSTEM_PROMPT = `You are Legally Unbullied, an expert Nigerian legal-information assistant who speaks like the user's personal legal adviser. You provide clear, comprehensive, and actionable legal information based ONLY on the statute excerpts provided.
 
 TONE & PERSONALITY:
-- Speak like a well-educated Nigerian friend who happens to know the law very well
+- Speak like a well-educated Nigerian friend who happens to know the law very well — the user's own personal adviser, not a generic information desk
+- Open with ONE short sentence that acknowledges the user's exact situation (use details they gave you — the state, the relationship, what happened) before you explain the law
+- Address the user directly as "you" throughout; refer to their specific facts, dates, and parties — never answer in the abstract
 - Be warm, direct, and practical — not cold or overly formal
 - Use plain Nigerian English. Avoid heavy legalese unless citing a specific provision
 - Where natural, you may use mild Nigerian expressions ("no wahala", "this one is straightforward", "the law is clear on this") — but don't force it
@@ -713,11 +715,10 @@ function casualClassification(question) {
 }
 
 async function classifyWithFallback(question, conversationContext, options = {}) {
-  // Fast path: pure greetings never need an LLM round-trip.
-  if (CASUAL_GREETING_PATTERN.test(question) && !options.forceLegal) {
-    return { classification: casualClassification(question), provider: "deterministic-fast-path" };
-  }
-
+  // No deterministic greeting fast-path: EVERY message — including
+  // "hi" — goes through the classifier model, which writes the casual
+  // reply itself. The CASUAL_GREETING_PATTERN below fires only when all
+  // classify providers are down (fail-closed backstop, never primary).
   const providers = [
     ["gemini-classify", getGeminiClient(), GEMINI_CLASSIFY_MODEL],
     ["groq-classify", getGroqClient(), CLASSIFY_MODEL],
@@ -1056,8 +1057,40 @@ Respond with ONLY a JSON object (no prose, no markdown fences):
   "followUps": ["Question 1?", "Question 2?"]
 }`;
 
-// Draft-tier provider fallback for procedural answers.
-async function answerProceduralWithFallback(question, classification, history) {
+// ── Limited-coverage answers (evidence gate said insufficient) ─────────────
+// When retrieval + the relevance gate cannot verify a controlling provision,
+// the answer is STILL written by the model — personalized to the user's facts,
+// honest that the exact provision could not be confirmed, strictly without
+// citations, and always escalating to a qualified lawyer. The static
+// makeInsufficientEvidenceResult remains only as the fail-closed backstop
+// when every provider is down (never a primary path).
+const LIMITED_COVERAGE_SYSTEM_PROMPT = `You are Legally Unbullied — the user's personal Nigerian legal adviser, warm and direct.
+
+Our ingested statute database could NOT verify the exact provision that controls this user's matter. Answer them honestly and helpfully in that situation:
+
+- Open with ONE short sentence acknowledging their exact situation (use the details they gave you — what happened, who is involved, the state) so they feel heard.
+- Say plainly that you could not confirm the exact section of the law that covers this, and that you will not quote a provision you cannot verify.
+- Still be useful: give practical protective steps that are safe in general for this kind of matter — preserve records and evidence, communicate in writing, respond within deadlines, and see a qualified lawyer promptly. Tailor every step to THEIR facts (their matter type, their state if known) — never a generic checklist feel.
+- If their situation sounds like it could involve imminent personal harm or violence, your FIRST step must be about immediate physical safety (get to a safe place, call emergency services) — above anything legal.
+
+IMPORTANT:
+- Do NOT cite any statute, Act, or section — you have verified nothing, so citing would mislead them.
+- "sources" MUST be an empty array [].
+- "escalate" MUST be true — an unverified legal matter needs a lawyer.
+- "followUps": 2-3 short natural follow-up QUESTIONS tied to their matter that they might ask next (e.g. "How do I write a demand letter to my landlord?"). Make them specific to what they described, not generic.
+
+Respond with ONLY a JSON object (no prose, no markdown fences):
+{
+  "lawMd": "Personalized acknowledgment + what this means for them (3-4 sentences, plain Nigerian English).",
+  "actionsMd": "- Step 1: ...\\n- Step 2: ...\\n- Step 3: ...\\n- Step 4: ...",
+  "sources": [],
+  "escalate": true,
+  "escalateReason": "The exact provision could not be verified from the ingested sources, so a lawyer should confirm the position.",
+  "followUps": ["Question 1?", "Question 2?"]
+}`;
+
+// Shared draft-tier provider chain for free-written (uncited) answers.
+async function answerWithProviderFallback(question, classification, history, systemPrompt, taskLabel) {
   const providers = [];
   const groqClient = getGroqClient();
   const cerebrasClient = getCerebrasClient();
@@ -1071,25 +1104,30 @@ async function answerProceduralWithFallback(question, classification, history) {
     historyContext = `\n\nPREVIOUS CONVERSATION CONTEXT:\n${formatHistoryForPrompt(history)}`;
   }
 
-  const entries = providers.map(([name, client, model]) => ({ name, key: `${name}-procedural:${model}`, client, model }));
+  const entries = providers.map(([name, client, model]) => ({ name, key: `${name}-${taskLabel}:${model}`, client, model }));
 
   try {
     const { value, name, model } = await runProviderChain(entries, async ({ client, model }) => {
       const completion = await callCompletion(client, model, [
-        { role: "system", content: PROCEDURAL_SYSTEM_PROMPT },
+        { role: "system", content: systemPrompt },
         { role: "user", content: `${historyContext}\n\nUser: ${question}` },
-      ], { task: "procedural", timeoutMs: 12000, temperature: 0.3, max_tokens: 900, response_format: { type: "json_object" } });
+      ], { task: taskLabel, timeoutMs: 12000, temperature: 0.3, max_tokens: 900, response_format: { type: "json_object" } });
       const parsed = completion.parsed;
       if (parsed && (parsed.lawMd || parsed.actionsMd)) {
         parsed.sources = [];
         return parsed;
       }
-      throw new Error("Procedural answer missing required fields");
-    }, { onFailure: (err, entry) => console.warn(`[/api/chat] Procedural answer via ${entry.model} failed: ${err.message}`) });
+      throw new Error(`${taskLabel} answer missing required fields`);
+    }, { onFailure: (err, entry) => console.warn(`[/api/chat] ${taskLabel} answer via ${entry.model} failed: ${err.message}`) });
     return { result: value, model, provider: name };
   } catch (err) {
-    throw new Error(`All procedural-answer providers failed: ${err ? err.message : "none configured"}`);
+    throw new Error(`All ${taskLabel}-answer providers failed: ${err ? err.message : "none configured"}`);
   }
+}
+
+// Draft-tier provider fallback for procedural answers.
+function answerProceduralWithFallback(question, classification, history) {
+  return answerWithProviderFallback(question, classification, history, PROCEDURAL_SYSTEM_PROMPT, "procedural");
 }
 
 // ── Recoverable-request persistence ────────────────────────────────────────
@@ -1246,8 +1284,39 @@ function makeInsufficientEvidenceResult(evidence, urgent, classification, questi
  * two paths into this (still-insufficient after broadening, and broadened
  * corpus empty) and they were two verbatim copies; keep one.
  */
-function insufficientEvidenceResponse(classification, route, evidence, urgent, question) {
-  const insuffResult = makeInsufficientEvidenceResult(evidence, urgent, classification, question);
+async function insufficientEvidenceResponse(classification, route, evidence, urgent, question, history) {
+  // Primary path: the limited-coverage answer is MODEL-WRITTEN, personalized
+  // to the user's facts, honest, uncited, always escalating. The static
+  // makeInsufficientEvidenceResult is the fail-closed backstop for when every
+  // provider is down.
+  let insuffResult;
+  try {
+    const llm = await answerWithProviderFallback(question, classification, history, LIMITED_COVERAGE_SYSTEM_PROMPT, "limited-coverage");
+    insuffResult = { ...llm.result, evidence };
+    // Honesty rails — never trust the model to remember them:
+    insuffResult.sources = [];
+    insuffResult.provisionIds = [];
+    insuffResult.claims = [];
+    insuffResult.escalate = true;
+    if (!insuffResult.escalateReason) {
+      insuffResult.escalateReason = "The exact provision could not be verified from the ingested sources, so a lawyer should confirm the position.";
+    }
+    if (!Array.isArray(insuffResult.followUps) || insuffResult.followUps.length === 0) {
+      insuffResult.followUps = backstopFollowUps(classification, question);
+    }
+    insuffResult.limitedCoverage = true;
+    // Fail-closed layering: urgent personal-harm situations must carry an
+    // immediate safety step whether or not the model remembered one.
+    applyDeterministicSafetyPolicy(insuffResult, classification, question, history);
+  } catch (err) {
+    if (err && err.__chatResponse) throw err;
+    console.warn("[/api/chat] Limited-coverage LLM answer failed, using static fail-closed backstop:", err.message);
+    insuffResult = makeInsufficientEvidenceResult(evidence, urgent, classification, question);
+    // Backstop follow-ups so the conversation never dead-ends.
+    if (!Array.isArray(insuffResult.followUps) || insuffResult.followUps.length === 0) {
+      insuffResult.followUps = backstopFollowUps(classification, question);
+    }
+  }
   return {
     result: insuffResult,
     body: {
@@ -1261,6 +1330,28 @@ function insufficientEvidenceResponse(classification, route, evidence, urgent, q
       retryAfter: null,
     },
   };
+}
+
+// Backstop follow-up chips derived from the classifier's own model-emitted
+// fields (key_issues / potential_remedies) — NOT seeded constants. Used only
+// when the model didn't produce followUps of its own.
+function backstopFollowUps(classification, question) {
+  const chips = [];
+  const issues = Array.isArray(classification?.key_issues) ? classification.key_issues : [];
+  const remedies = Array.isArray(classification?.potential_remedies) ? classification.potential_remedies : [];
+  for (const issue of issues.slice(0, 2)) {
+    if (typeof issue === "string" && issue.trim().length > 2) {
+      chips.push(issue.trim().endsWith("?") ? issue.trim() : `${issue.trim()}?`);
+    }
+  }
+  if (chips.length < 2) {
+    for (const remedy of remedies.slice(0, 2 - chips.length)) {
+      if (typeof remedy === "string" && remedy.trim().length > 2) {
+        chips.push(`How do I get ${remedy.trim().replace(/^[A-Z]/, (c) => c.toLowerCase()).replace(/\.$/, "")}?`);
+      }
+    }
+  }
+  return chips.slice(0, 3);
 }
 
 // Procedural/practical answers carry NO statute citations by design — one
@@ -1277,79 +1368,9 @@ function makeProceduralEvidence() {
   };
 }
 
-function makeProceduralFallback(question) {
-  const q = String(question || "").toLowerCase();
-  if (/\b(cac|corporate affairs|register (a|my|an? )?(business|company|ngo|enterprise|business name)|business name registration|incorporat)\b/.test(q)) {
-    return {
-      lawMd: "Business registration in Nigeria is done through the Corporate Affairs Commission (CAC). For a private company you register online at pre.cac.gov.ng (or at any CAC office); a business name is simpler and cheaper. The online sequence is: reserve the name, wait for approval, then file the incorporation forms and pay the statutory fee.",
-      actionsMd:
-        "- Step 1: Reserve your business or company name on the CAC pre-incorporation portal (pre.cac.gov.ng) — provide two name options, an email, and your ID.\n" +
-        "- Step 2: Wait for the name-approval email (typically 24–48 hours).\n" +
-        "- Step 3: Log back in and complete the registration forms: principal place of business, proprietors/directors, share capital (for companies), and objectives.\n" +
-        "- Step 4: Upload your ID and signature, then pay the filing fee (business name and company fees differ; the portal shows the current figure).\n" +
-        "- Step 5: Download the certificate of registration and the status report once CAC approves.",
-      sources: [],
-      escalate: false,
-      escalateReason: "CAC registration is a routine administrative process you can complete yourself online; a lawyer is only needed if structures or shareholdings are complex.",
-      followUps: ["Business name vs limited company — which should I pick?", "How long does CAC registration take?", "What documents do I need for CAC registration?"],
-    };
-  }
-  if (/\b(passport|driver'?s? licen[cs]e|permit|nin|national id|tin|tax id|licen[cs]e renewal|renew (my|the|a))\b/.test(q)) {
-    return {
-      lawMd: "Applications and renewals of Nigerian government documents are administrative procedures handled by the issuing agency itself, usually online. The exact portal and fee depend on the document, but the shape of the process is the same: apply on the agency's official site or office, submit your identification and supporting documents, pay the official fee, and collect or download the finished document.",
-      actionsMd:
-        "- Step 1: Identify the issuing agency (e.g. Nigeria Immigration Service for a passport, FRSC for a driver licence, NIMC for NIN, FIRS/JTB for TIN).\n" +
-        "- Step 2: Visit the agency's official online portal and register an account with the same name and email you will use on the application.\n" +
-        "- Step 3: Complete the application form and upload your ID, photo, and any supporting documents.\n" +
-        "- Step 4: Pay the official fee through the portal — avoid agents who promise shortcuts at inflated prices.\n" +
-        "- Step 5: Book or attend any biometric/verification appointment, then collect or download the finished document.",
-      sources: [],
-      escalate: false,
-      escalateReason: "This is an administrative process you can start yourself; a lawyer only becomes necessary if an application is refused unfairly.",
-      followUps: ["What documents do I need for this application?", "What fees does the agency charge for this?"],
-    };
-  }
-  if (/\b(lawyer|attorney|solicitor|legal.?aid)\b/.test(q)) {
-    return {
-      lawMd: "You can find a verified Nigerian lawyer through the Nigerian Bar Association public directory. This app cannot assign or recommend a specific lawyer.",
-      actionsMd:
-        "- Step 1: Open the NBA Find a Lawyer directory.\n" +
-        "- Step 2: Search by your state and the type of matter (criminal, tenancy, family, employment).\n" +
-        "- Step 3: Write a one-page timeline of what happened and take copies of documents, photos, and medical reports.\n" +
-        "- Step 4: If you cannot afford private fees, ask about legal aid in your state.",
-      sources: [],
-      escalate: true,
-      escalateReason: "A lawyer should handle this next step.",
-      followUps: ["What should I take to the lawyer?", "How do I report this to the police?"],
-    };
-  }
-  if (/\b(police|station|report (it|this)|file a report)\b/.test(q)) {
-    return {
-      lawMd: "Go to the nearest police station that covers where it happened. Ask for a station diary entry or extract. Keep your own copy of names, dates, and what you were told.",
-      actionsMd:
-        "- Step 1: Go with a trusted person if you can.\n" +
-        "- Step 2: State the facts: who, what, when, where. Do not guess.\n" +
-        "- Step 3: Ask for the diary number or extract and write down the officer's name and rank.\n" +
-        "- Step 4: If they refuse to record it, note that refusal and speak to a lawyer.",
-      sources: [],
-      escalate: false,
-      escalateReason: "Reporting to the police is something you can start yourself; a lawyer can help if they refuse to record it.",
-      followUps: ["What should I bring to the station?", "How do I find a lawyer?"],
-    };
-  }
-  return {
-    lawMd: "Write the facts down while they are fresh: who, what, when, where. Keep it specific and keep a copy.",
-    actionsMd:
-      "- Step 1: Write down the key facts as soon as possible.\n" +
-      "- Step 2: Keep it factual — what you saw or heard, not your opinion.\n" +
-      "- Step 3: Save a dated copy (photo or written) for yourself.\n" +
-      "- Step 4: Bring this record if you report to the police or meet a lawyer.",
-    sources: [],
-    escalate: false,
-    escalateReason: "This is a practical task you can handle yourself.",
-    followUps: [],
-  };
-}
+// Procedural answers come from the procedural LLM only. When every provider
+// is down we surface an honest "providers busy — retry" state instead of
+// answering from seeded template text, per the no-seeded-responses policy.
 
 function applyDeterministicSafetyPolicy(result, classification, question, history) {
   if (!result) return;
@@ -1581,12 +1602,15 @@ async function runChatPipeline(req) {
       return res.json({ classification, route: "simple", plan: null, result: proc.result, draftModel: proc.model, draftProvider: proc.provider, critique: null, evidence: procEvidence, providersBusy: false, retryAfter: null });
     } catch (err) {
       if (err && err.__chatResponse) throw err;
-      console.warn("[/api/chat] Procedural rescue failed, using static guidance:", err.message);
-      const staticResult = makeProceduralFallback(question);
-      applyDeterministicSafetyPolicy(staticResult, classification, question, history);
-      const procEvidence = makeProceduralEvidence();
-      await serverPersistMessage(req, { status: "done", result: { ...staticResult, evidence: procEvidence }, pipelineStatus: "done", unread: true });
-      return res.json({ classification, route: "simple", plan: null, result: staticResult, draftModel: null, draftProvider: null, critique: null, evidence: procEvidence, providersBusy: false, retryAfter: null });
+      console.warn("[/api/chat] Procedural rescue failed:", err.message);
+      // Honest failure surface — no seeded card. The client shows a retry prompt.
+      const busy = makeProvidersBusyResult(err.allSkipped === true);
+      await serverPersistMessage(req, { status: "providersBusy", providersBusyLawMd: busy.result.lawMd, providersBusyActionsMd: busy.result.actionsMd, pipelineStatus: "error", unread: true });
+      return res.json({
+        classification, route: "simple", plan: null, result: busy.result,
+        draftModel: null, draftProvider: null, critique: null, evidence: null,
+        providersBusy: true, retryAfter: busy.retryAfter,
+      });
     }
   };
   const shouldTryProceduralRescue = () => isClearlyProceduralQuestion(question) || isAdministrativeHowto(question);
@@ -1615,24 +1639,21 @@ async function runChatPipeline(req) {
       });
     } catch (err) {
       if (err && err.__chatResponse) throw err; // terminal response, not an error
-      console.warn("[/api/chat] Procedural answer failed, using static guidance:", err.message);
-      // Honest fallback: direct practical guidance with NO citations, never
-      // routed back into the citation pipeline.
-      const fallbackResult = makeProceduralFallback(question);
-      applyDeterministicSafetyPolicy(fallbackResult, classification, question, history);
-      const procEvidence = makeProceduralEvidence();
-      await serverPersistMessage(req, { status: "done", result: { ...fallbackResult, evidence: procEvidence }, pipelineStatus: "done", unread: true });
+      console.warn("[/api/chat] Procedural answer failed:", err.message);
+      // Honest failure surface — no seeded card. The client shows a retry prompt.
+      const busy = makeProvidersBusyResult(err.allSkipped === true);
+      await serverPersistMessage(req, { status: "providersBusy", providersBusyLawMd: busy.result.lawMd, providersBusyActionsMd: busy.result.actionsMd, pipelineStatus: "error", unread: true });
       return res.json({
         classification,
         route: "simple",
         plan: null,
-        result: fallbackResult,
-        draftModel: "fallback",
-        draftProvider: "procedural-fallback",
+        result: busy.result,
+        draftModel: null,
+        draftProvider: null,
         critique: null,
-        evidence: procEvidence,
-        providersBusy: false,
-        retryAfter: null,
+        evidence: null,
+        providersBusy: true,
+        retryAfter: busy.retryAfter,
       });
     }
   }
@@ -1797,7 +1818,7 @@ async function runChatPipeline(req) {
             console.log(`[/api/chat] Broadened search: ${relevantProvisions2.length} relevant provisions — sufficient`);
           } else {
             console.log(`[/api/chat] Broadened search still insufficient (${relevantProvisions2.length} relevant). Returning insufficient-evidence response.`);
-            const term = insufficientEvidenceResponse(classification, route, evidence, urgentSafety, question);
+            const term = await insufficientEvidenceResponse(classification, route, evidence, urgentSafety, question, history);
             await serverPersistMessage(req, { status: "done", result: term.result, pipelineStatus: "done", unread: true });
             return res.json(term.body);
           }
@@ -1809,7 +1830,7 @@ async function runChatPipeline(req) {
             await tryProceduralRescue();
             return;
           }
-          const term = insufficientEvidenceResponse(classification, route, evidence, urgentSafety, question);
+          const term = await insufficientEvidenceResponse(classification, route, evidence, urgentSafety, question, history);
           await serverPersistMessage(req, { status: "done", result: term.result, pipelineStatus: "done", unread: true });
           return res.json(term.body);
         }
