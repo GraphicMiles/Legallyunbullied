@@ -158,6 +158,7 @@ import {
   let _syncInProgress = false;
   let _migrationDone = false;
   let _isLoadingFromServer = false; // prevents syncToServer during loadFromServer
+  let _serverLoadFailed = false;    // set when the boot load exhausts its retries — used by the connectivity recovery listener
   let _authSettled = false;         // true once onAuthStateChanged has fired (or no-Firebase fallback elapsed)
   let _serverLoadPending = false;   // true while an authenticated server load is in flight
 
@@ -362,12 +363,25 @@ import {
 
   async function getServerAuthHeaders() {
     const headers = { "Content-Type": "application/json" };
+    if (!window.firebaseAuth || !window.firebaseAuth.currentUser) return headers;
     try {
-      if (window.firebaseAuth && window.firebaseAuth.currentUser) {
-        const token = await getIdToken(window.firebaseAuth.currentUser);
-        if (token) headers["Authorization"] = `Bearer ${token}`;
-      }
-    } catch (e) { /* ignore */ }
+      const token = await getIdToken(window.firebaseAuth.currentUser);
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      return headers;
+    } catch (e) {
+      // A failed token refresh (e.g. securetoken 5xx on a shaky connection)
+      // used to be silently swallowed — the API call then went out with NO
+      // Authorization header and the server responded 401. Retry once with a
+      // force-refresh so a single upstream hiccup doesn't strand the boot.
+      dbgChatError("auth.token_refresh_failed", { phase: "first", message: e.message });
+    }
+    try {
+      const token = await getIdToken(window.firebaseAuth.currentUser, /* forceRefresh */ true);
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+    } catch (e) {
+      dbgChatError("auth.token_refresh_failed", { phase: "forced", message: e.message });
+      console.warn("[server-sync] Auth token refresh failed twice — request will be unauthenticated:", e.message);
+    }
     return headers;
   }
 
@@ -385,18 +399,20 @@ import {
     const MAX_ATTEMPTS = 3;
     const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     try {
-      const headers = await getServerAuthHeaders();
-
       let data = null;
       for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        // Re-fetch auth headers per attempt — a stale/expired token from
+        // attempt 1 (e.g. token refresh 5xx) must not poison every retry.
+        const headers = await getServerAuthHeaders();
         let res;
         try {
           res = await fetch(`/api/conversations?limit=${LIST_PAGE_SIZE}`, { headers });
         } catch (err) {
           // Network error — retry, then give up.
           if (attempt === MAX_ATTEMPTS) {
-            console.warn("[server-sync] loadFromServer network error:", err.message);
+            envLogNetFailure(err);
             _isLoadingFromServer = false;
+            _serverLoadFailed = true;
             return;
           }
           await wait(800 * attempt);
@@ -414,6 +430,7 @@ import {
         if (!retryable || attempt === MAX_ATTEMPTS) {
           console.warn("[server-sync] Failed to load conversations:", res.status);
           _isLoadingFromServer = false;
+          _serverLoadFailed = true;
           return;
         }
         console.warn(`[server-sync] Transient ${res.status} loading conversations — retry ${attempt}/${MAX_ATTEMPTS - 1}`);
@@ -442,6 +459,7 @@ import {
       state.conversations = allConversations;
       _listHasMore = data.hasMore === true;
       _listCursor = data.nextCursor || null;
+      _serverLoadFailed = false;
       if (!opts.keepActiveId) state.activeId = null; // let URL routing decide what's active
       saveState(); // persist to localStorage as write-behind cache (won't trigger syncToServer because _isLoadingFromServer is true)
       renderHistory();
@@ -4456,6 +4474,72 @@ import {
     showChatStatus("Loading chat…", "Restoring your conversation.");
   }
 
+  /* ------------------------------------------------------------------ */
+  /* Connectivity recovery                                               */
+  /* ------------------------------------------------------------------ */
+  // Boot on a shaky connection used to fail silently: Firebase's token
+  // refresh is the first request offline hardware kills (the securetoken
+  // 5xxes then "Load failed" on GET /api/conversations in the trace), the
+  // sidebar stayed empty, and only a manual refresh recovered. Register a
+  // net listener ONCE per session: offline marks the banner/log, online
+  // re-runs the boot load when it previously failed.
+  let _netListenerBound = false;
+  let _netWasOffline = false;
+
+  function envLogNetFailure(err) {
+    const msg = err && err.message ? err.message : String(err);
+    // Safari says "Load failed", Chromium says "Failed to fetch".
+    const isNetwork = /load failed|failed to fetch|networkerror|network error/i.test(msg);
+    if (isNetwork) {
+      dbgChatError("net.failure", { message: msg, online: typeof navigator !== "undefined" ? navigator.onLine : null });
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        _netWasOffline = true;
+        showOfflineNotice();
+      }
+    } else {
+      dbgChatError("sync.loadFailed", { message: msg });
+    }
+  }
+
+  function showOfflineNotice() {
+    if (document.getElementById("lu-offline-pill")) return;
+    const pill = document.createElement("div");
+    pill.id = "lu-offline-pill";
+    pill.setAttribute("role", "status");
+    pill.style.cssText =
+      "position:fixed;top:calc(var(--topbar-height, 56px) + 8px);left:50%;transform:translateX(-50%);" +
+      "z-index:60;background:#2a1a04;color:#f2b705;border:1px solid rgba(242,183,5,.35);" +
+      "border-radius:999px;padding:6px 14px;font-size:12px;font-weight:600;font-family:inherit;" +
+      "pointer-events:none;";
+    pill.textContent = "You're offline — conversations will load when you're back online.";
+    document.body.appendChild(pill);
+  }
+
+  function hideOfflineNotice() {
+    const pill = document.getElementById("lu-offline-pill");
+    if (pill) pill.remove();
+  }
+
+  function bindConnectivityRecovery() {
+    if (_netListenerBound) return;
+    _netListenerBound = true;
+    window.addEventListener("offline", () => {
+      _netWasOffline = true;
+      dbgChat("net.offline", {});
+      showOfflineNotice();
+    });
+    window.addEventListener("online", () => {
+      dbgChat("net.online", { wasOffline: _netWasOffline });
+      hideOfflineNotice();
+      if (!_netWasOffline && !_serverLoadFailed) return; // nothing to recover
+      _netWasOffline = false;
+      if (!state.user) return;
+      dbgChat("net.recovering", { reason: _serverLoadFailed ? "boot-load-failed" : "was-offline" });
+      loadFromServer({ keepActiveId: true })
+        .catch((err) => console.warn("[net] reconnect resync failed:", err.message));
+    });
+  }
+
   function renderNotFound() {
     showChatStatus("Chat not found", "This chat doesn't exist, was deleted, or belongs to a different account.", { showHome: true });
   }
@@ -4487,6 +4571,14 @@ import {
     initAuth();       // auth first — more critical than composer
     initPromptBar();  // prompt bar before updateComposerState so it can delegate
     bindStarterPrompts();
+    bindConnectivityRecovery();
+    // If we booted while already offline, surface it immediately instead of
+    // letting the first failed fetch discover it.
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      _netWasOffline = true;
+      showOfflineNotice();
+      dbgChat("net.offline", { atBoot: true });
+    }
     updateComposerState();
   }
 
