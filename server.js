@@ -140,6 +140,10 @@ app.use(express.static(PUBLIC_DIR, {
       res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
       res.set("Pragma", "no-cache");
       res.set("Expires", "0");
+    } else if (filePath.includes("\\vendor\\") || filePath.includes("/vendor/")) {
+      // Vendored assets (fonts, fontawesome css) never change per deploy;
+      // cache hard for a week so repeat loads don't re-fetch them.
+      res.set("Cache-Control", "public, max-age=604800, immutable");
     }
   },
 }));
