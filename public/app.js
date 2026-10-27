@@ -687,20 +687,31 @@ import {
     }
   }
 
-  // Sync a single message to server immediately (for critical updates like step completion)
+  // Sync a single message to server immediately (for critical updates like
+  // step completion). Coalesces concurrent PUTs of the same message — the
+  // mass syncToServer loop and the finalize path used to hit the same
+  // message within ~200ms, exactly the duplicated server writes in the
+  // debug log.
+  const _syncMsgInflight = new Map();
   async function syncMessageToServer(convoId, message) {
     if (!isServerMode()) return;
-    try {
-      const headers = await getServerAuthHeaders();
-      const res = await syncFetch(`/api/conversations/${convoId}/messages/${message.id}`, {
-        method: "PUT",
-        headers,
-        body: JSON.stringify(message),
-      });
-      if (res.ok) message._synced = true;
-    } catch (e) {
-      console.warn(`[server-sync] syncMessage failed for ${message.id}:`, e.message);
-    }
+    const key = `${convoId}/${message.id}`;
+    if (_syncMsgInflight.has(key)) return _syncMsgInflight.get(key);
+    const task = (async () => {
+      try {
+        const headers = await getServerAuthHeaders();
+        const res = await syncFetch(`/api/conversations/${convoId}/messages/${message.id}`, {
+          method: "PUT",
+          headers,
+          body: JSON.stringify(message),
+        });
+        if (res.ok) message._synced = true;
+      } catch (e) {
+        console.warn(`[server-sync] syncMessage failed for ${message.id}:`, e.message);
+      }
+    })();
+    _syncMsgInflight.set(key, task);
+    try { await task; } finally { _syncMsgInflight.delete(key); }
   }
 
   // Migrate existing localStorage conversations to server.

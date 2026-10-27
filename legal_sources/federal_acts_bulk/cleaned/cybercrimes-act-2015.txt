@@ -1,0 +1,999 @@
+1. 	The objectives of this Act are to –
+(a) provide an effective and unified legal, regulatory and institutional framework for
+the prohibition, prevention, detection, prosecution and punishment of cybercrimes
+in Nigeria;
+(b) ensure the protection of critical national information infrastructure; and
+(c) promote cyber security and the protection of computer systems and networks,
+electronic communications, data and computer programs, intellectual property and
+privacy rights.
+Objectives.
+2. 	The provisions of this Act shall apply throughout the Federal Republic of Nigeria. 	Application.
+PART II -­‐ PROTECTION OF CRITICAL NATIONAL INFORMATION INFRASTRUCTURE
+3. 	(1) The President may on the recommendation of the National Security Adviser, by
+Order published in the Federal Gazette, designate certain computer systems, and/or
+networks, whether physical or virtual, and/or the computer programs, computer
+data and/or traffic data vital to this country that the incapacity or destruction of or
+interference with such system and assets would have a debilitating impact on
+security, national or economic security, national public health and safety, or any
+combination 	of 	those 	matters 	as 	constituting 	Critical 	National 	Information
+Infrastructure.
+(2) The Presidential Order made under subsection (1) of this section may prescribe
+minimum standards, guidelines, rules or procedure in respect of -­‐
+(a) the protection or preservation of critical information infrastructure;
+(b) the general management of critical information infrastructure;
+(c) access to, transfer and control of data in any critical information infrastructure;
+Designation of
+certain
+computer
+systems or
+networks as
+critical national
+information
+infrastructure.
+
+-- 5 of 43 --
+
+(d) infrastructural or procedural rules and requirements for securing the integrity and
+authenticity of data or information contained in any designated critical national
+information infrastructure;
+(e) the storage or archiving of data or information designated as critical national
+information infrastructure;
+(f) recovery plans in the event of disaster, breach or loss of the critical national
+information infrastructure or any part of it; and
+(g) any other matter required for the adequate protection, management and control
+of data and other resources in any critical national information infrastructure.
+4. 	The Presidential Order made under section 3 of this Act may require the Office of the
+National Security Adviser to audit and inspect any Critical National Information
+Infrastructure at any time to ensure compliance with the provisions of this Act.
+Audit and
+Inspection of
+critical national
+information
+infrastructure.
+PART III -­‐ OFFENCES AND PENALTIES
+5. 	(1) Any person who with intent, commits any offence punishable under this Act
+against any critical national information infrastructure, designated pursuant to
+section 3 of this Act, shall be liable on conviction to imprisonment for a term of not
+more than 10 years without an option of fine.
+(2) Where the offence committed under subsection (1) of this section results in
+grievous bodily harm to any person, the offender shall be liable on conviction to
+imprisonment for a term of not more than 15 years without option of fine.
+(3) Where the offence committed under subsection (1) of this section results in the
+death of person(s), the offender shall be liable on conviction to life imprisonment.
+Offences against
+critical national
+information
+infrastructure.
+6. 	(1) Any person, who without authorization, intentionally accesses in whole or in part,
+a computer system or network for fraudulent purposes and obtain data that are vital
+to 	national 	security, 	commits 	an 	offence 	and 	shall 	be 	liable 	on 	conviction
+to imprisonment for a term of not more than 5 years or to a fine of not more than
+N5,000,000.00 or to both fine and imprisonment.
+(2) Where the offence provided in subsection (1) of this section is committed with
+the intent of obtaining computer data, securing access to any program, commercial
+or industrial secrets or classified information, the punishment shall be imprisonment
+for a term of not more than 7 years or a fine of not more than N7, 000,000.00 or to
+both such fine and imprisonment.
+(3) Any person who, with the intent to commit an offence under this section, uses
+any device to avoid detection or otherwise prevent identification or attribution with
+the act or omission, commits an offence and shall be liable on conviction to
+Unlawful access
+to a computer.
+
+-- 6 of 43 --
+
+imprisonment for a term of not more than 7 years or to a fine of not more than
+N7,000,000.00 or to both such fine and imprisonment.
+(4) Any person or organisation who knowingly and intentionally trafficks in any
+password or similar information through which a computer may be accessed without
+lawful authority, if such trafficking affects public, private and or individual interest
+within or outside the federation of Nigeria, commits an offence and shall be liable on
+conviction to a fine of not more than N7, 000,000.00 or imprisonment for a term of
+not more than 3 years or both such fine and imprisonment.
+7. 	(1) From the commencement of this Act all operators of a cybercafé shall register as
+a business concern with Computer Professionals’ Registration Council in addition to a
+business name registration with the Corporate Affairs Commission. Cybercafés shall
+maintain a register of users through a sign-­‐in register. This register shall be available
+to law enforcement personnel whenever needed.
+(2) Any person, who perpetrates electronic fraud or online fraud using a cybercafé,
+shall be guilty of an offence and shall be sentenced to Three Years imprisonment or a
+fine of One Million Naira or both.
+(3) In the event of proven connivance by the owners of the cybercafé, such owners
+shall be guilty of an offence and shall be liable to a fine of N 2,000,000.00 or a 3 years
+jail term or both.
+(4) The burden of proving connivance in subsection 3 above shall be on the
+prosecutor.
+Registration of
+Cybercafé.
+8. 	Any person who without 	lawful authority, intentionally or for fraudulent purposes
+does an act which causes directly or indirectly the serious hindering of the
+functioning of a computer system by inputting, transmitting, damaging, deleting,
+deteriorating, 	altering 	or 	suppressing 	computer 	data 	or 	any 	other 	form 	of
+interference with the computer system, which prevents the computer system or any
+part thereof, from functioning in accordance with its intended purpose, commits an
+offence and shall be liable on conviction to imprisonment for a term of not more
+than 2 years or to a fine of not more than N5,000,000.00 or to both fine and
+imprisonment.
+System
+Interference.
+9. 	Any person who unlawfully destroys or aborts any electronic mails or processes
+through which money and or valuable information is being conveyed is guilty of an
+offence and is liable to imprisonment for 7 years in the first instance and upon
+second conviction shall be liable to 14 years imprisonment.
+Intercepting
+Electronic
+Messages,
+Emails Electronic
+Money
+Transfers.
+10. 	From the commencement of this Act, any person being employed by or under a Local
+Government of Nigeria, private organization or financial institution with respect to
+working with any critical infrastructure, electronic mails commits any act which he is
+not authorized to do by virtue of his contract of service or intentionally permits,
+Tampering with
+Critical
+Infrastructure.
+
+-- 7 of 43 --
+
+tampering with such computer, is guilty of an offence and is liable to a fine of N2
+,000,000.00 or imprisonment for 3 years .
+11. 	Any person who misdirects electronic messages with either the intention to
+fraudulently obtain financial gain as a result of such act or with the intention of
+obstructing the process in order to cause delay or speeding the messages with a view
+to cause an omission or commission that may defeat the essence of such messages is
+guilty of an offence and is liable to imprisonment for Three Years or a fine of N1
+,000,000.00 or both.
+Willful
+misdirection of
+Electronic
+Messages.
+12.
+13.
+(1) Any person, who intentionally and without authorization, intercepts by technical
+means, non-­‐public transmissions of computer data, content, or traffic data, including
+electromagnetic emissions or signals from a computer, computer system or network
+carrying or emitting signals, to or from a computer, computer system or connected
+system or network; commits an offence and shall be liable on conviction to
+imprisonment for a term of not more than 2 years or to a fine of not more than
+N5,000,000.00 or to both such fine and imprisonment.
+(2) Any person or organization who by means of false pretense induces any person
+employed by or under the government of the federal, state or local government of
+Nigeria or any person in charge of electronic devices to deliver to him any electronic
+messages which 	includes but is not limited to E-­‐mail, credit and debit cards
+information, facsimile messages which is not specifically meant for him or his
+organization (in the latter case except he is authorized to receive such messages for
+and on behalf of his organization) commits an offence and shall be liable on
+conviction to imprisonment for a term of Two Years or a fine of not more than
+N1,000,000 or to both such fine and imprisonment.
+(3) Any person who, being employed by or under the authorities of the Local, State,
+Federal Government of Nigeria or private organization who intentionally hides or
+detains any electronic mails, messages, electronic payment, credit and debit card
+which was found by him or delivered to him in error and which to his knowledge
+ought to be delivered to another person, commits an offence and shall be liable on
+conviction to imprisonment for 1 Year or a fine of N250,000 Naira or to both fine and
+imprisonment.
+A person who knowingly accesses any computer or network and inputs, alters,
+deletes or suppresses any data resulting in inauthentic data with the intention that
+such inauthentic data will be considered or acted upon as if it were authentic or
+genuine, regardless of whether or not such data is directly readable or intelligible,
+commits an offence and is liable on conviction to imprisonment for a term of not less
+than 3 years or to a fine of not less than 7,000,000.00 or both
+Unlawful
+interceptions.
+Computer
+Related Forgery.
+14. 	(1) Any person who knowingly and without authority or in excess of authority causes 	Computer
+Related Fraud.
+
+-- 8 of 43 --
+
+15.
+any loss of property to another by altering, erasing, inputting or suppressing any data
+held in any computer, whether or not for the purpose of conferring any economic
+benefits on himself or another person, commits an offence and is liable on conviction
+to imprisonment for a term of not less than 3 years or to a fine of not less than
+7,000,000.00 or both fine and imprisonment.
+(2) Any person who with intent to defraud sends electronic message materially
+misrepresents any fact or set of facts upon which reliance the recipient or another
+person is caused to suffer any damage or loss, commits an offence and shall be liable
+on conviction to imprisonment for a term of not less than 5 years and to a fine of not
+less than N10,000,000.00 or to both fine and imprisonment.
+(3) Any person who with intent to defraud, franks electronic messages, instructions,
+super scribes any electronic message and or instruction, commits an offence and
+shall be liable on conviction to imprisonment for a term of not more than 3 years or
+to a fine of not more than N5,000,000.00 or to both such fine and imprisonment
+(4) Any person employed in the public or private sector, who with intent to defraud,
+manipulates a computer or other electronic payment devices with the intent to short
+pay or overpay or actually short pays or overpays any employee of the public or
+private sector, commits an offence and shall be liable on conviction to imprisonment
+for a term of not more than 7 Years and shall forfeit the proprietary interest in the
+stolen money or property to the bank, financial institution or the customer.
+(a) Any person employed by or under the authority of any bank or other financial
+institutions who with intent to defraud, directly or indirectly, diverts electronic mails,
+commits an offence and shall be liable on conviction to imprisonment for a term of
+not more than 5 Years or a fine of not more than N7,000,000.00 or to both fine and
+imprisonment.
+(b) Any person who commits an offence under subsection (4) above, which results in
+material and/or financial loss to the bank, financial institution and/or customers shall
+in addition to 7 years imprisonment be liable to refund the stolen money or forfeit
+any property to which it has been converted to the bank, financial institution or the
+customer.
+(5) Any employee of a financial institution found to have connived with another
+person or group of persons to perpetrate fraud using computer system(s) or
+network, commits an offence and shall be liable on conviction to imprisonment for a
+term of not more than 7 years and shall in addition, refund the stolen money or
+forfeit any property to which it has been converted to the bank, financial institution
+or the customer.
+(a) 	Any person who steals a financial institutions or Public Infrastructure Terminal
+commits an offence and shall be liable on conviction to imprisonment for a term of 3
+years or a fine of N1,000,000.00 or to both fine and imprisonment.
+Theft of
+Electronic
+Devices.
+
+-- 9 of 43 --
+
+(b) Any person who steals an Automated Teller Machine (ATM) commits an offence
+and shall be liable on conviction to imprisonment for a term of not more than 7 years
+or a fine of not more than N10,000,000.00 or to both fine and imprisonment. 	All
+proceeds of such theft shall be forfeited to the lawful owners of the ATM.
+(c) Any person who attempts to steal an ATM, commits an offence and shall be liable
+on conviction to imprisonment for a term of not more than 1 year or a fine of not
+more than N1,000,000.00 or both fine and imprisonment.
+16. 	(1) Any person who with intent and without lawful authority directly or indirectly
+modifies or causes modification of any data held in any computer system or network,
+commits an offence and shall be liable on conviction to imprisonment for a term of
+not more than 3 years or to a fine of not more than N7,000,000.00 or to both such
+fine and imprisonment.
+(2) For the purpose of this section, a modification of any data held in any computer
+system or network includes modifications that take place whereby the operation of
+any function of the computer system or network concerned, or any-­‐
+(a) program or data held in it is altered or erased;
+(b) program or data is added to or removed from any program or data held in it;
+(c) program or data is suppressed to prevent or terminate the availability of the data
+or function to its authorized users; or
+(d) act occurs which impairs the normal operation of any computer, computer
+system or network concerned.
+(3) Any person who without lawful authority, intentionally does an act which causes
+directly or indirectly the serious hindering of the functioning of a computer system by
+inputting, transmitting, damaging, deleting, deteriorating, altering or suppressing
+computer data or any other form of interference with the computer system, which
+prevents the computer system or any part thereof, from functioning in accordance
+with its intended purpose, commits an offence and shall be liable on conviction to
+imprisonment for a term of not more than 2 years or to a fine of not more than
+N5,000,000.00 or to both such fine and imprisonment.
+Unauthorized
+modification of
+computer
+systems,
+network data
+and System
+interference.
+17. 	(1) (a) Electronic signature in respect of purchases of goods, and any other
+transactions shall be binding.
+(b) Whenever the geniuses or otherwise of such signatures is in question, the burden
+of proof, that the signature does not belong to the purported originator of such
+electronic signatures shall be on the contender.
+(c) Any person who with the intent to defraud and or misrepresent, forges through
+electronic devices another person’s signature or company mandate commits an
+Electronic
+Signatures.
+
+-- 10 of 43 --
+
+18.
+offence and shall be liable on conviction to imprisonment for a term of not more
+than 7 years or a fine of not more than N10,000,000.00 or to both fine and
+imprisonment.
+(2) The following transactions shall be excluded from the categories of contractual
+transactions or declarations that are valid by virtue of electronic signature:
+(a) creation and execution of wills, codicils and or other testamentary documents;
+(b) Death certificate;
+(c) Birth certificate;
+(d) matters of family law such as marriage, divorce, adoption and other related
+issues;
+(e) issuance of court orders, notices, official court documents such as affidavit,
+pleadings, motions and other related judicial documents and instruments;
+(f) any cancellation or termination of utility services;
+(g) any instrument required to accompany any transportation or handling of
+dangerous materials either solid or liquid in nature;
+(h) any document ordering withdrawal of drugs, chemicals and any other material
+either on the ground that such items are fake, dangerous to the people or the
+environment or expired by any authority empowered to issue orders for withdrawal
+of such items.
+(1) Any person that accesses or causes to be accessed any computer or computer
+system or network for purposes of terrorism, commits an offence and is liable on
+conviction to life imprisonment.
+(2) For the purpose of this section, “terrorism” shall have the same meaning under
+the Terrorism (Prevention) Act, 2011, as amended.
+Cyber Terrorism.
+19. 	(1) From the commencement of this Act, no financial institution shall give posting
+and authorizing access to any single employee.
+(2) Any person or persons authorized to give access to computer to employees and
+gives more than one access to any person or persons is guilty of an offense and is
+liable to payment of a fine of One Million Naira or Seven years imprisonment or both.
+(3) Financial institutions must as a duty to their customers put in place effective
+counter-­‐fraud measures to safeguard their sensitive information, where a security
+breach occurs the proof of negligence lies on the customer to prove the financial
+institution in question could have done more to safeguard its information integrity.
+Exceptions to
+Financial
+Institutions,
+Posting and
+authorized
+options.
+
+-- 11 of 43 --
+
+20. 	Any person being authorized by any financial institution and charged with the
+responsibility of using computer or other electronic devices for financial transactions
+such as posting of debit and credit, issuance of electronic instructions as they relate
+to sending of electronic debit and credit messages or charged with the duty of
+confirmation of electronic fund transfer, unlawfully with the intent to defraud issues
+false 	electronic 	or 	verbal 	messages 	is 	guilty 	of 	an 	offence 	and 	is 	liable 	to
+imprisonment for 7 years.
+Fraudulent
+issuance of E-­‐
+Instructions.
+21. 	(1) Any person or institution, who operates a computer system or a network,
+whether public or 	private, must immediately inform the National Computer
+Emergency Response Team (CERT) Coordination Center of any attacks, intrusions and
+other disruptions liable to hinder the functioning of another computer system or
+network, so that the National CERT can take the necessary measures to tackle the
+issues.
+(2) In such cases mentioned in subsection (1) above, and in order to protect
+computer systems and networks, the National CERT Coordination Center may
+propose the isolation of affected computer systems or network pending the
+resolution of the issues.
+(3) Any person or institution who fails to report any such incident to the National
+CERT within 7 days of its occurrence, commits an offence and shall be liable to denial
+of internet services. Such persons or institution shall in addition, pay a mandatory
+fine of N2, 000,000.00 into the National Cyber Security Fund.
+Reporting of
+Cyber Threats.
+22. 	(1) Any person who is engaged in the services of any financial institution, and as a
+result of his special knowledge commits identity theft of its employer, staff, service
+providers and consultants with the intent to defraud is guilty of an offence and upon
+conviction shall be sentenced to 7 years imprisonment or N5,000,000.00 fine or both.
+(2) Any person who fraudulently or dishonestly makes use of the electronic
+signature, password or any other unique identification feature of any other person;
+or
+(3)fraudulently impersonates another entity or person, living or dead, with intent to -­‐
+(a) gain advantage for himself or another person;
+(b) obtain any property or an interest in any property;
+(c) cause disadvantage to the entity or person being impersonated or another
+person; or
+(d) avoid arrest or prosecution or to obstruct, pervert or defeat the course of justice.
+(4) any person who makes or causes to be made, either directly or indirectly, any
+Identity theft
+and
+impersonation.
+
+-- 12 of 43 --
+
+false statement as to a material fact in writing, knowing it to be false and with intent
+that it be relied upon respecting his identity or that of any other person or his
+financial condition or that of any other person for the purpose of procuring the
+issuance of a card or other instrument to himself or another person commits an
+offence and 	shall be liable on conviction to imprisonment for a term of 	not more
+than 5 years or a fine of not more than N7,000,000.00 or to both such fine and
+imprisonment.
+23. 	(1) Any person who intentionally uses any computer system or network in or for-­‐
+(a) producing child pornography;
+(b) offering or making available child pornography;
+(c) distributing or transmitting child pornography;
+(d) procuring child pornography for oneself or for another person;
+(e) possessing child pornography in a computer system or on a computer-­‐data
+storage medium:
+commits an offence under this Act and shall be liable on conviction –
+(i) in the case of paragraphs (a), (b) and (c) to imprisonment for a term of 10 years or
+a fine of not more than N20,000,000.00 or to both fine and imprisonment; and
+(ii) in the case of paragraphs(d) and (e) of this subsection, to imprisonment for a term
+of not more than 5 years or a fine of not more than N10,000,000.00 or to both such
+fine and imprisonment.
+(2) Any person who knowingly makes or sends other pornographic images to another
+computer by way of unsolicited distribution shall be guilty of an offence and upon
+conviction shall be sentenced to One year imprisonment or a fine of Two Hundred
+and Fifty Thousand Naira or both.
+(3) Any person who, intentionally proposes, grooms or solicits, through any computer
+system or network, to meet a child for the purpose of:
+(a) engaging in sexual activities with the child;
+(b) engaging in sexual activities with the child where –
+(i) use is made of coercion, inducement, force or threats;
+(ii) abuse is made of a recognized position of trust, authority or influence over the
+child, including within the family; or
+Child
+pornography and
+related offences.
+
+-- 13 of 43 --
+
+(iii) abuse is made of a particularly vulnerable situation of the child, mental or
+physical disability or a situation of dependence;
+(c) recruiting, inducing, coercing, exposing, or causing a child to participate in
+pornographic performances or profiting from or otherwise exploiting a child for such
+purposes;
+commits an offence under this Act and shall be liable on conviction-­‐
+(i) in the case of paragraphs (a) to imprisonment for a term of not more than 10
+years and a fine of not more than N15,000,000.00; and
+(ii) in the case of paragraphs(b) and(c) of this subsection, to imprisonment for a term
+of not more than 15 years and a fine of not more than N25,000,000.
+(4) For the purpose of subsection (1) above, the term “child pornography” shall
+include pornographic material that visually depicts-­‐
+(a) a minor engaged in sexually explicit conduct;
+(b) a person appearing to be a minor engaged in sexually explicit conduct; and
+(c) realistic images representing a minor engaged in sexually explicit conduct.
+(5) For the purpose of this section, the term “child” or “minor” means a person
+below 18 years of age.
+24. 	Any person who knowingly or intentionally sends a message or other matter by
+means of computer systems or network that -­‐
+(a) is grossly offensive, pornographic or of an indecent, obscene or menacing
+character or causes any such message or matter to be so sent; or
+(b) he knows to be false, for the purpose of causing annoyance, inconvenience
+danger, obstruction, insult, injury, criminal intimidation, enmity, hatred, ill will 	or
+needless anxiety to another or causes such a message to be sent:
+commits an offence under this Act and shall be liable on conviction to a fine of not
+more than N7,000,000.00 or imprisonment for a term of not more than 3 years or to
+both such fine and imprisonment.
+(2) Any person who knowingly or intentionally transmits or causes the transmission
+of any communication through a computer system or network -­‐
+(a) to bully, threaten or harass another person, where such communication places
+another person in fear of death, violence or bodily harm or to another person;
+Cyberstalking.
+
+-- 14 of 43 --
+
+(b) containing any threat to kidnap any person or any threat to harm the person of
+another, any demand or request for a ransom for the release of any kidnapped
+person, to extort from any person, firm, association or corporation, any money or
+other thing of value; or
+(c) containing any threat to harm the property or reputation of the addressee or of
+another or the reputation of a deceased person or any threat to accuse the
+addressee or any other person of a crime, to extort from any person, firm,
+association, or corporation, any money or other thing of value:
+commits an offence under this Act and shall be liable on conviction-­‐
+(i) in the case of paragraphs (a) and (b) of this subsection to imprisonment for a term
+of 10 years and/or a minimum fine of N25,000,000.00; and
+(ii) in the case of paragraph (c) and (d) of this subsection, to imprisonment for a term
+of 5 years and/or a minimum fine of N15,000,000.00.
+(3) A court sentencing or otherwise dealing with a person convicted of an offence
+under subsections (1) and (2) may also make an order, which may, for the purpose of
+protecting the victim or victims of the offence, or any other person mentioned in the
+order, from further conduct which-­‐
+(a) amounts to harassment; or
+(b) will cause fear of violence, death or bodily harm; prohibit the defendant from
+doing anything described/specified in the order.
+(4) A defendant who does anything which he is prohibited from doing by an order
+under this section, commits an offence and shall be liable on conviction to a fine of
+not more than N10,000,000.00 or imprisonment for a term of not more than 3 years
+or to both such fine and imprisonment.
+(5) The order made under subsection (3) of this section may have effect for a
+specified period or until further order and the defendant or any other person
+mentioned in the order may apply to the court which made the order for it to be
+varied or discharged by a further order.
+(6) Notwithstanding the powers of the court under subsections (3) and (5), the court
+may make an interim order for the protection of victim(s) from further exposure to
+the alleged offences.
+25. 	(1) Any person who, intentionally takes or makes use of a name, business name,
+trademark, domain name or other word or phrase registered, owned or in use by any
+individual, body corporate or belonging to either the Federal, State or Local
+Governments in Nigeria, on the internet or any other computer network, without
+authority or right, and for the purpose of interfering with their use by the owner,
+registrant or legitimate prior user, commits an offence under this Act and shall be
+Cybersquatting.
+
+-- 15 of 43 --
+
+liable on conviction to imprisonment for a term of not more than 2 years or a fine of
+not more than N5,000,000.00 or to both fine and imprisonment.
+(2) In awarding any penalty against an offender under this section, a court shall have
+regard to the following -­‐
+(a) a refusal by the offender to relinquish, upon formal request by the rightful owner
+of the name, business name, trademark, domain name, or other word or phrase
+registered, owned or in use by any individual, body corporate or belonging to either
+the Federal, State or Local Governments in Nigeria; or
+(b) an attempt by the offender to obtain compensation in any form for the release to
+the rightful owner for use of the name, business name, trademark, domain name or
+other word or phrase registered, owned or in use by any individual, body corporate
+or belonging to either the Federal, State or Local Government of Nigeria.
+(3) In addition to the penalty specified under this section, the court may make an
+order directing the offender to relinquish such registered name, mark, trademark,
+domain name, or other word or phrase to the rightful owner.
+26. 	(1) Any person who with intent –
+(a) distributes or otherwise makes available, any racist or xenophobic material to the
+public through a computer system or network;
+(b) threatens through a computer system or network –
+(i) persons for the reason that they belong to a group distinguished by race, colour,
+descent, national or ethnic origin, as well as, religion, if used as a pretext for any of
+these factors; or
+(ii) a group of persons which is distinguished by any of these characteristics;
+(c) insults publicly through a computer system or network–
+(i) persons for the reason that they belong to a group distinguished by race, colour,
+descent or national or ethnic origin, as well as religion, if used as a pretext for any of
+these factors; or
+(ii) a group of persons which is distinguished by any of these characteristics; or
+(d) distributes or otherwise makes available, through a computer system or network,
+to the public, material which denies or approves or justifies acts constituting
+genocide or crimes against humanity, Commits an offence and shall be liable on
+conviction to imprisonment for a term of not more than 5 years or to a fine of not
+more thanN10,000,000.00 or both such fine and imprisonment.
+Racist and
+xenophobic
+offences.
+
+-- 16 of 43 --
+
+(2) For the purpose of subsection (1) of this section, the term “Crime against
+humanity” includes any of the following acts committed as part of a widespread or
+systematic attack directed against any civilian population, with knowledge of the
+attack: murders, extermination, enslavement, deportation or forcible transfer of
+population, imprisonment, torture, rape, sexual slavery, enforced prostitution, forced
+pregnancy, enforced sterilization or any other form of sexual violence of comparable
+gravity, persecution against an identifiable group on political, racial, national, ethnic,
+cultural, religious or gender grounds, enforced disappearance of persons, the crime
+of apartheid, other inhumane acts of similar character intentionally causing great
+suffering or serious bodily or mental injury.
+“Genocide” means any of the following acts committed with intent to destroy in
+whole or in part, a national, ethnic, racial or religious group as such: killing members
+of the group, deliberately inflicting on the group conditions of life calculated to bring
+about its physical destruction in whole or in part; imposing measures intended to
+prevent births within the group; forcibly transferring children of the group to another
+group.
+“racist or xenophobic material” means any written or printed material, any image or
+any other representation of ideas or theories, which advocates, promotes or incites
+hatred, discrimination or violence, against any individual group of individuals, based
+on race, color, descent or national or ethnic origin, as well as religion if used as a
+pretext for any of these factors.
+27. 	(1) Any person who –
+(a) attempts to commit any offence under this Act; or
+(b) aids, abets, conspires, counsels or procures another person(s) to commit any
+offence under this Act:
+commits an offence and shall be liable on conviction to the punishment provided for
+the principal offence under this Act.
+(2) Any employee of a financial institution found to have connived with another
+person or group of persons to perpetrate fraud using computer system(s) or
+network, commits an offence and shall be liable on conviction to imprisonment for a
+term of not more than 7 years and shall in addition, refund the stolen money or
+forfeit any property to which it has been converted to the bank, financial institution
+or the customer.
+Attempt,
+conspiracy,
+aiding and
+abetting.
+28. 	(1) Any person who unlawfully produces, supplies, adapts, manipulates or procures
+for use, imports, exports, distributes, offers for sale or otherwise makes available-­‐
+(a) any device, including a computer program or a component designed or adapted
+for the purpose of committing an offence under this Act;
+Importation and
+fabrication of E-­‐
+Tools.
+
+-- 17 of 43 --
+
+(b) a computer password, access code or similar data by which the whole or any part
+of a computer system or network is capable of being accessed for the purpose of
+committing an offence under this Act; or
+(c) any device, including a computer program designed to overcome security
+measures in any computer system or network with the intent that the devices be
+utilized for the purpose of violating any provision of this Act:
+commits an offence and shall be liable on conviction to imprisonment for a term of
+not more than 3 years or a fine of not more than N7,000,000.00 or to both.
+(2) Any person who with intent to commit an offence under this Act, has in his
+possession any device or program referred to in subsection (1) of this section,
+commits an offence and shall be liable on conviction to imprisonment for a term of
+not more than 2 years or to a fine of not more than N5,000,000.00 or to both such
+fine and imprisonment.
+(3) Any person who, knowingly and without authority, discloses any password,
+access code or any other means of gaining access to any program or data held in any
+computer or network for any unlawful purpose or gain, commits an offence and shall
+be liable on conviction to imprisonment for a term of not more than 2 years or to a
+fine of not more than N5,000,000.00 or to both fine and imprisonment.
+(4) Where the offence under subsection (1) of this section results in loss or damage,
+the offender shall be liable to imprisonment for a term of not more than 5 years or to
+a fine of not more than N10,000,000.00 or to both such fine and imprisonment.
+(5) Any person who with intent to commit any offence under this Act uses any
+automated means or device or any computer program or software to retrieve, collect
+and store password, access code or any means of gaining access to any program,
+data or database held in any computer, commits an offence and shall be liable on
+conviction to imprisonment for a term of not more than 5 years or to a fine of not
+more than N10,000,000.00 or to both such fine and imprisonment.
+(6) Any persons who without lawful authority and or appropriate license where
+required, with fraudulent intent, imports, transports or installs within the Federation
+of Nigeria any tool, implement, item used or designed to be used in making, forging,
+altering, or counterfeiting any electronic device, commits an offence and shall be
+liable on conviction to imprisonment for a term of not more than 7 Years or a fine of
+not more than N5,000,000.00 or to both such fine and imprisonment.
+29. 	(1) Any person or organization who being a computer based service provider and or
+vendor does any act with intent to defraud and by virtue of his position as a service
+provider, forges, illegally used security codes of the consumer with the intent to gain
+any financial and or material advantage or with intent to provide less value for
+money in his or its services to the consumer shall if corporate organization be guilty
+of an offence and is liable to a fine of N5,000,000.00and forfeiture of further
+Breach of
+Confidence by
+Service
+Providers.
+
+-- 18 of 43 --
+
+equivalent of the monetary value of the loss sustained by the consumer.
+(2) (a) Where an offence under this Act which has been committed by a body
+corporate is 	proved to have been committed on the instigation or with the
+connivance of or attributable to any neglect on the part of a director, manager,
+secretary or other similar officer of the body corporate, or any officer purporting to
+act in any such capacity, he, as well as the body corporate, where practicable, shall
+be deemed to be guilty of that offence and shall be liable to be proceeded against
+and punished accordingly.
+(b) Where a body corporate is convicted of an offence under this Act, the Court may
+order that the body corporate shall thereupon and without any further assurances,
+but for such order, be wound up and all its assets and properties forfeited to the
+Federal Government.
+(c) If the offender is a natural person, he commits an offence and shall be liable on
+conviction to imprisonment for a term of not more than 7 Years and to a fine of not
+more than N5,000,000.00 or to both such imprisonment and fine.
+(3) 	Nothing 	contained 	in 	this 	section 	shall 	render 	any 	person 	liable 	to 	any
+punishment, 	where 	he 	proves 	that 	the 	offence 	was 	committed 	without 	his
+knowledge or that he exercised all due diligence to prevent the commission of the
+offence.
+30. 	(1) Any person who manipulates an ATM machine or Point of Sales terminals with the
+intention to defraud shall be guilty of an offence and upon conviction sentenced to
+Five Years imprisonment or N5, 000,000.00 fine or both.
+(2) Any employee of a financial institution found to have connived with another
+person or group of persons to perpetrate fraud using an ATM of Point of sales device,
+shall be guilty of an offence and upon conviction sentenced to Seven Years
+imprisonment without an option of fine.
+Manipulation of
+ATM/POS
+Terminals.
+31. 	(1) Without prejudice to any contractual agreement between the employer and the
+employee all employees in both the public and private sectors must relinquish or
+surrender 	all 	codes 	and 	access 	rights 	to 	their 	employers 	immediately 	upon
+disengagement from their employment, and if such code or access right constitutes a
+threat or risk to the employer, it shall, unless there is any lawful reason to the
+contrary, be presumed that the refusal to relinquish or surrender such code or access
+right is intended to be used to hold such employer to ransom.
+(2) Any employee who, without any lawful reason, continues to hold unto the code
+or access right of his employer after disengagement without any lawful reason shall
+be guilty of an offence and liable on conviction to 3 years imprisonment or
+3,000,000.00 or both.
+Employees
+Responsibility.
+32. 	(1) Any person who knowingly or intentionally engages in computer phishing shall be 	Phishing,
+Spamming,
+
+-- 19 of 43 --
+
+liable upon conviction to 3 years imprisonment or a fine of N1, 000,000.00 or both.
+(2) Any person who engages in spamming with intent to disrupt the operations of a
+computer be it public or private or financial institutions shall be guilty of an offence
+and liable upon conviction to 3 years imprisonment or a fine of N1, 000,000.00 or
+both.
+(3) Any person who engages in malicious or deliberate spread of viruses or any
+malware thereby causing damage to critical information in public, private or financial
+institution’s computers shall be guilty of an offence is liable upon conviction to 3
+years imprisonment or a fine of N1, 000,000.00 or both.
+Spreading of
+Computer Virus.
+33. 	(1) Any person who with intent to defraud, uses any access device including credit,
+debit, charge, loyalty and other types of financial cards, to obtain cash, credit, goods
+or service commits an offence and shall be liable on conviction to imprisonment for a
+term of not more than 7 Years or a fine of not more than N5,000,000.00 or to both
+such fine and imprisonment 	and shall further be liable to payment in monetary
+terms the value of loss sustained by the owner of the credit card.
+(2) Any person who uses:
+(a) a counterfeit access device;
+(b) an unauthorized access device;
+(c) an access device issued to another person;
+resulting in a loss or gain commits an offence and shall be liable on conviction to
+imprisonment for a term of not more than 7 years or a fine of not more than
+N5,000,000.00 and forfeiture of the advantage or value derived from his act.
+(3) Any person who steals an electronic card commits an offence and shall be liable
+on conviction to imprisonment for a term of not more than 3 years or to a fine of not
+more than N1,000,000.00. He shall further be liable to repayment in monetary terms
+the value of loss sustained by the cardholder or forfeiture of the assets or goods
+acquired with the funds from the account of the cardholder.
+(4) Any person who receives a card that he knows or ought to know to have been
+lost, mislaid, or delivered under a mistake as to the identity or address of the
+cardholder and who retains possession with the intent to use, sell, or to traffic it to a
+person other than the issuer or the cardholder commits an offence and shall be liable
+on conviction to not more than 3 years imprisonment or to a fine of not more than
+N1,000,000.00 and shall further be liable to payment in monetary terms the value of
+loss sustained by the cardholder.
+(5) Any person who, with intent to defraud the issuer, a creditor, or any other
+person, obtains control over a card as security for a debt commits an offence and
+Electronic cards
+related fraud.
+
+-- 20 of 43 --
+
+shall be liable on conviction to imprisonment for a term of not more than 3 years or
+to a fine of not more than N3,000,000.00 or to such both fine and imprisonment and
+shall further be liable to payment in monetary terms the value of loss sustained by
+the card holder or forfeiture of the assets or goods acquired with the funds from the
+account of the cardholder.
+(6) Any person, other than the cardholder or a person authorized by him, who, with
+the intend to defraud the issuer or a creditor, signs a card commits an offence and
+shall be liable on conviction to imprisonment for a term of not more than 3 years or a
+fine of not more than N1,000,000.00.
+(7) Any person who, with intent to defraud an issuer or a creditor, uses, for the
+purpose of obtaining money, goods, services, or anything else of value, a card
+obtained or retained fraudulently or a card which he knows is forged or expired, or
+who obtains money, goods, services, or anything else of value by representing,
+without the consent or authorization of the cardholder, that he is the holder of a
+specified card, or by representing that he is the holder of a card and such card has
+been validly issued, commits an offence and shall be liable on conviction to
+imprisonment for a term of not more than 3 years and a fine of not more than
+N1,000,000.00.
+(8) (a) Any creditor who, with intent to defraud the issuer or the cardholder,
+furnishes goods, services, or anything else of value upon presentation of a card which
+he knows is obtained or retained fraudulently or illegally or a card which he knows is
+forged, expired, or revoked commits an offence and shall be liable on conviction to
+imprisonment for a term of not more than 3 years or a fine of not more than
+N1,000,000.00 or to both such fine and imprisonment.
+(b) Any Creditor who, with intent to defraud the issuer, or the cardholder, fails to
+furnish goods, services, or anything of value which he represents in writing to the
+issuer or the cardholder that he has furnished commits an offence and shall be liable
+on conviction to imprisonment for a term of not more than 3 years or a fine of not
+more than N1,000,000.00 or to both such fine and imprisonment.
+(c) Any person who is authorized by a creditor to furnish goods, services, or anything
+else of value upon presentation of a card or a card account number by a cardholder,
+or any agent or employee of such person, who, with intent to defraud the issuer, or
+the cardholder, presents to the issuer or the cardholder, for payment, a card
+transaction record of sale, which sale was not made by such person or his agent or
+employee, commits an offence and shall be liable on summary conviction to a fine of
+not more than N500,000 and to imprisonment for 3 years.
+(d) Any person who, without the creditor’s authorization, employs, solicits or
+otherwise causes a person who is authorized by the creditor to furnish goods,
+services or anything else of value upon presentation of a card account number by the
+cardholder, or employs, solicits or otherwise causes an agent or employee of such
+authorized person, to remit to the creditor a card transaction record of a sale that
+
+-- 21 of 43 --
+
+was not made by such authorized person or his agent or employee commits an
+offence and shall be liable on conviction to imprisonment for a term of not more
+than 3 years or to a fine of not more than N1,000,000.00 or to both such fine and
+imprisonment.
+(9) Any person who with intent to defraud, possesses counterfeit cards, invoices,
+vouchers, sales drafts, or other representations or manifestations of counterfeit
+cards, or card account numbers of another person, commits an offence and shall be
+liable on conviction to imprisonment for a term of not more than 5 years or to a fine
+of not more than N3,000,000.00 or to both such fine and imprisonment.
+(10) Any person who receives, possesses, transfers, buys, sells, controls, or has
+custody of any card-­‐making equipment with intent that such equipment be used in
+the manufacture of counterfeit cards commits an offence and shall be liable on
+conviction to imprisonment for a term of not more than 5 years or to a fine of not
+more than N7,000,000.00 or to both such fine and imprisonment.
+(11) Any person who, with intent to defraud another person, falsely alters any
+invoice for money, goods, services, or anything else of value obtained by use of a
+card after that invoice has been signed by the cardholder or a person authorized by
+him, commits an offence and shall be liable on conviction to imprisonment for a term
+of not more than 3 years or to a fine of not more than N5,000,000.00 or to both such
+fine and imprisonment.
+(12) Any institution that makes available, lends, donates, or sells any list or portion of
+a list of cardholders and their addresses and account numbers to any person without
+the prior written permission of the cardholder(s), commits an offence and shall be
+liable on conviction to a fine of N10,000,000.00.
+(13) An institution may make available to the Central Bank of Nigeria or a licensed
+credit bureau, which seeks to determine only the cardholder’s rating, any list or
+portion of a list of any cardholder and their addresses without the permission of the
+cardholder, but must within 7 working days, give notice in writing of the disclosure to
+the cardholder. Such institution which fails to comply with the requirement to notify
+the cardholder, commits an offence and shall be liable on conviction to a fine of not
+more than N1,000,000.00.
+34. 	Any person, other than the issuer, who receives and retains possession of two or
+more cards issued in the name or names of different cardholders, which cards he
+knows were taken or retained under circumstances which constitute a card theft
+commits an offence and is liable on summary conviction to 3 years imprisonment or
+to a fine of one N1,000,000.00and shall further be liable to repayment in monetary
+terms the value of loss sustained by the cardholder or forfeiture of the assets or
+goods acquired with the funds from the account of the cardholder.
+Dealing in Card
+of Another.
+35. 	Any person other than an issuer or their authorized agent who sells a card or a
+person who buys a card from a person other than an issuer or their authorized agent
+Purchase or Sale
+of Card of
+Another.
+
+-- 22 of 43 --
+
+commits an offence and is liable on summary conviction to a fine of N500,000.00 and
+shall further be liable to payment in monetary terms the value of loss sustained by
+the card holder or forfeiture of the assets or goods acquired with the funds from the
+account of the cardholder.
+36. 	(1) Any person who with intent to defraud uses any device or attachment, e-­‐mails or
+fraudulent website to obtain information or details of a cardholder commits an
+offence and upon conviction is liable to imprisonment for a period of 3years or to a
+fine of N 1,000,000.00 or both.
+(2) 	Any 	person 	who 	fraudulently 	re-­‐direct 	funds 	transfer 	instructions 	during
+transmissions over any authorized communications path or device and re-­‐directs
+funds transferred electronically with an authorized account commits any offence and
+upon conviction is liable to imprisonment for a period of 3years or to a fine of N
+1,000,000.00 and shall further be liable to payment in monetary terms the value of
+loss sustained by the cardholder or forfeiture of the assets or goods acquired with
+the funds from the account of the cardholder.
+Use of
+Fraudulent
+Device or
+Attached E-­‐mails
+and Websites.
+PART IV -­‐ DUTIES OF FINANCIAL INSTUTUTIONS
+37. 	(1) A financial institution shall —
+(a) verify the identity of its customers carrying out Electronic financial transactions by
+requiring the customers to present documents bearing their names, addresses and
+other relevant information before issuance of ATM cards, credit cards, Debit cards
+and other related electronic devices;
+(b) apply the principle of know your customer in documentation of customers
+preceding execution of customers electronic transfer, payment, debit and issuance
+orders;
+(2) Any official or organization who fails to obtain proper identity of customers
+before executing customer electronic instructions in whatever way, commits an
+offence and shall be liable on conviction to a fine of N5,000,000.00
+(3) Any financial institution that makes an unauthorized debit on a customers
+account 	shall 	upon 	written 	notification 	by 	the 	customer, 	provide 	clear 	legal
+authorization for such debit to the customer or reverse such debit within 72 hours.
+Any financial institution that fails to reverse such debit within 72 hours , shall be
+guilty of an offence and liable on conviction to restitution of the debit and a fine of N
+5, 000,000.00.
+Duties of
+Financial
+Institutions.
+38.
+DUTIES OF SERVICE PROVIDERS
+(1) A service provider shall keep all traffic data and subscriber information as may be
+prescribed by the relevant authority for the time being, responsible for the
+regulation of communication services in Nigeria, for a period of 2 years.
+Records
+retention and
+protection of
+
+-- 23 of 43 --
+
+(2) A service provider shall, at the request of the relevant authority referred to in
+subsection (1) of this section or any law enforcement agency –
+(a) preserve, hold or retain any traffic data, subscriber information, non-­‐content
+information, and content data; or
+(b) release any information required to be kept under subsection (1) of this section.
+(3) A law enforcement agency may, through its authorized officer, request for the
+release of any information in respect of subsection (2) (b) of this section and it shall
+be the duty of the service provider to comply.
+(4) Any data retained, processed or retrieved by the service provider at the request
+of any law enforcement agency under this Act shall not be utilized except for
+legitimate purposes as may be provided for under this Act, any other legislation,
+regulation or by an order of a court of competent jurisdiction.
+(5) Anyone exercising any function under this section shall have due regard to the
+individual’s right to privacy under the Constitution of the Federal Republic of Nigeria,
+1999 and shall take appropriate measures to safeguard the confidentiality of the data
+retained, processed or retrieved for the purpose of law enforcement.
+(6) Subject to the provisions of this Act, any person who contravenes any of the
+provisions of this section commits an offence and shall be liable on conviction to
+imprisonment for a term of not more than 3 years or a fine of not more than
+N7,000,000.00 or to both fine and imprisonment.
+data.
+39. 	Where there are reasonable grounds to suspect that the content of any electronic
+communication is reasonably required for the purposes of a criminal investigation or
+proceedings, a Judge may on the basis of information on oath;
+(a) order a service provider, through the application of technical means to intercept,
+collect, record, permit or assist competent authorities with the collection or
+recording 	of 	content 	data 	and/or 	traffic 	data 	associated 	with 	specified
+communications transmitted by means of a computer system; or
+(b) authorize a law enforcement officer to collect or record such data through
+application of technical means.
+Interception of
+electronic
+communications.
+40. 	(1) It shall be the duty of every service provider in Nigeria to comply with all the
+provisions of this Act and disclose information requested by any law enforcement
+agency or otherwise render assistance howsoever in any inquiry or proceeding under
+this Act.
+(2) Without prejudice to the generality of the foregoing, a service provider shall, at
+the request of any law enforcement agency in Nigeria or at its own initiative, provide
+assistance towards –
+Failure of service
+provider to
+perform certain
+duties.
+
+-- 24 of 43 --
+
+(a) the identification, apprehension and prosecution of offenders;
+(b) the identification, tracking and tracing of proceeds of any offence or any
+property, equipment or device used in the commission of any offence; or
+(c) the freezing, removal, erasure or cancellation of the services of the offender
+which enables the offender to either commit the offence, hide or preserve the
+proceeds of any offence or any property, equipment or device used in the
+commission of the offence.
+(3) Any service provider who contravenes the provisions of subsection (1) and (2) of
+this section, commits an offence and shall be liable on conviction to a fine of not
+more than N 10,000,000.00.
+(4) In addition to the punishment prescribed under subsection (3) of this section and
+subject to the provisions of section 20 of this Act, each director, manager or officer of
+the service provider shall be liable on conviction to imprisonment for a term of not
+more than 3 years or a fine of not more than N7,000,000.00 or to both such fine and
+imprisonment.
+PART V -­‐ ADMINISTRATION AND ENFORCEMENT
+41. 	(1) The office of the National Security Adviser shall be the coordinating body for all
+security and enforcement agencies under this Act and shall;
+(a) provide support to all relevant security, intelligence, law enforcement agencies
+and military services to prevent and combat cybercrimes in Nigeria;
+(b) ensure formulation and effective implementation of a comprehensive cyber
+security strategy and a national cyber security policy for Nigeria;
+(c) establish and maintain a National Computer Emergency Response Team (CERT)
+Coordination Center responsible for managing cyber incidences in Nigeria;
+(d) establish and maintain a National Computer Forensic Laboratory and coordinate
+utilization of the facility by all law enforcement, security and intelligence agencies;
+(e) build capacity for the effective discharge of the functions of all relevant security,
+intelligence, law enforcement and military services under this Act or any other law on
+cybercrime in Nigeria;
+(f) establish appropriate platforms for public private partnership (PPP);
+(g) coordinate Nigeria’s involvement in international cyber security cooperation to
+ensure the integration of Nigeria into the global frameworks on cyber security; and
+(h) do such other acts or things that are necessary for the effective performance of
+Co-­‐ordination
+and
+enforcement.
+
+-- 25 of 43 --
+
+the functions of the relevant security and enforcement agencies under this Act.
+(2) The Attorney – General of the Federation shall strengthen and enhance the
+existing legal framework to ensure –
+(a) conformity of Nigeria’s cybercrime and cyber security laws and policies with
+regional and international standards;
+(b) 	maintenance 	of 	international 	co-­‐operation 	required 	for 	preventing 	and
+combating cybercrimes and promoting cyber security; and
+(c) effective prosecution of cybercrimes and cyber security matters.
+(3) All law enforcement, security and intelligence agencies shall develop requisite
+institutional capacity for the effective implementation of the provisions of this Act
+and shall in collaboration with the Office of the National Security Adviser, initiate,
+develop or organize training programmers nationally or internationally for officers
+charged 	with 	the 	responsibility 	for 	the 	prohibition, 	prevention, 	detection,
+investigation and prosecution of cybercrimes.
+42. 	(1) There is established, a Cybercrime Advisory Council (in this Act referred to as “the
+Council”) which shall comprise of a representative each, of the Ministries and
+Agencies listed under the First Schedule to this Act.
+(2) A representative appointed pursuant to subsection (1) of this section shall be an
+officer not below the Directorate Cadre in the Public Service or its equivalent.
+(3) A member of the Council shall cease to hold office if –
+(a) he ceases to hold the office on the basis of which he became a member of the
+Council; or
+(b) the President is satisfied that it is not in the public interest for the person to
+continue in office as a member of the Council.
+(4) The meetings of the Council shall be presided over by the National Security
+Adviser.
+(5) The Council shall meet at least four times in a year and whenever it is convened
+by the National Security Adviser.
+Establishment of
+the Cybercrime
+Advisory Council.
+43. 	(1) The Council shall –
+(a) create an enabling environment for members to share knowledge, experience,
+intelligence and information on a regular basis and shall provide recommendations
+on issues relating to the prevention and combating of cybercrimes and the
+promotion of cyber security in Nigeria;
+Functions and
+powers of the
+Council.
+
+-- 26 of 43 --
+
+(b) formulate and provide general policy guidelines for the implementation of the
+provisions of this Act;
+(c) 	advise 	on 	measures 	to 	prevent 	and 	combat 	computer 	related 	offences,
+cybercrimes, threats to national cyberspace and other cyber security related issues;
+(d) establish a program to award grants to institutions of higher education to
+establish Cyber security Research Centers to support the development of new Cyber
+security defences, techniques and processes in the real-­‐world environment; and
+(e) promote Graduate Traineeships in Cyber security and Computer and Network
+Security Research and Development
+(2) The Council shall have power to regulate its proceedings and make standing
+orders with respect to the holding of its meetings, notices to be given, the keeping of
+minutes of its proceedings and such other matters as Council may, from time to time
+determine.
+44. 	(1) There is established a Fund, which shall be known as the National Cyber security
+Fund (in this Act referred to as “The Fund”).
+(2) There shall be paid and credited into the Fund established under subsection (1) of
+this section and domiciled in the Central Bank of Nigeria:
+(a) A levy of 0.005 of all electronic transactions by the businesses specified in the
