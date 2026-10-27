@@ -91,10 +91,12 @@ CRITICAL RULE: A described INCIDENT always counts as a legal question, no matter
 YOU ROUTE EACH REQUEST TO THE RIGHT PATH BY SEMANTIC INTENT, NOT KEYWORD. Three intents:
 
 1. **casual** — greetings, thanks, how-are-you, identity, jokes, small talk → is_legal_question: false.
-2. **procedural / administrative how-to** — the user wants concrete practical steps, not a statute lookup: registering a company or business name with the CAC, filing for a trademark, renewing a licence, applying for a passport/NIN/TIN, what documents to bring, how to contact the police, how to find a lawyer, how to note down facts, what to wear to court, filing fees and office hours, portals to visit → is_legal_question: true, needs_sourcing: FALSE. These questions are answered correctly from procedural knowledge alone — forcing an irrelevant statute search onto them produces broken answers for the user. If answering correctly does not depend on what a specific statute says, this is the right intent.
+2. **procedural / administrative how-to** — the user wants concrete practical steps and NO statute governs them: what documents to bring, how to contact the police, how to find a lawyer, how to note down facts, what to wear to court, filing fees and office hours, portals to visit → is_legal_question: true, needs_sourcing: FALSE. If answering correctly does not depend on what a specific statute says, this is the right intent.
+
+WARNING — registration/filing/incorporation is SOURCED, not procedural: CAMA 2020 governs registering companies, business names, and incorporated trustees (PINC/BN parts, ss.17–39: name reservation, documents of incorporation, registration, certificates). A "how do I register a company/business/NGO with CAC" question MUST be intent 3 (needs_sourcing: TRUE) so the answer can cite the governing sections of CAMA. The same holds for other procedure-with-a-statute questions (passport under the Passports Act, etc.).
 3. **legal (sourced)** — anything that depends on what the law actually says, requires, or forbids → is_legal_question: true, needs_sourcing: TRUE (we will verify against retrieved statutes).
 
-An "INCIDENT" (assault, landlord dispute, eviction, arrest…) is always intent 3 regardless of how it's phrased. A pure how-to like "how do I register a CAC" is intent 2, even though it is legal-flavoured — answering needs steps and portals, not sections of an Act.
+An "INCIDENT" (assault, landlord dispute, eviction, arrest…) is always intent 3 regardless of how it's phrased. Registration/incorporation how-tos are intent 3 too — CAMA 2020 ss.17–39 literally define the CAC registration process, so citeable law exists and users deserve citations, not unsourced steps.
 
 PRACTICAL FOLLOW-UP RULE: A practical, procedural how-to question inside a legal conversation — e.g. "how do I note down the key facts", "how do I contact the police", "what should I bring to the station", "how do I find a lawyer" — is a needs_sourcing:false question. Do NOT set needs_sourcing false for questions about what the law itself says or requires.
 
@@ -145,7 +147,7 @@ Provide:
 - "summary": 1-2 sentence summary of the legal situation
 - "keywords": 4-8 specific legal/factual terms likely in relevant statutes (procedural terms, timeframes, named concepts)
 - "key_issues": Array of 3-5 specific legal issues or questions that need to be addressed
-- "needs_sourcing": true/false — the routing decision. Set FALSE when the correct answer is a sequence of practical steps, addresses, portals, or documents (company/CAC registration, licence renewals, passport/NIN applications, "what should I bring", "how do I find a lawyer", "how do I note down facts"). Set TRUE when the answer depends on what a specific law says (rights, penalties, offences, what is legal, who is liable).
+- "needs_sourcing": true/false — the routing decision. Set FALSE ONLY when the correct answer is a sequence of practical steps with NO governing statute in Nigerian law (office addresses, "what should I bring", "how do I find a lawyer", "how do I note down facts"). Set TRUE when the answer depends on what a specific law says (rights, penalties, offences, what is legal, who is liable) — including procedural questions whose process a statute defines, such as company/business-name/NGO registration under CAMA 2020, trademark filing, and licence applications under a licensing statute.
 - "complexity": ["Low", "Medium", "High"] — Low: straightforward single issue, Medium: multiple issues or interpretation needed, High: complex multi-party/constitutional/novel questions
 - "route": ["simple", "complex"] — simple: direct factual lookup that can be answered from a single statute lookup (e.g. "What is the minimum wage in Nigeria?", "What is the legal drinking age?"). complex: a described situation requiring investigation, multi-step analysis, or interpretation of how law applies to facts.
 - "reasoning_approach": Detailed 2-3 sentence description of how to systematically answer this question, including what legal framework to establish, how to apply it to the facts, and what remedies/guidance to provide
@@ -289,10 +291,11 @@ For EACH candidate provision, judge whether it SUBSTANTIVELY governs the situati
 
 Rules:
 - relevant: the provision directly establishes the law for the act/right/remedy the user is asking about
+- PROCEDURAL provisions are relevant too: for "how do I register / apply / file / renew" questions, provisions that state the required documents, the responsible authority's duty (e.g. "the Commission shall register the memorandum and articles"), eligibility, or fees DIRECTLY govern the process the user asks about. They are not tangential. CAMA's Part containing name reservation, documents of incorporation, and registration of the memorandum and articles governs company-registration how-tos; similar provisions govern other filing questions.
 - irrelevant: keyword-only overlap, different subject matter, or a definition torn from its governing context
 - If the model's own explanation of a provision would naturally say "this is not quite the right provision, but..." — it is irrelevant.
 
-sufficient: true ONLY if at least MIN_SOURCES provisions directly govern the situation (MIN_SOURCES is given in the user message; it is 1 for simple factual questions and 2 otherwise). A single tangential provision is NOT sufficient when MIN_SOURCES is 2.
+sufficient: true ONLY if at least MIN_SOURCES provisions directly govern the situation (MIN_SOURCES is given in the user message; it is 1 for simple factual questions and 2 otherwise). A single tangential provision is NOT sufficient when MIN_SOURCES is 2 — but one provision that directly governs IS sufficient when MIN_SOURCES is 1.
 
 Respond with ONLY a JSON object:
 {
@@ -1601,7 +1604,9 @@ async function runChatPipeline(req) {
     try {
       const proc = await answerProceduralWithFallback(question, classification, history);
       applyDeterministicSafetyPolicy(proc.result, classification, question, history);
-      const procEvidence = makeProceduralEvidence();
+      // Carry over flags set by the caller branch (e.g. proceduralRescue,
+      // gateInsufficiencyRescued) so evidence reflects WHY this path ran.
+      const procEvidence = { ...makeProceduralEvidence(), ...evidence, noSourcing: true, sourceCount: 0, sufficient: true };
       await serverPersistMessage(req, { status: "done", result: { ...proc.result, evidence: procEvidence }, pipelineStatus: "done", unread: true });
       return res.json({ classification, route: "simple", plan: null, result: proc.result, draftModel: proc.model, draftProvider: proc.provider, critique: null, evidence: procEvidence, providersBusy: false, retryAfter: null });
     } catch (err) {
@@ -1840,6 +1845,20 @@ async function runChatPipeline(req) {
             evidence.sufficient = true;
             console.log(`[/api/chat] Broadened search: ${relevantProvisions2.length} relevant provisions — sufficient`);
           } else {
+            // Symmetry with the empty-broad branch below: an administrative
+            // how-to whose provisions the gate rejected should still get the
+            // practical answer, never the "insufficient evidence" dead-end.
+            // The rescue regex is a validation backstop, not the router —
+            // the classifier prompt now routes registration (CAMA ss.17-39)
+            // through the sourced path, so this only fires for genuine
+            // logistic how-tos (office addresses, what-to-bring, find-lawyer).
+            if (shouldTryProceduralRescue()) {
+              console.log("[/api/chat] Gate insufficient for a procedural/admin question — answering procedurally.");
+              evidence.proceduralRescue = true;
+              evidence.gateInsufficiencyRescued = true;
+              await tryProceduralRescue();
+              return;
+            }
             console.log(`[/api/chat] Broadened search still insufficient (${relevantProvisions2.length} relevant). Returning insufficient-evidence response.`);
             const term = await insufficientEvidenceResponse(classification, route, evidence, urgentSafety, question, history);
             await serverPersistMessage(req, { status: "done", result: term.result, pipelineStatus: "done", unread: true });
