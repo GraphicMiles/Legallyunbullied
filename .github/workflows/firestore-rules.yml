@@ -1,0 +1,41 @@
+name: Deploy Firestore rules
+
+# Manual only. The corpus deny rule has to reach the live project by hand
+# because there is no automatic deploy path; run this after any change to
+# firestore.rules and once now to close the drift.
+#
+# Requires a repository secret FIREBASE_TOKEN (firebase login:ci).
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install firebase-tools
+        run: npm install --global firebase-tools@13
+
+      - name: Deploy rules
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: firebase deploy --only firestore:rules --project legally-unbullied --non-interactive
+
+      # The rules file denies browser reads on legal_provisions. Anything other
+      # than 403 here means the deployed rules are not the committed ones.
+      - name: Verify the corpus is closed to browsers
+        run: |
+          key='REDACTED_PUBLIC_WEB_API_KEY'
+          url="https://firestore.googleapis.com/v1/projects/legally-unbullied/databases/(default)/documents/legal_provisions?key=$key&pageSize=1"
+          code=$(curl -s -o /dev/null -w '%{http_code}' "$url")
+          echo "anonymous read of legal_provisions -> $code"
+          if [ "$code" != "403" ]; then
+            echo "::error::expected 403, got $code. Deployed rules do not match firestore.rules."
+            exit 1
+          fi
