@@ -26,3 +26,16 @@ npm test
 ```
 
 > Legally Unbullied provides legal information, not legal advice.
+
+## Firestore rules
+
+`firestore.rules` denies all browser access to `legal_provisions`; the corpus is
+served only by the authenticated server pipeline. Rules are deployed by hand:
+
+```bash
+firebase deploy --only firestore:rules --project legally-unbullied
+```
+
+`.github/workflows/firestore-rules.yml` does the same thing from Actions
+(needs a `FIREBASE_TOKEN` secret) and then asserts that an anonymous read of
+`legal_provisions` returns 403. Run it after any rules change.
