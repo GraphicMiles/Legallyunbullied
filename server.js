@@ -187,6 +187,11 @@ app.get("/api/debug/server-logs", requireAuth, requireAdmin, (req, res) => {
 // Auth is applied inside the route module itself.
 app.use("/api/conversations", conversationRoute);
 
+// ── Answer feedback (thumbs up/down) ──────────────────────────────────────
+// Auth inside the route module. One Firestore write per explicit tap;
+// browsers have no direct access (catch-all deny in firestore.rules).
+app.use("/api/feedback", require("./server/feedbackRoute"));
+
 // ── Email OTP for the auth pages ──────────────────────────────────────────
 // Backs the /auth signup flow: 6-digit codes, pluggable email sender
 // (Resend/SendGrid via env, server log until a provider is configured).

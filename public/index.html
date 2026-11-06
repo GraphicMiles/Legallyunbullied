@@ -7,6 +7,8 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>Legally Unbullied: Ask a legal question</title>
+<meta name="theme-color" content="#1e1f22" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none'%3E%3Cpath d='M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z' stroke='%23f2b705' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='M11 15.5L14.2 18.7L21 11.5' stroke='%23f2b705' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
 <link rel="stylesheet" href="/vendor/fontawesome/all.min.css" />
 <link rel="stylesheet" href="styles/beui-inspired.css" />
 <link rel="stylesheet" href="styles/beui-components.css" />
@@ -92,9 +94,9 @@
      Every tappable control compresses ~3% the moment it is touched. */
   .btn:not([disabled]):active, .icon-btn:not([disabled]):active,
   .chat-status__home:active, .disclaimer-pop__close:active,
-  .modal-card__close:active, .msg-action-btn:active,
   .followup-chip:active, .history__kebab:active,
-  .auth-signin-btn:active, .modal-card__tab:active {
+  .auth-signin-btn:active, .answer-actions__btn:active, .answer-actions__thumb:active,
+  .starter-prompt:active {
     transform: scale(0.965);
     transition-property: transform;
     transition-duration: var(--dur-press);
@@ -642,33 +644,6 @@
   }
   .modal-card--small { max-width: 320px; text-align: center; }
 
-  .modal-card__close {
-    position: absolute;
-    top: var(--space-3);
-    right: var(--space-3);
-  }
-
-  .modal-card__brand { display: flex; justify-content: center; margin-bottom: var(--space-4); }
-  .modal-card__brand svg { width: 34px; height: 34px; }
-
-  .modal-card__tabs {
-    display: flex;
-    border-radius: var(--radius-md);
-    padding: 3px;
-    margin-bottom: var(--space-4);
-  }
-  .modal-card__tab {
-    flex: 1;
-    text-align: center;
-    padding: 7px 0;
-    border-radius: 8px;
-    font-size: var(--fs-sm);
-    font-weight: 600;
-    color: var(--color-text-faint);
-    transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
-  }
-  .modal-card__tab.is-active { background: var(--color-accent); color: var(--color-accent-text); }
-
   .modal-card__title {
     font-size: var(--fs-lg);
     font-weight: 700;
@@ -682,49 +657,6 @@
     line-height: 1.6;
     margin: 0 0 var(--space-5);
   }
-
-  .modal-card__form { display: flex; flex-direction: column; gap: var(--space-3); }
-  .modal-field { display: flex; flex-direction: column; gap: 6px; }
-  .modal-field__label {
-    font-size: var(--fs-xs);
-    font-weight: 600;
-    color: var(--color-text-muted);
-  }
-  .modal-field input {
-    border-radius: var(--radius-md);
-    padding: var(--space-3);
-    background: var(--color-surface);
-    color: var(--color-text);
-    font-size: var(--fs-sm);
-    transition: border-color var(--dur-fast) var(--ease);
-  }
-  .modal-field input::placeholder { color: var(--color-text-faint); }
-  .modal-field input:focus { background: var(--color-surface-alt); }
-
-  .modal-card__error {
-    font-size: var(--fs-xs);
-    color: var(--color-danger);
-    background: rgba(229, 72, 77, 0.1);
-    border-radius: var(--radius-sm);
-    padding: var(--space-2) var(--space-3);
-    margin: 0;
-  }
-
-  .modal-card__divider {
-    display: flex;
-    align-items: center;
-    text-align: center;
-    color: var(--color-text-faint);
-    font-size: var(--fs-xs);
-    margin: var(--space-4) 0;
-  }
-  .modal-card__divider::before, .modal-card__divider::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: var(--color-border);
-  }
-  .modal-card__divider span { padding: 0 var(--space-3); }
 
   .modal-card__actions {
     display: flex;
@@ -898,6 +830,48 @@
     margin: 0;
   }
 
+  /* Starter prompts — first-run affordance. Same quiet-surface language as
+     the rest of the app; gold stays reserved for brand/send/focus. */
+  .starter-prompts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+    width: 100%;
+  }
+  .starter-prompt {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-height: 44px;
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-soft);
+    color: var(--color-text-muted);
+    font-family: inherit;
+    font-size: var(--fs-sm);
+    line-height: 1.45;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color var(--dur-fast) var(--ease),
+                color var(--dur-fast) var(--ease),
+                background var(--dur-fast) var(--ease);
+  }
+  .starter-prompt:hover {
+    border-color: var(--color-accent-border);
+    color: var(--color-text);
+    background: var(--color-surface-alt);
+  }
+  .starter-prompt__icon {
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--color-text-faint);
+    flex-shrink: 0;
+    transition: color var(--dur-fast) var(--ease);
+  }
+  .starter-prompt:hover .starter-prompt__icon { color: var(--color-accent); }
+
   /* --- chat status (loading / not found) --- */
   .chat-status {
     flex: 1;
@@ -942,8 +916,9 @@
   /* Keyboard focus is a tone lift, never an outline stroke. */
   .btn:focus-visible, .icon-btn:focus-visible,
   .followup-chip:focus-visible, .history__item:focus-visible, .history__kebab:focus-visible,
-  .link-btn:focus-visible, .auth-signin-btn:focus-visible, .modal-card__tab:focus-visible,
-  .chat-status__home:focus-visible, .msg-action-btn:focus-visible, .context-card__head:focus-visible {
+  .link-btn:focus-visible, .auth-signin-btn:focus-visible,
+  .chat-status__home:focus-visible, .msg-action-btn:focus-visible, .context-card__head:focus-visible,
+  .answer-actions__btn:focus-visible, .answer-actions__thumb:focus-visible, .starter-prompt:focus-visible {
     outline: none;
     background-color: var(--color-surface-alt);
     color: var(--color-text);
@@ -1872,50 +1847,6 @@
   <div class="scrim" id="scrim"></div>
 
   <!-- ============================================================
-       AUTH MODAL
-       ============================================================ -->
-  <div class="modal-overlay" id="auth-modal-overlay">
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
-      <button class="icon-btn modal-card__close" id="auth-modal-close" aria-label="Close">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-
-      <div class="modal-card__brand">
-        <svg viewBox="0 0 32 32" fill="none"><path d="M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z" stroke="#f2b705" stroke-width="2" stroke-linejoin="round"/><path d="M11 15.5L14.2 18.7L21 11.5" stroke="#f2b705" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
-
-      <div class="modal-card__tabs" role="tablist">
-        <button type="button" class="modal-card__tab is-active" id="auth-tab-signin" data-mode="signin">Sign in</button>
-        <button type="button" class="modal-card__tab" id="auth-tab-signup" data-mode="signup">Create account</button>
-      </div>
-
-      <h2 class="modal-card__title" id="auth-modal-title">Welcome back</h2>
-
-      <form id="auth-form" class="modal-card__form">
-        <label class="modal-field">
-          <span class="modal-field__label">Email</span>
-          <input type="email" id="auth-email" autocomplete="email" required placeholder="you@example.com" />
-        </label>
-        <label class="modal-field">
-          <span class="modal-field__label">Password</span>
-          <input type="password" id="auth-password" autocomplete="current-password" required placeholder="••••••••" minlength="6" />
-        </label>
-
-        <p class="modal-card__error" id="auth-error" style="display:none;"></p>
-
-        <button type="submit" class="btn btn--primary btn--block" id="auth-submit">Sign in</button>
-      </form>
-
-      <div class="modal-card__divider"><span>or</span></div>
-
-      <button type="button" class="btn btn--outline btn--block btn--icon-leading" id="auth-google-btn">
-        <i class="fa-brands fa-google"></i>
-        Continue with Google
-      </button>
-    </div>
-  </div>
-
-  <!-- ============================================================
        CONFIRM DIALOG (Clear / Delete chat)
        ============================================================ -->
   <div class="modal-overlay" id="confirm-modal-overlay">
@@ -1963,6 +1894,14 @@
           <h1 class="empty-state__title">What's the legal situation?</h1>
           <p class="empty-state__subtitle">Describe it in plain language. The agent classifies it against Nigerian law and tells you what to do next.</p>
 
+          <div class="starter-prompts" role="group" aria-label="Example questions">
+            <button type="button" class="starter-prompt"><i class="fa-solid fa-scale-balanced starter-prompt__icon" aria-hidden="true"></i><span>Police stopped me and won't say why. What are my rights?</span></button>
+            <button type="button" class="starter-prompt"><i class="fa-solid fa-house-chimney starter-prompt__icon" aria-hidden="true"></i><span>My landlord wants to evict me without notice. What can I do?</span></button>
+            <button type="button" class="starter-prompt"><i class="fa-solid fa-briefcase starter-prompt__icon" aria-hidden="true"></i><span>My employer hasn't paid my salary in three months. What does the law say?</span></button>
+            <button type="button" class="starter-prompt"><i class="fa-solid fa-receipt starter-prompt__icon" aria-hidden="true"></i><span>I paid for goods that turned out defective and I can't get a refund. Where do I stand?</span></button>
+            <button type="button" class="starter-prompt"><i class="fa-solid fa-map-location-dot starter-prompt__icon" aria-hidden="true"></i><span>A relative sold family land I was using while I was abroad. What does the law say?</span></button>
+            <button type="button" class="starter-prompt"><i class="fa-solid fa-children starter-prompt__icon" aria-hidden="true"></i><span>We're separating and we have children. How does custody work?</span></button>
+          </div>
 
         </div>
 
