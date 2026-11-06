@@ -12,10 +12,6 @@
 
 import {
   onAuthStateChanged,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signInWithPopup,
-  GoogleAuthProvider,
   signOut,
   getIdToken,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -63,17 +59,6 @@ import {
     copyChatBtn: document.getElementById("copy-chat-btn"),
     topbarAvatar: document.getElementById("topbar-avatar"),
     authSection: document.getElementById("auth-section"),
-    authModalOverlay: document.getElementById("auth-modal-overlay"),
-    authModalClose: document.getElementById("auth-modal-close"),
-    authModalTitle: document.getElementById("auth-modal-title"),
-    authTabSignin: document.getElementById("auth-tab-signin"),
-    authTabSignup: document.getElementById("auth-tab-signup"),
-    authForm: document.getElementById("auth-form"),
-    authEmail: document.getElementById("auth-email"),
-    authPassword: document.getElementById("auth-password"),
-    authError: document.getElementById("auth-error"),
-    authSubmit: document.getElementById("auth-submit"),
-    authGoogleBtn: document.getElementById("auth-google-btn"),
     confirmModalOverlay: document.getElementById("confirm-modal-overlay"),
     confirmModalTitle: document.getElementById("confirm-modal-title"),
     confirmModalText: document.getElementById("confirm-modal-text"),
@@ -1494,6 +1479,19 @@ import {
     }
   }
 
+  /* Generic clipboard copy: navigator.clipboard with a textarea fallback.
+     Used by copy-all and per-answer copy. */
+  function copyText(text, onCopied) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(onCopied).catch(() => {
+        console.warn("[copy] Clipboard write failed, trying fallback");
+        fallbackCopy(text, onCopied);
+      });
+    } else {
+      fallbackCopy(text, onCopied);
+    }
+  }
+
   function copyConversationToClipboard(id) {
     const convo = state.conversations.find((c) => c.id === id);
     if (!convo || !convo.messages.length) return;
@@ -1532,14 +1530,7 @@ import {
       }, 1400);
     };
 
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(flashCopied).catch(() => {
-        console.warn("[copy] Clipboard write failed, trying fallback");
-        fallbackCopy(text, flashCopied);
-      });
-    } else {
-      fallbackCopy(text, flashCopied);
-    }
+    copyText(text, flashCopied);
   }
 
   function fallbackCopy(text, onSuccess) {
@@ -1970,7 +1961,12 @@ import {
     const actionsTextEl = document.createElement("div");
     actionsWrapper.appendChild(actionsTextEl);
     wrap.appendChild(actionsWrapper);
-    
+
+    // Utility actions: copy the answer as text, rate whether it helped.
+    const answerActions = buildAnswerActions(msg, r);
+    wrap.appendChild(answerActions);
+    if (stream) answerActions.style.display = "none";
+
     if (stream) {
       actionsWrapper.style.display = "none";
     } else {
@@ -2017,7 +2013,8 @@ import {
       actionsSection: { el: actionsWrapper, textEl: actionsTextEl, liveDot: null },
       verdict,
       followUps,
-      meta
+      meta,
+      answerActions
     };
     return wrap;
   }
@@ -2038,41 +2035,197 @@ import {
     const validSources = sources.filter(s => !isPlaceholderSource(s));
     if (!validSources.length) return;
     sources = validSources;
-    
-    // Simple inline citation list - no card styling
+
+    // Expandable citation list: the row shows the provision label and its
+    // review status; expanding reveals the full corpus excerpt the server
+    // already sent (up to 400 chars), the jurisdiction and a link out when
+    // the provision carries an authoritative URL.
     const list = document.createElement("div");
     list.className = "answer-sources";
 
-    
     const label = document.createElement("div");
     label.className = "answer-sources__label";
     label.textContent = "Sources";
     list.appendChild(label);
-    
-    sources.forEach((src) => {
+
+    sources.forEach((src, i) => {
       const item = document.createElement("div");
       item.className = "answer-sources__item";
-      
+
+      const detailId = `src-detail-${Date.now()}-${i}`;
+
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "answer-sources__toggle";
+      toggle.setAttribute("aria-expanded", "false");
+      toggle.setAttribute("aria-controls", detailId);
+
       const name = document.createElement("span");
       name.className = "answer-sources__name";
       name.textContent = src.label || "Unknown Source";
-      item.appendChild(name);
-      
+      toggle.appendChild(name);
+
+      const badge = document.createElement("span");
+      badge.className = "answer-sources__badge " + (src.reviewed ? "is-reviewed" : "is-unverified");
+      badge.textContent = src.reviewed ? "Reviewed" : "Unverified";
+      toggle.appendChild(badge);
+
+      const chevron = document.createElement("span");
+      chevron.className = "answer-sources__chevron";
+      chevron.innerHTML = ICONS.chevron;
+      chevron.setAttribute("aria-hidden", "true");
+      toggle.appendChild(chevron);
+
+      item.appendChild(toggle);
+
+      const detail = document.createElement("div");
+      detail.className = "answer-sources__detail";
+      detail.id = detailId;
+      detail.hidden = true;
+
       if (src.excerpt) {
-        const excerpt = document.createElement("span");
+        const excerpt = document.createElement("p");
         excerpt.className = "answer-sources__excerpt";
-        // Truncate long excerpts
-        const maxLen = 200;
-        excerpt.textContent = src.excerpt.length > maxLen 
-          ? src.excerpt.slice(0, maxLen) + "..." 
-          : src.excerpt;
-        item.appendChild(excerpt);
+        excerpt.textContent = src.excerpt;
+        detail.appendChild(excerpt);
       }
-      
+
+      const meta = document.createElement("div");
+      meta.className = "answer-sources__meta";
+
+      const bits = [];
+      if (src.jurisdiction) bits.push(src.jurisdiction);
+      if (src.sourceVersion) bits.push(`Rev. ${src.sourceVersion}`);
+      if (bits.length) {
+        const metaText = document.createElement("span");
+        metaText.textContent = bits.join(" · ");
+        meta.appendChild(metaText);
+      }
+      if (src.sourceUrl && /^https?:\/\//i.test(src.sourceUrl)) {
+        const link = document.createElement("a");
+        link.className = "answer-sources__link";
+        link.href = src.sourceUrl;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = "View source";
+        meta.appendChild(link);
+      }
+      if (meta.childNodes.length) detail.appendChild(meta);
+
+      item.appendChild(detail);
+
+      toggle.addEventListener("click", () => {
+        const open = toggle.getAttribute("aria-expanded") === "true";
+        toggle.setAttribute("aria-expanded", String(!open));
+        detail.hidden = open;
+        toggle.classList.toggle("is-open", !open);
+      });
+
       list.appendChild(item);
     });
-    
+
     sectionEl.appendChild(list);
+  }
+
+  // One utility row under the written answer: copy it as text, and a
+  // thumbs up/down so the user can say whether it held up. Ratings post to
+  // /api/feedback (one Firestore write per tap); signed-out users get the
+  // rating recorded on this device only.
+  function buildAnswerActions(msg, r) {
+    const row = document.createElement("div");
+    row.className = "answer-actions";
+
+    const copyBtn = document.createElement("button");
+    copyBtn.type = "button";
+    copyBtn.className = "answer-actions__btn";
+    copyBtn.innerHTML = `${ICONS.copy}<span>Copy answer</span>`;
+    copyBtn.addEventListener("click", () => {
+      const lines = [];
+      if (r.lawMd) lines.push("What the law says\n\n" + r.lawMd);
+      if (r.actionsMd) lines.push("\nWhat you can do\n\n" + r.actionsMd);
+      const used = (r.sources || []).filter((s) => s && s.label);
+      if (used.length) lines.push("\nSources\n" + used.map((s) => `- ${s.label}`).join("\n"));
+      lines.push("\nLegally Unbullied provides legal information, not legal advice.");
+      copyText(lines.join("\n"), () => {
+        copyBtn.innerHTML = `${ICONS.check}<span>Copied</span>`;
+        copyBtn.classList.add("is-done");
+        setTimeout(() => {
+          copyBtn.innerHTML = `${ICONS.copy}<span>Copy answer</span>`;
+          copyBtn.classList.remove("is-done");
+        }, 1400);
+      });
+    });
+    row.appendChild(copyBtn);
+
+    const rateWrap = document.createElement("div");
+    rateWrap.className = "answer-actions__rate";
+    rateWrap.setAttribute("role", "group");
+    rateWrap.setAttribute("aria-label", "Rate this answer");
+
+    const convoId = state.activeId || null;
+    const msgKey = String((msg && (msg.id || msg.createdAt)) || "live");
+    const storageKey = `lu.feedback.${convoId || "local"}.${msgKey}`;
+    const stored = (() => { try { return localStorage.getItem(storageKey); } catch (_) { return null; } })();
+
+    const upBtn = document.createElement("button");
+    upBtn.type = "button";
+    upBtn.className = "answer-actions__thumb";
+    upBtn.setAttribute("aria-label", "This answer helped");
+    upBtn.innerHTML = ICONS.thumbsUp;
+
+    const downBtn = document.createElement("button");
+    downBtn.type = "button";
+    downBtn.className = "answer-actions__thumb";
+    downBtn.setAttribute("aria-label", "This answer missed the mark");
+    downBtn.innerHTML = ICONS.thumbsDown;
+
+    const applyStored = () => {
+      for (const [btn, value] of [[upBtn, "up"], [downBtn, "down"]]) {
+        const active = stored === value;
+        btn.setAttribute("aria-pressed", String(active));
+        btn.classList.toggle("is-active", active);
+      }
+    };
+    applyStored();
+
+    async function rate(rating, pressedBtn, otherBtn) {
+      if (pressedBtn.getAttribute("aria-pressed") === "true") return; // already rated
+      pressedBtn.setAttribute("aria-pressed", "true");
+      pressedBtn.classList.add("is-active");
+      otherBtn.setAttribute("aria-pressed", "false");
+      otherBtn.classList.remove("is-active");
+
+      const persistLocal = () => { try { localStorage.setItem(storageKey, rating); } catch (_) {} };
+
+      // Without a signed-in Firebase user there is nothing to save against,
+      // so the rating lives on this device (and never hits the network).
+      const authed = !!(window.firebaseAuth && window.firebaseAuth.currentUser);
+      if (!authed) { persistLocal(); return; }
+      try {
+        const headers = await getAuthHeaders();
+        const res = await fetch("/api/feedback", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            rating,
+            conversationId: convoId || undefined,
+            messageId: (msg && msg.id) || undefined,
+          }),
+        });
+        if (!res.ok) throw new Error("feedback_" + res.status);
+        persistLocal();
+      } catch (err) {
+        console.warn("[feedback] rating not saved:", err && err.message ? err.message : err);
+        applyStored(); // roll the UI back to the last known saved state
+      }
+    }
+
+    upBtn.addEventListener("click", () => rate("up", upBtn, downBtn));
+    downBtn.addEventListener("click", () => rate("down", downBtn, upBtn));
+    rateWrap.appendChild(upBtn);
+    rateWrap.appendChild(downBtn);
+    row.appendChild(rateWrap);
+    return row;
   }
 
   // Confidence label must reflect EVIDENCE quality, not just writing quality.
@@ -2330,7 +2483,7 @@ import {
       // question so it survives the sign-in redirect and is restored into
       // the composer afterwards.
       stashPendingQuestion(text);
-      openAuthModal();
+      goToAuthPage();
       return;
     }
     cancelBusyRetry(); // a manual send supersedes any pending auto-retry
@@ -3451,7 +3604,7 @@ import {
       btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg> Sign in to continue';
       btn.addEventListener("click", () => {
         stashPendingQuestion(opts.retryText);
-        openAuthModal();
+        goToAuthPage();
       });
       actions.appendChild(btn);
     } else if (opts.retryText) {
@@ -3460,7 +3613,7 @@ import {
       btn.className = "link-btn";
       btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Try again';
       btn.addEventListener("click", () => {
-        if (isSignedOut()) { stashPendingQuestion(opts.retryText); openAuthModal(); return; }
+        if (isSignedOut()) { stashPendingQuestion(opts.retryText); goToAuthPage(); return; }
         submitQuestion(opts.retryText);
       });
       actions.appendChild(btn);
@@ -3594,6 +3747,7 @@ import {
                   if (token !== pipelineToken) return;
                   const stickBeforeFollowUps = isNearBottom();
                   if (refs.followUps) refs.followUps.style.display = "";
+                  if (refs.answerActions) refs.answerActions.style.display = "";
                   scrollChatToBottom(stickBeforeFollowUps);
 
                   setTimeout(() => {
@@ -3844,11 +3998,23 @@ import {
   /* ------------------------------------------------------------------ */
   /* Event bindings                                                       */
   /* ------------------------------------------------------------------ */
+  // Starter prompts (empty state) fill the composer rather than send, so
+  // the user reviews the question first — same contract as follow-ups.
+  document.querySelectorAll(".starter-prompt").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const text = (btn.textContent || "").replace(/\s+/g, " ").trim();
+      if (!text) return;
+      if (el.composerInput) el.composerInput.value = text;
+      if (window.promptBar && window.promptBar.setValue) window.promptBar.setValue(text);
+      const focusTarget = el.composerInput || (window.promptBar && window.promptBar.inputElement);
+      if (focusTarget && focusTarget.focus) focusTarget.focus();
+    });
+  });
   el.newChatBtn.addEventListener("click", createConversation);
   el.newChatMobile.addEventListener("click", createConversation);
   if (el.chatStatusHome) el.chatStatusHome.addEventListener("click", goHome);
   if (el.chatStatusSignin) el.chatStatusSignin.addEventListener("click", () => {
-    if (window.firebaseAuth) openAuthModal();
+    if (window.firebaseAuth) goToAuthPage();
   });
   if (el.chatStatusRetry) el.chatStatusRetry.addEventListener("click", resolveUrl);
   el.menuToggle.addEventListener("click", openMobileSidebar);
@@ -3870,9 +4036,8 @@ import {
   });
 
   /* ------------------------------------------------------------------ */
-  /* Auth (Firebase) — sidebar sign-in/profile, topbar avatar, modal      */
+  /* Auth (Firebase) — sidebar sign-in/profile, topbar avatar, /auth redirect */
   /* ------------------------------------------------------------------ */
-  let authMode = "signin";
 
   function initAuth() {
     // Wait for Firebase to be ready
@@ -4000,7 +4165,7 @@ import {
           <i class="fa-solid fa-right-to-bracket"></i> Sign in
         </button>
       `;
-      container.querySelector("#auth-open-btn").addEventListener("click", openAuthModal);
+      container.querySelector("#auth-open-btn").addEventListener("click", goToAuthPage);
       el.topbarAvatar.style.display = "none";
       return;
     }
@@ -4045,46 +4210,13 @@ import {
     };
   }
 
-  function openAuthModal() {
-    // Auth now lives on a dedicated full page (didit-grade flow) instead of a
-    // popup. Preserve the current hash so the user returns to the same view.
-    const next = "/" + window.location.hash;
+  // Auth lives on the dedicated /auth page (OTP signup, Google, forgot
+  // password). Preserve the current view so the user returns to what they
+  // were doing. A stashed question, if any, is restored into the composer
+  // by the restore logic on load.
+  function goToAuthPage() {
+    const next = window.location.pathname + window.location.hash;
     window.location.href = "/auth?mode=signin&next=" + encodeURIComponent(next);
-  }
-
-  function closeAuthModal() {
-    el.authModalOverlay.classList.remove("is-visible");
-  }
-
-  function updateAuthModalMode() {
-    const isSignup = authMode === "signup";
-    el.authTabSignin.classList.toggle("is-active", !isSignup);
-    el.authTabSignup.classList.toggle("is-active", isSignup);
-    el.authModalTitle.textContent = isSignup ? "Create your account" : "Welcome back";
-    el.authSubmit.textContent = isSignup ? "Create account" : "Sign in";
-    el.authPassword.autocomplete = isSignup ? "new-password" : "current-password";
-    el.authError.style.display = "none";
-  }
-
-  function showAuthError(message) {
-    el.authError.textContent = message;
-    el.authError.style.display = "block";
-  }
-
-  function friendlyAuthError(err) {
-    const code = (err && err.code) || "";
-    const map = {
-      "auth/invalid-email": "That email address doesn't look right.",
-      "auth/user-not-found": "No account found with that email.",
-      "auth/wrong-password": "Incorrect password.",
-      "auth/invalid-credential": "Incorrect email or password.",
-      "auth/email-already-in-use": "An account already exists with that email — try signing in instead.",
-      "auth/weak-password": "Password should be at least 6 characters.",
-      "auth/popup-closed-by-user": "Sign-in was cancelled.",
-      "auth/operation-not-allowed": "This sign-in method isn't enabled yet for this app.",
-      "auth/network-request-failed": "Network error — check your connection and try again.",
-    };
-    return map[code] || (err && err.message) || "Something went wrong. Try again.";
   }
 
   function handleLogout() {
@@ -4144,56 +4276,8 @@ import {
     updateComposerState();
   }
 
-  el.authModalClose.addEventListener("click", closeAuthModal);
-  el.authModalOverlay.addEventListener("click", (e) => {
-    if (e.target === el.authModalOverlay) closeAuthModal();
-  });
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && el.authModalOverlay.classList.contains("is-visible")) closeAuthModal();
-  });
 
-  el.authTabSignin.addEventListener("click", () => { authMode = "signin"; updateAuthModalMode(); });
-  el.authTabSignup.addEventListener("click", () => { authMode = "signup"; updateAuthModalMode(); });
 
-  el.authForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const auth = window.firebaseAuth;
-    if (!auth) return;
-
-    const email = el.authEmail.value.trim();
-    const password = el.authPassword.value;
-    el.authError.style.display = "none";
-    el.authSubmit.disabled = true;
-    const originalLabel = el.authSubmit.textContent;
-    el.authSubmit.textContent = authMode === "signup" ? "Creating account…" : "Signing in…";
-
-    try {
-      if (authMode === "signup") {
-        await createUserWithEmailAndPassword(auth, email, password);
-      } else {
-        await signInWithEmailAndPassword(auth, email, password);
-      }
-      closeAuthModal();
-    } catch (err) {
-      showAuthError(friendlyAuthError(err));
-    } finally {
-      el.authSubmit.disabled = false;
-      el.authSubmit.textContent = originalLabel;
-    }
-  });
-
-  el.authGoogleBtn.addEventListener("click", async () => {
-    const auth = window.firebaseAuth;
-    if (!auth) return;
-    el.authError.style.display = "none";
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      closeAuthModal();
-    } catch (err) {
-      showAuthError(friendlyAuthError(err));
-    }
-  });
 
   /* ------------------------------------------------------------------ */
   /* URL-based routing — base URL = empty state, #chat/{id} = convo      */
@@ -4511,7 +4595,7 @@ import {
     // Gated-state affordance: while signed out the input is disabled, so a
     // tap anywhere on the composer is the sign-in shortcut.
     container.addEventListener("click", () => {
-      if (isSignedOut() && !state.isAgentBusy) openAuthModal();
+      if (isSignedOut() && !state.isAgentBusy) goToAuthPage();
     });
     
     if (!window.BeUIPromptBar) {
