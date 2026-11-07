@@ -1,6 +1,7 @@
 /**
- * BeUIPromptBar - Composer with /-commands and a send/stop button.
- * @-mentions and a model picker were never wired and have been removed.
+ * BeUIPromptBar - Composer with a send/stop button and an attachments menu.
+ * The /-command and @-mention systems were never completed and have been
+ * removed; the placeholder, mic and send behaviour are unchanged.
  */
 class BeUIPromptBar {
   constructor(container, options = {}) {
@@ -11,7 +12,6 @@ class BeUIPromptBar {
       onStop: options.onStop || null,
       onMenu: options.onMenu || null,
       onMic: options.onMic || null,
-      commands: options.commands || [],
       ...options
     };
 
@@ -20,17 +20,9 @@ class BeUIPromptBar {
     this.submitButton = null;
     this.menuButton = null;
     this.micButton = null;
-    this.dropdown = null;
-    this.isDropdownOpen = false;
-    this.dropdownType = null;
-    this._commandMatches = [];
     this.isSubmitting = false;
 
-    // Click-outside handler reference for cleanup
-    this._outsideClickHandler = (e) => this.handleOutsideClick(e);
-
     this.render();
-    this.attachOutsideClickListener();
   }
 
   render() {
@@ -43,7 +35,7 @@ class BeUIPromptBar {
     textarea.placeholder = this.options.placeholder;
     textarea.rows = 1;
     textarea.setAttribute('aria-label', 'Your legal question');
-    textarea.addEventListener('input', (e) => this.handleInput(e));
+    textarea.addEventListener('input', () => this.handleInput());
     textarea.addEventListener('keydown', (e) => this.handleKeydown(e));
 
     // Controls row: menu on the left, dictation and send on the right.
@@ -53,7 +45,7 @@ class BeUIPromptBar {
     const menuBtn = document.createElement('button');
     menuBtn.type = 'button';
     menuBtn.className = 'beui-prompt-bar__tool beui-prompt-bar__tool--menu';
-    menuBtn.setAttribute('aria-label', 'Commands and attachments');
+    menuBtn.setAttribute('aria-label', 'Attach evidence');
     menuBtn.setAttribute('aria-haspopup', 'menu');
     menuBtn.setAttribute('aria-expanded', 'false');
     menuBtn.innerHTML = '<i class="fa-solid fa-plus" aria-hidden="true"></i>';
@@ -93,15 +85,8 @@ class BeUIPromptBar {
     controls.appendChild(micBtn);
     controls.appendChild(submitBtn);
 
-    // Dropdown
-    const dropdown = document.createElement('div');
-    dropdown.className = 'beui-prompt-bar__dropdown';
-    dropdown.setAttribute('role', 'listbox');
-    dropdown.setAttribute('aria-label', 'Commands');
-
     wrapper.appendChild(textarea);
     wrapper.appendChild(controls);
-    wrapper.appendChild(dropdown);
 
     this.container.appendChild(wrapper);
     this.element = wrapper;
@@ -109,7 +94,6 @@ class BeUIPromptBar {
     this.submitButton = submitBtn;
     this.menuButton = menuBtn;
     this.micButton = micBtn;
-    this.dropdown = dropdown;
 
     // Auto-resize
     textarea.addEventListener('input', () => {
@@ -118,127 +102,17 @@ class BeUIPromptBar {
     });
   }
 
-  /**
-   * Attach a global click listener to close dropdowns when clicking outside.
-   */
-  attachOutsideClickListener() {
-    document.addEventListener('click', this._outsideClickHandler, true);
-  }
-
-  /**
-   * If a click happens outside the prompt bar element, close any open dropdown.
-   */
-  handleOutsideClick(e) {
-    if (this.element && !this.element.contains(e.target)) {
-      this.hideDropdown();
-    }
-  }
-
-  handleInput(e) {
-    const value = e.target.value;
-
+  handleInput() {
     // Don't change button state while submitting (stop button should stay visible)
-    if (!this.isSubmitting) {
-      this.submitButton.disabled = value.trim().length === 0;
-    }
-
-    // Slash commands trigger only when the whole input is a partial command
-    const textBeforeCursor = value.slice(0, e.target.selectionStart);
-    const commandMatch = textBeforeCursor.match(/^\/(\w*)$/);
-    if (commandMatch) {
-      this.showCommands(commandMatch[1]);
-      return;
-    }
-
-    this.hideDropdown();
+    if (this.isSubmitting) return;
+    this.submitButton.disabled = this.inputElement.value.trim().length === 0;
   }
 
   handleKeydown(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      // When the command dropdown is open, Enter picks the first match
-      // instead of submitting a bare "/tenancy" as the question.
-      if (this.isDropdownOpen && this._commandMatches && this._commandMatches.length) {
-        this.executeCommand(this._commandMatches[0]);
-        return;
-      }
       this.submit();
-    } else if (e.key === 'Escape') {
-      this.hideDropdown();
     }
-  }
-
-
-  showCommands(query) {
-    const filtered = this.options.commands.filter(c =>
-      c.name.toLowerCase().includes(query.toLowerCase())
-    );
-
-    this._commandMatches = filtered;
-    if (filtered.length === 0) {
-      this.hideDropdown();
-      return;
-    }
-
-    this.dropdown.innerHTML = '';
-    this.dropdownType = 'commands';
-
-    filtered.forEach(command => {
-      const item = document.createElement('div');
-      item.className = 'beui-prompt-bar__dropdown-item';
-      item.setAttribute('role', 'option');
-      item.setAttribute('tabindex', '0');
-      item.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          this.executeCommand(command);
-        }
-      });
-
-      const textWrapper = document.createElement('div');
-      textWrapper.className = 'beui-prompt-bar__dropdown-text';
-
-      const name = document.createElement('span');
-      name.className = 'beui-prompt-bar__dropdown-name';
-      name.textContent = command.name;
-
-      const desc = document.createElement('span');
-      desc.className = 'beui-prompt-bar__dropdown-desc';
-      desc.textContent = command.desc || '';
-
-      textWrapper.appendChild(name);
-      textWrapper.appendChild(desc);
-
-      item.appendChild(textWrapper);
-
-      item.addEventListener('click', () => {
-        this.executeCommand(command);
-      });
-
-      this.dropdown.appendChild(item);
-    });
-
-    this.dropdown.classList.add('is-visible');
-    this.isDropdownOpen = true;
-  }
-
-  hideDropdown() {
-    this.dropdown.classList.remove('is-visible');
-    this.isDropdownOpen = false;
-    this.dropdownType = null;
-    this._commandMatches = [];
-  }
-
-
-  executeCommand(command) {
-    this.hideDropdown();
-    this.inputElement.value = `${command.name} `;
-    this.inputElement.style.height = 'auto';
-    this.inputElement.style.height = Math.min(this.inputElement.scrollHeight, 200) + 'px';
-    this.submitButton.disabled = false;
-    this.inputElement.focus();
-    const end = this.inputElement.value.length;
-    try { this.inputElement.setSelectionRange(end, end); } catch (_) { /* pre-focus fallback */ }
   }
 
   /**
@@ -251,7 +125,6 @@ class BeUIPromptBar {
     e.stopPropagation();
 
     if (this.isSubmitting) {
-      // During submission the button acts as a stop button
       if (this.options.onStop) {
         this.options.onStop();
       }
@@ -279,7 +152,6 @@ class BeUIPromptBar {
     this.inputElement.value = '';
     this.inputElement.style.height = 'auto';
     this.submitButton.disabled = true;
-    this.hideDropdown();
   }
 
   getValue() {
@@ -319,7 +191,6 @@ class BeUIPromptBar {
   }
 
   destroy() {
-    document.removeEventListener('click', this._outsideClickHandler, true);
     if (this.element && this.element.parentNode) {
       this.element.parentNode.removeChild(this.element);
     }

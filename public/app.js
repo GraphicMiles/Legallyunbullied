@@ -1716,27 +1716,12 @@ import {
   let voiceRecognition = null;
   let voiceListening = false;
 
-  function insertCommand(command) {
-    const bar = window.promptBar;
-    if (!bar) return;
-    bar.setValue(command + " ");
-    const input = bar.inputElement;
-    if (input) {
-      input.focus();
-      try { input.setSelectionRange(input.value.length, input.value.length); } catch (_) { /* focus-first is fine */ }
-    }
-  }
-
   function openComposerMenu(menuBtn) {
     if (!window.promptBar) return;
+    // The /-command topic system was removed (it sent bare "/tenancy"
+    // strings to the model). The plus menu is the future home of evidence
+    // attachments; the item stays disabled until that ships.
     const items = [
-      { label: "Tenancy law", icon: "fa-house-chimney", onClick: () => insertCommand("/tenancy") },
-      { label: "Employment law", icon: "fa-briefcase", onClick: () => insertCommand("/employment") },
-      { label: "Criminal law", icon: "fa-gavel", onClick: () => insertCommand("/criminal") },
-      { label: "Family law", icon: "fa-children", onClick: () => insertCommand("/family") },
-      { label: "Business law", icon: "fa-building", onClick: () => insertCommand("/business") },
-      { label: "Constitutional rights", icon: "fa-scale-balanced", onClick: () => insertCommand("/constitutional") },
-      { divider: true },
       { label: "Attach evidence", icon: "fa-paperclip", trailing: "Coming soon", disabled: true, onClick: () => {} },
     ];
     menuBtn.setAttribute("aria-expanded", "true");
@@ -4974,14 +4959,6 @@ import {
         },
         onMenu: (menuBtn) => openComposerMenu(menuBtn),
         onMic: () => toggleVoiceDictation(),
-        commands: [
-          { key: "tenancy", name: "/tenancy", desc: "Ask about tenancy law" },
-          { key: "employment", name: "/employment", desc: "Ask about employment law" },
-          { key: "criminal", name: "/criminal", desc: "Ask about criminal law" },
-          { key: "family", name: "/family", desc: "Ask about family law" },
-          { key: "business", name: "/business", desc: "Ask about business law" },
-          { key: "constitutional", name: "/constitutional", desc: "Ask about constitutional rights" }
-        ]
       });
 
     } catch (err) {
