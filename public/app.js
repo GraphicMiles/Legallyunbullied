@@ -1764,8 +1764,9 @@ import {
   // Reveal the mic only when the browser can actually dictate.
   function initVoiceDictation() {
     const bar = window.promptBar;
-    if (!bar || !bar.micButton) return;
-    bar.micButton.hidden = !SpeechRecognitionImpl;
+    if (bar && bar.micButton) bar.micButton.hidden = !SpeechRecognitionImpl;
+    const quickMic = document.getElementById("quick-mic");
+    if (quickMic) quickMic.hidden = !SpeechRecognitionImpl;
   }
 
   /* ------------------------------------------------------------------ */
@@ -1798,6 +1799,8 @@ import {
   function setEmptyStateVisible(show) {
     if (!el.emptyState) return;
     el.emptyState.style.display = show ? "flex" : "none";
+    const mainEl = document.querySelector(".main");
+    if (mainEl) mainEl.classList.toggle("is-hero", show);
     dockComposer(show);
   }
 
@@ -3437,7 +3440,7 @@ import {
         }
       } catch (err) {
         console.error("[safetyAck] Failed:", err);
-        confirmBtn.textContent = "Error — try again";
+        confirmBtn.textContent = "Error. Try again.";
         confirmBtn.disabled = false;
       }
     });
@@ -3605,12 +3608,12 @@ import {
           renderChat();
         } else {
           // Token expired after reload — honest fallback.
-          confirmBtn.textContent = "Expired — ask again";
+          confirmBtn.textContent = "Expired. Ask again.";
           confirmBtn.style.opacity = "0.5";
         }
       } catch (err) {
         console.error("[safetyAck] Static confirm failed:", err);
-        confirmBtn.textContent = "Error — try again";
+        confirmBtn.textContent = "Error. Try again.";
         confirmBtn.disabled = false;
       }
     });
@@ -3629,7 +3632,7 @@ import {
     icon.innerHTML = '<i class="fa-solid fa-hourglass-half"></i>';
 
     const title = document.createElement("p");
-    title.textContent = `Providers were busy — try again`;
+    title.textContent = `Providers were busy. Try again.`;
     title.className = "providers-busy__title";
 
     const message = document.createElement("p");
@@ -4183,11 +4186,11 @@ import {
 
   /* Event bindings                                                       */
   /* ------------------------------------------------------------------ */
-  // Starter prompts (empty state) fill the composer rather than send, so
+  // Quick questions (empty state) fill the composer rather than send, so
   // the user reviews the question first — same contract as follow-ups.
-  document.querySelectorAll(".starter-prompt").forEach((btn) => {
+  document.querySelectorAll("[data-prompt]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const text = (btn.textContent || "").replace(/\s+/g, " ").trim();
+      const text = (btn.getAttribute("data-prompt") || "").trim();
       if (!text) return;
       if (el.composerInput) el.composerInput.value = text;
       if (window.promptBar && window.promptBar.setValue) window.promptBar.setValue(text);
@@ -4195,6 +4198,43 @@ import {
       if (focusTarget && focusTarget.focus) focusTarget.focus();
     });
   });
+
+  // Transient confirmation for quick actions (share / copy). Reused by
+  // both the share fallback and any future clipboard feedback.
+  const toastEl = document.getElementById("toast");
+  let toastTimer = null;
+  function showToast(message) {
+    if (!toastEl) return;
+    toastEl.textContent = message;
+    toastEl.classList.add("show");
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove("show"), 1800);
+  }
+
+  // Quick actions: share the app, or start composer dictation. The
+  // paperclip is deliberately disabled (no evidence pipeline yet) and
+  // announces itself as "Attach evidence, coming soon".
+  const quickShare = document.getElementById("quick-share");
+  if (quickShare) quickShare.addEventListener("click", async () => {
+    const payload = {
+      title: "Legally Unbullied",
+      text: "Know your rights with Legally Unbullied — plain-English answers on Nigerian law.",
+      url: window.location.origin,
+    };
+    try {
+      if (navigator.share) { await navigator.share(payload); return; }
+      await navigator.clipboard.writeText(payload.url);
+      showToast("Link copied");
+    } catch (err) {
+      if (err && err.name === "AbortError") return; // user dismissed the share sheet
+      try {
+        await navigator.clipboard.writeText(payload.url);
+        showToast("Link copied");
+      } catch (_e) { /* clipboard unavailable — stay silent */ }
+    }
+  });
+  const quickMic = document.getElementById("quick-mic");
+  if (quickMic) quickMic.addEventListener("click", () => { toggleVoiceDictation(); });
   el.newChatBtn.addEventListener("click", createConversation);
   el.newChatMobile.addEventListener("click", createConversation);
   if (el.chatStatusHome) el.chatStatusHome.addEventListener("click", goHome);
@@ -4386,6 +4426,7 @@ import {
   function renderAuthSection(user) {
     const container = el.authSection;
     if (!container) return;
+    renderGreeting(user || null);
 
     if (!window.firebaseAuth) {
       container.innerHTML = `
@@ -4734,7 +4775,7 @@ import {
     pill.id = "lu-offline-pill";
     pill.setAttribute("role", "status");
     pill.className = "lu-offline-pill";
-    pill.textContent = "You're offline — conversations will load when you're back online.";
+    pill.textContent = "You're offline. Conversations will load when you're back online.";
     document.body.appendChild(pill);
   }
 
@@ -4789,12 +4830,13 @@ import {
     // the auth callback (renderHistory shows a loading placeholder instead of
     // a stale cache that would otherwise flash).
     if (!window.firebaseAuth) _authSettled = true;
+    renderGreeting(null);
     resolveUrl();
     renderHistory();
     initAuth();       // auth first — more critical than composer
     initPromptBar();  // prompt bar before updateComposerState so it can delegate
     initVoiceDictation(); // reveal the mic only when the browser supports dictation
-    initDisclaimerPop();
+    initComposerNote();
     bindConnectivityRecovery();
     // If we booted while already offline, surface it immediately instead of
     // letting the first failed fetch discover it.
@@ -4806,27 +4848,29 @@ import {
     updateComposerState();
   }
 
-  // The legal-information disclaimer lives in the composer card. It stays
-  // visible until the user dismisses it; dismissal is persisted locally.
-  function initDisclaimerPop() {
-    // Fresh key for the redesigned in-card banner: an old one-time-popup
-    // dismissal must not hide the new banner.
-    const POP_KEY = "lu.composer.banner.dismissed";
-    const pop = document.getElementById("disclaimer-pop");
-    const closeBtn = document.getElementById("disclaimer-pop-close");
-    if (!pop || !closeBtn) return;
-    // The "talk to a lawyer" link points at the same NBA directory used by
-    // the escalation verdict, so the two never drift.
-    const lawyerLink = document.getElementById("disclaimer-lawyer-link");
+  // The legal-information footnote rides inside the composer card. It is
+  // always present — no dismissal, no nag-pill. The "talk to a lawyer"
+  // link points at the same NBA directory used by the escalation verdict,
+  // so the two never drift.
+  function initComposerNote() {
+    const lawyerLink = document.getElementById("composer-lawyer-link");
     if (lawyerLink) lawyerLink.href = NBA_DIRECTORY_URL;
-    let dismissed = false;
-    try { dismissed = localStorage.getItem(POP_KEY) === "1"; } catch (_e) { /* private mode */ }
-    if (dismissed) return;
-    pop.hidden = false;
-    closeBtn.addEventListener("click", () => {
-      pop.hidden = true;
-      try { localStorage.setItem(POP_KEY, "1"); } catch (_e) { /* private mode */ }
-    });
+  }
+
+  /* Greeting line — time-aware ("Good morning/afternoon/evening"), and it
+     picks up the sign-in first name once auth resolves. The fixed second
+     line is the real headline; the first line is warmth, not a question. */
+  function greetingPrefix() {
+    const h = new Date().getHours();
+    if (h < 12) return "Good morning";
+    if (h < 17) return "Good afternoon";
+    return "Good evening";
+  }
+  function renderGreeting(user) {
+    const line = document.getElementById("greeting-line");
+    if (!line) return;
+    const first = user ? accountFirstName(user) : "";
+    line.textContent = first ? `${greetingPrefix()}, ${first}.` : `${greetingPrefix()}.`;
   }
 
   function initPromptBar() {
