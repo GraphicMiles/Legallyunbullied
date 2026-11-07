@@ -1484,7 +1484,8 @@ import {
   /* ------------------------------------------------------------------ */
   /* Confirm dialog (Clear / Delete chat)                                 */
   /* ------------------------------------------------------------------ */
-  function showConfirm({ text, confirmLabel = "Confirm", onConfirm }) {
+  function showConfirm({ text, confirmLabel = "Confirm", title = "Confirm", onConfirm }) {
+    el.confirmModalTitle.textContent = title;
     el.confirmModalText.textContent = text;
     el.confirmModalConfirm.textContent = confirmLabel;
     el.confirmModalOverlay.classList.add("is-visible");
@@ -1515,6 +1516,7 @@ import {
     showConfirm({
       text: `Clear all messages in "${truncate(convo.title, 44)}"? This can't be undone.`,
       confirmLabel: "Clear chat",
+      title: "Clear this chat?",
       onConfirm: () => clearConversationMessages(id),
     });
   }
@@ -1624,6 +1626,7 @@ import {
     showConfirm({
       text: `Delete "${truncate(convo.title, 44)}"? This can't be undone.`,
       confirmLabel: "Delete chat",
+      title: "Delete this chat?",
       onConfirm: () => deleteConversationById(id),
     });
   }
@@ -2153,7 +2156,7 @@ import {
         </div>
         <div>
           <div class="safety-flag-banner__title">
-            Treat this carefully — high-risk area
+            High-risk area. Treat this carefully.
           </div>
           <div class="safety-flag-banner__body">
             ${escapeHtml(r._safetyFlag.message || "This response covers a sensitive legal area and could not be fully verified.")}
@@ -2554,7 +2557,7 @@ import {
         <div class="verdict__actions">
           <a class="link-btn" href="${NBA_DIRECTORY_URL}" target="_blank" rel="noopener noreferrer">
             ${ICONS.external}
-            Find a verified lawyer — NBA directory
+            Find a verified lawyer on the NBA directory
           </a>
         </div>
       ` : ""}
@@ -3439,7 +3442,7 @@ import {
         </div>
         <div>
           <div class="safety-approval__title">
-            High-risk legal area — review required
+            High-risk legal area. Review required.
           </div>
           <div class="safety-approval__body">
             ${escapeHtml(message || "This response could not be fully verified.")}
@@ -3558,8 +3561,8 @@ import {
     
     const title = document.createElement("p");
     title.textContent = willRetry
-      ? `Providers are busy — retrying in ${retryAfter}s (attempt ${attempts} of ${MAX_BUSY_RETRIES})`
-      : "Providers are busy — please try again in a few minutes";
+      ? `Providers are busy. Retrying in ${retryAfter}s (attempt ${attempts} of ${MAX_BUSY_RETRIES}).`
+      : "Providers are busy. Try again in a few minutes.";
     title.className = "providers-busy__title";
     
     const message = document.createElement("p");
@@ -3747,7 +3750,7 @@ import {
           <div class="answer-section__icon"><i class="fa-solid fa-hourglass-half"></i></div>
           <span class="answer-section__title">Still working on this</span>
         </div>
-        <div class="answer-section__text"><p>The answer is still being prepared — it will appear here shortly.</p></div>
+        <div class="answer-section__text"><p>The answer is still being prepared. It will appear here shortly.</p></div>
       </div>
       <div class="msg__meta"><span class="msg__meta-text">Legal information, not legal advice · ${formatTime(createdAt)}</span></div>
     `;
@@ -4284,7 +4287,7 @@ import {
   if (quickShare) quickShare.addEventListener("click", async () => {
     const payload = {
       title: "Legally Unbullied",
-      text: "Know your rights with Legally Unbullied — plain-English answers on Nigerian law.",
+      text: "Legally Unbullied: plain-English answers on Nigerian law.",
       url: window.location.origin,
     };
     try {
