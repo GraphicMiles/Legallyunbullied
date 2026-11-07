@@ -332,9 +332,10 @@
     height: 38px;
     padding: 0 var(--space-4);
     background: var(--color-surface);
-    transition: background var(--dur-fast) var(--ease);
+    border: 1px solid transparent;
+    transition: border-color var(--dur-fast) var(--ease);
   }
-  .sidebar__search:focus-within { background: var(--color-surface-alt); }
+  .sidebar__search:focus-within { border-color: var(--color-accent-border); }
   .sidebar__search svg { width: 15px; height: 15px; color: var(--color-text-faint); }
   .sidebar__search i { font-size: 13px; color: var(--color-text-faint); }
   .sidebar__search input {
@@ -1151,14 +1152,14 @@
   }
 
 
-  /* Keyboard focus is a tone lift, never an outline stroke. */
+  /* Keyboard focus = accent ring (app-wide convention). */
   .btn:focus-visible, .icon-btn:focus-visible,
   .followup-chip:focus-visible, .history__item:focus-visible, .history__kebab:focus-visible,
   .link-btn:focus-visible, .auth-signin-btn:focus-visible,
   .chat-status__home:focus-visible, .msg-action-btn:focus-visible, .context-card__head:focus-visible,
   .answer-actions__btn:focus-visible, .answer-actions__thumb:focus-visible, .question:focus-visible, .pill-button:focus-visible, .account-chip:focus-visible {
-    outline: none;
-    background-color: var(--color-surface-alt);
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
     color: var(--color-text);
   }
 
@@ -1824,18 +1825,7 @@
     max-width: var(--composer-max-width);
     margin: 0 auto;
   }
-  .composer__form {
-    display: flex;
-    align-items: flex-end;
-    gap: var(--space-2);
-    border-radius: var(--radius-lg);
-    background: rgba(38, 39, 43, 0.92);
-    backdrop-filter: blur(20px) saturate(170%);
-    -webkit-backdrop-filter: blur(20px) saturate(170%);
-    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
-    transition: border-color var(--dur-fast) var(--ease);
-  }
-  .composer__form:focus-within { border-color: var(--color-accent-border); }
+
   .composer__input {
     flex: 1;
     resize: none;
@@ -1868,10 +1858,11 @@
      token steps only. */
   .composer-card {
     background: var(--color-surface);
+    border: 1px solid transparent;
     border-radius: var(--radius-xl);
-    transition: background var(--dur-fast) var(--ease);
+    transition: border-color var(--dur-fast) var(--ease);
   }
-  .composer-card:focus-within { background: var(--color-surface-alt); }
+  .composer-card:focus-within { border-color: var(--color-accent-border); }
 
 
   /* ============================================================

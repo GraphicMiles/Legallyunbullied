@@ -309,7 +309,7 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
   font: inherit;
   font-size: 14.5px;
   outline: none;
-  transition: background 0.2s;
+  transition: none;
 }
 
 .field__control .field__input { padding-right: 52px; }
@@ -317,7 +317,8 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
 .field__input::placeholder { color: var(--faint); }
 
 .field__input:focus {
-  background: var(--surface-alt);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .field__eye {
@@ -473,7 +474,8 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
 }
 
 .check input:focus-visible + .check__box {
-  background: var(--surface);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .check__text { font-size: 12.5px; color: var(--muted); }
@@ -504,7 +506,8 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
 }
 
 .otp-box:focus {
-  background: var(--surface-alt);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
   color: var(--accent);
   transform: translateY(-1px);
 }
@@ -559,11 +562,11 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
   .btn-primary:hover:not(:disabled), .btn-social:active { transform: none; }
 }
 
-/* Keyboard focus = tone lift, never an outline stroke. */
+/* Keyboard focus = accent ring, never a fill. */
 .btn-social:focus-visible, .btn-primary:focus-visible, .link-btn:focus-visible,
 .field__eye:focus-visible {
-  outline: none;
-  background: var(--surface-alt);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 .check__text a { color: var(--accent); text-decoration: none; }
 .check__text a:hover { text-decoration: underline; }
