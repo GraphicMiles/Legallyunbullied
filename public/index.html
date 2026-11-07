@@ -263,7 +263,7 @@
     min-height: 0;
     flex: 1;
     padding: 0 12px;
-    gap: 12px;
+    gap: 0;
   }
 
   .btn {
@@ -309,62 +309,85 @@
 
   .btn--block { width: 100%; }
 
-  /* Quiet enterprise action (sidebar new-question). Gold is reserved for
-     send / focus / active states. */
-  .btn--new {
-    background: var(--color-surface);
-    color: var(--color-text);
-    border-radius: var(--radius-full);
-    height: 40px;
-    font-size: 13.5px;
+  /* Sidebar rail: one vertical stack of equal rows. The primary action is a
+     row, not a filled button, so the rail reads as a single column. Gold stays
+     reserved for send / focus / active states. */
+  .sidebar__actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    flex-shrink: 0;
   }
-  .btn--new:active { transform: translateY(1px); }
-  .btn--new i, .btn--new svg { color: var(--color-accent); }
 
-  .btn--icon-leading svg { width: 16px; height: 16px; }
-  .btn--icon-leading i { font-size: 14px; }
+  .sidebar__action {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    min-height: 40px;
+    padding: 0 10px;
+    border-radius: var(--radius-md);
+    color: var(--color-text-muted);
+    font-size: 13.5px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    text-align: left;
+    transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+  }
+  .sidebar__action:hover { background: var(--color-surface); color: var(--color-text); }
+  .sidebar__action:active { background: var(--color-surface-alt); color: var(--color-text); }
+  .sidebar__action:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  .sidebar__action svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--color-text-faint); }
+  .sidebar__action:hover svg { color: var(--color-text-muted); }
 
   .sidebar__search {
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    border-radius: var(--radius-full);
-    height: 38px;
-    padding: 0 var(--space-4);
+    border-radius: var(--radius-md);
+    min-height: 40px;
+    padding: 0 10px;
     background: var(--color-surface);
     border: 1px solid transparent;
-    transition: border-color var(--dur-fast) var(--ease);
+    transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
   }
-  .sidebar__search:focus-within { border-color: var(--color-accent-border); }
-  .sidebar__search svg { width: 15px; height: 15px; color: var(--color-text-faint); }
+  .sidebar__search:hover { background: var(--color-surface-alt); }
+  .sidebar__search:focus-within {
+    border-color: var(--color-accent-border);
+    background: var(--color-surface-alt);
+  }
+  .sidebar__search svg { width: 15px; height: 15px; flex-shrink: 0; color: var(--color-text-faint); }
   .sidebar__search i { font-size: 13px; color: var(--color-text-faint); }
   .sidebar__search input {
     width: 100%;
+    min-width: 0;
     color: var(--color-text);
     font-size: var(--fs-sm);
   }
   .sidebar__search input::placeholder { color: var(--color-text-faint); }
 
+  /* One quiet label over the conversation list. Sentence case, never a
+     repeated per-group heading. */
+  .sidebar__section-label {
+    flex-shrink: 0;
+    margin: var(--space-2) 0 0;
+    padding: 0 10px var(--space-2);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    color: var(--color-text-faint);
+  }
+  .sidebar__section-label[hidden] { display: none; }
+
   .history {
     flex: 1;
     overflow-y: auto;
     margin: 0;
-    padding: 0 4px 16px;
+    padding: 0 0 16px;
     min-height: 0;
   }
-
-  /* Group heading (Today / Yesterday / ...) aligned with the inset rows. */
-  .history__heading {
-    flex-shrink: 0;
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.09em;
-    color: var(--color-text-faint);
-    padding: 0 12px 6px;
-    margin-top: 16px;
-  }
-  .history__heading:first-child { margin-top: 4px; }
 
   /* history row: rounded highlight unit; title (flex) + kebab (far right). */
   .history__row {
@@ -385,8 +408,9 @@
     gap: var(--space-2);
     flex: 1;
     min-width: 0;
+    min-height: 36px;
     text-align: left;
-    padding: 8px 8px 8px 12px;
+    padding: 8px 8px 8px 10px;
     color: var(--color-text-muted);
     font-size: 13px;
     cursor: pointer;
@@ -394,6 +418,19 @@
     border: 0;
     transition: color var(--dur-fast) var(--ease);
   }
+  /* Leading icon on every conversation row, matching the rail's action rows. */
+  .history__icon {
+    flex-shrink: 0;
+    width: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-faint);
+    transition: color var(--dur-fast) var(--ease);
+  }
+  .history__icon svg { width: 14px; height: 14px; }
+  .history__row:hover .history__icon,
+  .history__row.is-active .history__icon { color: var(--color-text-muted); }
   .history__item:hover { color: var(--color-text); }
   .history__row.is-active .history__item { color: var(--color-text); }
 
@@ -434,6 +471,24 @@
   .history__kebab:focus-visible,
   .history__kebab.is-open { opacity: 1; }
   @media (hover: none) { .history__kebab { opacity: 1; } }
+  /* Touch: every rail control reaches the 44px target without changing the
+     desktop rhythm. The kebab carries its own full-height slot so it never
+     overlaps the neighbouring row. */
+  @media (hover: none) {
+    .sidebar__action, .sidebar__search { min-height: 44px; }
+    .sidebar__search input { height: 100%; }
+    .history__item { min-height: 44px; padding-right: 0; }
+    .history__kebab { width: 44px; height: 44px; margin-right: 0; }
+    .sidebar .sidebar__close { width: 44px; height: 44px; margin-right: -6px; }
+    .sidebar__legal a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 0 var(--space-1);
+    }
+    .sidebar__legal a:first-child { margin-left: 0; }
+    .sidebar .auth-profile__logout { width: 44px; height: 44px; }
+  }
   .history__kebab:hover { color: var(--color-text); }
   .history__kebab.is-open { background: var(--color-surface-alt); color: var(--color-text); }
   .history__kebab i { font-size: 13px; }
@@ -527,10 +582,10 @@
 
   .sidebar__footer {
     flex-shrink: 0;
-    padding: 14px 16px max(16px, calc(env(safe-area-inset-bottom, 0px) + 10px));
+    padding: var(--space-3) 12px max(16px, calc(env(safe-area-inset-bottom, 0px) + 10px));
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: var(--space-2);
     border-top: 1px solid var(--color-border-soft);
   }
 
@@ -593,9 +648,10 @@
     display: flex;
     align-items: center;
     gap: var(--space-2);
+    min-height: 44px;
     border-radius: var(--radius-md);
-    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
-    background: var(--color-surface);
+    padding: var(--space-2) var(--space-2) var(--space-2) 10px;
+    background: transparent;
   }
   .auth-profile__avatar {
     width: 32px;
@@ -2139,15 +2195,19 @@
     </div>
 
     <div class="sidebar__body">
-      <button class="btn btn--new btn--block btn--icon-leading" id="new-chat-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/></svg>
-        New question
-      </button>
+      <div class="sidebar__actions">
+        <button class="sidebar__action" id="new-chat-btn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/></svg>
+          <span>New question</span>
+        </button>
 
-      <label class="sidebar__search" for="history-search">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        <input id="history-search" type="text" placeholder="Search your questions" autocomplete="off" />
-      </label>
+        <label class="sidebar__search" for="history-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="history-search" type="text" placeholder="Search your questions" autocomplete="off" />
+        </label>
+      </div>
+
+      <p class="sidebar__section-label" id="history-label">Recent</p>
 
       <nav class="history" id="history-list" aria-label="Recents"></nav>
     </div>
