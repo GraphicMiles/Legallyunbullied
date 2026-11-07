@@ -359,7 +359,7 @@
   /* Group heading (Today / Yesterday / ...) aligned with the inset rows. */
   .history__heading {
     flex-shrink: 0;
-    font-size: 10.5px;
+    font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.09em;
@@ -600,7 +600,7 @@
     text-overflow: ellipsis;
   }
   .auth-profile__email {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--color-text-faint);
     white-space: nowrap;
     overflow: hidden;
@@ -672,8 +672,8 @@
   }
 
   .sidebar__disclaimer {
-    font-size: 11.5px;
-    font-size: 11px;
+    font-size: 12px;
+    font-size: 12px;
     line-height: 1.5;
     color: var(--color-text-faint);
   }
@@ -826,7 +826,7 @@
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     white-space: nowrap;
     padding: 4px 10px;
@@ -1044,7 +1044,7 @@
   .composer-note {
     margin: 0;
     padding: var(--space-1) var(--space-3) var(--space-3);
-    font-size: 10.5px;
+    font-size: 12px;
     line-height: 1.42;
     color: var(--color-text-faint);
     text-align: left;
@@ -1094,7 +1094,7 @@
     .action-pill { padding: 3px; }
     .pill-button { height: 44px; }
     .pill-button i { font-size: 13px; }
-    .composer-note { font-size: 9.5px; padding-left: var(--space-3); padding-right: var(--space-3); }
+    .composer-note { padding-left: var(--space-3); padding-right: var(--space-3); }
   }
 
   @media (max-height: 620px) {
@@ -1102,6 +1102,26 @@
     .bento { height: 132px; }
     .quick-area { padding-top: 4px; }
     .empty-state__composer { margin-top: var(--space-1); }
+  }
+
+  /* Desktop composition: the phone rhythm (greeting top, cluster docked
+     bottom) reads as a void on a wide, tall canvas. On >=1024px the hero
+     is one vertically centred composition; the content column is the same
+     780px used everywhere, brand row centres with the greeting. */
+  @media (min-width: 1024px) {
+    .empty-state {
+      justify-content: center;
+      text-align: center;
+      gap: var(--space-7);
+      padding-top: 0;
+    }
+    .greeting {
+      text-align: center;
+      margin-inline: auto;
+    }
+    .quick-area { margin-top: 0; padding-top: 0; }
+    .brand { justify-content: center; margin-bottom: 0; }
+    .empty-state__composer { margin-top: 0; }
   }
 
   /* --- chat status (loading / not found) --- */
@@ -1304,7 +1324,7 @@
   }
   .trace__toggle:hover { color: var(--color-text); }
   .trace__toggle-icon {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--color-text-faint);
     transition: transform var(--dur-base) var(--ease);
     flex-shrink: 0;
@@ -1392,7 +1412,7 @@
   }
   .trace-step.is-pending .trace-step__title { color: var(--color-text-faint); }
   .trace-step__title-time {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 500;
     color: var(--color-text-faint);
     font-family: var(--font-mono);
@@ -1413,7 +1433,7 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--color-text-muted);
     background: var(--color-bg-raised);
@@ -1578,7 +1598,7 @@
     cursor: pointer;
   }
   .context-card__badge {
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.04em;
     color: var(--color-accent);
@@ -1599,7 +1619,7 @@
     font-family: var(--font-mono);
   }
   .context-card__meta {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--color-text-faint);
     flex-shrink: 0;
   }
@@ -1750,7 +1770,7 @@
   .link-btn i { font-size: 12px; }
 
   .msg__meta {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--color-text-faint);
     display: flex;
     align-items: center;
