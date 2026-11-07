@@ -37,7 +37,7 @@ loadDotEnv();
 const { getIdToken, clearTokenCache } = require("./liveAuth");
 const { findProvisions } = require("../../server/legalCorpus");
 
-const SCENARIOS_PATH = path.join(REPO_ROOT, "server", "eval", "scenarios100.json");
+let SCENARIOS_PATH = path.join(REPO_ROOT, "server", "eval", "scenarios100.json");
 
 // ── CLI ────────────────────────────────────────────────────────────────────
 function parseArgs(argv) {
@@ -53,6 +53,7 @@ function parseArgs(argv) {
     else if (a === "--out" && argv[i + 1]) o.out = argv[++i];
     else if (a === "--no-retrieval") o.noRetrieval = true;
     else if (a === "--dry-run") o.dryRun = true;
+    else if (a === "--scenarios" && argv[i + 1]) o.scenarios = argv[++i];
   }
   return o;
 }
@@ -211,7 +212,8 @@ async function main() {
   const opts = parseArgs(process.argv.slice(2));
   const outPath = opts.out || path.join(REPO_ROOT, "server", "eval", "results100.jsonl");
 
-  const data = JSON.parse(fs.readFileSync(SCENARIOS_PATH, "utf-8"));
+  const scenariosFile = opts.scenarios ? path.resolve(opts.scenarios) : SCENARIOS_PATH;
+  const data = JSON.parse(fs.readFileSync(scenariosFile, "utf-8"));
   let scenarios = data.scenarios;
 
   if (opts.categories) scenarios = scenarios.filter((s) => opts.categories.includes(s.category));
