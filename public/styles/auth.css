@@ -574,3 +574,5 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
   outline: none;
   background: var(--surface-alt);
 }
+.check__text a { color: var(--accent); text-decoration: none; }
+.check__text a:hover { text-decoration: underline; }
