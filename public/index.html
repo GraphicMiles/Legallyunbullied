@@ -68,7 +68,7 @@
     --fs-xl:   24px;
 
     /* --- layout --- */
-    --sidebar-width: 280px;
+    --sidebar-width: 300px;
     --topbar-height: 56px;
     --composer-max-width: 780px;
     --border-width: 1px;
@@ -221,7 +221,7 @@
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    padding: 16px 16px 12px;
+    padding: 20px 16px 14px;
     flex-shrink: 0;
   }
 
@@ -233,15 +233,15 @@
   }
 
   .brand__mark {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     flex-shrink: 0;
   }
 
   .brand__name {
-    font-size: 15px;
+    font-size: 17px;
     font-weight: 700;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.015em;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -315,8 +315,8 @@
   .icon-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
 
   .icon {
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
     flex-shrink: 0;
     fill: none;
     stroke: currentColor;
@@ -335,19 +335,19 @@
   .sidebar__action {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: var(--space-2);
     width: 100%;
-    min-height: 44px;
+    min-height: 48px;
     color: var(--color-text-muted);
-    font-size: var(--fs-base);
+    font-size: 15px;
     font-weight: 500;
     text-align: left;
-    transition: color var(--dur-fast) var(--ease);
+    transition: color var(--dur-fast) var(--ease), transform var(--dur-press) var(--ease-press);
   }
   .sidebar__action .icon { color: var(--color-text-faint); transition: color var(--dur-fast) var(--ease); }
   .sidebar__action:hover { color: var(--color-text); }
   .sidebar__action:hover .icon { color: var(--color-text-muted); }
-  .sidebar__action:active { opacity: 0.6; }
+  .sidebar__action:active { transform: translateY(1px); }
   .sidebar__action:focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
@@ -356,8 +356,8 @@
   .sidebar__search {
     display: flex;
     align-items: center;
-    gap: 10px;
-    min-height: 44px;
+    gap: var(--space-2);
+    min-height: 48px;
     color: var(--color-text-muted);
   }
   .sidebar__search .icon { color: var(--color-text-faint); transition: color var(--dur-fast) var(--ease); }
@@ -367,9 +367,9 @@
   .sidebar__search input {
     width: 100%;
     min-width: 0;
-    height: 44px;
+    height: 48px;
     color: var(--color-text);
-    font-size: var(--fs-md);
+    font-size: 15px;
     caret-color: var(--color-accent);
   }
   .sidebar__search input::placeholder { color: var(--color-text-faint); }
@@ -379,9 +379,9 @@
      repeated per-group heading. */
   .sidebar__section-label {
     flex-shrink: 0;
-    margin: var(--space-5) 0 0;
+    margin: var(--space-6) 0 0;
     padding-bottom: var(--space-2);
-    font-size: var(--fs-sm);
+    font-size: 13px;
     font-weight: 500;
     color: var(--color-text-faint);
   }
@@ -405,14 +405,14 @@
   .history__item {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: var(--space-2);
     flex: 1;
     min-width: 0;
-    min-height: 40px;
+    min-height: 44px;
     text-align: left;
     padding: var(--space-2) 0;
-    color: var(--color-text-muted);
-    font-size: var(--fs-base);
+    color: var(--color-text);
+    font-size: 15px;
     cursor: pointer;
     background: transparent;
     border: 0;
@@ -421,18 +421,18 @@
   /* Leading icon on every conversation row, matching the rail's action rows. */
   .history__icon {
     flex-shrink: 0;
-    width: 16px;
+    width: 20px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     color: var(--color-text-faint);
     transition: color var(--dur-fast) var(--ease);
   }
-  .history__icon svg { width: 14px; height: 14px; }
+  .history__icon svg { width: 17px; height: 17px; }
   .history__row:hover .history__icon { color: var(--color-text-muted); }
   .history__row.is-active .history__icon { color: var(--color-accent); }
-  .history__item:hover { color: var(--color-text); }
-  .history__row.is-active .history__item { color: var(--color-text); }
+  .history__item:hover { color: var(--color-accent-hover); }
+  .history__row.is-active .history__item { color: var(--color-text); font-weight: 600; }
 
   .history__item-title {
     flex: 1;
@@ -455,22 +455,20 @@
      Its own click target; never triggers chat navigation. */
   .history__kebab {
     flex-shrink: 0;
-    width: 28px;
-    height: 28px;
-    margin-right: var(--space-1);
+    width: 32px;
+    height: 32px;
+    margin-right: -6px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-sm);
     color: var(--color-text-faint);
-    opacity: 0;
-    transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease);
+    transition: color var(--dur-fast) var(--ease);
   }
   .history__row:hover .history__kebab,
   .history__row.is-active .history__kebab,
   .history__kebab:focus-visible,
-  .history__kebab.is-open { opacity: 1; }
-  @media (hover: none) { .history__kebab { opacity: 1; } }
+  .history__kebab.is-open { color: var(--color-text-muted); }
   /* Touch: every rail control reaches the 44px target without changing the
      desktop rhythm. The kebab carries its own full-height slot so it never
      overlaps the neighbouring row. */
@@ -492,7 +490,7 @@
   .history__kebab:hover { color: var(--color-text); }
   .history__kebab.is-open { color: var(--color-text); }
   .history__kebab i { font-size: 13px; }
-  .history__kebab svg { width: 15px; height: 15px; }
+  .history__kebab svg { width: 18px; height: 18px; }
 
   /* small popover menu (history kebab) */
   .menu-popover {
@@ -582,10 +580,10 @@
 
   .sidebar__footer {
     flex-shrink: 0;
-    padding: var(--space-5) 16px max(16px, calc(env(safe-area-inset-bottom, 0px) + 8px));
+    padding: var(--space-6) 16px max(16px, calc(env(safe-area-inset-bottom, 0px) + 8px));
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
+    gap: var(--space-4);
   }
 
 
@@ -645,8 +643,8 @@
     background: transparent;
   }
   .auth-profile__avatar {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     flex-shrink: 0;
     overflow: hidden;
@@ -666,7 +664,7 @@
   }
   .auth-profile__info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
   .auth-profile__name {
-    font-size: var(--fs-sm);
+    font-size: 15px;
     font-weight: 600;
     color: var(--color-text);
     white-space: nowrap;
@@ -674,7 +672,7 @@
     text-overflow: ellipsis;
   }
   .auth-profile__email {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--color-text-faint);
     white-space: nowrap;
     overflow: hidden;
@@ -693,7 +691,7 @@
   }
   .auth-profile__logout:hover { color: var(--color-danger); }
   .auth-profile__logout .icon { width: 16px; height: 16px; }
-  .auth-profile__logout i { font-size: 13px; }
+  .auth-profile__logout .icon { width: 18px; height: 18px; }
 
   /* account chip (topbar) — avatar + first name + menu affordance.
      Opens the account popover. Collapses to a circle on phone widths. */
@@ -746,17 +744,16 @@
 
   .sidebar__disclaimer {
     margin: 0;
-    max-width: 34ch;
-    font-size: 12px;
-    line-height: 1.5;
+    font-size: 13px;
+    line-height: 1.45;
     color: var(--color-text-faint);
   }
 
   .sidebar__legal {
     display: flex;
     align-items: center;
-    gap: var(--space-4);
-    font-size: 12px;
+    gap: var(--space-5);
+    font-size: 13px;
     line-height: 1.4;
   }
   .sidebar__legal a {
