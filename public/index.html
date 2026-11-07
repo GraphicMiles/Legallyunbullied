@@ -221,7 +221,7 @@
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    padding: 20px 20px 12px;
+    padding: 14px 16px 10px;
     flex-shrink: 0;
   }
 
@@ -527,30 +527,67 @@
 
   .sidebar__footer {
     flex-shrink: 0;
-    padding: 16px 20px 20px;
+    padding: 14px 16px max(16px, calc(env(safe-area-inset-bottom, 0px) + 10px));
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
+    gap: 14px;
+    border-top: 1px solid var(--color-border-soft);
   }
 
 
   /* auth section (sidebar) */
+  .auth-guest {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
   .auth-signin-btn {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: var(--space-2);
+    gap: 10px;
     width: 100%;
-    padding: var(--space-3) var(--space-4);
+    height: 44px;
+    padding: 0 16px 0 14px;
     border-radius: var(--radius-full);
-    background: transparent;
+    background: var(--color-surface);
     color: var(--color-text);
     font-size: var(--fs-sm);
     font-weight: 600;
-    transition: background var(--dur-fast) var(--ease);
+    letter-spacing: -0.01em;
+    text-align: left;
+    transition: color var(--dur-fast) var(--ease);
   }
-  .auth-signin-btn:hover { background: var(--color-accent-soft); }
-  .auth-signin-btn i { font-size: 13px; }
+  .auth-signin-btn__leading {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: var(--radius-full);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-accent-soft);
+    color: var(--color-accent);
+  }
+  .auth-signin-btn__leading i { font-size: 12px; }
+  .auth-signin-btn__label { flex: 1; min-width: 0; }
+  .auth-signin-btn__trailing {
+    flex-shrink: 0;
+    font-size: 12px;
+    color: var(--color-text-faint);
+    transition: transform var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease);
+  }
+  .auth-signin-btn:hover { color: var(--color-accent); }
+  .auth-signin-btn:hover .auth-signin-btn__trailing { transform: translateX(2px); color: var(--color-accent); }
+  .auth-signin-btn:active { transform: translateY(1px); }
+  .auth-signin-btn[disabled] { opacity: 0.45; }
+  .auth-signin-btn[disabled] .auth-signin-btn__trailing { display: none; }
+  .auth-signin-hint {
+    margin: 0;
+    padding: 0 16px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--color-text-faint);
+  }
 
   .auth-profile {
     display: flex;
@@ -660,11 +697,40 @@
   }
 
   .sidebar__disclaimer {
-    font-size: 12px;
+    margin: 0;
+    max-width: 34ch;
     font-size: 12px;
     line-height: 1.5;
     color: var(--color-text-faint);
   }
+
+  .sidebar__legal {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding-top: 12px;
+    border-top: 1px solid var(--color-border-soft);
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .sidebar__legal a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+    padding: 10px 8px;
+    margin: -10px 0;
+    border-radius: var(--radius-sm);
+    transition: color var(--dur-fast) var(--ease);
+  }
+  .sidebar__legal a:first-child { margin-left: -8px; }
+  .sidebar__legal a:hover { color: var(--color-accent); text-decoration: underline; text-underline-offset: 2px; }
+  .sidebar__legal a:focus-visible {
+    color: var(--color-accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  .sidebar__legal-sep { color: var(--color-text-faint); }
 
   /* ------------------------------------------------------------
      SCRIM (mobile sidebar backdrop)
@@ -859,19 +925,31 @@
   }
 
   /* --- empty state --- */
+  /* Hero bands — greeting pinned to the top, the quick cluster anchors to
+     the bottom of the middle band (scrolling internally on very short
+     screens), the composer pinned to the bottom. The two side bands never
+     overlap; the composer owns the top of the layer stack. */
   .empty-state {
     flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: flex-start;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
     text-align: left;
     gap: 0;
     padding: clamp(14px, 4vh, 26px) 0 0;
     max-width: none;
     margin: 0;
     width: 100%;
+    min-height: 0;
   }
+  .quick-area {
+    margin: 0;
+    min-height: 0;
+    overflow-y: auto;
+    justify-content: flex-end;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+  .quick-area::-webkit-scrollbar { width: 0; height: 0; display: none; }
   .empty-state__mark {
     width: 40px;
     height: 40px;
@@ -903,15 +981,17 @@
   /* The composer moves between this hero slot (empty state) and the
      bottom dock (active conversation). Same node, two homes. */
   .empty-state__composer {
+    position: relative;
+    z-index: 20;
     width: 100%;
     margin-top: var(--space-4);
   }
+  .composer-dock { position: relative; z-index: 20; }
 
   /* Quick area — brand row + bento, pinned just above the composer.
      Gold stays reserved for the brand mark and send; everything else is
      two neutral tones and one clear action. */
   .quick-area {
-    margin-top: auto;
     padding-top: 28px;
     display: flex;
     flex-direction: column;
@@ -1086,9 +1166,40 @@
 
   @media (max-height: 620px) {
     .greeting { font-size: 24px; }
-    .bento { height: 132px; }
+    /* Intrinsic height: the cards' min-content drives the track, so the
+       pill row can never be pushed past the bento onto the composer. */
+    .bento { height: auto; }
     .quick-area { padding-top: 4px; }
     .empty-state__composer { margin-top: var(--space-1); }
+  }
+  @media (max-height: 520px) {
+    .greeting { font-size: 22px; line-height: 1.06; }
+    .empty-state { padding-top: 8px; }
+    .quick-area { padding-top: 2px; gap: 0; }
+    .brand { margin-bottom: 6px; height: 28px; }
+    .brand svg { width: 20px; height: 20px; }
+    .brand-name { font-size: 13px; }
+    .bento { height: auto; gap: 8px; }
+    .bento-side { grid-template-rows: minmax(0, auto) auto; gap: 8px; }
+    .question { padding: 10px 12px 36px; }
+    .question--small { padding: 8px 10px 34px; }
+    .question--hero .question__text { font-size: 13px; }
+    .topic-icon { width: 30px; height: 30px; bottom: 7px; left: 10px; }
+    .topic-icon i { font-size: 13px; }
+    .pill-button { height: 38px; }
+    .empty-state__composer { margin-top: var(--space-1); }
+  }
+  @media (max-height: 430px) {
+    .greeting { font-size: 19px; line-height: 1.05; }
+    .empty-state { padding-top: 4px; }
+    /* Extreme-short fallback: the drawer already carries the brand; drop the
+       in-hero copy so greeting + quick questions + composer all fit. */
+    .brand { display: none; }
+    .bento { gap: 6px; }
+    .question { padding: 8px 12px 32px; }
+    .question--small { padding: 7px 10px 30px; }
+    .composer { padding-top: var(--space-2); }
+    .composer-note { line-height: 1.4; padding-bottom: var(--space-1); }
   }
 
   /* Desktop composition: the phone rhythm (greeting top, cluster docked
@@ -1097,7 +1208,8 @@
      780px used everywhere, brand row centres with the greeting. */
   @media (min-width: 1024px) {
     .empty-state {
-      justify-content: center;
+      grid-template-rows: auto auto auto;
+      align-content: center;
       text-align: center;
       gap: var(--space-7);
       padding-top: 0;
@@ -2043,10 +2155,10 @@
     <div class="sidebar__footer">
       <div id="auth-section"></div>
       <p class="sidebar__disclaimer">Legal information, not legal representation. Need a lawyer? We point you to the NBA's public directory.</p>
-      <nav aria-label="Legal" style="display:flex;align-items:center;gap:var(--space-2);margin-top:2px;font-size:12px;line-height:1.4">
-        <a href="/privacy" style="color:var(--color-text-muted);text-decoration:none">Privacy</a>
-        <span aria-hidden="true" style="color:var(--color-text-faint)">·</span>
-        <a href="/terms" style="color:var(--color-text-muted);text-decoration:none">Terms</a>
+      <nav class="sidebar__legal" aria-label="Legal">
+        <a href="/privacy">Privacy</a>
+        <span class="sidebar__legal-sep" aria-hidden="true">·</span>
+        <a href="/terms">Terms</a>
       </nav>
     </div>
   </aside>
@@ -2167,6 +2279,6 @@
 <script src="components/BeUIThinkingState.js?v=4.3.0"></script>
 <script src="components/BeUIStreamingText.js?v=4.3.0"></script>
 <script src="components/BeUIPromptBar.js"></script>
-<script type="module" src="app.js?v=5.0.5"></script>
+<script type="module" src="app.js?v=5.1.0"></script>
 </body>
 </html>
