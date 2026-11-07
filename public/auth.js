@@ -115,10 +115,14 @@ import {
   document.querySelectorAll(".field__eye").forEach((btn) => {
     btn.addEventListener("click", () => {
       const input = document.getElementById(btn.dataset.eye);
+      if (!input) return;
       const show = input.type === "password";
       input.type = show ? "text" : "password";
+      btn.classList.toggle("is-on", show);
+      btn.setAttribute("aria-pressed", show ? "true" : "false");
       btn.setAttribute("aria-label", show ? "Hide password" : "Show password");
-      btn.style.color = show ? "var(--text)" : "";
+      // Keep typing flow: focus stays in the field after toggling.
+      input.focus({ preventScroll: true });
     });
   });
 

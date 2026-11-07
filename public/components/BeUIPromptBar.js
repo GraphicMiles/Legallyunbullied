@@ -1,6 +1,6 @@
 /**
- * BeUIPromptBar - Enhanced composer with @-mentions, /-commands, and model picker
- * Full-featured implementation with FontAwesome icons
+ * BeUIPromptBar - Composer with /-commands and a send/stop button.
+ * @-mentions and a model picker were never wired and have been removed.
  */
 class BeUIPromptBar {
   constructor(container, options = {}) {
@@ -11,7 +11,6 @@ class BeUIPromptBar {
       onStop: options.onStop || null,
       onMenu: options.onMenu || null,
       onMic: options.onMic || null,
-      sources: options.sources || [],
       commands: options.commands || [],
       ...options
     };
@@ -24,6 +23,7 @@ class BeUIPromptBar {
     this.dropdown = null;
     this.isDropdownOpen = false;
     this.dropdownType = null;
+    this._commandMatches = [];
     this.isSubmitting = false;
 
     // Click-outside handler reference for cleanup
@@ -96,6 +96,8 @@ class BeUIPromptBar {
     // Dropdown
     const dropdown = document.createElement('div');
     dropdown.className = 'beui-prompt-bar__dropdown';
+    dropdown.setAttribute('role', 'listbox');
+    dropdown.setAttribute('aria-label', 'Commands');
 
     wrapper.appendChild(textarea);
     wrapper.appendChild(controls);
@@ -134,23 +136,14 @@ class BeUIPromptBar {
 
   handleInput(e) {
     const value = e.target.value;
-    const cursorPos = e.target.selectionStart;
 
     // Don't change button state while submitting (stop button should stay visible)
     if (!this.isSubmitting) {
       this.submitButton.disabled = value.trim().length === 0;
     }
 
-    // Check for @ mention
-    const textBeforeCursor = value.slice(0, cursorPos);
-    const mentionMatch = textBeforeCursor.match(/@(\w*)$/);
-
-    if (mentionMatch) {
-      this.showSources(mentionMatch[1]);
-      return;
-    }
-
-    // Check for / command
+    // Slash commands trigger only when the whole input is a partial command
+    const textBeforeCursor = value.slice(0, e.target.selectionStart);
     const commandMatch = textBeforeCursor.match(/^\/(\w*)$/);
     if (commandMatch) {
       this.showCommands(commandMatch[1]);
@@ -163,65 +156,25 @@ class BeUIPromptBar {
   handleKeydown(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
+      // When the command dropdown is open, Enter picks the first match
+      // instead of submitting a bare "/tenancy" as the question.
+      if (this.isDropdownOpen && this._commandMatches && this._commandMatches.length) {
+        this.executeCommand(this._commandMatches[0]);
+        return;
+      }
       this.submit();
     } else if (e.key === 'Escape') {
       this.hideDropdown();
     }
   }
 
-  showSources(query) {
-    const filtered = this.options.sources.filter(s =>
-      s.name.toLowerCase().includes(query.toLowerCase())
-    );
-
-    if (filtered.length === 0) {
-      this.hideDropdown();
-      return;
-    }
-
-    this.dropdown.innerHTML = '';
-    this.dropdownType = 'sources';
-
-    filtered.forEach(source => {
-      const item = document.createElement('div');
-      item.className = 'beui-prompt-bar__dropdown-item';
-
-      const icon = document.createElement('i');
-      icon.className = `fa-solid ${source.glyph || 'fa-file'}`;
-
-      const textWrapper = document.createElement('div');
-      textWrapper.className = 'beui-prompt-bar__dropdown-text';
-
-      const name = document.createElement('span');
-      name.className = 'beui-prompt-bar__dropdown-name';
-      name.textContent = source.name;
-
-      const desc = document.createElement('span');
-      desc.className = 'beui-prompt-bar__dropdown-desc';
-      desc.textContent = source.desc || '';
-
-      textWrapper.appendChild(name);
-      textWrapper.appendChild(desc);
-
-      item.appendChild(icon);
-      item.appendChild(textWrapper);
-
-      item.addEventListener('click', () => {
-        this.insertSource(source);
-      });
-
-      this.dropdown.appendChild(item);
-    });
-
-    this.dropdown.classList.add('is-visible');
-    this.isDropdownOpen = true;
-  }
 
   showCommands(query) {
     const filtered = this.options.commands.filter(c =>
       c.name.toLowerCase().includes(query.toLowerCase())
     );
 
+    this._commandMatches = filtered;
     if (filtered.length === 0) {
       this.hideDropdown();
       return;
@@ -233,6 +186,14 @@ class BeUIPromptBar {
     filtered.forEach(command => {
       const item = document.createElement('div');
       item.className = 'beui-prompt-bar__dropdown-item';
+      item.setAttribute('role', 'option');
+      item.setAttribute('tabindex', '0');
+      item.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          this.executeCommand(command);
+        }
+      });
 
       const textWrapper = document.createElement('div');
       textWrapper.className = 'beui-prompt-bar__dropdown-text';
@@ -265,35 +226,19 @@ class BeUIPromptBar {
     this.dropdown.classList.remove('is-visible');
     this.isDropdownOpen = false;
     this.dropdownType = null;
+    this._commandMatches = [];
   }
 
-  insertSource(source) {
-    const value = this.inputElement.value;
-    const cursorPos = this.inputElement.selectionStart;
-    const textBeforeCursor = value.slice(0, cursorPos);
-    const textAfterCursor = value.slice(cursorPos);
-
-    const mentionMatch = textBeforeCursor.match(/@(\w*)$/);
-    if (mentionMatch) {
-      const beforeMention = textBeforeCursor.slice(0, mentionMatch.index);
-      const newValue = `${beforeMention}@${source.name} ${textAfterCursor}`;
-
-      this.inputElement.value = newValue;
-      const newCursorPos = beforeMention.length + source.name.length + 2;
-      this.inputElement.setSelectionRange(newCursorPos, newCursorPos);
-    }
-
-    this.hideDropdown();
-    this.inputElement.focus();
-  }
 
   executeCommand(command) {
-    this.inputElement.value = '';
     this.hideDropdown();
-    this.inputElement.focus();
-
-    // Insert command as text
     this.inputElement.value = `${command.name} `;
+    this.inputElement.style.height = 'auto';
+    this.inputElement.style.height = Math.min(this.inputElement.scrollHeight, 200) + 'px';
+    this.submitButton.disabled = false;
+    this.inputElement.focus();
+    const end = this.inputElement.value.length;
+    try { this.inputElement.setSelectionRange(end, end); } catch (_) { /* pre-focus fallback */ }
   }
 
   /**

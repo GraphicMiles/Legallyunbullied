@@ -25,7 +25,7 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-* { box-sizing: border-box; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 html, body { height: 100%; }
 
@@ -326,8 +326,8 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
   top: 50%;
   right: 8px;
   transform: translateY(-50%);
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -340,7 +340,12 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
 }
 
 .field__eye:hover { color: var(--text); background: var(--surface); }
-.field__eye svg { width: 17px; height: 17px; }
+.field__eye svg { width: 18px; height: 18px; }
+.field__eye .i-eye-off { display: none; }
+.field__eye.is-on { color: var(--text); }
+.field__eye.is-on .i-eye { display: none; }
+.field__eye.is-on .i-eye-off { display: block; }
+.field__eye:active { transform: translateY(-50%) scale(0.9); }
 
 .btn-primary {
   width: 100%;

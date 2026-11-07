@@ -4974,7 +4974,6 @@ import {
         },
         onMenu: (menuBtn) => openComposerMenu(menuBtn),
         onMic: () => toggleVoiceDictation(),
-        sources: [],
         commands: [
           { key: "tenancy", name: "/tenancy", desc: "Ask about tenancy law" },
           { key: "employment", name: "/employment", desc: "Ask about employment law" },
