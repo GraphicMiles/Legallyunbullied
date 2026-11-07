@@ -31,13 +31,29 @@ const PUBLIC_DIR = path.join(__dirname, "public");
 app.disable("x-powered-by");
 
 // ── Baseline security headers ─────────────────────────────────────────────
-// No CSP yet: the client pulls Firebase SDK from Google CDNs and uses inline
-// bootstraps, so a policy has to be engineered, not toggled. These three are
-// safe everywhere and close framing/mime-sniffing/referrer leaks today.
+// No nonce-based CSP yet: index.html relies on inline bootstraps and an
+// inline <style> block, so script-src/style-src carry 'unsafe-inline'.
+// What this policy still buys: scripts/styles/fonts/images may only load
+// from ourselves and the Firebase CDNs, framing is refused twice
+// (X-Frame-Options + frame-ancestors), and plugins/object embeds are out.
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: https:",
+  "font-src 'self' data:",
+  "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join("; ");
+
 app.use((req, res, next) => {
   res.set("X-Content-Type-Options", "nosniff");
   res.set("X-Frame-Options", "DENY");
   res.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.set("Content-Security-Policy", CONTENT_SECURITY_POLICY);
   next();
 });
 
@@ -162,6 +178,24 @@ app.get("/firebase-config.js", (req, res) => {
 });
 
 // ── Static assets ─────────────────────────────────────────────────────────
+// The debug panel is a development tool. In production it is served only
+// when explicitly enabled (?debug=1 on the page URL, or DEBUG_PANEL=1);
+// otherwise 404, so prod browsers never download an instrumentation bundle.
+app.use((req, res, next) => {
+  if (req.path === "/debug-panel.js" && process.env.NODE_ENV === "production") {
+    // The page enables the panel with ?debug=1 on its own URL, so the script
+    // is gated on the same flag: either the script URL carries it, the page
+    // URL does (visible in Referer for same-origin loads), or it is opted in
+    // server-side with DEBUG_PANEL=1. Otherwise 404 — prod browsers never
+    // download an instrumentation bundle.
+    const referer = String(req.get("referer") || "");
+    const enabled = req.query.debug === "1" || referer.includes("debug=1") || process.env.DEBUG_PANEL === "1";
+    if (!enabled) {
+      return res.status(404).json({ error: "not_found", message: "Unknown asset." });
+    }
+  }
+  next();
+});
 app.use(express.static(PUBLIC_DIR, {
   extensions: ["html"],
   setHeaders: (res, filePath) => {
@@ -234,22 +268,32 @@ app.use("/api/otp", require("./server/otpRoute"));
 // device fingerprint. Bucket is consumed ONLY for POST /api/chat (the
 // generation endpoint); control-plane subroutes (/api/chat/acknowledge …)
 // are free, and cache hits refund the credit inside the pipeline.
-const chatAuthOrGuest = (req, res, next) => {
+const chatAuthOrGuest = async (req, res, next) => {
   const m = String(req.headers.authorization || "").match(/^Bearer\s+(.+)$/i);
   if (m) return requireAuth(req, res, next);
   if (req.method !== "POST" || (req.path && req.path !== "/")) return next(); // free control plane
-  const verdict = guestQuota.allow(req);
-  if (!verdict.allowed) {
-    return res.status(429).json({
-      error: "guest_quota_exhausted",
-      limit: verdict.limit,
-      message: "You've used your 3 free questions today. Sign in to keep going.",
-    });
+  try {
+    const verdict = await guestQuota.allow(req);
+    if (!verdict.allowed) {
+      return res.status(429).json({
+        error: "guest_quota_exhausted",
+        limit: verdict.limit,
+        message: "You've used your 3 free questions today. Sign in to keep going.",
+      });
+    }
+    req.guest = verdict;
+    req.guestRefund = () => {
+      guestQuota.refund(verdict.key).catch((err) => console.warn("[guestQuota] refund failed:", err.message));
+    };
+    res.setHeader("X-Guest-Remaining", String(verdict.remaining));
+    return next();
+  } catch (err) {
+    // The guest gate must never take the public service down: on an
+    // unexpected failure, fail open and let the request proceed without a
+    // guest verdict attached (the pipeline treats missing req.guest as fine).
+    console.warn("[guestQuota] gate error — letting request through:", err.message);
+    return next();
   }
-  req.guest = verdict;
-  req.guestRefund = () => guestQuota.refund(verdict.key);
-  res.setHeader("X-Guest-Remaining", String(verdict.remaining));
-  return next();
 };
 app.use("/api/chat", chatLimiter, chatAuthOrGuest);
 app.use("/api/generate-title", chatLimiter, requireAuth);
@@ -258,6 +302,14 @@ app.use(chatRoute);
 // ── Auth pages (clean URL) ────────────────────────────────────────────────
 app.get("/auth", (req, res) => {
   res.sendFile(path.join(PUBLIC_DIR, "auth.html"));
+});
+
+// ── Legal pages (clean URLs) ─────────────────────────────────────────────
+app.get("/privacy", (req, res) => {
+  res.sendFile(path.join(PUBLIC_DIR, "privacy.html"));
+});
+app.get("/terms", (req, res) => {
+  res.sendFile(path.join(PUBLIC_DIR, "terms.html"));
 });
 
 // ── API 404 (JSON, before the SPA fallback) ──────────────────────────────

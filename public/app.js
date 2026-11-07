@@ -2432,6 +2432,14 @@ import {
       // so the rating lives on this device (and never hits the network).
       const authed = !!(window.firebaseAuth && window.firebaseAuth.currentUser);
       if (!authed) { persistLocal(); return; }
+      // Traceability for fine-tuning: store the exact question asked and the
+      // answer given alongside the rating. Signed-in users only.
+      const convoObj = (typeof getActiveConversation === "function") ? getActiveConversation() : null;
+      const question = (typeof findRetryQuestion === "function" ? findRetryQuestion(convoObj, msg) : null) || "";
+      const answerParts = [];
+      if (r && r.lawMd) answerParts.push("What the law says\n\n" + r.lawMd);
+      if (r && r.actionsMd) answerParts.push("What you can do\n\n" + r.actionsMd);
+      const answer = answerParts.join("\n\n") || (r && r.casualReply) || "";
       try {
         const headers = await getAuthHeaders();
         const res = await fetch("/api/feedback", {
@@ -2441,6 +2449,9 @@ import {
             rating,
             conversationId: convoId || undefined,
             messageId: (msg && msg.id) || undefined,
+            practiceArea: (r && r.practiceArea) || undefined,
+            question: question.slice(0, 4000) || undefined,
+            answer: answer.slice(0, 16000) || undefined,
           }),
         });
         if (!res.ok) throw new Error("feedback_" + res.status);

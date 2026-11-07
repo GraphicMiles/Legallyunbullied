@@ -39,16 +39,13 @@ project, a model API key, and the corpus loaded. `.env.example` lists the
 variables, and `docs/SYSTEM_REFERENCE.md` is the canonical document for setup,
 providers, retrieval, deployment and the endpoint list.
 
-### Tests and evaluation
+### Evaluation
 
 ```bash
-npm test                   # deterministic suite through scripts/run-tests.js
-npm run test:v2            # guardrails, retrieval evidence, safety acknowledgement
 npm run eval:critical      # the critical-scenario evaluation runner
+npm run eval:full          # the full scenario sweep
+npm run eval:report        # score the results into JSON + Markdown
 ```
-
-The root also holds the browser and chat tests, one file per behaviour, which is
-why there are so many `test-*.js` files next to `server.js`.
 
 ## What is not here
 
