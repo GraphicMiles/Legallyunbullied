@@ -4019,7 +4019,7 @@ import {
       } else {
         window.promptBar.setSubmitting(false);
         window.promptBar.setDisabled(false);
-        window.promptBar.inputElement.placeholder = "Describe your legal situation\u2026";
+        window.promptBar.inputElement.placeholder = "Ask in your own words\u2026";
         window.promptBar.element.classList.remove("is-gated");
       }
     }
@@ -4058,7 +4058,7 @@ import {
         el.sendBtn.disabled = !hasText;
 
         el.composerInput.classList.remove("is-busy");
-        el.composerInput.placeholder = "Describe your legal situation…";
+        el.composerInput.placeholder = "Ask in your own words…";
         el.composerInput.disabled = false;
       }
     }
@@ -4894,7 +4894,7 @@ import {
     try {
       // Initialize BeUIPromptBar with full features
       window.promptBar = new window.BeUIPromptBar(container, {
-        placeholder: "Describe your legal situation…",
+        placeholder: "Ask in your own words…",
         onSubmit: (text) => {
           if (!text || state.isAgentBusy) return;
           stopVoiceDictation();

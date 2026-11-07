@@ -42,7 +42,7 @@ class BeUIPromptBar {
     textarea.className = 'beui-prompt-bar__input';
     textarea.placeholder = this.options.placeholder;
     textarea.rows = 1;
-    textarea.setAttribute('aria-label', 'Describe your legal situation');
+    textarea.setAttribute('aria-label', 'Your legal question');
     textarea.addEventListener('input', (e) => this.handleInput(e));
     textarea.addEventListener('keydown', (e) => this.handleKeydown(e));
 
