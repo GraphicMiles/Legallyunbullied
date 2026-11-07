@@ -146,7 +146,7 @@ class BeUIThinkingState {
       justify-content: center;
       color: ${working ? "var(--color-text-muted)" : "var(--color-text-faint)"};
     `;
-    icon.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>`;
+    icon.innerHTML = `<svg class="icon icon--fill" style="width:16px;height:16px" aria-hidden="true"><use href="#i-sparkle"/></svg>`;
     
     // Label
     const label = document.createElement("span");
@@ -184,7 +184,7 @@ class BeUIThinkingState {
       transform: ${expanded ? "rotate(180deg)" : "rotate(0)"};
       color: var(--color-text-faint);
     `;
-    chevron.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`;
+    chevron.innerHTML = `<svg class="icon" style="width:14px;height:14px" aria-hidden="true"><use href="#i-chevron-down"/></svg>`;
     
     header.appendChild(icon);
     header.appendChild(label);
@@ -239,10 +239,7 @@ class BeUIThinkingState {
         animation: ${expanded ? "fade-up 300ms cubic-bezier(0.23, 1, 0.32, 1) both" : "none"};
       `;
       queryRow.innerHTML = `
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-faint)" stroke-width="2" stroke-linecap="round">
-          <circle cx="11" cy="11" r="7"/>
-          <path d="M21 21l-4.3-4.3"/>
-        </svg>
+        <svg class="icon" style="width:14px;height:14px" aria-hidden="true"><use href="#i-search"/></svg>
         <span style="font-size: 12.5px; color: var(--color-text-muted);">${v.query}</span>
       `;
       traceRef.appendChild(queryRow);
@@ -276,13 +273,13 @@ class BeUIThinkingState {
           background: ${tones[i % 3]};
           flex-shrink: 0;
         `;
-        dot.innerHTML = `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><circle cx="12" cy="12" r="9"/></svg>`;
+        dot.innerHTML = `<svg class="icon" style="width:9px;height:9px" aria-hidden="true"><use href="#i-circle"/></svg>`;
         rowEl.appendChild(dot);
       } else if (this.variant === "Steps") {
         if (i < visible - 1 || !working) {
           const check = document.createElement("span");
           check.style.cssText = "flex-shrink: 0; color: var(--color-text-faint);";
-          check.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;
+          check.innerHTML = `<svg class="icon" style="width:14px;height:14px" aria-hidden="true"><use href="#i-check"/></svg>`;
           rowEl.appendChild(check);
         } else {
           const spinner = document.createElement("span");

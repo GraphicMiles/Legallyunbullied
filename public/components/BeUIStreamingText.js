@@ -85,10 +85,10 @@ class BeUIStreamingText {
     
     // Action icons
     const actions = [
-      { icon: 'copy', path: 'M8 4v12a2 2 0 002 2h8a2 2 0 002-2V7.242a2 2 0 00-.602-1.43L16.083 2.57A2 2 0 0014.685 2H10a2 2 0 00-2 2z M16 18v2a2 2 0 01-2 2H6a2 2 0 01-2-2V9a2 2 0 012-2h2' },
-      { icon: 'retry', path: 'M21 12a9 9 0 11-2.64-6.36 M21 3v6h-6' },
-      { icon: 'up', path: 'M7 10v12 M15 5.88L14 10h5.83a2 2 0 011.92 2.56l-2.33 8A2 2 0 0117.5 22H4a2 2 0 01-2-2v-8a2 2 0 012-2h2.76a2 2 0 001.79-1.11L12 2a3.13 3.13 0 013 3.88z' },
-      { icon: 'down', path: 'M17 14V2 M9 18.12L10 14H4.17a2 2 0 01-1.92-2.56l2.33-8A2 2 0 016.5 2H20a2 2 0 012 2v8a2 2 0 01-2 2h-2.76a2 2 0 00-1.79 1.11L12 22a3.13 3.13 0 01-3-3.88z' }
+      { icon: 'copy', symbol: 'copy', label: 'Copy' },
+      { icon: 'retry', symbol: 'rotate-cw', label: 'Retry' },
+      { icon: 'up', symbol: 'thumbs-up', label: 'Helpful' },
+      { icon: 'down', symbol: 'thumbs-down', label: 'Not helpful' }
     ];
     
     actions.forEach(action => {
@@ -108,7 +108,7 @@ class BeUIStreamingText {
         cursor: pointer;
         transition: background-color 100ms, color 100ms;
       `;
-      btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${action.path}"/></svg>`;
+      btn.innerHTML = `<svg class="icon" style="width:15px;height:15px" aria-hidden="true"><use href="#i-${action.symbol}"/></svg>`;
       
       btn.addEventListener('mouseenter', () => {
         btn.style.backgroundColor = 'var(--color-surface-alt, #1c1c1c)';
@@ -240,10 +240,7 @@ class BeUIStreamingText {
           transition: background-color 100ms;
         `;
         btn.innerHTML = `
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-faint, #6b6b66)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
-            <path d="M9 10l-5 5 5 5"/>
-            <path d="M20 4v7a4 4 0 01-4 4H4"/>
-          </svg>
+          <svg class="icon" style="width:11px;height:11px;flex-shrink:0;color:var(--color-text-faint, #6b6b66)" aria-hidden="true"><use href="#i-reply"/></svg>
           <span>${text}</span>
         `;
         btn.addEventListener('mouseenter', () => {

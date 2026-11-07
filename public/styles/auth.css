@@ -1,3 +1,25 @@
+/* One icon family (Lucide) shared with the app shell. */
+.icon-sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.icon--fill { fill: currentColor; stroke: none; }
+
 /* ==========================================================================
    Legally Unbullied — auth pages
    didit-grade layout and motion (centered single column, pill geometry,
