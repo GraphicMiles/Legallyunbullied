@@ -41,6 +41,7 @@ import {
     newChatMobile: document.getElementById("new-chat-mobile"),
     historyList: document.getElementById("history-list"),
     historySearch: document.getElementById("history-search"),
+    historyLabel: document.getElementById("history-label"),
     chat: document.getElementById("chat"),
     chatMessages: document.getElementById("chat-messages"),
     emptyState: document.getElementById("empty-state"),
@@ -1227,19 +1228,12 @@ import {
   /* ------------------------------------------------------------------ */
   /* Sidebar / history                                                   */
   /* ------------------------------------------------------------------ */
-  // Recency buckets for the grouped sidebar (Today / Yesterday / 7d / 30d / Older).
-  function historyBucket(ts) {
-    if (!ts) return "Older";
-    const now = new Date();
-    const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    if (ts >= startToday) return "Today";
-    if (ts >= startToday - 86400000) return "Yesterday";
-    if (ts >= startToday - 7 * 86400000) return "Previous 7 days";
-    if (ts >= startToday - 30 * 86400000) return "Previous 30 days";
-    return "Older";
-  }
-
   function renderHistory() {
+    // The section label only describes the recency list; search results and
+    // the loading placeholder stand on their own.
+    const activeQuery = (el.historySearch.value || "").trim();
+    if (el.historyLabel) el.historyLabel.hidden = activeQuery.length > 0;
+
     // Don't flash a stale localStorage cache while the authoritative server
     // data is still loading (or before auth has resolved). Show a loading
     // placeholder instead of old/duplicate conversations from the write-behind
@@ -1291,22 +1285,10 @@ import {
       return;
     }
 
-    // Group by recency (Today / Yesterday / …) like mature AI products.
-    let currentBucket = null;
-    let groupList = null;
-    sorted.forEach((c) => {
-      const bucket = historyBucket(c.updatedAt || c.createdAt);
-      if (bucket !== currentBucket) {
-        currentBucket = bucket;
-        const heading = document.createElement("div");
-        heading.className = "history__heading";
-        heading.textContent = bucket;
-        el.historyList.appendChild(heading);
-        groupList = document.createElement("ul");
-        el.historyList.appendChild(groupList);
-      }
-      groupList.appendChild(buildHistoryRow(c));
-    });
+    // One flat list, newest first, under the single section label.
+    const groupList = document.createElement("ul");
+    sorted.forEach((c) => groupList.appendChild(buildHistoryRow(c)));
+    el.historyList.appendChild(groupList);
 
     // ── Load more (older conversations) ────────────────────────────────────
     if (_listHasMore || _listLoadingMore) {
@@ -1363,6 +1345,12 @@ import {
     btn.type = "button";
     btn.dataset.id = c.id;
     if (state.isAgentBusy) btn.disabled = true;
+
+    const icon = document.createElement("span");
+    icon.className = "history__icon";
+    icon.setAttribute("aria-hidden", "true");
+    icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+    btn.appendChild(icon);
 
     const titleSpan = document.createElement("span");
     titleSpan.className = "history__item-title";
