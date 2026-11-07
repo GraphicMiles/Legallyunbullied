@@ -121,8 +121,8 @@
   },
   {
     "i": 6,
-    "name": "ADVERTISING PRACTITIONER\u2019S (REGISTRATION, ETC.) ACT",
-    "act": "Advertising Practitioner\u2019S (Registration, Etc.) Act",
+    "name": "ADVERTISING PRACTITIONER’S (REGISTRATION, ETC.) ACT",
+    "act": "Advertising Practitioner’S (Registration, Etc.) Act",
     "practice_area": "general",
     "slug": "advertising-practitioner-s-registration-etc-act",
     "sourceUrl": "https://placng.org/lawsofnigeria/print.php?sn=22",
@@ -1671,13 +1671,13 @@
     "stats": {
       "trimmedHeader": true,
       "trimmedTail": true,
-      "sectionCount": 7,
+      "sectionCount": 998,
       "monotonic": true,
-      "firstSection": 1,
-      "lastSection": 7,
-      "runCount": 3
+      "firstSection": "1",
+      "lastSection": 521,
+      "runCount": 1
     },
-    "rawLength": 442608
+    "rawLength": 437458
   },
   {
     "i": 84,
@@ -8411,10 +8411,10 @@
     "stats": {
       "trimmedHeader": true,
       "trimmedTail": true,
-      "sectionCount": 6,
+      "sectionCount": 140,
       "monotonic": true,
-      "firstSection": 1,
-      "lastSection": 6,
+      "firstSection": "3",
+      "lastSection": 477,
       "runCount": 1
     },
     "rawLength": 43868
@@ -10938,5 +10938,45 @@
       "runCount": 0
     },
     "rawLength": 98074
+  },
+  {
+    "i": 547,
+    "name": "PENAL CODE (NORTHERN STATES) FEDERAL PROVISIONS ACT",
+    "act": "Penal Code (Northern States) Federal Provisions Act",
+    "practice_area": "criminal_offences",
+    "slug": "penal-code-northern-states-federal-provisions-act",
+    "sourceUrl": "https://placng.org/lawsofnigeria/print.php?sn=432",
+    "sourceType": "html",
+    "cleanedPath": "/home/user/Legallyunbullied/legal_sources/federal_acts_bulk/cleaned/penal-code-northern-states-federal-provisions-act.txt",
+    "stats": {
+      "trimmedHeader": true,
+      "trimmedTail": true,
+      "sectionCount": 140,
+      "monotonic": true,
+      "firstSection": "3",
+      "lastSection": 477,
+      "runCount": 1
+    },
+    "rawLength": 45393
+  },
+  {
+    "i": 548,
+    "name": "PENAL CODE ACT (ABUJA)",
+    "act": "Penal Code Act (FCT) — schedule identical to the Penal Code (Northern States)",
+    "practice_area": "criminal_offences",
+    "slug": "penal-code-act-fct",
+    "sourceUrl": "https://database.ilga.org/api/downloader/download/1/NG%20-%20LEG%20-%20Penal%20Code%20(Northern%20States)%20Federal%20Provisions%20Act%20(1959)%20-%20OR(en).pdf",
+    "sourceType": "pdf",
+    "cleanedPath": "/home/user/Legallyunbullied/legal_sources/federal_acts_bulk/cleaned/penal-code-act-fct.txt",
+    "stats": {
+      "trimmedHeader": true,
+      "trimmedTail": true,
+      "sectionCount": 756,
+      "monotonic": true,
+      "firstSection": "2",
+      "lastSection": 410,
+      "runCount": 1
+    },
+    "rawLength": 243218
   }
 ]
