@@ -250,7 +250,6 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
   transition: background 0.2s, transform 0.15s;
 }
 
-.btn-social:hover { background: var(--surface-alt); }
 .btn-social:active { transform: scale(0.985); }
 .btn-social svg { width: 17px; height: 17px; }
 
@@ -339,7 +338,7 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
   transition: color 0.2s, background 0.2s;
 }
 
-.field__eye:hover { color: var(--text); background: var(--surface); }
+.field__eye:hover { color: var(--text); }
 .field__eye svg { width: 18px; height: 18px; }
 .field__eye .i-eye { display: none; }
 .field__eye.is-on { color: var(--text); }
