@@ -1201,20 +1201,20 @@ import {
   /* Trace step definitions + icons                                      */
   /* ------------------------------------------------------------------ */
   const ICONS = {
-    read: '<i class="fa-solid fa-file-lines"></i>',
-    classify: '<i class="fa-solid fa-tag"></i>',
-    search: '<i class="fa-solid fa-magnifying-glass"></i>',
-    draft: '<i class="fa-solid fa-pen-nib"></i>',
-    check: '<i class="fa-solid fa-check"></i>',
-    chevron: '<i class="fa-solid fa-chevron-right"></i>',
-    bolt: '<i class="fa-solid fa-scale-balanced"></i>',
-    list: '<i class="fa-solid fa-list-check"></i>',
-    lawyer: '<i class="fa-solid fa-triangle-exclamation"></i>',
-    thumbsUp: '<i class="fa-solid fa-thumbs-up"></i>',
-    thumbsDown: '<i class="fa-solid fa-thumbs-down"></i>',
-    copy: '<i class="fa-regular fa-copy"></i>',
-    external: '<i class="fa-solid fa-arrow-up-right-from-square"></i>',
-    plus: '<i class="fa-solid fa-plus"></i>',
+    read: '<svg class="icon" aria-hidden="true"><use href="#i-file-text"/></svg>',
+    classify: '<svg class="icon" aria-hidden="true"><use href="#i-tag"/></svg>',
+    search: '<svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>',
+    draft: '<svg class="icon" aria-hidden="true"><use href="#i-pen-tool"/></svg>',
+    check: '<svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>',
+    chevron: '<svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>',
+    bolt: '<svg class="icon" aria-hidden="true"><use href="#i-scale"/></svg>',
+    list: '<svg class="icon" aria-hidden="true"><use href="#i-list-checks"/></svg>',
+    lawyer: '<svg class="icon" aria-hidden="true"><use href="#i-triangle-alert"/></svg>',
+    thumbsUp: '<svg class="icon" aria-hidden="true"><use href="#i-thumbs-up"/></svg>',
+    thumbsDown: '<svg class="icon" aria-hidden="true"><use href="#i-thumbs-down"/></svg>',
+    copy: '<svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg>',
+    external: '<svg class="icon" aria-hidden="true"><use href="#i-external-link"/></svg>',
+    plus: '<svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>',
   };
 
   const STEP_DEFS = [
@@ -1428,7 +1428,7 @@ import {
       btn.className = "menu-popover__item" + (item.danger ? " menu-popover__item--danger" : "");
       const iconHtml = item.svg
         ? `<span class="menu-popover__item-icon">${item.svg}</span>`
-        : `<span class="menu-popover__item-icon"><i class="fa-solid ${item.icon}"></i></span>`;
+        : `<span class="menu-popover__item-icon"><svg class="icon" aria-hidden="true"><use href="#i-${item.icon}"/></svg></span>`;
       const trailing = item.trailing ? `<span class="menu-popover__trailing">${escapeHtml(item.trailing)}</span>` : "";
       btn.innerHTML = `${iconHtml}<span>${escapeHtml(item.label)}</span>${trailing}`;
       btn.disabled = !!item.disabled;
@@ -1583,9 +1583,9 @@ import {
 
     const flashCopied = () => {
       const btn = el.copyChatBtn;
-      btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+      btn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>';
       setTimeout(() => {
-        btn.innerHTML = '<i class="fa-solid fa-copy"></i>';
+        btn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg>';
       }, 1400);
     };
 
@@ -1710,7 +1710,7 @@ import {
     // strings to the model). The plus menu is the future home of evidence
     // attachments; the item stays disabled until that ships.
     const items = [
-      { label: "Attach evidence", icon: "fa-paperclip", trailing: "Coming soon", disabled: true, onClick: () => {} },
+      { label: "Attach evidence", icon: "paperclip", trailing: "Coming soon", disabled: true, onClick: () => {} },
     ];
     menuBtn.setAttribute("aria-expanded", "true");
     showPopover(menuBtn, items, {
@@ -1728,8 +1728,8 @@ import {
     micBtn.setAttribute("aria-pressed", on ? "true" : "false");
     micBtn.setAttribute("aria-label", on ? "Stop dictation" : "Dictate your situation");
     micBtn.innerHTML = on
-      ? '<i class="fa-solid fa-stop" aria-hidden="true"></i>'
-      : '<i class="fa-solid fa-microphone" aria-hidden="true"></i>';
+      ? '<svg class="icon" aria-hidden="true"><use href="#i-square"/></svg>'
+      : '<svg class="icon" aria-hidden="true"><use href="#i-mic"/></svg>';
   }
 
   function disableVoicePermanently() {
@@ -1743,7 +1743,7 @@ import {
     micBtn.setAttribute("aria-pressed", "false");
     micBtn.setAttribute("aria-label", "Voice input unavailable (microphone permission denied)");
     micBtn.title = "Voice input unavailable: microphone permission was denied.";
-    micBtn.innerHTML = '<i class="fa-solid fa-microphone-slash" aria-hidden="true"></i>';
+    micBtn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-mic-off"/></svg>';
   }
 
   function startVoiceDictation() {
@@ -2060,7 +2060,7 @@ import {
       ? `<span class="trace__status" style="color: var(--color-text-faint);">${(msg.steps || []).length} steps</span>`
       : `<span class="trace__status"></span>`;
     toggle.innerHTML = `
-      <i class="fa-solid fa-chevron-right trace__toggle-icon"></i>
+      <svg class="icon trace__toggle-icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
       <span>${label}</span>
       ${statusHtml}
     `;
@@ -2125,7 +2125,7 @@ import {
       banner.className = "safety-flag-banner";
       banner.innerHTML = `
         <div class="safety-flag-banner__icon">
-          <i class="fa-solid fa-circle-exclamation"></i>
+          <svg class="icon" aria-hidden="true"><use href="#i-circle-alert"/></svg>
         </div>
         <div>
           <div class="safety-flag-banner__title">
@@ -2520,7 +2520,7 @@ import {
     verdict.innerHTML = `
       <div class="verdict__head">
         <div class="verdict__icon">
-          ${escalate ? ICONS.lawyer : '<i class="fa-solid fa-check"></i>'}
+          ${escalate ? ICONS.lawyer : '<svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>'}
         </div>
         <span class="verdict__title">${escalate ? "See a lawyer" : "You can do this yourself"}</span>
         <span class="verdict__confidence">${confidence.label}</span>
@@ -3231,7 +3231,7 @@ import {
       traceEl.classList.remove("is-thinking");
       traceEl.classList.remove("is-open");
       toggleEl.innerHTML = `
-        <i class="fa-solid fa-chevron-right trace__toggle-icon"></i>
+        <svg class="icon trace__toggle-icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
         <span>Thought for ${(agentMsg.thinkingElapsedMs / 1000).toFixed(1)}s</span>
         <span class="trace__status" style="color: var(--color-text-faint);">${agentMsg.steps.length} steps</span>
       `;
@@ -3244,7 +3244,7 @@ import {
     wrap.innerHTML = `
       <div class="answer-section">
         <div class="answer-section__head">
-          <div class="answer-section__icon"><i class="fa-solid fa-circle-info"></i></div>
+          <div class="answer-section__icon"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg></div>
           <span class="answer-section__title">Not sourced yet</span>
         </div>
         <div class="answer-section__text"><p>${escapeHtml(message)}</p></div>
@@ -3273,7 +3273,7 @@ import {
     wrap.innerHTML = `
       <div class="answer-section">
         <div class="answer-section__head">
-          <div class="answer-section__icon"><i class="fa-solid fa-hand"></i></div>
+          <div class="answer-section__icon"><svg class="icon" aria-hidden="true"><use href="#i-hand"/></svg></div>
           <span class="answer-section__title">Response stopped</span>
         </div>
         <div class="answer-section__text"><p>You stopped the response. You can ask a follow-up question or rephrase to continue.</p></div>
@@ -3344,7 +3344,7 @@ import {
 
     const icon = document.createElement("div");
     icon.className = "needs-input__icon";
-    icon.innerHTML = '<i class="fa-solid fa-circle-question"></i>';
+    icon.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-circle-help"/></svg>';
 
     const q = document.createElement("p");
     q.textContent = question || "Can you clarify?";
@@ -3411,7 +3411,7 @@ import {
     wrap.innerHTML = `
       <div class="safety-approval__row">
         <div class="safety-approval__icon" aria-hidden="true">
-          <i class="fa-solid fa-triangle-exclamation"></i>
+          <svg class="icon" aria-hidden="true"><use href="#i-triangle-alert"/></svg>
         </div>
         <div>
           <div class="safety-approval__title">
@@ -3530,7 +3530,7 @@ import {
     
     const icon = document.createElement("div");
     icon.className = "providers-busy__icon";
-    icon.innerHTML = '<i class="fa-solid fa-hourglass-half"></i>';
+    icon.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-hourglass"/></svg>';
     
     const title = document.createElement("p");
     title.textContent = willRetry
@@ -3674,7 +3674,7 @@ import {
 
     const icon = document.createElement("div");
     icon.className = "providers-busy__icon";
-    icon.innerHTML = '<i class="fa-solid fa-hourglass-half"></i>';
+    icon.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-hourglass"/></svg>';
 
     const title = document.createElement("p");
     title.textContent = `Providers were busy. Try again.`;
@@ -3704,7 +3704,7 @@ import {
     wrap.innerHTML = `
       <div class="answer-section">
         <div class="answer-section__head">
-          <div class="answer-section__icon"><i class="fa-solid fa-circle-info"></i></div>
+          <div class="answer-section__icon"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg></div>
           <span class="answer-section__title">Response incomplete</span>
         </div>
         <div class="answer-section__text"><p>This response didn't finish processing. You can try asking again.</p></div>
@@ -3720,7 +3720,7 @@ import {
     wrap.innerHTML = `
       <div class="answer-section">
         <div class="answer-section__head">
-          <div class="answer-section__icon"><i class="fa-solid fa-hourglass-half"></i></div>
+          <div class="answer-section__icon"><svg class="icon" aria-hidden="true"><use href="#i-hourglass"/></svg></div>
           <span class="answer-section__title">Still working on this</span>
         </div>
         <div class="answer-section__text"><p>The answer is still being prepared. It will appear here shortly.</p></div>
@@ -3803,7 +3803,7 @@ import {
 
     wrap.innerHTML = `
       <div class="notice-card__head">
-        <div class="notice-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg></div>
+        <div class="notice-card__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg></div>
         <span class="notice-card__title">${escapeHtml(title)}</span>
       </div>
       <p class="notice-card__text">${escapeHtml(safeMessage)}</p>
@@ -3818,7 +3818,7 @@ import {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "link-btn";
-      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg> Sign in to keep going';
+      btn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-log-in"/></svg> Sign in to keep going';
       btn.addEventListener("click", () => {
         stashPendingQuestion(opts.retryText);
         goToAuthPage();
@@ -3829,7 +3829,7 @@ import {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "link-btn";
-      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg> Sign in to continue';
+      btn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-log-in"/></svg> Sign in to continue';
       btn.addEventListener("click", () => {
         stashPendingQuestion(opts.retryText);
         goToAuthPage();
@@ -3839,7 +3839,7 @@ import {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "link-btn";
-      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Try again';
+      btn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-rotate-ccw"/></svg> Try again';
       btn.addEventListener("click", () => {
         submitQuestion(opts.retryText); // guest quota enforced server-side; 429 renders its own card
       });
@@ -3889,7 +3889,7 @@ import {
       traceEl.classList.remove("is-thinking");
       traceEl.classList.remove("is-open");
       live.refs.toggle.innerHTML = `
-        <i class="fa-solid fa-chevron-right trace__toggle-icon"></i>
+        <svg class="icon trace__toggle-icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
         <span>Stopped after ${(agentMsg.thinkingElapsedMs / 1000).toFixed(1)}s</span>
       `;
     }
@@ -4084,7 +4084,7 @@ import {
         el.sendBtn.disabled = false;
         el.sendBtn.type = "button";
         el.sendBtn.classList.add("composer__send--stop");
-        el.sendBtn.innerHTML = '<i class="fa-solid fa-stop"></i>';
+        el.sendBtn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-square"/></svg>';
         el.sendBtn.setAttribute("aria-label", "Stop generating");
         el.sendBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); stopGeneration(); };
 
@@ -4094,7 +4094,7 @@ import {
       } else {
         el.sendBtn.type = "submit";
         el.sendBtn.classList.remove("composer__send--stop");
-        el.sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
+        el.sendBtn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-arrow-up"/></svg>';
         el.sendBtn.setAttribute("aria-label", "Send");
         el.sendBtn.onclick = null;
         el.sendBtn.disabled = !hasText;
@@ -4152,7 +4152,7 @@ import {
             traceEl.classList.remove("is-thinking");
             traceEl.classList.remove("is-open");
             live.refs.toggle.innerHTML = `
-              <i class="fa-solid fa-chevron-right trace__toggle-icon"></i>
+              <svg class="icon trace__toggle-icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
               <span>Stopped after ${(agentMsg.thinkingElapsedMs / 1000).toFixed(1)}s</span>
               <span class="trace__status" style="color: var(--color-text-faint);">partial</span>
             `;
@@ -4170,7 +4170,7 @@ import {
             stoppedEl.innerHTML = `
               <div class="answer-section">
                 <div class="answer-section__head">
-                  <div class="answer-section__icon"><i class="fa-solid fa-hand"></i></div>
+                  <div class="answer-section__icon"><svg class="icon" aria-hidden="true"><use href="#i-hand"/></svg></div>
                   <span class="answer-section__title">Response stopped</span>
                 </div>
                 <div class="answer-section__text"><p>You stopped the response. You can ask a follow-up question or rephrase to continue.</p></div>
@@ -4527,15 +4527,15 @@ import {
       const toolsDisabled = el.clearChatBtn.disabled; // mirrors hasMessages || isAgentBusy
       showPopover(el.topbarAvatar, [
         { label: "Copy all messages",
-          svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
+          svg: '<svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg>',
           disabled: toolsDisabled,
           onClick: () => { if (state.activeId && !state.isAgentBusy) copyConversationToClipboard(state.activeId); } },
         { label: "Clear this chat",
-          svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>',
+          svg: '<svg class="icon" aria-hidden="true"><use href="#i-eraser"/></svg>',
           disabled: toolsDisabled, danger: true,
           onClick: () => { if (state.activeId && !state.isAgentBusy) confirmClearConversation(state.activeId); } },
         { divider: true },
-        { label: "Log out", svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>', danger: true, onClick: handleLogout },
+        { label: "Log out", svg: '<svg class="icon" aria-hidden="true"><use href="#i-log-out"/></svg>', danger: true, onClick: handleLogout },
       ]);
     };
   }

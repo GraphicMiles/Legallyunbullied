@@ -488,8 +488,9 @@
   transform: scale(0.92);
 }
 
-.beui-prompt-bar__tool i {
-  font-size: 17px;
+.beui-prompt-bar__tool .icon {
+  width: 17px;
+  height: 17px;
 }
 
 .beui-prompt-bar__tool:focus-visible {
@@ -1031,9 +1032,10 @@
   margin-bottom: 8px;
 }
 
-.providers-busy__icon i {
+.providers-busy__icon .icon {
   color: var(--color-accent, #f2b705);
-  font-size: 18px;
+  width: 18px;
+  height: 18px;
 }
 
 .providers-busy__title {
@@ -1071,9 +1073,10 @@
   margin-bottom: 8px;
 }
 
-.needs-input__icon i {
+.needs-input__icon .icon {
   color: var(--color-accent, #f2b705);
-  font-size: 18px;
+  width: 18px;
+  height: 18px;
 }
 
 .needs-input__question {

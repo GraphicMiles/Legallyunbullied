@@ -48,7 +48,7 @@ class BeUIPromptBar {
     menuBtn.setAttribute('aria-label', 'Attach evidence');
     menuBtn.setAttribute('aria-haspopup', 'menu');
     menuBtn.setAttribute('aria-expanded', 'false');
-    menuBtn.innerHTML = '<i class="fa-solid fa-plus" aria-hidden="true"></i>';
+    menuBtn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>';
     menuBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -64,7 +64,7 @@ class BeUIPromptBar {
     micBtn.hidden = true; // The app reveals it once Web Speech is known to work.
     micBtn.setAttribute('aria-label', 'Dictate your situation');
     micBtn.setAttribute('aria-pressed', 'false');
-    micBtn.innerHTML = '<i class="fa-solid fa-microphone" aria-hidden="true"></i>';
+    micBtn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-mic"/></svg>';
     micBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -75,7 +75,7 @@ class BeUIPromptBar {
     const submitBtn = document.createElement('button');
     submitBtn.type = 'button';
     submitBtn.className = 'beui-prompt-bar__button beui-prompt-bar__button--submit';
-    submitBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>';
+    submitBtn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-arrow-up"/></svg>';
     submitBtn.disabled = true;
     submitBtn.setAttribute('aria-label', 'Send question');
     submitBtn.addEventListener('click', (e) => this.handleSubmitClick(e));
@@ -177,13 +177,13 @@ class BeUIPromptBar {
     this.submitButton.classList.toggle('is-stop', isSubmitting);
     if (isSubmitting) {
       // Show stop button — enabled so user can click to abort
-      this.submitButton.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>';
+      this.submitButton.innerHTML = '<svg class="icon icon--fill" aria-hidden="true"><use href="#i-square"/></svg>';
       this.submitButton.disabled = false;
       this.submitButton.title = 'Stop generating';
       this.submitButton.setAttribute('aria-label', 'Stop generating');
     } else {
       // Restore send button
-      this.submitButton.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>';
+      this.submitButton.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-arrow-up"/></svg>';
       this.submitButton.disabled = this.inputElement.value.trim().length === 0;
       this.submitButton.title = '';
       this.submitButton.setAttribute('aria-label', 'Send question');

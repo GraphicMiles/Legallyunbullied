@@ -426,7 +426,7 @@
     root.id = "lu-debug-root";
     root.innerHTML =
       '<button type="button" id="lu-debug-fab" aria-label="Toggle debug panel" title="Debug log (Ctrl+Shift+D)">' +
-        '<i class="fa-solid fa-bug"></i>' +
+        '<svg class="icon" aria-hidden="true"><use href="#i-bug"/></svg>' +
         '<span id="lu-debug-badge" hidden><span id="lu-debug-count">0</span></span>' +
       "</button>" +
       '<div id="lu-debug-panel" role="dialog" aria-label="Debug log">' +
