@@ -576,25 +576,56 @@
   .auth-profile__logout:hover { background: var(--color-surface-alt); color: var(--color-danger); }
   .auth-profile__logout i { font-size: 13px; }
 
-  /* topbar avatar */
-  .topbar__avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
+  /* account chip (topbar) — avatar + first name + menu affordance.
+     Opens the account popover. Collapses to a circle on phone widths. */
+  .account-chip {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    height: 44px;
     flex-shrink: 0;
+    padding: 0 var(--space-3) 0 var(--space-2);
+    border-radius: var(--radius-full);
+    background: var(--color-surface);
+    transition: background var(--dur-fast) var(--ease);
+  }
+  .account-chip:hover { background: var(--color-surface-alt); }
+  .account-chip:active { background: var(--color-surface-alt); }
+  .account-chip__avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
     overflow: hidden;
+    flex-shrink: 0;
     background: var(--color-accent);
     color: var(--color-accent-text);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 13px;
-    font-weight: 700;
-    text-transform: uppercase;
-    transition: border-color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
   }
-  .topbar__avatar:hover { background: var(--color-surface-alt); transform: scale(1.05); }
-  .topbar__avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .account-chip__avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .account-chip__name {
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: var(--color-text);
+    max-width: 96px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .account-chip__caret { font-size: 10px; color: var(--color-text-faint); }
+  @media (max-width: 900px) {
+    .account-chip {
+      width: 44px;
+      padding: 0;
+      justify-content: center;
+      border-radius: 50%;
+    }
+    .account-chip__name, .account-chip__caret { display: none; }
+  }
 
   .sidebar__disclaimer {
     font-size: 11.5px;
@@ -774,13 +805,15 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+    scrollbar-width: none; /* hide the scrollbar; scroll and keyboard nav still work */
   }
+  .chat::-webkit-scrollbar { width: 0; height: 0; display: none; }
 
   .chat__inner {
     max-width: var(--composer-max-width);
     width: 100%;
     margin: 0 auto;
-    padding: var(--space-4) var(--space-5) 40px;
+    padding: var(--space-3) var(--space-4) var(--space-4);
     display: flex;
     flex-direction: column;
     gap: var(--space-6);
@@ -801,73 +834,91 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    gap: var(--space-3);
-    padding: var(--space-4) var(--space-3);
-    max-width: 480px;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-2);
+    max-width: 600px;
     margin: 0 auto;
+    width: 100%;
   }
   .empty-state__mark {
-    width: 44px;
-    height: 44px;
-    border-radius: var(--radius-lg);
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
     display: flex;
     align-items: center;
     justify-content: center;
     background: var(--color-surface);
   }
-  .empty-state__mark svg { width: 22px; height: 22px; color: var(--color-accent); }
+  .empty-state__mark svg { width: 20px; height: 20px; color: var(--color-accent); }
   .empty-state__title {
-    font-size: clamp(20px, 3.4vw, 26px);
+    font-size: clamp(21px, 5.2vw, 27px);
     font-weight: 700;
     letter-spacing: -0.02em;
+    text-wrap: balance;
     margin: 0;
   }
   .empty-state__subtitle {
     font-size: var(--fs-base);
     color: var(--color-text-muted);
-    max-width: 400px;
+    max-width: 420px;
     line-height: 1.55;
+    text-wrap: pretty;
     margin: 0;
   }
+  /* The composer moves between this hero slot (empty state) and the
+     bottom dock (active conversation). Same node, two homes. */
+  .empty-state__composer {
+    width: 100%;
+    margin-top: var(--space-1);
+  }
+  .composer-dock { display: contents; }
 
-  /* Starter prompts — first-run affordance. Same quiet-surface language as
-     the rest of the app; gold stays reserved for brand/send/focus. */
+  .starter-prompts__caption {
+    align-self: flex-start;
+    margin: var(--space-1) 0 0;
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    color: var(--color-text-faint);
+    letter-spacing: 0.01em;
+  }
+
+  /* Starter prompts — first-run affordance. Quiet surface rows, full
+     width, packed so all six fit without scrolling on a phone. Gold stays
+     reserved for brand/send/focus. */
   .starter-prompts {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    display: flex;
+    flex-direction: column;
     gap: var(--space-2);
-    margin-top: var(--space-4);
+    margin-top: var(--space-1);
     width: 100%;
   }
   .starter-prompt {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 10px;
     min-height: 44px;
-    padding: var(--space-3);
+    padding: 8px var(--space-3);
     border-radius: var(--radius-md);
     background: var(--color-surface);
-    border: 1px solid var(--color-border-soft);
     color: var(--color-text-muted);
     font-family: inherit;
     font-size: var(--fs-sm);
-    line-height: 1.45;
+    line-height: 1.4;
     text-align: left;
     cursor: pointer;
-    transition: border-color var(--dur-fast) var(--ease),
-                color var(--dur-fast) var(--ease),
+    transition: color var(--dur-fast) var(--ease),
                 background var(--dur-fast) var(--ease);
   }
   .starter-prompt:hover {
-    border-color: var(--color-accent-border);
     color: var(--color-text);
     background: var(--color-surface-alt);
   }
   .starter-prompt__icon {
-    margin-top: 2px;
     font-size: 12px;
     color: var(--color-text-faint);
     flex-shrink: 0;
+    width: 18px;
+    text-align: center;
     transition: color var(--dur-fast) var(--ease);
   }
   .starter-prompt:hover .starter-prompt__icon { color: var(--color-accent); }
@@ -918,7 +969,7 @@
   .followup-chip:focus-visible, .history__item:focus-visible, .history__kebab:focus-visible,
   .link-btn:focus-visible, .auth-signin-btn:focus-visible,
   .chat-status__home:focus-visible, .msg-action-btn:focus-visible, .context-card__head:focus-visible,
-  .answer-actions__btn:focus-visible, .answer-actions__thumb:focus-visible, .starter-prompt:focus-visible {
+  .answer-actions__btn:focus-visible, .answer-actions__thumb:focus-visible, .starter-prompt:focus-visible, .account-chip:focus-visible {
     outline: none;
     background-color: var(--color-surface-alt);
     color: var(--color-text);
@@ -963,8 +1014,6 @@
     font-size: var(--fs-base);
     line-height: 1.6;
     white-space: pre-wrap;
-    word-wrap: break-word;
-    word-break: break-all;
     overflow-wrap: anywhere;
     max-width: 100%;
   }
@@ -1578,8 +1627,13 @@
      ------------------------------------------------------------ */
   .composer {
     flex-shrink: 0;
-    padding: var(--space-3) var(--space-5) var(--space-4);
+    padding: var(--space-3) var(--space-4) max(var(--space-5), calc(env(safe-area-inset-bottom, 0px) + var(--space-3)));
   }
+  /* Hero variant: composer sits inside the empty state, not at the screen edge. */
+  .composer--hero {
+    padding: 0;
+  }
+  .composer--hero .disclaimer-pop { margin-top: var(--space-2); }
   .composer__inner {
     max-width: var(--composer-max-width);
     margin: 0 auto;
@@ -1627,20 +1681,17 @@
   /* --- disclaimer: shown once on first visit, dismisses permanently --- */
   .disclaimer-pop {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: var(--space-2);
     margin: var(--space-2) 0 0;
-    padding: var(--space-2) var(--space-3);
-    border-radius: var(--radius-md);
-    background: var(--color-surface);
-    animation: disclaimer-pop-in var(--dur-base) var(--ease);
+    padding: var(--space-1) var(--space-1);
   }
   .disclaimer-pop[hidden] { display: none; }
   .disclaimer-pop__text {
     flex: 1;
-    font-size: 11px;
+    font-size: var(--fs-xs);
     line-height: 1.5;
-    color: var(--color-text-muted);
+    color: var(--color-text-faint);
     margin: 0;
   }
   .disclaimer-pop__close {
@@ -1658,10 +1709,6 @@
     color: var(--color-text);
   }
   .disclaimer-pop__close i { font-size: 12px; }
-  @keyframes disclaimer-pop-in {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: none; }
-  }
 
   /* ============================================================
      RESPONSIVE — MOBILE (< 900px): sidebar collapses to drawer
@@ -1695,8 +1742,9 @@
     .badges .badge:nth-child(n+3) { display: none; }
     .topbar { gap: var(--space-2); padding: 0 var(--space-4); }
     .msg__body, .msg--agent .msg__body { max-width: 100%; }
-    .chat__inner { padding: var(--space-3) var(--space-4) 32px; }
-    .composer { padding: var(--space-2) var(--space-4) var(--space-3); }
+    .chat__inner { padding: var(--space-2) var(--space-3) var(--space-4); gap: var(--space-4); }
+    .composer { padding: var(--space-2) var(--space-3) max(var(--space-5), calc(env(safe-area-inset-bottom, 0px) + var(--space-2))); }
+    .composer--hero { padding: 0; }
   }
 
   @media (max-width: 480px) {
@@ -1794,13 +1842,13 @@
     }
   }
 
-  /* scrollbars */
-  .history::-webkit-scrollbar, .chat::-webkit-scrollbar { width: 8px; }
-  .history::-webkit-scrollbar-thumb, .chat::-webkit-scrollbar-thumb {
+  /* scrollbars: hidden on the chat surface; the sidebar history keeps a thin one */
+  .history::-webkit-scrollbar { width: 8px; }
+  .history::-webkit-scrollbar-thumb {
     background: var(--color-border);
     border-radius: var(--radius-full);
   }
-  .history::-webkit-scrollbar-track, .chat::-webkit-scrollbar-track { background: transparent; }
+  .history::-webkit-scrollbar-track { background: transparent; }
 </style>
 </head>
 <body>
@@ -1881,7 +1929,11 @@
       <button class="icon-btn new-chat-mobile" id="new-chat-mobile" aria-label="New question">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
       </button>
-      <button class="topbar__avatar" id="topbar-avatar" aria-label="Account" style="display:none;"></button>
+      <button class="account-chip" id="topbar-avatar" type="button" aria-label="Account" aria-haspopup="menu" style="display:none;">
+        <span class="account-chip__avatar" id="topbar-avatar-avatar" aria-hidden="true"></span>
+        <span class="account-chip__name" id="topbar-avatar-name"></span>
+        <i class="fa-solid fa-chevron-down account-chip__caret" aria-hidden="true"></i>
+      </button>
     </header>
 
     <section class="chat" id="chat">
@@ -1894,6 +1946,9 @@
           <h1 class="empty-state__title">What's the legal situation?</h1>
           <p class="empty-state__subtitle">Describe it in plain language. The agent classifies it against Nigerian law and tells you what to do next.</p>
 
+          <div class="empty-state__composer" id="empty-composer-slot"></div>
+
+          <p class="starter-prompts__caption">Common situations</p>
           <div class="starter-prompts" role="group" aria-label="Example questions">
             <button type="button" class="starter-prompt"><i class="fa-solid fa-scale-balanced starter-prompt__icon" aria-hidden="true"></i><span>Police stopped me and won't say why. What are my rights?</span></button>
             <button type="button" class="starter-prompt"><i class="fa-solid fa-house-chimney starter-prompt__icon" aria-hidden="true"></i><span>My landlord wants to evict me without notice. What can I do?</span></button>
@@ -1927,7 +1982,8 @@
       </div>
     </section>
 
-    <footer class="composer">
+    <div class="composer-dock" id="composer-dock">
+    <footer class="composer" id="composer">
       <div class="composer__inner">
         <!-- BeUIPromptBar will be initialized here -->
         <div id="prompt-bar-container"></div>
@@ -1939,6 +1995,7 @@
         </div>
       </div>
     </footer>
+    </div>
   </main>
 
 </div>

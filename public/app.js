@@ -58,6 +58,8 @@ import {
     clearChatBtn: document.getElementById("clear-chat-btn"),
     copyChatBtn: document.getElementById("copy-chat-btn"),
     topbarAvatar: document.getElementById("topbar-avatar"),
+    topbarAvatarAvatar: document.getElementById("topbar-avatar-avatar"),
+    topbarAvatarName: document.getElementById("topbar-avatar-name"),
     authSection: document.getElementById("auth-section"),
     confirmModalOverlay: document.getElementById("confirm-modal-overlay"),
     confirmModalTitle: document.getElementById("confirm-modal-title"),
@@ -1636,6 +1638,39 @@ import {
   }
 
   /* ------------------------------------------------------------------ */
+  /* Composer dock — the prompt bar lives in the hero slot while the    */
+  /* empty state is visible, and docks into the bottom footer once a    */
+  /* conversation exists. Same node, so its state survives the move.     */
+  /* ------------------------------------------------------------------ */
+  const composerEl = document.querySelector(".composer");
+  const composerDock = document.getElementById("composer-dock");
+  const emptyComposerSlot = document.getElementById("empty-composer-slot");
+
+  function dockComposer(hero) {
+    if (!composerEl || !composerDock || !emptyComposerSlot) return;
+    const target = hero ? emptyComposerSlot : composerDock;
+    const move = composerEl.parentElement !== target;
+    if (!move) {
+      composerEl.classList.toggle("composer--hero", hero);
+      return;
+    }
+    // Moving a node drops focus; if the user was typing, hand focus back
+    // to the input so the flow is uninterrupted.
+    const wasFocused = composerEl.contains(document.activeElement);
+    target.appendChild(composerEl);
+    composerEl.classList.toggle("composer--hero", hero);
+    if (wasFocused && window.promptBar && window.promptBar.inputElement) {
+      try { window.promptBar.inputElement.focus({ preventScroll: true }); } catch (_) { window.promptBar.inputElement.focus(); }
+    }
+  }
+
+  function setEmptyStateVisible(show) {
+    if (!el.emptyState) return;
+    el.emptyState.style.display = show ? "flex" : "none";
+    dockComposer(show);
+  }
+
+  /* ------------------------------------------------------------------ */
   /* Chat — full rebuild (conversation switch / new chat / init)         */
   /* ------------------------------------------------------------------ */
   function renderChat() {
@@ -1647,25 +1682,25 @@ import {
     updateClearChatButtonState();
 
     if (!convo) {
-      el.emptyState.style.display = "flex";
+      setEmptyStateVisible(true);
       renderTopbar();
       return;
     }
 
     if ((convo.messages || []).length === 0 && needsLazyLoad(convo)) {
-      el.emptyState.style.display = "none";
+      setEmptyStateVisible(false);
       renderLoadingChat();
       renderTopbar();
       return;
     }
 
     if (convo.messages.length === 0) {
-      el.emptyState.style.display = "flex";
+      setEmptyStateVisible(true);
       renderTopbar();
       return;
     }
 
-    el.emptyState.style.display = "none";
+    setEmptyStateVisible(false);
 
     // Order by when each message was actually created/sent (createdAt), never
     // by when it happened to be saved/synced. This guarantees a background-
@@ -2527,7 +2562,7 @@ import {
   }
 
   function mountLivePipeline(convo, agentMsg, token) {
-    el.emptyState.style.display = "none";
+    setEmptyStateVisible(false);
 
     // Only append the NEW user message (don't re-render everything)
     const lastUserMsg = convo.messages[convo.messages.length - 2]; // second to last is the user message
@@ -4145,6 +4180,44 @@ import {
     });
   } // end setupAuth()
 
+  /* Account avatar — provider photo when it loads, monogram otherwise.
+     Google placeholder URLs are re-requested at s96 for crispness at chip
+     size; non-HTTPS or failed images keep the monogram so the UI never
+     shows a broken image or an empty circle. textContent is used for the
+     monogram, never HTML. */
+  function accountFirstName(user) {
+    const raw = (user.displayName || (user.email ? user.email.split("@")[0] : "") || "Account").trim();
+    return raw.split(/\s+/)[0] || raw;
+  }
+
+  function accountInitial(user) {
+    const name = (user.displayName || (user.email ? user.email.split("@")[0] : "") || "").trim();
+    const ch = (name.slice(0, 1) || (user.email || "?").trim().slice(0, 1) || "?").toUpperCase();
+    return ch;
+  }
+
+  function sizedPhotoUrl(url) {
+    if (!url || typeof url !== "string") return null;
+    if (!/^https:\/\//i.test(url)) return null;
+    if (/(googleusercontent|ggpht)\.com/.test(url)) {
+      // Normalize Google's size suffix to s96-c (good for 28-36px circles).
+      return url.replace(/=s\d+(-[a-z]+)*$/i, "") + "=s96-c";
+    }
+    return url;
+  }
+
+  function renderAccountAvatar(container, user) {
+    if (!container || !user) return;
+    container.textContent = accountInitial(user);
+    const url = sizedPhotoUrl(user.photoURL);
+    if (!url) return;
+    const img = new Image();
+    img.alt = "";
+    img.referrerPolicy = "no-referrer";
+    img.addEventListener("load", () => { container.replaceChildren(img); });
+    img.src = url;
+  }
+
   function renderAuthSection(user) {
     const container = el.authSection;
     if (!container) return;
@@ -4171,14 +4244,11 @@ import {
     }
 
     const name = user.displayName || (user.email ? user.email.split("@")[0] : "Account");
-    const initials = (name.trim().slice(0, 1) || "?").toUpperCase();
-    const avatarInner = user.photoURL
-      ? `<img src="${escapeHtml(user.photoURL)}" alt="" />`
-      : escapeHtml(initials);
+    const firstName = accountFirstName(user);
 
     container.innerHTML = `
       <div class="auth-profile">
-        <div class="auth-profile__avatar">${avatarInner}</div>
+        <div class="auth-profile__avatar" id="auth-profile-avatar"></div>
         <div class="auth-profile__info">
           <span class="auth-profile__name">${escapeHtml(name)}</span>
           ${user.email ? `<span class="auth-profile__email">${escapeHtml(user.email)}</span>` : ""}
@@ -4189,10 +4259,13 @@ import {
       </div>
     `;
     container.querySelector("#auth-logout-btn").addEventListener("click", handleLogout);
+    renderAccountAvatar(container.querySelector("#auth-profile-avatar"), user);
 
     el.topbarAvatar.style.display = "flex";
-    el.topbarAvatar.innerHTML = avatarInner;
-    el.topbarAvatar.title = `${name} · Chat options`;
+    if (el.topbarAvatarAvatar) renderAccountAvatar(el.topbarAvatarAvatar, user);
+    if (el.topbarAvatarName) el.topbarAvatarName.textContent = firstName;
+    el.topbarAvatar.title = `${name} · Account`;
+    el.topbarAvatar.setAttribute("aria-label", `Account (${name})`);
     el.topbarAvatar.onclick = (e) => {
       const toolsDisabled = el.clearChatBtn.disabled; // mirrors hasMessages || isAgentBusy
       showPopover(el.topbarAvatar, [
@@ -4444,7 +4517,7 @@ import {
   function showChatStatus(title, subtitle, { showHome = false, showSignIn = false, showRetry = false } = {}) {
     const status = el.chatStatus;
     if (!status) return;
-    el.emptyState.style.display = "none";
+    setEmptyStateVisible(false);
     el.chatMessages.innerHTML = "";
     el.chatStatusTitle.textContent = title;
     el.chatStatusSubtitle.textContent = subtitle || "";
