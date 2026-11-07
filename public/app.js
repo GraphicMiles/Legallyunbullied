@@ -1848,7 +1848,7 @@ import {
 
   function setEmptyStateVisible(show) {
     if (!el.emptyState) return;
-    el.emptyState.style.display = show ? "flex" : "none";
+    el.emptyState.style.display = show ? "grid" : "none";
     const mainEl = document.querySelector(".main");
     if (mainEl) mainEl.classList.toggle("is-hero", show);
     dockComposer(show);
@@ -4484,9 +4484,13 @@ import {
 
     if (!window.firebaseAuth) {
       container.innerHTML = `
-        <button type="button" class="auth-signin-btn" disabled title="Sign-in isn't configured yet">
-          <i class="fa-solid fa-right-to-bracket"></i> Sign in
-        </button>
+        <div class="auth-guest">
+          <button type="button" class="auth-signin-btn" disabled title="Sign-in isn't configured yet">
+            <span class="auth-signin-btn__leading"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i></span>
+            <span class="auth-signin-btn__label">Sign in to save your chats</span>
+          </button>
+          <p class="auth-signin-hint">Pick up where you left off on any device.</p>
+        </div>
       `;
       el.topbarAvatar.style.display = "none";
       return;
@@ -4494,9 +4498,14 @@ import {
 
     if (!user) {
       container.innerHTML = `
-        <button type="button" class="auth-signin-btn" id="auth-open-btn">
-          <i class="fa-solid fa-right-to-bracket"></i> Sign in
-        </button>
+        <div class="auth-guest">
+          <button type="button" class="auth-signin-btn" id="auth-open-btn">
+            <span class="auth-signin-btn__leading"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i></span>
+            <span class="auth-signin-btn__label">Sign in to save your chats</span>
+            <i class="fa-solid fa-arrow-right auth-signin-btn__trailing" aria-hidden="true"></i>
+          </button>
+          <p class="auth-signin-hint">Pick up where you left off on any device.</p>
+        </div>
       `;
       container.querySelector("#auth-open-btn").addEventListener("click", goToAuthPage);
       el.topbarAvatar.style.display = "none";
