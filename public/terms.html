@@ -5,59 +5,49 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Terms of Service · Legally Unbullied</title>
 <meta name="description" content="The rules for using Legally Unbullied. Legal information, not legal advice." />
+<meta name="theme-color" content="#1e1f22" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none'%3E%3Cpath d='M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z' stroke='%23f2b705' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='M11 15.5L14.2 18.7L21 11.5' stroke='%23f2b705' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
-<style>
-:root{--bg:#1e1f22;--raised:#17181a;--surface:#26272b;--surface-alt:#2c2d31;--border:#37383c;--text:#ececee;--muted:#b4b5ba;--faint:#8f9096;--accent:#f2b705;--accent-hover:#ffc61a;--accent-text:#14120a;--accent-soft:rgba(242,183,5,.12);--accent-border:rgba(242,183,5,.35)}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Helvetica,Arial,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
-.skip{position:absolute;left:-9999px;top:0;background:var(--accent);color:var(--accent-text);padding:.5rem 1rem;border-radius:0 0 8px 0;font-weight:600;z-index:10}
-.skip:focus{left:0}
-.topbar{background:var(--raised);border-bottom:1px solid var(--border)}
-.topbar__inner{max-width:880px;margin:0 auto;padding:.75rem 1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
-.brand{display:flex;align-items:center;gap:.6rem;color:var(--text);text-decoration:none;font-weight:700;letter-spacing:-.01em}
-.brand em{color:var(--accent);font-style:normal}
-.brand svg{width:24px;height:24px;color:var(--accent)}
-main{max-width:880px;margin:0 auto;padding:2.25rem 1.25rem 3rem}
-h1{font-size:1.9rem;letter-spacing:-.02em;margin:0 0 .25rem}
-.updated{color:var(--faint);font-size:.85rem;margin-bottom:2rem}
-h2{font-size:1.15rem;margin:2rem 0 .5rem;padding-top:1.5rem;border-top:1px solid var(--border);letter-spacing:-.01em}
-h2:first-of-type{border-top:0;padding-top:0}
-p,li{color:var(--muted)}
-li{margin:.3rem 0}
-strong{color:var(--text)}
-a{color:var(--accent)}
-a:hover{color:var(--accent-hover)}
-.callout{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:12px;padding:.8rem 1rem;margin:1rem 0}
-.callout p{margin:0}
-footer{background:var(--raised);border-top:1px solid var(--border)}
-.footer__inner{max-width:880px;margin:0 auto;padding:1rem 1.25rem;display:flex;flex-wrap:wrap;gap:1rem;align-items:center;justify-content:space-between;color:var(--faint);font-size:.82rem}
-.footer__inner nav{display:flex;gap:1.25rem}
-.footer__inner a{color:var(--muted);text-decoration:none}
-.footer__inner a:hover,.footer__inner a[aria-current]{color:var(--accent)}
-</style>
+<link rel="stylesheet" href="/styles/legal.css" />
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
+
 <header class="topbar">
-  <div class="topbar__inner">
+  <div class="doc topbar__inner">
     <a class="brand" href="/" aria-label="Legally Unbullied home">
-      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M11 15.5L14.2 18.7L21 11.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M11 15.5L14.2 18.7L21 11.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <span>Legally <em>Unbullied</em></span>
     </a>
   </div>
 </header>
-<main id="main">
-  <h1>Terms of Service</h1>
-  <p class="updated">Last updated: 7 November 2026 · Applies to the Legally Unbullied web app (this site)</p>
 
-  <div class="callout">
-    <p><strong>The short version.</strong> Legally Unbullied is an educational tool that helps you understand Nigerian law in plain language. It is legal <em>information</em>, not legal <em>advice</em>, and using it does not create a lawyer–client relationship. For anything with real consequences, talk to a qualified Nigerian lawyer.</p>
-  </div>
+<main class="doc" id="main">
+  <h1 class="doc__title">Terms of Service</h1>
+  <p class="doc__meta">Last updated: 7 November 2026 &middot; Applies to the Legally Unbullied web app (this site)</p>
 
-  <h2>1. Accepting these terms</h2>
+  <nav class="contents" aria-label="Contents">
+    <ol>
+      <li><a href="#s1"><span>1</span>Accepting these terms</a></li>
+      <li><a href="#s2"><span>2</span>What Legally Unbullied is, and is not</a></li>
+      <li><a href="#s3"><span>3</span>Accuracy of sources</a></li>
+      <li><a href="#s4"><span>4</span>Appropriate use</a></li>
+      <li><a href="#s5"><span>5</span>Your account</a></li>
+      <li><a href="#s6"><span>6</span>Feedback and content you give us</a></li>
+      <li><a href="#s7"><span>7</span>AI-generated output</a></li>
+      <li><a href="#s8"><span>8</span>Service availability and liability</a></li>
+      <li><a href="#s9"><span>9</span>Privacy</a></li>
+      <li><a href="#s10"><span>10</span>Governing law and disputes</a></li>
+      <li><a href="#s11"><span>11</span>Changes to these terms</a></li>
+      <li><a href="#contact"><span>12</span>Contact</a></li>
+    </ol>
+  </nav>
+
+  <p class="lead"><strong>The short version.</strong> Legally Unbullied is an educational tool that helps you understand Nigerian law in plain language. It is legal <em>information</em>, not legal <em>advice</em>, and using it does not create a lawyer&ndash;client relationship. For anything with real consequences, talk to a qualified Nigerian lawyer.</p>
+
+  <h2 id="s1">1. Accepting these terms</h2>
   <p>By using Legally Unbullied, whether in guest mode (your 3 free questions per day) or with an account, you agree to these Terms. If you create an account, you must tick the box agreeing to these Terms and acknowledging our <a href="/privacy">Privacy Policy</a>, and you confirm you are at least 13 years old and that the details you give us are accurate.</p>
 
-  <h2>2. What Legally Unbullied is, and is not</h2>
+  <h2 id="s2">2. What Legally Unbullied is, and is not</h2>
   <ul>
     <li><strong>It is</strong> a plain-language legal information service for Nigeria. It retrieves relevant legal sources (statutes, constitutional provisions, codes, official publications, published court judgments) and uses AI to explain how they may apply to your situation.</li>
     <li><strong>It is not legal advice.</strong> No professional relationship is created between you and Legally Unbullied or any person involved in it. Answers are general in nature and cannot account for everything specific to your case: facts, evidence, deadlines, local court practice, or new developments in the law.</li>
@@ -65,57 +55,59 @@ footer{background:var(--raised);border-top:1px solid var(--border)}
     <li><strong>Deadlines are real.</strong> Litigation and administrative deadlines can permanently defeat your rights. Never miss a deadline because of something this app told you. Confirm the deadline with the court registry or a lawyer.</li>
   </ul>
 
-  <h2>3. Accuracy of sources</h2>
-  <p>Quoted legal texts come from public official or reputable sources (e.g. the Laws of the Federation, PLAC's consolidated compendium, published judgments). We make reasonable efforts to reproduce and link them accurately, but we do not control those sources; always consult the official version, and the courts' own publications, for the authoritative text.</p>
+  <h2 id="s3">3. Accuracy of sources</h2>
+  <p>Quoted legal texts come from public official or reputable sources (e.g. the Laws of the Federation, PLAC&rsquo;s consolidated compendium, published judgments). We make reasonable efforts to reproduce and link them accurately, but we do not control those sources; always consult the official version, and the courts&rsquo; own publications, for the authoritative text.</p>
 
-  <h2>4. Appropriate use</h2>
+  <h2 id="s4">4. Appropriate use</h2>
   <ul>
     <li>Do not use the service to break the law, harass others, or misrepresent the app as a lawyer.</li>
-    <li>Do not paste other people's personal data you are not allowed to share, or confidential third-party material.</li>
+    <li>Do not paste other people&rsquo;s personal data you are not allowed to share, or confidential third-party material.</li>
     <li>Do not try to extract, scrape, or bulk-download the service, or circumvent the guest-mode limits.</li>
     <li>The guest limit (3 free questions per UTC day, per device/network) is part of the deal; signing in is the supported way to use it more.</li>
     <li>Do not rely on the app as your only input for court filings. Use it to understand the terrain, then verify with a lawyer.</li>
   </ul>
 
-  <h2>5. Your account</h2>
+  <h2 id="s5">5. Your account</h2>
   <ul>
     <li>Keep your password confidential. You are responsible for activity under your account.</li>
     <li>We may suspend accounts involved in abuse, security attacks, or material breach of these Terms.</li>
     <li>You may stop using the service at any time and delete your conversations; for full account deletion see the Privacy Policy.</li>
   </ul>
 
-  <h2>6. Feedback and content you give us</h2>
+  <h2 id="s6">6. Feedback and content you give us</h2>
   <p>When you send a message, rate an answer, or give feedback, you grant us a non-exclusive, worldwide, royalty-free licence to use it to operate, evaluate, and improve the service, including to build better retrieval, prompts, and training data for legal-information quality. You retain ownership of your content. We will not publish your questions or answers in a way that identifies you without your consent.</p>
 
-  <h2>7. AI-generated output</h2>
+  <h2 id="s7">7. AI-generated output</h2>
   <p>Answers are generated by AI large language models working on top of retrieved Nigerian legal sources. AI can produce plausible-sounding errors. Verdicts and recommendations shown in the app are informational, are not professional opinions, and are not binding on any court, lawyer, or opposing party.</p>
 
-  <h2>8. Service availability and liability</h2>
+  <h2 id="s8">8. Service availability and liability</h2>
   <ul>
-    <li>The service is provided "as is" and "as available". AI providers and official sources can fail, change, or be unreachable; we may change, suspend, or discontinue parts of the service at any time.</li>
+    <li>The service is provided &ldquo;as is&rdquo; and &ldquo;as available&rdquo;. AI providers and official sources can fail, change, or be unreachable; we may change, suspend, or discontinue parts of the service at any time.</li>
     <li>To the fullest extent permitted by Nigerian law, we exclude all implied warranties and accept no liability for loss arising from reliance on the service, including lost claims, deadlines, costs, or decisions. Your route to recourse for legal matters is through qualified Nigerian counsel.</li>
     <li>Nothing in these Terms limits liability that cannot be limited by law.</li>
   </ul>
 
-  <h2>9. Privacy</h2>
+  <h2 id="s9">9. Privacy</h2>
   <p>Our <a href="/privacy">Privacy Policy</a> explains what we collect, why, and the choices you have. It forms part of these Terms.</p>
 
-  <h2>10. Governing law and disputes</h2>
+  <h2 id="s10">10. Governing law and disputes</h2>
   <p>These Terms are governed by the laws of the Federal Republic of Nigeria, and the courts of Nigeria have jurisdiction. If any provision is unenforceable, the rest remains in force.</p>
 
-  <h2>11. Changes to these terms</h2>
+  <h2 id="s11">11. Changes to these terms</h2>
   <p>We may update these Terms as the service evolves. The date at the top shows the current version; material changes will be notified in the app before they take effect. Continued use after changes means acceptance.</p>
 
   <h2 id="contact">12. Contact</h2>
   <p>Legally Unbullied is a small, independent project operated from Nigeria. A public support email is not yet published; when one is, it will be listed here and in the Privacy Policy. In the meantime, privacy and account questions can be raised in the app as described in the <a href="/privacy">Privacy Policy</a>.</p>
 
-  <div class="callout">
-    <p>These Terms are not legal advice either. Questions about them can also be discussed with a Nigerian lawyer.</p>
-  </div>
+  <p class="colophon">These Terms are not legal advice either. Questions about them can also be discussed with a Nigerian lawyer.</p>
 </main>
-<footer>
-  <div class="footer__inner">
-    <span>Legally <em style="color:var(--accent);font-style:normal">Unbullied</em> · Legal information, not legal advice.</span>
+
+<footer class="footer">
+  <div class="doc footer__inner">
+    <span class="footer__brand">
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M11 15.5L14.2 18.7L21 11.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Legally Unbullied · Legal information, not legal advice.
+    </span>
     <nav>
       <a href="/privacy">Privacy</a>
       <a href="/terms" aria-current="page">Terms</a>
