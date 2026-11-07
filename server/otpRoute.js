@@ -15,10 +15,20 @@
  * per 10-minute window on top of the global /api rate limit.
  */
 
+const crypto = require("crypto");
 const express = require("express");
 const rateLimit = require("express-rate-limit");
 
 const router = express.Router();
+
+// Expired entries are swept lazily on each send/verify — the map can never
+// grow unbounded, even under a spray of distinct emails.
+function sweepExpired(store) {
+  const now = Date.now();
+  for (const [key, entry] of store) {
+    if (!entry || now > entry.expiresAt) store.delete(key);
+  }
+}
 
 const CODE_TTL_MS = 10 * 60 * 1000;
 const SEND_WINDOW_MS = 10 * 60 * 1000;
@@ -106,7 +116,8 @@ router.post("/send", sendLimiter, async (req, res) => {
     return res.status(429).json({ error: "Too many codes sent. Try again in a few minutes." });
   }
 
-  const code = String(Math.floor(100000 + Math.random() * 900000));
+  sweepExpired(store);
+  const code = String(crypto.randomInt(0, 1000000)).padStart(6, "0");
   store.set(email, {
     code,
     expiresAt: now + CODE_TTL_MS,
@@ -116,8 +127,8 @@ router.post("/send", sendLimiter, async (req, res) => {
   });
 
   try {
-    const via = await deliver(email, code);
-    return res.json({ ok: true, deliveredVia: via });
+    await deliver(email, code);
+    return res.json({ ok: true });
   } catch (err) {
     console.error("[otp] delivery failed:", err.message);
     store.delete(email);
@@ -132,6 +143,7 @@ router.post("/verify", verifyLimiter, (req, res) => {
     return res.status(400).json({ error: "Enter the 6-digit code from your email." });
   }
 
+  sweepExpired(store);
   const entry = store.get(email);
   if (!entry || Date.now() > entry.expiresAt) {
     store.delete(email);

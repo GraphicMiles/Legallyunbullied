@@ -2426,7 +2426,7 @@ router.post("/api/chat/acknowledge", async (req, res) => {
  * If the message is not a legal question, returns { title: null }.
  */
 router.post("/api/generate-title", async (req, res) => {
-  const question = (req.body && req.body.question || "").toString().trim();
+  const question = (req.body && req.body.question || "").toString().trim().slice(0, 300);
   if (!question) {
     return res.status(400).json({ error: "bad_request" });
   }

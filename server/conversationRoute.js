@@ -243,6 +243,7 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     const { title, id } = req.body || {};
+    const cleanTitle = typeof title === "string" ? title.trim().slice(0, 200) : "";
     const now = Date.now();
 
     // Canonical identity: honor the client-supplied ID so the conversation is
@@ -270,7 +271,7 @@ router.post("/", async (req, res) => {
 
     await ref.set({
       userId: req.uid,
-      title: title || "New question",
+      title: cleanTitle || "New question",
       createdAt: now,
       updatedAt: now,
       messageCount: 0,
@@ -278,7 +279,7 @@ router.post("/", async (req, res) => {
 
     res.status(201).json({
       id: ref.id,
-      title: title || "New question",
+      title: cleanTitle || "New question",
       createdAt: now,
       updatedAt: now,
     });
@@ -336,7 +337,12 @@ router.put("/:id", async (req, res) => {
     }
 
     const updates = { updatedAt: Date.now() };
-    if (req.body.title !== undefined) updates.title = req.body.title;
+    if (req.body.title !== undefined) {
+      if (typeof req.body.title !== "string") {
+        return res.status(400).json({ error: "invalid_title", message: "title must be a string." });
+      }
+      updates.title = req.body.title.trim().slice(0, 200) || "New question";
+    }
 
     await ref.update(updates);
     res.json({ success: true });
