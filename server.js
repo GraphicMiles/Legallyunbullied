@@ -14,7 +14,7 @@ require("dotenv").config({ quiet: true });
 const express = require("express");
 const path = require("path");
 const cors = require("cors");
-const rateLimit = require("express-rate-limit");
+const { rateLimit, ipKeyGenerator } = require("express-rate-limit");
 const chatRoute = require("./server/chatRoute");
 const conversationRoute = require("./server/conversationRoute");
 const { requireAuth, requireAdmin } = require("./server/authMiddleware");
@@ -29,6 +29,17 @@ const PUBLIC_DIR = path.join(__dirname, "public");
 
 app.disable("x-powered-by");
 
+// ── Baseline security headers ─────────────────────────────────────────────
+// No CSP yet: the client pulls Firebase SDK from Google CDNs and uses inline
+// bootstraps, so a policy has to be engineered, not toggled. These three are
+// safe everywhere and close framing/mime-sniffing/referrer leaks today.
+app.use((req, res, next) => {
+  res.set("X-Content-Type-Options", "nosniff");
+  res.set("X-Frame-Options", "DENY");
+  res.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  next();
+});
+
 // ── Proxy trust ────────────────────────────────────────────────────────────
 // Render (and most PaaS hosts) terminate TLS at a load balancer, so req.ip is
 // the proxy's address for EVERY user. Without this setting the rate limiters
@@ -37,27 +48,30 @@ app.disable("x-powered-by");
 app.set("trust proxy", 1);
 
 // ── CORS ──────────────────────────────────────────────────────────────────
-// Allow the Render deployment, localhost dev, and Firebase hosting preview.
+// Exact allowlist only: the production deploy, localhost dev, and any extra
+// origins passed in ALLOWED_ORIGINS (comma-separated) — e.g. a Firebase
+// Hosting site when you enable it. No wildcard subdomain matching: a cloned
+// frontend hosted on a free *.onrender.com / *.firebaseapp.com / *.web.app
+// domain would otherwise be allowed to call this API with credentials.
 // Local origins follow PORT so running `PORT=4000 node server.js` doesn't
 // get the app's own static assets blocked by its own CORS layer.
-// Expand this list if you add custom domains.
 const ALLOWED_ORIGINS = [
   "https://legally-unbullied.onrender.com",
   `http://localhost:${PORT}`,
   `http://127.0.0.1:${PORT}`,
   "http://localhost:5173",
   "http://127.0.0.1:5173",
+  ...String(process.env.ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean),
 ];
-
-// Also allow any *.onrender.com preview and firebaseapp.com hosting
-const ORIGIN_REGEX = /^https:\/\/.*\.(onrender\.com|firebaseapp\.com|web\.app)$/;
 
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (server-to-server, curl, mobile apps)
     if (!origin) return callback(null, true);
     if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
-    if (ORIGIN_REGEX.test(origin)) return callback(null, true);
     console.warn(`[cors] Blocked origin: ${origin}`);
     callback(new Error("Not allowed by CORS"));
   },
@@ -83,11 +97,23 @@ app.use(express.json({ limit: "50kb" }));
 // ── Rate limiting ─────────────────────────────────────────────────────────
 // General API rate limit — applies to all /api/* endpoints.
 // 60 requests per minute per IP. Prevents casual abuse.
+const clientIpKey = (req) => {
+  // Rightmost XFF entry = the address the edge proxy appended for the real
+  // client. Rotating a spoofed XFF prefix no longer mints a fresh bucket.
+  // ipKeyGenerator folds IPv6 addresses to a /56 subnet so a client can't
+  // rotate through its own address space either.
+  const xff = String(req.headers["x-forwarded-for"] || "");
+  const last = xff.split(",").pop().trim();
+  return ipKeyGenerator(last || req.ip);
+};
+
 const generalLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 60,
   standardHeaders: true, // Return RateLimit-* headers
   legacyHeaders: false,
+  keyGenerator: clientIpKey,
+  validate: { xForwardedForHeader: false },
   message: { error: "rate_limited", message: "Too many requests. Please slow down." },
 });
 app.use("/api/", generalLimiter);
@@ -99,6 +125,8 @@ const chatLimiter = rateLimit({
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: clientIpKey,
+  validate: { xForwardedForHeader: false },
   message: { error: "chat_rate_limited", message: "Too many chat requests. Please wait a moment." },
 });
 
@@ -209,6 +237,12 @@ app.get("/auth", (req, res) => {
   res.sendFile(path.join(PUBLIC_DIR, "auth.html"));
 });
 
+// ── API 404 (JSON, before the SPA fallback) ──────────────────────────────
+// A typo'd /api/* path must be a JSON 404, never a 200 text/html page.
+app.use("/api", (req, res) => {
+  res.status(404).json({ error: "not_found", message: "Unknown API endpoint." });
+});
+
 // ── SPA fallback ──────────────────────────────────────────────────────────
 app.get("*", (req, res) => {
   res.sendFile(path.join(PUBLIC_DIR, "index.html"));
@@ -238,7 +272,7 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Legally Unbullied listening on port ${PORT}`);
-  console.log(`  CORS origins: ${ALLOWED_ORIGINS.join(", ")} + *.onrender.com, *.firebaseapp.com`);
+  console.log(`  CORS origins: ${ALLOWED_ORIGINS.join(", ")}`);
   console.log(`  Rate limit: 60 req/min general, 20 req/min /api/chat`);
   console.log(`  Auth: required for /api/chat and /api/cache-invalidate`);
   console.log(`  Body limit: 50kb`);

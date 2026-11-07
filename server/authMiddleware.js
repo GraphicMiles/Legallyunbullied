@@ -45,7 +45,7 @@ function requireAuth(req, res, next) {
     return res.status(503).json({ error: "auth_unavailable", message: "Authentication service is not configured on the server." });
   }
 
-  auth.verifyIdToken(idToken)
+  auth.verifyIdToken(idToken, /* checkRevoked */ true)
     .then((decoded) => {
       req.uid = decoded.uid;
       next();
