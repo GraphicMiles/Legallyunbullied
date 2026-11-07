@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Privacy Policy · Legally Unbullied</title>
-<meta name="description" content="What Legally Unbullied collects, why, and the choices you have — in plain language." />
+<meta name="description" content="What Legally Unbullied collects, why, and the choices you have, in plain language." />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none'%3E%3Cpath d='M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z' stroke='%23f2b705' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='M11 15.5L14.2 18.7L21 11.5' stroke='%23f2b705' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
 <style>
 :root{--bg:#1e1f22;--raised:#17181a;--surface:#26272b;--surface-alt:#2c2d31;--border:#37383c;--text:#ececee;--muted:#b4b5ba;--faint:#8f9096;--accent:#f2b705;--accent-hover:#ffc61a;--accent-text:#14120a;--accent-soft:rgba(242,183,5,.12);--accent-border:rgba(242,183,5,.35)}
@@ -17,8 +17,6 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,B
 .brand{display:flex;align-items:center;gap:.6rem;color:var(--text);text-decoration:none;font-weight:700;letter-spacing:-.01em}
 .brand em{color:var(--accent);font-style:normal}
 .brand svg{width:24px;height:24px;color:var(--accent)}
-.topbar a.back{color:var(--muted);text-decoration:none;font-size:.85rem;border:1px solid var(--border);border-radius:999px;padding:.35rem .85rem;white-space:nowrap}
-.topbar a.back:hover{color:var(--text);border-color:var(--accent-border)}
 main{max-width:880px;margin:0 auto;padding:2.25rem 1.25rem 3rem}
 h1{font-size:1.9rem;letter-spacing:-.02em;margin:0 0 .25rem}
 .updated{color:var(--faint);font-size:.85rem;margin-bottom:2rem}
@@ -46,7 +44,6 @@ footer{background:var(--raised);border-top:1px solid var(--border)}
       <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M11 15.5L14.2 18.7L21 11.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <span>Legally <em>Unbullied</em></span>
     </a>
-    <a class="back" href="/">Back to the app</a>
   </div>
 </header>
 <main id="main">
@@ -64,23 +61,23 @@ footer{background:var(--raised);border-top:1px solid var(--border)}
 
   <p><strong>Account and sign-in</strong> (if you create an account)</p>
   <ul>
-    <li><strong>Email and password.</strong> Accounts are handled by Firebase Authentication. Your password goes directly to Firebase — we never see, receive, or store it ourselves. Passwords are stored by Firebase using industry-standard hashing.</li>
-    <li><strong>Email verification.</strong> When you sign up we send a 6‑digit code to your email to confirm it is really you (via the OTP flow, or Firebase's own reset/verification emails).</li>
-    <li><strong>Google sign-in (optional).</strong> If you choose "Continue with Google", we receive your Google basic profile (name, email, profile image) from Google — nothing else about your Google account.</li>
+    <li><strong>Email and password.</strong> Accounts are handled by Firebase Authentication. Your password goes directly to Firebase. We never see, receive, or store it ourselves. Passwords are stored by Firebase using industry-standard hashing.</li>
+    <li><strong>Email verification.</strong> When you sign up we send a 6-digit code to your email to confirm it is really you (via the OTP flow, or Firebase's own reset/verification emails).</li>
+    <li><strong>Google sign-in (optional).</strong> If you choose "Continue with Google", we receive your Google basic profile (name, email, profile image) from Google. Nothing else about your Google account.</li>
   </ul>
 
   <p><strong>Your questions and answers</strong> (signed-in users)</p>
   <ul>
-    <li>Questions you ask, the answers we generate, follow-up clarifications, safety approvals you give, and your conversation titles — stored in our database (Google Firestore) under your account only.</li>
-    <li>Our security rules restrict each conversation to its owner; other users — and anonymous visitors — cannot read yours.</li>
+    <li>Questions you ask, the answers we generate, follow-up clarifications, safety approvals you give, and your conversation titles are stored in our database (Google Firestore) under your account only.</li>
+    <li>Our security rules restrict each conversation to its owner; other users and anonymous visitors cannot read yours.</li>
     <li>Conversations stay until you delete them (you can delete individual conversations in the app) or until you ask us to delete your account.</li>
   </ul>
 
   <p><strong>Guest mode (no account)</strong></p>
   <ul>
-    <li>Everyone gets <strong>3 free questions per day</strong> without signing up. To enforce that fairly, we keep a short-lived daily counter in Firestore keyed by a one‑way hash of: your IP address, your browser's user‑agent, and a device fingerprint generated in your browser.</li>
-    <li>The hash cannot be reversed into your identity, and we never attach your questions or answers to it. Guest counters are day‑buckets — they exist to count, reset daily, and are not used for profiling or advertising.</li>
-    <li>On our <em>device</em> (your browser), guest state such as remaining free questions and your conversation cache is stored in localStorage — it never leaves your device except as described above.</li>
+    <li>Everyone gets <strong>3 free questions per day</strong> without signing up. To enforce that fairly, we keep a short-lived daily counter in Firestore keyed by a one-way hash of: your IP address, your browser's user-agent, and a device fingerprint generated in your browser.</li>
+    <li>The hash cannot be reversed into your identity, and we never attach your questions or answers to it. Guest counters are day-buckets that reset daily. They are not used for profiling or advertising.</li>
+    <li>On your device (your browser), guest state such as remaining free questions and your conversation cache is stored in localStorage. It never leaves your device except as described above.</li>
   </ul>
 
   <p><strong>Feedback on answers (thumbs up / down)</strong></p>
@@ -97,8 +94,8 @@ footer{background:var(--raised);border-top:1px solid var(--border)}
 
   <p><strong>Technical and service data</strong></p>
   <ul>
-    <li>Our servers (hosted by Render) keep standard logs — IP address, request path, time, status — for security, abuse prevention, and reliability.</li>
-    <li>We do not run third‑party analytics, advertising, or tracking cookies. The only third parties involved in ordinary use are listed in section 4.</li>
+    <li>Our servers (hosted by Render) keep standard logs (IP address, request path, time, status) for security, abuse prevention, and reliability.</li>
+    <li>We do not run third-party analytics, advertising, or tracking cookies. The only third parties involved in ordinary use are listed in section 4.</li>
   </ul>
 
   <h2>3. What we do <em>not</em> do</h2>
@@ -111,16 +108,16 @@ footer{background:var(--raised);border-top:1px solid var(--border)}
 
   <h2>4. Third parties that process your data</h2>
   <ul>
-    <li><strong>Google Firebase</strong> (Authentication, Cloud Firestore, hosting of our backend data) — account credentials and your conversations are stored in Google's data centres, which may be outside Nigeria (e.g. the United States and European Union). Google processes this data as our processor under its <a href="https://firebase.google.com/support/privacy" rel="noopener noreferrer" target="_blank">Firebase privacy information</a>.</li>
-    <li><strong>AI model providers</strong> — to generate answers, the text of your question (and the relevant legal context we retrieve) is sent to the AI provider we have configured at the time (e.g. Groq, Google Gemini, Cerebras or OpenRouter). They process it to produce the answer and under their own terms; do not include information you are not comfortable sharing with an AI provider.</li>
-    <li><strong>Hosting (Render)</strong> — serves the app and stores operational logs.</li>
-    <li><strong>Legal sources</strong> — quotes of Nigerian law come from public official or reputable publications (e.g. the Laws of the Federation, PLAC compendium, published judgments). These are public documents; the links are shown with each answer.</li>
+    <li><strong>Google Firebase</strong> (Authentication, Cloud Firestore, hosting of our backend data). Account credentials and your conversations are stored in Google's data centres, which may be outside Nigeria (e.g. the United States and European Union). Google processes this data as our processor under its <a href="https://firebase.google.com/support/privacy" rel="noopener noreferrer" target="_blank">Firebase privacy information</a>.</li>
+    <li><strong>AI model providers</strong>. To generate answers, the text of your question (and the relevant legal context we retrieve) is sent to the AI provider we have configured at the time (e.g. Groq, Google Gemini, Cerebras or OpenRouter). They process it under their own terms. Do not include information you are not comfortable sharing with an AI provider.</li>
+    <li><strong>Hosting (Render).</strong> Runs the app and keeps operational logs.</li>
+    <li><strong>Legal sources</strong>. Quotes of Nigerian law come from public official or reputable publications (e.g. the Laws of the Federation, PLAC compendium, published judgments). These are public documents; the links are shown with each answer.</li>
   </ul>
 
   <h2>5. Your rights</h2>
   <p>Under the Nigeria Data Protection Act 2023 you may request access to, correction of, and deletion of your personal data.</p>
   <ul>
-    <li><strong>In the app:</strong> delete any conversation and it is removed from our database. Signing out removes the on‑device session.</li>
+    <li><strong>In the app:</strong> delete any conversation and it is removed from our database. Signing out removes the on-device session.</li>
     <li><strong>Full deletion:</strong> to delete your account and all associated server data (conversations, messages, feedback you submitted), contact us as described in section 9. We will honour the request, except where retention is required by law.</li>
     <li>You may object to processing or complain to the Nigeria Data Protection Commission at <a href="https://ndpc.gov.ng" rel="noopener noreferrer" target="_blank">ndpc.gov.ng</a>.</li>
   </ul>
@@ -134,10 +131,10 @@ footer{background:var(--raised);border-top:1px solid var(--border)}
   </ul>
 
   <h2>7. Security</h2>
-  <p>Data is encrypted in transit (TLS). Access to the database is server‑side only, protected by Firebase Admin SDK, with Firestore security rules denying all direct client access to internal collections. No security is perfect — if you suspect misuse of your account, change your password and contact us.</p>
+  <p>Data is encrypted in transit (TLS). Access to the database is server-side only, protected by Firebase Admin SDK, with Firestore security rules denying all direct client access to internal collections. No security is perfect. If you suspect misuse of your account, change your password and contact us.</p>
 
   <h2>8. Children</h2>
-  <p>Legally Unbullied is designed for adults dealing with real‑life legal matters in Nigeria. It is not directed at children under 13, and we do not knowingly collect their data. If you believe a child has created an account, contact us and we will delete it.</p>
+  <p>Legally Unbullied is designed for adults dealing with real-life legal matters in Nigeria. It is not directed at children under 13, and we do not knowingly collect their data. If you believe a child has created an account, contact us and we will delete it.</p>
 
   <h2 id="contact">9. Contacting us, and changes to this policy</h2>
   <p><strong>Contact.</strong> Legally Unbullied is a small, independent project operated from Nigeria; a public support email is not yet published. Privacy questions and requests for access, correction, or deletion can be raised in the app after signing in (e.g. via answer feedback or conversation settings) and will be handled by the operator. If a support address is published later, it will appear here.</p>

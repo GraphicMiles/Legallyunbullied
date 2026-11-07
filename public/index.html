@@ -2045,7 +2045,12 @@
 
     <div class="sidebar__footer">
       <div id="auth-section"></div>
-      <p class="sidebar__disclaimer">Legally Unbullied provides legal information, not legal representation. For issues that need a lawyer, we point you to the NBA's public directory.</p>
+      <p class="sidebar__disclaimer">Legal information, not legal representation. Need a lawyer? We point you to the NBA's public directory.</p>
+      <nav aria-label="Legal" style="display:flex;align-items:center;gap:var(--space-2);margin-top:2px;font-size:12px;line-height:1.4">
+        <a href="/privacy" style="color:var(--color-text-muted);text-decoration:none">Privacy</a>
+        <span aria-hidden="true" style="color:var(--color-text-faint)">·</span>
+        <a href="/terms" style="color:var(--color-text-muted);text-decoration:none">Terms</a>
+      </nav>
     </div>
   </aside>
 
@@ -2056,7 +2061,7 @@
        ============================================================ -->
   <div class="modal-overlay" id="confirm-modal-overlay">
     <div class="modal-card modal-card--small" role="alertdialog" aria-modal="true" aria-labelledby="confirm-modal-title">
-      <h2 class="modal-card__title" id="confirm-modal-title">Are you sure?</h2>
+      <h2 class="modal-card__title" id="confirm-modal-title">Confirm</h2>
       <p class="modal-card__text" id="confirm-modal-text"></p>
       <div class="modal-card__actions">
         <button type="button" class="btn btn--outline" id="confirm-modal-cancel">Cancel</button>
@@ -2147,7 +2152,7 @@
       <div class="composer__inner">
         <div class="composer-card">
           <div id="prompt-bar-container"></div>
-          <p class="composer-note" role="note">Answers aren&rsquo;t 100% dependable · For deeper guidance, <a class="composer-note__link" id="composer-lawyer-link" href="https://www.nigerianbar.org.ng/find-a-lawyer" target="_blank" rel="noopener noreferrer">talk to a lawyer</a> · <a href="/privacy" style="color:var(--color-accent);text-decoration:none">Privacy</a> · <a href="/terms" style="color:var(--color-accent);text-decoration:none">Terms</a></p>
+          <p class="composer-note" role="note">Not legal advice. For real decisions, <a class="composer-note__link" id="composer-lawyer-link" href="https://www.nigerianbar.org.ng/find-a-lawyer" target="_blank" rel="noopener noreferrer">talk to a lawyer</a>.</p>
         </div>
       </div>
     </footer>

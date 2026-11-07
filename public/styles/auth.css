@@ -143,19 +143,6 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
 .auth-brand svg { width: 26px; height: 26px; color: var(--accent); }
 .auth-brand em { color: var(--accent); font-style: normal; }
 
-.auth-top__link {
-  color: var(--muted);
-  text-decoration: none;
-  font-size: 13.5px;
-  font-weight: 500;
-  padding: 8px 16px;
-  background: var(--surface);
-  border-radius: var(--radius-pill);
-  transition: color 0.2s, background 0.2s;
-}
-
-.auth-top__link:hover { color: var(--text); background: var(--surface-alt); }
-
 .auth-main {
   position: relative;
   z-index: 1;
@@ -570,7 +557,7 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
 
 /* Keyboard focus = tone lift, never an outline stroke. */
 .btn-social:focus-visible, .btn-primary:focus-visible, .link-btn:focus-visible,
-.auth-top__link:focus-visible, .field__eye:focus-visible {
+.field__eye:focus-visible {
   outline: none;
   background: var(--surface-alt);
 }
