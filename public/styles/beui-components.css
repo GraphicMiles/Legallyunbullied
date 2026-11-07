@@ -435,7 +435,7 @@
   width: 100%;
   min-height: 48px;
   max-height: 200px;
-  padding: 16px 18px 8px;
+  padding: var(--space-4, 16px) var(--space-4, 16px) var(--space-2, 8px);
   background: transparent;
   border: none;
   /* 16px is the iOS Safari threshold: below it, focusing a field triggers
@@ -461,8 +461,8 @@
 .beui-prompt-bar__controls {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 10px 12px;
+  gap: var(--space-2, 8px);
+  padding: var(--space-1, 4px) var(--space-3, 12px) var(--space-3, 12px);
 }
 
 .beui-prompt-bar__spacer {
