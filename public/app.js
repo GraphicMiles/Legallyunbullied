@@ -1358,7 +1358,11 @@ import {
   }
 
   function showPopover(anchorEl, items, { onClose, align = "end" } = {}) {
+    // Tapping the anchor while its menu is open toggles the menu closed
+    // (show/hide), instead of closing and immediately reopening.
+    const sameAnchor = activePopover && activePopover.anchor === anchorEl;
     closePopover();
+    if (sameAnchor) return;
 
     const menu = document.createElement("div");
     menu.className = "menu-popover";
@@ -1412,7 +1416,7 @@ import {
       document.addEventListener("keydown", escHandler, true);
     }, 0);
 
-    activePopover = { el: menu, outsideHandler, escHandler, onClose };
+    activePopover = { el: menu, anchor: anchorEl, outsideHandler, escHandler, onClose };
   }
 
   /* ------------------------------------------------------------------ */
@@ -4146,18 +4150,37 @@ import {
   }
 
   /* ------------------------------------------------------------------ */
-  /* Mobile sidebar                                                       */
+  /* Sidebar: mobile drawer (< 900px) and desktop collapse               */
   /* ------------------------------------------------------------------ */
+  const appRoot = document.querySelector(".app");
+  const isDesktopSidebar = () =>
+    typeof window.matchMedia === "function" && window.matchMedia("(min-width: 901px)").matches;
+
   function openMobileSidebar() {
     el.sidebar.classList.add("is-open");
     el.scrim.classList.add("is-visible");
+    if (el.menuToggle) el.menuToggle.setAttribute("aria-expanded", "true");
   }
   function closeMobileSidebar() {
     el.sidebar.classList.remove("is-open");
     el.scrim.classList.remove("is-visible");
+    if (el.menuToggle) el.menuToggle.setAttribute("aria-expanded", "false");
+  }
+  // Desktop: hide the whole sidebar track; the topbar's sidebar icon
+  // becomes the way back in ("normal sidebar icon" toggle).
+  function collapseDesktopSidebar() {
+    if (appRoot) appRoot.classList.add("sidebar-collapsed");
+    if (el.menuToggle) el.menuToggle.setAttribute("aria-expanded", "false");
+  }
+  function expandDesktopSidebar() {
+    if (appRoot) appRoot.classList.remove("sidebar-collapsed");
+    if (el.menuToggle) el.menuToggle.setAttribute("aria-expanded", "true");
   }
 
   /* ------------------------------------------------------------------ */
+  // Boot state: expanded on desktop (sidebar visible), collapsed on mobile
+  if (el.menuToggle) el.menuToggle.setAttribute("aria-expanded", isDesktopSidebar() ? "true" : "false");
+
   /* Event bindings                                                       */
   /* ------------------------------------------------------------------ */
   // Starter prompts (empty state) fill the composer rather than send, so
@@ -4179,8 +4202,22 @@ import {
     if (window.firebaseAuth) goToAuthPage();
   });
   if (el.chatStatusRetry) el.chatStatusRetry.addEventListener("click", resolveUrl);
-  el.menuToggle.addEventListener("click", openMobileSidebar);
-  el.sidebarClose.addEventListener("click", closeMobileSidebar);
+  el.menuToggle.addEventListener("click", () => {
+    if (isDesktopSidebar()) {
+      expandDesktopSidebar();
+      return;
+    }
+    if (el.sidebar.classList.contains("is-open")) closeMobileSidebar();
+    else openMobileSidebar();
+  });
+  el.sidebarClose.addEventListener("click", () => {
+    if (isDesktopSidebar()) {
+      collapseDesktopSidebar();
+      if (el.menuToggle) el.menuToggle.focus();
+      return;
+    }
+    closeMobileSidebar();
+  });
   el.scrim.addEventListener("click", closeMobileSidebar);
   el.historySearch.addEventListener("input", onSearchInput);
   el.clearChatBtn.addEventListener("click", () => {
@@ -4194,7 +4231,8 @@ import {
   });
 
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeMobileSidebar();
+    if (e.key !== "Escape") return;
+    if (!isDesktopSidebar()) closeMobileSidebar();
   });
 
   /* ------------------------------------------------------------------ */
@@ -4768,11 +4806,12 @@ import {
     updateComposerState();
   }
 
-  // The legal-information disclaimer is a one-time popup, not a permanent
-  // footer. It appears on the first visit and disappears forever once the
-  // user dismisses it (persisted to localStorage).
+  // The legal-information disclaimer lives in the composer card. It stays
+  // visible until the user dismisses it; dismissal is persisted locally.
   function initDisclaimerPop() {
-    const POP_KEY = "lu.disclaimer.dismissed";
+    // Fresh key for the redesigned in-card banner: an old one-time-popup
+    // dismissal must not hide the new banner.
+    const POP_KEY = "lu.composer.banner.dismissed";
     const pop = document.getElementById("disclaimer-pop");
     const closeBtn = document.getElementById("disclaimer-pop-close");
     if (!pop || !closeBtn) return;
