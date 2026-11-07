@@ -63,18 +63,19 @@
           <span class="field__label">Email</span>
           <input class="field__input" type="email" id="signin-email" autocomplete="email" placeholder="you@example.com" />
         </label>
-        <label class="field">
+        <div class="field">
           <span class="field__label-row">
-            <span class="field__label">Password</span>
+            <label class="field__label" for="signin-password">Password</label>
             <a class="field__link" href="/auth?mode=forgot">Forgot your password?</a>
           </span>
           <span class="field__control">
             <input class="field__input" type="password" id="signin-password" autocomplete="current-password" placeholder="Your password" />
-            <button type="button" class="field__eye" data-eye="signin-password" aria-label="Show password">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.06 12.35a1 1 0 0 1 0-.7C3.42 8.1 7.36 5 12 5s8.58 3.1 9.94 6.65a1 1 0 0 1 0 .7C20.58 15.9 16.64 19 12 19s-8.58-3.1-9.94-6.65Z"/><circle cx="12" cy="12" r="3"/></svg>
+            <button type="button" class="field__eye" data-eye="signin-password" aria-label="Show password" aria-pressed="false">
+              <svg class="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.06 12.35a1 1 0 0 1 0-.7C3.42 8.1 7.36 5 12 5s8.58 3.1 9.94 6.65a1 1 0 0 1 0 .7C20.58 15.9 16.64 19 12 19s-8.58-3.1-9.94-6.65Z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="i-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.45 18.45 0 0 1-2.39 3.43M6.1 6.1A18.45 18.45 0 0 0 1 12s4 8 11 8a9.12 9.12 0 0 0 5.02-1.42"/><path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/><line x1="4" y1="4" x2="20" y2="20"/></svg>
             </button>
           </span>
-        </label>
+        </div>
         <p class="auth-error" id="signin-error" role="alert" hidden></p>
         <button type="submit" class="btn-primary" id="signin-submit" disabled>Sign in</button>
       </form>
@@ -100,15 +101,16 @@
             <span class="field__label">Email</span>
             <input class="field__input" type="email" id="signup-email" autocomplete="email" placeholder="you@example.com" />
           </label>
-          <label class="field">
-            <span class="field__label">Password</span>
+          <div class="field">
+            <label class="field__label" for="signup-password">Password</label>
             <span class="field__control">
               <input class="field__input" type="password" id="signup-password" autocomplete="new-password" placeholder="Create a password" />
-              <button type="button" class="field__eye" data-eye="signup-password" aria-label="Show password">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.06 12.35a1 1 0 0 1 0-.7C3.42 8.1 7.36 5 12 5s8.58 3.1 9.94 6.65a1 1 0 0 1 0 .7C20.58 15.9 16.64 19 12 19s-8.58-3.1-9.94-6.65Z"/><circle cx="12" cy="12" r="3"/></svg>
+              <button type="button" class="field__eye" data-eye="signup-password" aria-label="Show password" aria-pressed="false">
+                <svg class="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.06 12.35a1 1 0 0 1 0-.7C3.42 8.1 7.36 5 12 5s8.58 3.1 9.94 6.65a1 1 0 0 1 0 .7C20.58 15.9 16.64 19 12 19s-8.58-3.1-9.94-6.65Z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="i-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.45 18.45 0 0 1-2.39 3.43M6.1 6.1A18.45 18.45 0 0 0 1 12s4 8 11 8a9.12 9.12 0 0 0 5.02-1.42"/><path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/><line x1="4" y1="4" x2="20" y2="20"/></svg>
               </button>
             </span>
-          </label>
+          </div>
 
           <ul class="pw-rules" id="pw-rules" aria-label="Password requirements">
             <li data-rule="length"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Minimum 8 characters</li>
