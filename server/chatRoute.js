@@ -231,6 +231,7 @@ CORE PRINCIPLES:
 - Use ONLY the provided statute excerpts — never cite provisions not in the context
 - Every excerpt has a provisionId. Cite it using the exact token [[provisionId]]; never type or invent an Act/section label yourself
 - Return every used ID in "provisionIds" and attach IDs to individual entries in "claims"
+- Never invent or quote a phone number, hotline, emergency number, email address, or street address. If help is needed, name the authority (the police, the hospital, a lawyer, the NBA directory, the court) and tell the user how to reach it — never produce a number or contact detail that is not in the supplied excerpts
 - Do NOT include URLs, links, or [text](url) markdown. The backend resolves provision IDs to authoritative citation labels
 - Be comprehensive but clear — explain legal concepts in plain language
 - Provide actionable next steps the user can take
@@ -1102,7 +1103,7 @@ Our ingested statute database could NOT verify the exact provision that controls
 - Open with ONE short sentence acknowledging their exact situation (use the details they gave you — what happened, who is involved, the state) so they feel heard.
 - Say plainly that you could not confirm the exact section of the law that covers this, and that you will not quote a provision you cannot verify.
 - Still be useful: give practical protective steps that are safe in general for this kind of matter — preserve records and evidence, communicate in writing, respond within deadlines, and see a qualified lawyer promptly. Tailor every step to THEIR facts (their matter type, their state if known) — never a generic checklist feel.
-- If their situation sounds like it could involve imminent personal harm or violence, your FIRST step must be about immediate physical safety (get to a safe place, call emergency services) — above anything legal.
+- If their situation sounds like it could involve imminent personal harm or violence, your FIRST step must be about immediate physical safety (get to a safe place; call the police or a hospital) — above anything legal. NEVER write a phone number, hotline, email address, or street address — none that we have verified, and you must never invent one.
 
 IMPORTANT:
 - Do NOT cite any statute, Act, or section — you have verified nothing, so citing would mislead them.
@@ -1403,6 +1404,26 @@ function makeProceduralEvidence() {
 // is down we surface an honest "providers busy — retry" state instead of
 // answering from seeded template text, per the no-seeded-responses policy.
 
+
+// Emergency and contact numbers are an invented-facts trap for LLMs. Strip any
+// phone-number-like token that did not come from the user or the supplied
+// excerpts. Section refs and prices with separators do not match (7-8 digit
+// bare runs are left alone; ₦-style amounts contain commas and never match).
+function sanitizeInventedContacts(text, allowedSources) {
+  if (!text || typeof text !== "string") return { text, removed: 0 };
+  // Compare digits-vs-digits: "0803 555 7890" and "08035557890" are the same number.
+  const source = allowedSources.map((s) => String(s || "")).join(" ").replace(/\D/g, "");
+  let removed = 0;
+  const cleaned = text.replace(/\+?[()\d][\d\s().\-]{6,}[\d)]/g, (m) => {
+    const digits = m.replace(/\D/g, "");
+    if (digits.length < 9) return m;
+    if (source && source.includes(digits)) return m; // user/source supplied it — echo is fine
+    removed += 1;
+    return "";
+  });
+  return { text: cleaned, removed };
+}
+
 function applyDeterministicSafetyPolicy(result, classification, question, history) {
   if (!result) return;
   const area = String(classification?.practice_area || "").toLowerCase();
@@ -1437,6 +1458,18 @@ function applyDeterministicSafetyPolicy(result, classification, question, histor
         first = "- Step 1: Get urgent medical help and preserve the medical report; if danger is continuing, move to a safe place and contact the police or emergency service.";
       }
       result.actionsMd = `${first}\n${actions}`.trim();
+    }
+  }
+
+  // Strip invented contact details before the answer reaches the user.
+  {
+    const allowed = [question, ...((history || []).map((m) => (m && m.content) || ""))];
+    for (const field of ["lawMd", "actionsMd", "escalateReason", "limitedMd", "refusalMd", "bodyMd"]) {
+      const r = sanitizeInventedContacts(result[field], allowed);
+      if (r.removed > 0) {
+        result[field] = r.text.replace(/\(\s*\)/g, "").replace(/[ \t]{2,}/g, " ").trim();
+        console.warn(`[safety] stripped ${r.removed} unverifiable contact token(s) from ${field}`);
+      }
     }
   }
 }
@@ -1988,6 +2021,8 @@ async function runChatPipeline(req) {
     const cached = cacheAllowed ? getCachedResult(cacheKey) : null;
 
     if (cached && cached.draftResult && !cached.draftResult.providersBusy) {
+      // Served from cache — costs the guest nothing; refund the quota credit.
+      if (typeof req.guestRefund === "function") req.guestRefund();
       console.log(`[/api/chat] Cache HIT for standalone question (key: ${cacheKey.slice(0, 50)})`);
       draftResult = cached.draftResult;
       critiqueResult = cached.critiqueResult || null;
