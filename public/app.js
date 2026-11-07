@@ -1349,7 +1349,7 @@ import {
     const icon = document.createElement("span");
     icon.className = "history__icon";
     icon.setAttribute("aria-hidden", "true");
-    icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+    icon.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-message-square"/></svg>';
     btn.appendChild(icon);
 
     const titleSpan = document.createElement("span");
@@ -1374,7 +1374,7 @@ import {
     kebab.type = "button";
     kebab.className = "history__kebab";
     kebab.setAttribute("aria-label", "Chat options");
-    kebab.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>';
+    kebab.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-ellipsis-vertical"/></svg>';
     if (state.isAgentBusy) kebab.disabled = true;
     kebab.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -1382,8 +1382,8 @@ import {
       showPopover(
         kebab,
         [
-          { label: "Clear chat", svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>', onClick: () => confirmClearConversation(c.id) },
-          { label: "Delete chat", svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>', danger: true, onClick: () => confirmDeleteConversation(c.id) },
+          { label: "Clear chat", svg: '<svg class="icon" aria-hidden="true"><use href="#i-eraser"/></svg>', onClick: () => confirmClearConversation(c.id) },
+          { label: "Delete chat", svg: '<svg class="icon" aria-hidden="true"><use href="#i-trash-2"/></svg>', danger: true, onClick: () => confirmDeleteConversation(c.id) },
         ],
         { onClose: () => kebab.classList.remove("is-open") }
       );
@@ -4474,7 +4474,7 @@ import {
       container.innerHTML = `
         <div class="auth-guest">
           <button type="button" class="auth-signin-btn" disabled title="Sign-in isn't configured yet">
-            <span class="auth-signin-btn__leading"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i></span>
+            <span class="auth-signin-btn__leading"><svg class="icon" aria-hidden="true"><use href="#i-log-in"/></svg></span>
             <span class="auth-signin-btn__label">Sign in to save your chats</span>
           </button>
           <p class="auth-signin-hint">Pick up where you left off on any device.</p>
@@ -4488,9 +4488,9 @@ import {
       container.innerHTML = `
         <div class="auth-guest">
           <button type="button" class="auth-signin-btn" id="auth-open-btn">
-            <span class="auth-signin-btn__leading"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i></span>
+            <span class="auth-signin-btn__leading"><svg class="icon" aria-hidden="true"><use href="#i-log-in"/></svg></span>
             <span class="auth-signin-btn__label">Sign in to save your chats</span>
-            <i class="fa-solid fa-arrow-right auth-signin-btn__trailing" aria-hidden="true"></i>
+            <svg class="icon auth-signin-btn__trailing" aria-hidden="true"><use href="#i-arrow-right"/></svg>
           </button>
           <p class="auth-signin-hint">Pick up where you left off on any device.</p>
         </div>
@@ -4511,7 +4511,7 @@ import {
           ${user.email ? `<span class="auth-profile__email">${escapeHtml(user.email)}</span>` : ""}
         </div>
         <button type="button" class="auth-profile__logout" id="auth-logout-btn" title="Log out" aria-label="Log out">
-          <i class="fa-solid fa-right-from-bracket"></i>
+          <svg class="icon" aria-hidden="true"><use href="#i-log-out"/></svg>
         </button>
       </div>
     `;
