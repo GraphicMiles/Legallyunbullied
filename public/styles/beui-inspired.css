@@ -238,7 +238,6 @@
 }
 
 .completion-action:hover {
-  background: var(--color-surface-alt);
   border-color: var(--color-accent-border);
   color: var(--color-text);
 }

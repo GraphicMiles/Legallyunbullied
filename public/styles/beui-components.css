@@ -225,7 +225,6 @@
 
 .beui-thinking__tab:hover {
   color: var(--color-text);
-  background: var(--color-surface);
 }
 
 .beui-thinking__tab.is-active {
@@ -412,7 +411,6 @@
 }
 
 .beui-streaming__sources-pill:hover {
-  background: var(--color-surface-alt);
   color: var(--color-accent);
 }
 
@@ -484,10 +482,7 @@
               transform 90ms cubic-bezier(0.33, 0, 0.67, 0);
 }
 
-.beui-prompt-bar__tool:hover {
-  background: var(--color-border);
-  color: var(--color-text);
-}
+.beui-prompt-bar__tool:hover { color: var(--color-text); }
 
 .beui-prompt-bar__tool:not(:disabled):active {
   transform: scale(0.92);
@@ -535,7 +530,6 @@
 }
 
 .beui-prompt-bar__button:hover {
-  background: var(--color-surface-alt);
   color: var(--color-text);
 }
 
@@ -621,9 +615,6 @@
   transition: background var(--beui-duration-fast);
 }
 
-.beui-prompt-bar__mention-item:hover {
-  background: var(--color-surface-alt);
-}
 
 .beui-prompt-bar__mention-icon {
   width: 16px;
@@ -795,9 +786,6 @@
   color: var(--color-text);
 }
 
-.beui-recommendation__button--secondary:hover {
-  background: var(--color-surface);
-}
 
 /* ==========================================================================
    REDUCED MOTION
@@ -981,7 +969,6 @@
 }
 
 .safety-approval__btn--cancel:hover {
-  background: rgba(255, 255, 255, 0.04);
   color: var(--color-text);
 }
 
@@ -1217,7 +1204,6 @@
 }
 
 .followup-chip:hover {
-  background: var(--color-border, #2a2a2a);
   color: var(--color-text, #f5f5f2);
 }
 
@@ -1274,7 +1260,6 @@
   transition: background var(--dur-fast, 120ms) var(--ease, ease);
 }
 
-.answer-sources__toggle:hover { background: var(--color-surface-alt, #2c2d31); }
 
 .answer-sources__toggle .answer-sources__name { flex: 1; min-width: 0; }
 
@@ -1375,7 +1360,6 @@
 
 .answer-actions__btn:hover {
   color: var(--color-text, #ececee);
-  background: var(--color-surface-alt, #2c2d31);
   border-color: var(--color-border, #37383c);
 }
 
@@ -1408,7 +1392,6 @@
 
 .answer-actions__thumb:hover {
   color: var(--color-text, #ececee);
-  background: var(--color-surface-alt, #2c2d31);
 }
 
 .answer-actions__thumb.is-active {
