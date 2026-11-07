@@ -1175,6 +1175,11 @@ async function serverPersistMessage(req, fields) {
     if (fields && fields.status) require("./telemetry").countTerminalStatus(fields.status);
   } catch (_) { /* telemetry must never break the request path */ }
 
+  // Guests have no server-side per-user path to persist into (their chats
+  // live in localStorage). Without this guard, .doc(undefined) threw inside
+  // Firestore path validation and EVERY guest question 500'd at the final
+  // persist step — after the answer had already been computed.
+  if (!req.uid || typeof req.uid !== "string") return Promise.resolve();
   const conversationId = (req.body && typeof req.body.conversationId === "string" && req.body.conversationId) || null;
   const messageId = (req.body && typeof req.body.messageId === "string" && req.body.messageId) || null;
   if (!conversationId || !messageId) return Promise.resolve();
