@@ -25,9 +25,12 @@ const admin = require("firebase-admin");
 const REPO_ROOT = path.join(__dirname, "..", "..");
 const ENV_PATH = path.join(REPO_ROOT, ".env");
 
-// Public web API key — fetched live from the deployed server so we never
-// hardcode anything and always match the current project.
-const DEFAULT_WEB_API_KEY = "REDACTED_PUBLIC_WEB_API_KEY";
+// The web API key is a public value: the browser receives it at
+// /firebase-config.js. It is read from configuration here so no project value
+// is stored in the repository.
+function webApiKeyFromEnv() {
+  return process.env.FIREBASE_API_KEY || "";
+}
 
 let cached = null; // { idToken, expiresAt }
 
@@ -92,11 +95,15 @@ function postJson(url, body) {
 }
 
 async function mintIdToken(uid, webApiKey) {
+  const key = webApiKey || webApiKeyFromEnv();
+  if (!key) {
+    throw new Error("FIREBASE_API_KEY is not set; it is required to exchange a custom token");
+  }
   const adm = ensureAdminApp();
   const customToken = await adm.auth().createCustomToken(uid);
   const url =
     "https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=" +
-    encodeURIComponent(webApiKey || DEFAULT_WEB_API_KEY);
+    encodeURIComponent(key);
   const res = await postJson(url, { token: customToken, returnSecureToken: true });
   if (res.status !== 200 || !res.body.idToken) {
     throw new Error(
@@ -114,7 +121,7 @@ async function getIdToken({ uid = "eval-suite", webApiKey } = {}) {
   if (cached && Date.now() < cached.expiresAt - 5 * 60 * 1000) {
     return cached.idToken;
   }
-  const body = await mintIdToken(uid, webApiKey || DEFAULT_WEB_API_KEY);
+  const body = await mintIdToken(uid, webApiKey || webApiKeyFromEnv());
   // Firebase ID tokens carry exp in seconds.
   const expMs = (parseInt(body.expiresIn, 10) || 3600) * 1000;
   cached = { idToken: body.idToken, expiresAt: Date.now() + expMs };

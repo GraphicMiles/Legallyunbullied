@@ -1,84 +1,118 @@
 # Legally Unbullied
 
-A Nigerian legal information assistant that answers from statute and case law,
-and shows the provision it used. Ask a question in plain English, and it works
-out which area of law applies, retrieves the matching provisions from a Nigerian
-law corpus, and drafts an answer with every claim tied to a section.
+A Nigerian legal information assistant. You describe your situation in plain
+English, and it answers using Nigerian statutes, showing the section behind
+each point.
 
-When the retrieved text does not support the answer, it refuses instead of
-guessing. That refusal is a designed state, not an error.
+Most legal information online is either a forum answer with no source, or a paid
+database that is hard to reach from a phone. Legally Unbullied aims at the
+middle ground: an answer you can check, with the law and the section next to it.
 
-## Why it exists
+## What it does
 
-Legal information online is either a forum post with no source or a paid
-database nobody can reach from a phone. The gap is an answer you can check: here
-is the law, here is the section, here is what it means for your situation. The
-hard part is not generating the sentence, it is refusing to generate the ones
-that are not grounded.
+- Reads your question and works out which area of law it belongs to.
+- Retrieves the matching provisions from a Nigerian law corpus held in
+  Firestore.
+- Drafts an answer in plain language, with each claim tied to a section.
+- Shows the source text next to the citation, so you can read it yourself.
+- Withholds an answer when the retrieved text does not support one, instead of
+  filling the gap with general knowledge.
+- Keeps your past questions in the app.
 
-## What you can do
+It covers twenty areas of law, including police conduct and arrest, tenancy,
+employment, family, consumer, cybercrime, land, and contract.
 
-- **Ask a question** and get an answer that cites the provisions behind it.
-- **Read the citation** next to the claim, with the retrieved text it came from.
-- **Work across twenty practice areas**, from police conduct and tenancy to
-  employment, family, consumer and cyber matters.
-- **See when the assistant refuses**, and why: the answer is withheld when the
-  citation check cannot find support in the retrieved text.
-- **Keep a history** of past questions in the browser app.
+## What it is not
 
-## Running it
+- It is not a lawyer and it does not give legal advice. It gives legal
+  information and says so in the interface.
+- It does not file, send, or submit anything anywhere.
+- It only knows the laws included in `legal_sources/`. A question outside that
+  corpus is treated as unsupported rather than answered from memory.
+- It needs Firebase and a model provider to run. There is no offline mode,
+  because the work happens on the server.
+
+## Requirements
+
+- Node.js 18 or newer
+- A Firebase project, with a web app config and an admin service account
+- An API key for at least one supported model provider (Groq or Gemini)
+
+## Run it locally
 
 ```bash
+cp .env.example .env    # then fill in the values
 npm install
 npm start
 ```
 
-Then open http://localhost:3000. The server, the browser application and the
-pipeline start together, but the pipeline needs configuration: a Firebase
-project, a model API key, and the corpus loaded. `.env.example` lists the
-variables, and `docs/SYSTEM_REFERENCE.md` is the canonical document for setup,
-providers, retrieval, deployment and the endpoint list.
+Open <http://localhost:3000>.
 
-### Evaluation
+`.env.example` documents every variable and which ones are required.
+
+Variables fall into four groups:
+
+| Group | What it configures |
+|---|---|
+| Firebase (client) | The browser app's project settings, served at `/firebase-config.js` |
+| Firebase (admin) | Server-side token verification, conversations, and corpus reads |
+| Providers | Groq and Gemini keys. OpenRouter and Cerebras are optional |
+| Server | Port, environment, retrieval timeout, rate limits, CORS origins |
+
+## The corpus
+
+`legal_sources/` holds the laws the assistant answers from. It contains the
+Constitution, a set of hand-cleaned federal acts, Lagos State laws, a bulk
+compendium of federal acts, and extracts of CBN consumer and payment
+regulations. `legal_sources/SOURCES.md` lists where each document came from.
+
+The corpus is loaded into Firestore by the ingestion scripts:
 
 ```bash
-npm run eval:critical      # the critical-scenario evaluation runner
-npm run eval:full          # the full scenario sweep
-npm run eval:report        # score the results into JSON + Markdown
+npm run corpus:verify   # check the source files parse and match the manifest
+npm run ingest          # load the reviewed acts
 ```
 
-## What is not here
+`firestore.rules` denies all browser access to the provisions collection. The
+corpus is served only through the authenticated server.
 
-- This is legal information, not legal advice. The interface says so and the
-  answers are written to stay descriptive.
-- Coverage is the corpus included in `legal_sources/`. A question outside it is
-  answered as unsupported rather than filled in from general knowledge.
-- The app needs Firebase and a model provider. There is no offline mode, because
-  the pipeline is server side by design.
-- Nothing is filed, sent or submitted anywhere. It answers questions.
+## Evaluation
 
-## How it is built
+The repository includes a scenario set and a scoring runner used to check
+answer quality and citation behaviour:
 
-```
-server.js            the Node server and API
-server/              retrieval, citation control, the critic stage, providers
-public/              the browser application
-legal_sources/       the Nigerian law corpus and ingestion inputs
-scripts/             runners, evaluation, ingestion and setup
-docs/                SYSTEM_REFERENCE.md and design notes
+```bash
+npm run eval:dry       # build the run plan without calling a model
+npm run eval:critical  # the release-critical scenarios
+npm run eval:full      # the full scenario sweep
+npm run eval:report    # score the results into JSON and Markdown
 ```
 
-`firestore.rules` denies all browser access to `legal_provisions`: the corpus is
-served only through the authenticated server pipeline. Rules are deployed with
+These call the live API with real credentials and consume provider quota.
+
+## Deployment
+
+`render.yaml` describes the web service. Firestore rules are deployed
+separately:
 
 ```bash
 firebase deploy --only firestore:rules --project legally-unbullied
 ```
 
-and `.github/workflows/firestore-rules.yml` does the same from Actions, then
-asserts that an anonymous read fails.
+`.github/workflows/firestore-rules.yml` runs the same deploy from Actions and
+then checks that an anonymous read of the corpus is refused. It needs the
+repository secrets `FIREBASE_TOKEN` and `FIREBASE_API_KEY`.
 
-### Deploy
+## Project layout
 
-`render.yaml` describes the deployed service. The Firebase project and its rules
-are configured separately.
+```
+server.js          Express server, routes, startup
+server/            retrieval, citation checks, review stage, model providers
+public/            the browser app and its components
+legal_sources/     the Nigerian law corpus and source notes
+scripts/           ingestion, cleaning, verification, and evaluation
+```
+
+## Licence
+
+No licence has been chosen for this repository yet.

@@ -30,9 +30,16 @@ jobs:
       # The rules file denies browser reads on legal_provisions. Anything other
       # than 403 here means the deployed rules are not the committed ones.
       - name: Verify the corpus is closed to browsers
+        env:
+          # Public web API key. Set it as a repository secret so no project
+          # value is stored in the repository.
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
         run: |
-          key='REDACTED_PUBLIC_WEB_API_KEY'
-          url="https://firestore.googleapis.com/v1/projects/legally-unbullied/databases/(default)/documents/legal_provisions?key=$key&pageSize=1"
+          if [ -z "$FIREBASE_API_KEY" ]; then
+            echo "::error::repository secret FIREBASE_API_KEY is not set"
+            exit 1
+          fi
+          url="https://firestore.googleapis.com/v1/projects/legally-unbullied/databases/(default)/documents/legal_provisions?key=$FIREBASE_API_KEY&pageSize=1"
           code=$(curl -s -o /dev/null -w '%{http_code}' "$url")
           echo "anonymous read of legal_provisions -> $code"
           if [ "$code" != "403" ]; then
