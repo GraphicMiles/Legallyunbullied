@@ -22,3 +22,4 @@ __pycache__/
 agent/
 skills/
 skills-lock.json
+server/eval/results500-live.jsonl
