@@ -1375,7 +1375,8 @@ import {
       const iconHtml = item.svg
         ? `<span class="menu-popover__item-icon">${item.svg}</span>`
         : `<span class="menu-popover__item-icon"><i class="fa-solid ${item.icon}"></i></span>`;
-      btn.innerHTML = `${iconHtml}<span>${escapeHtml(item.label)}</span>`;
+      const trailing = item.trailing ? `<span class="menu-popover__trailing">${escapeHtml(item.trailing)}</span>` : "";
+      btn.innerHTML = `${iconHtml}<span>${escapeHtml(item.label)}</span>${trailing}`;
       btn.disabled = !!item.disabled;
       btn.addEventListener("click", () => {
         closePopover();
@@ -1635,6 +1636,132 @@ import {
     span.appendChild(dot);
     span.appendChild(document.createTextNode(text));
     return span;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Composer menu (the + button) and voice dictation (the mic button)  */
+  /* ------------------------------------------------------------------ */
+  const SpeechRecognitionImpl = (typeof window !== "undefined")
+    ? (window.SpeechRecognition || window.webkitSpeechRecognition)
+    : null;
+  let voiceRecognition = null;
+  let voiceListening = false;
+
+  function insertCommand(command) {
+    const bar = window.promptBar;
+    if (!bar) return;
+    bar.setValue(command + " ");
+    const input = bar.inputElement;
+    if (input) {
+      input.focus();
+      try { input.setSelectionRange(input.value.length, input.value.length); } catch (_) { /* focus-first is fine */ }
+    }
+  }
+
+  function openComposerMenu(menuBtn) {
+    if (!window.promptBar) return;
+    const items = [
+      { label: "Tenancy law", icon: "fa-house-chimney", onClick: () => insertCommand("/tenancy") },
+      { label: "Employment law", icon: "fa-briefcase", onClick: () => insertCommand("/employment") },
+      { label: "Criminal law", icon: "fa-gavel", onClick: () => insertCommand("/criminal") },
+      { label: "Family law", icon: "fa-children", onClick: () => insertCommand("/family") },
+      { label: "Business law", icon: "fa-building", onClick: () => insertCommand("/business") },
+      { label: "Constitutional rights", icon: "fa-scale-balanced", onClick: () => insertCommand("/constitutional") },
+      { divider: true },
+      { label: "Attach evidence", icon: "fa-paperclip", trailing: "Coming soon", disabled: true, onClick: () => {} },
+    ];
+    menuBtn.setAttribute("aria-expanded", "true");
+    showPopover(menuBtn, items, {
+      align: "start",
+      onClose: () => menuBtn.setAttribute("aria-expanded", "false"),
+    });
+  }
+
+  function setVoiceListeningUI(on) {
+    const bar = window.promptBar;
+    const micBtn = bar && bar.micButton;
+    if (!micBtn) return;
+    voiceListening = on;
+    micBtn.classList.toggle("is-listening", on);
+    micBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    micBtn.setAttribute("aria-label", on ? "Stop dictation" : "Dictate your situation");
+    micBtn.innerHTML = on
+      ? '<i class="fa-solid fa-stop" aria-hidden="true"></i>'
+      : '<i class="fa-solid fa-microphone" aria-hidden="true"></i>';
+  }
+
+  function disableVoicePermanently() {
+    const bar = window.promptBar;
+    const micBtn = bar && bar.micButton;
+    voiceListening = false;
+    voiceRecognition = null;
+    if (!micBtn) return;
+    micBtn.disabled = true;
+    micBtn.classList.remove("is-listening");
+    micBtn.setAttribute("aria-pressed", "false");
+    micBtn.setAttribute("aria-label", "Voice input unavailable (microphone permission denied)");
+    micBtn.title = "Voice input unavailable: microphone permission was denied.";
+    micBtn.innerHTML = '<i class="fa-solid fa-microphone-slash" aria-hidden="true"></i>';
+  }
+
+  function startVoiceDictation() {
+    const bar = window.promptBar;
+    if (!bar || !SpeechRecognitionImpl) return;
+    try {
+      const rec = new SpeechRecognitionImpl();
+      voiceRecognition = rec;
+      rec.continuous = false;
+      rec.interimResults = false;
+      rec.maxAlternatives = 1;
+      rec.onstart = () => setVoiceListeningUI(true);
+      rec.onresult = (event) => {
+        const transcript = Array.from(event.results || [])
+          .map((r) => (r && r[0] && r[0].transcript) || "")
+          .join(" ")
+          .trim();
+        if (!transcript) return;
+        const input = bar.inputElement;
+        if (!input) return;
+        const current = input.value;
+        input.value = current.trim() ? current.replace(/\s+$/, "") + " " + transcript : transcript;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.focus();
+      };
+      rec.onerror = (event) => {
+        const code = event && event.error;
+        if (code === "not-allowed" || code === "service-not-allowed") {
+          disableVoicePermanently();
+          return;
+        }
+        setVoiceListeningUI(false);
+        if (code && code !== "no-speech" && code !== "aborted") {
+          console.warn("[voice] dictation error:", code);
+        }
+      };
+      rec.onend = () => setVoiceListeningUI(false);
+      rec.start();
+    } catch (err) {
+      console.warn("[voice] could not start dictation:", err);
+      setVoiceListeningUI(false);
+    }
+  }
+
+  function stopVoiceDictation() {
+    try { if (voiceRecognition) voiceRecognition.stop(); } catch (_) { /* already ended */ }
+    voiceRecognition = null;
+    setVoiceListeningUI(false);
+  }
+
+  function toggleVoiceDictation() {
+    if (voiceListening) { stopVoiceDictation(); return; }
+    startVoiceDictation();
+  }
+
+  // Reveal the mic only when the browser can actually dictate.
+  function initVoiceDictation() {
+    const bar = window.promptBar;
+    if (!bar || !bar.micButton) return;
+    bar.micButton.hidden = !SpeechRecognitionImpl;
   }
 
   /* ------------------------------------------------------------------ */
@@ -4628,6 +4755,7 @@ import {
     renderHistory();
     initAuth();       // auth first — more critical than composer
     initPromptBar();  // prompt bar before updateComposerState so it can delegate
+    initVoiceDictation(); // reveal the mic only when the browser supports dictation
     initDisclaimerPop();
     bindConnectivityRecovery();
     // If we booted while already offline, surface it immediately instead of
@@ -4648,6 +4776,10 @@ import {
     const pop = document.getElementById("disclaimer-pop");
     const closeBtn = document.getElementById("disclaimer-pop-close");
     if (!pop || !closeBtn) return;
+    // The "talk to a lawyer" link points at the same NBA directory used by
+    // the escalation verdict, so the two never drift.
+    const lawyerLink = document.getElementById("disclaimer-lawyer-link");
+    if (lawyerLink) lawyerLink.href = NBA_DIRECTORY_URL;
     let dismissed = false;
     try { dismissed = localStorage.getItem(POP_KEY) === "1"; } catch (_e) { /* private mode */ }
     if (dismissed) return;
@@ -4682,6 +4814,7 @@ import {
         placeholder: "Describe your legal situation…",
         onSubmit: (text) => {
           if (!text || state.isAgentBusy) return;
+          stopVoiceDictation();
           submitQuestion(text);
         },
         onStop: () => {
@@ -4689,6 +4822,8 @@ import {
             stopGeneration();
           }
         },
+        onMenu: (menuBtn) => openComposerMenu(menuBtn),
+        onMic: () => toggleVoiceDictation(),
         sources: [],
         commands: [
           { key: "tenancy", name: "/tenancy", desc: "Ask about tenancy law" },
