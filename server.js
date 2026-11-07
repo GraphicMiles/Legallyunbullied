@@ -254,6 +254,7 @@ app.use("/api/conversations", conversationRoute);
 // Auth inside the route module. One Firestore write per explicit tap;
 // browsers have no direct access (catch-all deny in firestore.rules).
 app.use("/api/feedback", require("./server/feedbackRoute"));
+app.use("/api/telemetry", require("./server/telemetryRoute"));
 
 // ── Email OTP for the auth pages ──────────────────────────────────────────
 // Backs the /auth signup flow: 6-digit codes, pluggable email sender
@@ -275,6 +276,7 @@ const chatAuthOrGuest = async (req, res, next) => {
   try {
     const verdict = await guestQuota.allow(req);
     if (!verdict.allowed) {
+      try { require("./server/telemetry").increment("guest_quota_exhausted"); } catch (_) { /* telemetry must never break the path */ }
       return res.status(429).json({
         error: "guest_quota_exhausted",
         limit: verdict.limit,
