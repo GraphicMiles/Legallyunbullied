@@ -124,10 +124,38 @@ import {
 
   function saveState() {
     const storageKey = getStorageKey();
-    localStorage.setItem(storageKey, JSON.stringify({
+    // Unbounded localStorage was crashing the pipeline: QuotaExceededError
+    // propagated out of finalizeAnswer and the answer card never landed.
+    // Persist best-effort; on quota failure, evict the OLDEST non-active
+    // conversations (preserving the active thread) and retry. If the active
+    // thread alone is too big, prune its oldest messages. Never throw.
+    const serialize = () => JSON.stringify({
       conversations: state.conversations,
       activeId: state.activeId,
-    }));
+    });
+    try {
+      localStorage.setItem(storageKey, serialize());
+    } catch (quotaErr) {
+      let saved = false;
+      try {
+        const byAge = [...state.conversations].sort((a, b) => (a.updatedAt || 0) - (b.updatedAt || 0));
+        for (const victim of byAge) {
+          if (saved) break;
+          if (victim.id === state.activeId) continue;
+          const idx = state.conversations.indexOf(victim);
+          if (idx > -1) state.conversations.splice(idx, 1);
+          try { localStorage.setItem(storageKey, serialize()); saved = true; } catch (_) { /* evict further */ }
+        }
+        if (!saved) {
+          const active = getActiveConversation();
+          if (active && Array.isArray(active.messages) && active.messages.length > 4) {
+            active.messages = active.messages.slice(-Math.floor(active.messages.length / 2));
+            try { localStorage.setItem(storageKey, serialize()); saved = true; } catch (_) { /* give up gracefully */ }
+          }
+        }
+      } catch (_) { /* fall through to in-memory keep-alive */ }
+      if (!saved) console.warn("[saveState] localStorage full/unavailable — state kept in memory only:", quotaErr && quotaErr.message);
+    }
     // Sync to server if authenticated (non-blocking)
     // Skip sync during:
     // - Server load (prevents sync-during-load duplication loop)
@@ -1009,11 +1037,42 @@ import {
     };
   }
 
+  // ── Device fingerprint (guest quota) ──────────────────────────────────
+  // Best-effort, stable-ish signal; not personally identifying. Hashed
+  // together with IP + UA server-side to key the 3-free-questions / UTC-day
+  // bucket for signed-out visitors. Recomputed once per page load.
+  let _fpCache = null;
+  function getDeviceFingerprint() {
+    if (_fpCache) return _fpCache;
+    try {
+      const nav = navigator || {}, s = window.screen || {};
+      const parts = [
+        nav.userAgent || "",
+        nav.platform || "",
+        (nav.languages && nav.languages.join(",")) || nav.language || "",
+        [s.width, s.height, s.colorDepth].join("x"),
+        (window.devicePixelRatio || 1),
+        (Intl.DateTimeFormat().resolvedOptions() || {}).timeZone || "",
+        nav.hardwareConcurrency || "",
+        nav.deviceMemory || "",
+        (window.MotionEvent ? "motion" : "") + (window.TouchEvent ? "touch" : ""),
+      ].join("|");
+      // FNV-1a — small deterministic hash; enough for collision resistance
+      // across a few buckets per browser.
+      let h = 0x811c9dc5;
+      for (let i = 0; i < parts.length; i++) { h ^= parts.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+      _fpCache = "fp" + h.toString(16).padStart(8, "0");
+    } catch (_) {
+      _fpCache = "fp-unknown";
+    }
+    return _fpCache;
+  }
+
   // ── Auth header helper ────────────────────────────────────────────────
   // Returns headers object with Firebase ID token for authenticated API calls.
   // Falls back to plain JSON header if Firebase isn't available or user not signed in.
   async function getAuthHeaders() {
-    const headers = { "Content-Type": "application/json" };
+    const headers = { "Content-Type": "application/json", "x-device-fingerprint": getDeviceFingerprint() };
     try {
       if (window.firebaseAuth && window.firebaseAuth.currentUser) {
         const token = await getIdToken(window.firebaseAuth.currentUser);
@@ -1084,6 +1143,9 @@ import {
           throw new Error("Please sign in to continue. Your session may have expired.");
         }
         if (res.status === 429) {
+          if (data && data.error === "guest_quota_exhausted") {
+            throw new Error("FREE_QSTACK You've used your 3 free questions today. Sign in to keep going.");
+          }
           throw new Error("You're sending messages too quickly. Please wait a moment and try again.");
         }
         throw new Error((data && data.message) || `Request failed with status ${res.status}.`);
@@ -2647,14 +2709,10 @@ import {
   /* ------------------------------------------------------------------ */
   function submitQuestion(text) {
     if (state.isAgentBusy) return;
-    if (isSignedOut()) {
-      // Chat requires auth — never even create the message. Stash the
-      // question so it survives the sign-in redirect and is restored into
-      // the composer afterwards.
-      stashPendingQuestion(text);
-      goToAuthPage();
-      return;
-    }
+    // Signed-out visitors are guests: the server allows 3 questions per UTC
+    // day (IP + device fingerprint); past that they see the quota notice
+    // with a sign-in CTA. No more forced redirect here.
+    
     cancelBusyRetry(); // a manual send supersedes any pending auto-retry
     _runningPolls = 0; // new pipeline → reset the bounded running-job poll budget
     ensureActiveConversation();
@@ -3751,21 +3809,35 @@ import {
   function buildErrorEl(message, opts = {}) {
     const wrap = document.createElement("div");
     wrap.className = "notice-card";
+    const isGuestQuota = /FREE_QSTACK|free questions today/i.test(message || "");
     const isAuthError = /sign in|session may have expired|401/i.test(message || "");
-    const title = isAuthError ? "You're signed out" : "Something went wrong";
+    const safeMessage = (message || "").replace(/FREE_QSTACK\s*/, "");
+    const title = isGuestQuota ? "Free questions used up" : (isAuthError ? "You're signed out" : "Something went wrong");
 
     wrap.innerHTML = `
       <div class="notice-card__head">
         <div class="notice-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg></div>
         <span class="notice-card__title">${escapeHtml(title)}</span>
       </div>
-      <p class="notice-card__text">${escapeHtml(message)}</p>
+      <p class="notice-card__text">${escapeHtml(safeMessage)}</p>
     `;
 
     const actions = document.createElement("div");
     actions.className = "notice-card__actions";
 
-    if (isAuthError && opts.retryText) {
+    if (isGuestQuota && opts.retryText) {
+      // The guest used their 3 free questions for today — the CTA that
+      // actually unblocks them is sign-in, not a silent retry.
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "link-btn";
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg> Sign in to keep going';
+      btn.addEventListener("click", () => {
+        stashPendingQuestion(opts.retryText);
+        goToAuthPage();
+      });
+      actions.appendChild(btn);
+    } else if (isAuthError && opts.retryText) {
       // Sign in → the question survives the redirect and lands back in the composer.
       const btn = document.createElement("button");
       btn.type = "button";
@@ -3782,8 +3854,7 @@ import {
       btn.className = "link-btn";
       btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Try again';
       btn.addEventListener("click", () => {
-        if (isSignedOut()) { stashPendingQuestion(opts.retryText); goToAuthPage(); return; }
-        submitQuestion(opts.retryText);
+        submitQuestion(opts.retryText); // guest quota enforced server-side; 429 renders its own card
       });
       actions.appendChild(btn);
     }
@@ -4004,15 +4075,7 @@ import {
   function updateComposerState() {
     // --- New BeUIPromptBar path (composer-form was replaced by prompt-bar-container) ---
     if (window.promptBar) {
-      if (isSignedOut() && !state.isAgentBusy) {
-        // Locked, not broken: the composer explains the gate and a single
-        // click/tap on it routes to sign-in (see container listener in
-        // initPromptBar).
-        window.promptBar.setSubmitting(false);
-        window.promptBar.setDisabled(true);
-        window.promptBar.inputElement.placeholder = "Sign in to ask a question\u2026";
-        window.promptBar.element.classList.add("is-gated");
-      } else if (state.isAgentBusy) {
+      if (state.isAgentBusy) {
         window.promptBar.setDisabled(false);
         window.promptBar.setSubmitting(true);
         window.promptBar.element.classList.remove("is-gated");
@@ -4028,15 +4091,7 @@ import {
     if (el.composerInput && el.sendBtn) {
       const hasText = el.composerInput.value.trim().length > 0;
 
-      if (isSignedOut() && !state.isAgentBusy) {
-        el.sendBtn.disabled = true;
-        el.composerInput.disabled = true;
-        el.composerInput.placeholder = "Sign in to ask a question\u2026";
-        el.newChatBtn.disabled = state.isAgentBusy;
-        el.newChatMobile.disabled = state.isAgentBusy;
-        updateClearChatButtonState();
-        return;
-      }
+      // Guests may type freely; quota exhaustion surfaces via the API.
 
       if (state.isAgentBusy) {
         el.sendBtn.disabled = false;
@@ -4882,9 +4937,7 @@ import {
 
     // Gated-state affordance: while signed out the input is disabled, so a
     // tap anywhere on the composer is the sign-in shortcut.
-    container.addEventListener("click", () => {
-      if (isSignedOut() && !state.isAgentBusy) goToAuthPage();
-    });
+    // Guests use the composer like anyone else; quota handled server-side.
     
     if (!window.BeUIPromptBar) {
       console.warn('[init] BeUIPromptBar not available');

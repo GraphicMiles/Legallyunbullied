@@ -18,6 +18,7 @@ const { rateLimit, ipKeyGenerator } = require("express-rate-limit");
 const chatRoute = require("./server/chatRoute");
 const conversationRoute = require("./server/conversationRoute");
 const { requireAuth, requireAdmin } = require("./server/authMiddleware");
+const guestQuota = require("./server/guestQuota");
 const { sweepAndStart } = require("./server/jobRunner");
 const { probeProviders, getProviderHealth } = require("./server/providerHealth");
 const debugLog = require("./server/debugLog");
@@ -228,7 +229,29 @@ app.use("/api/otp", require("./server/otpRoute"));
 // ── Chat API (auth required + stricter rate limit) ────────────────────────
 // Each /api/chat call invokes LLM providers (Groq/Gemini/etc.) which cost
 // tokens and have their own rate limits. Require auth + apply stricter limit.
-app.use("/api/chat", chatLimiter, requireAuth);
+// Chat access: signed-in users are verified and unlimited; signed-out
+// visitors get 3 questions per UTC day, keyed by IP + UA + the client's
+// device fingerprint. Bucket is consumed ONLY for POST /api/chat (the
+// generation endpoint); control-plane subroutes (/api/chat/acknowledge …)
+// are free, and cache hits refund the credit inside the pipeline.
+const chatAuthOrGuest = (req, res, next) => {
+  const m = String(req.headers.authorization || "").match(/^Bearer\s+(.+)$/i);
+  if (m) return requireAuth(req, res, next);
+  if (req.method !== "POST" || (req.path && req.path !== "/")) return next(); // free control plane
+  const verdict = guestQuota.allow(req);
+  if (!verdict.allowed) {
+    return res.status(429).json({
+      error: "guest_quota_exhausted",
+      limit: verdict.limit,
+      message: "You've used your 3 free questions today. Sign in to keep going.",
+    });
+  }
+  req.guest = verdict;
+  req.guestRefund = () => guestQuota.refund(verdict.key);
+  res.setHeader("X-Guest-Remaining", String(verdict.remaining));
+  return next();
+};
+app.use("/api/chat", chatLimiter, chatAuthOrGuest);
 app.use("/api/generate-title", chatLimiter, requireAuth);
 app.use(chatRoute);
 
