@@ -16,11 +16,11 @@
  *   GET  /api/feedback/export   — owner fine-tuning export (Bearer FEEDBACK_ADMIN_TOKEN)
  */
 
-const crypto = require("crypto");
 const express = require("express");
 const router = express.Router();
 const { getFirestore } = require("./firebaseAdmin");
 const { requireAuth } = require("./authMiddleware");
+const { checkAdminAuth } = require("./adminToken");
 
 const ID_RE = /^[A-Za-z0-9._~-]{1,128}$/;
 const MAX_QUESTION = 4000;
@@ -32,13 +32,6 @@ function trimTo(value, max) {
   const trimmed = value.trim();
   if (!trimmed) return null;
   return trimmed.slice(0, max);
-}
-
-function safeEqual(a, b) {
-  const ba = Buffer.from(String(a), "utf8");
-  const bb = Buffer.from(String(b), "utf8");
-  if (ba.length !== bb.length) return false;
-  return crypto.timingSafeEqual(ba, bb);
 }
 
 /**
@@ -53,14 +46,7 @@ function safeEqual(a, b) {
  */
 router.get("/export", async (req, res) => {
   try {
-    const adminToken = process.env.FEEDBACK_ADMIN_TOKEN;
-    if (!adminToken) {
-      return res.status(503).json({ error: "export_not_configured", message: "Set FEEDBACK_ADMIN_TOKEN to enable the export." });
-    }
-    const match = String(req.headers.authorization || "").match(/^Bearer\s+(.+)$/i);
-    if (!match || !safeEqual(match[1].trim(), adminToken)) {
-      return res.status(401).json({ error: "unauthorized", message: "Invalid export token." });
-    }
+    if (!checkAdminAuth(req, res)) return;
 
     let limit = Number.parseInt(req.query.limit, 10);
     if (Number.isNaN(limit) || limit < 1) limit = 200;

@@ -1170,6 +1170,11 @@ function answerProceduralWithFallback(question, classification, history) {
 // user was away is waiting for them on reopen. No-op when the client didn't
 // send conversationId/messageId (e.g. older clients).
 async function serverPersistMessage(req, fields) {
+  // Telemetry: count every terminal outcome (before the conversationId early-return).
+  try {
+    if (fields && fields.status) require("./telemetry").countTerminalStatus(fields.status);
+  } catch (_) { /* telemetry must never break the request path */ }
+
   const conversationId = (req.body && typeof req.body.conversationId === "string" && req.body.conversationId) || null;
   const messageId = (req.body && typeof req.body.messageId === "string" && req.body.messageId) || null;
   if (!conversationId || !messageId) return Promise.resolve();
@@ -2377,6 +2382,9 @@ router.post("/api/chat/acknowledge", async (req, res) => {
     // Ownership mismatches deliberately look identical to missing tokens.
     return res.status(404).json({ error: "not_found", message: "Acknowledgment token expired or not found. Please re-ask your question." });
   }
+
+  // Telemetry: count only real, owned acknowledge/decline decisions (never bad tokens).
+  try { require("./telemetry").increment(acknowledged === false ? "safety_ack_declined" : "safety_ack"); } catch (_) { /* telemetry must never break the path */ }
 
   // User rejected — don't return the response
   if (acknowledged === false) {
