@@ -88,7 +88,6 @@ function load() {
     ["federal_acts/acja-2015-cleaned.txt", "Administration of Criminal Justice Act 2015", "criminal_rights", "Federal"],
     ["federal_acts/police-act-2020-official-gazette.txt", "Nigeria Police Act 2020", "criminal_rights", "Federal", "https://sabilaw.org/wp-content/uploads/2020/11/Police-Act-2020-1.pdf"],
     ["federal_acts/cybercrimes-act-2015-cleaned.txt", "Cybercrimes (Prohibition, Prevention, etc.) Act 2015", "criminal_offences", "Federal"],
-    ["federal_acts_bulk/criminal-code-act.txt", "Criminal Code Act", "criminal_offences", "Federal"],
     ["federal_acts_bulk/advance-fee-fraud-and-other-fraud-related-offences-act.txt", "Advance Fee Fraud and Other Fraud Related Offences Act", "criminal_offences", "Federal"],
     ["federal_acts/labour-act-cap-l1-lfn-2004-cleaned.txt", "Labour Act", "employment", "Federal"],
     ["federal_acts/fccpa-2018-cleaned.txt", "Federal Competition and Consumer Protection Act 2018", "consumer_rights", "Federal"],
