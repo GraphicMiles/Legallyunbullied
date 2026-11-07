@@ -343,7 +343,7 @@
         }
       })
       .catch(function (err) {
-        addLog("warn", "server", "Server log pull failed: " + (err && err.message ? err.message : err), "needs an admin account; see docs/SYSTEM_REFERENCE.md");
+        addLog("warn", "server", "Server log pull failed: " + (err && err.message ? err.message : err), "needs an admin account");
       })
       .finally(function () {
         serverPullBusy = false;
