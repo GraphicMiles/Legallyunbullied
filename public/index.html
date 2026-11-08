@@ -822,7 +822,7 @@
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    padding: 0 var(--space-5);
+    padding: 0 var(--space-5) 0 4px;
     /* Floating material (apple-design §12): content scrolls under a frosted
        layer, edges fade instead of a hard 1px divider. */
     background: var(--color-translucent-topbar, var(--color-topbar));
@@ -882,14 +882,6 @@
     min-width: 0;
   }
   .topbar__brand-mark { width: 26px; height: 26px; color: var(--color-accent); flex: none; }
-  .topbar__brand-name {
-    font-size: 17px;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    white-space: nowrap;
-    color: var(--color-text);
-  }
-  .topbar__brand-name em { font-style: normal; color: var(--color-accent); }
   .main.is-hero .topbar__brand { display: inline-flex; }
   .main.is-hero .topbar__title { display: none; }
   /* Where the sidebar is on screen it already carries the brand, so the bar
@@ -983,11 +975,8 @@
      start a fifth of the width further right. The block itself moves; nothing
      inside it is padded or inset. */
   .greeting {
-    width: 80%;
-    margin-left: 20%;
-    /* The block shrank, so the type is solved to hold "What's the legal" on one
-       line inside it. */
-    font-size: clamp(26px, 7.2vw, 34px);
+    text-align: center;
+    font-size: clamp(28px, 8.4vw, 34px);
     line-height: 1.1;
     letter-spacing: -0.02em;
     font-weight: 700;
@@ -1946,7 +1935,7 @@
     .new-chat-mobile { display: inline-flex; }
 
     .topbar__title { max-width: 46vw; }
-    .topbar { gap: var(--space-2); padding: 0 var(--space-4); }
+    .topbar { gap: var(--space-2); padding: 0 var(--space-4) 0 4px; }
     .msg__body, .msg--agent .msg__body { max-width: 100%; }
     .chat__inner { padding: var(--space-2) var(--space-3) var(--space-4); gap: var(--space-4); }
     .composer { padding: var(--space-2) var(--space-3) max(var(--space-5), calc(env(safe-area-inset-bottom, 0px) + var(--space-2))); }
@@ -2195,7 +2184,6 @@
         <!-- Home shows who this is. A conversation shows what it is about. -->
         <span class="topbar__brand" id="topbar-brand">
           <svg class="topbar__brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M11 15.5L14.2 18.7L21 11.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span class="topbar__brand-name">Legally <em>Unbullied</em></span>
         </span>
         <span class="topbar__title" id="conversation-title">New question</span>
       </div>
