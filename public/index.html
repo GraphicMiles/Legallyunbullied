@@ -519,39 +519,44 @@
 
   .history__kebab svg { width: 18px; height: 18px; }
 
-  /* small popover menu (history kebab) */
+  /* Row action menu. Sized to its own content (a single action does not get a
+     200px slab), one radius, one fill, no stroke, no divider rule, and no
+     coloured fill on hover: the row is a target, so the feedback is the label
+     and icon brightening, nothing that repaints a box. */
   .menu-popover {
     position: fixed;
-    min-width: 200px;
+    width: max-content;
+    max-width: min(240px, calc(100vw - 24px));
     background: var(--color-chip);
-    border-radius: var(--radius-lg);
-    padding: 6px;
+    border-radius: 14px;
+    padding: 5px;
     display: flex;
     flex-direction: column;
     gap: 2px;
     z-index: 80;
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.35);
-    transform-origin: top center;
-    /* Rolling-down curtain: the panel unrolls from its top edge. */
+    box-shadow: 0 12px 28px -10px rgba(0, 0, 0, 0.75), 0 2px 6px rgba(0, 0, 0, 0.28);
+    transform-origin: top right;
     animation: menuCurtain var(--dur-med) var(--ease-out) both;
   }
   @keyframes menuCurtain {
-    from { opacity: 0; clip-path: inset(0 0 100% 0); transform: translateY(-6px); }
+    from { opacity: 0; clip-path: inset(0 0 100% 0); transform: translateY(-4px); }
     to   { opacity: 1; clip-path: inset(0 0 0 0);    transform: translateY(0); }
   }
   .menu-popover__item {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-2);
     width: 100%;
     text-align: left;
-    min-height: 48px;
-    padding: 0 var(--space-3);
-    border-radius: 0.5rem;
-    font-size: var(--fs-sm);
+    min-height: 44px;
+    padding: 0 12px 0 10px;
+    border-radius: 10px;
+    font-size: 14px;
     font-weight: 500;
+    line-height: 1.2;
+    white-space: nowrap;
     color: var(--color-text);
-    transition: background var(--dur-fast) var(--ease);
+    transition: color var(--dur-fast) var(--ease);
   }
   .menu-popover__item-icon {
     flex-shrink: 0;
@@ -560,28 +565,23 @@
     align-items: center;
     justify-content: center;
     color: var(--color-text-faint);
+    transition: color var(--dur-fast) var(--ease);
   }
-
-  .menu-popover__item-icon svg { width: 14px; height: 14px; }
+  .menu-popover__item-icon svg { width: 15px; height: 15px; }
+  /* Hover brightens the label and its icon. No background is painted, here or
+     anywhere else in the menu. */
+  .menu-popover__item:hover { background: transparent; color: #ffffff; }
+  .menu-popover__item:hover .menu-popover__item-icon { color: var(--color-text); }
+  .menu-popover__item:active { opacity: 0.72; }
   .menu-popover__item--danger { color: #fa8d90; }
-  .menu-popover__item:disabled { opacity: 0.55; cursor: not-allowed; }
-  .menu-popover__trailing {
-    margin-left: auto;
-    flex-shrink: 0;
-    font-size: var(--fs-xs);
-    font-weight: 600;
-    color: var(--color-text-faint);
-    background: var(--color-surface-alt);
-    border-radius: var(--radius-full);
-    padding: 2px 8px;
-  }
-  .menu-popover__divider {
-    height: 1px;
-    margin: var(--space-1) calc(-1 * var(--space-2));
-    background: var(--color-border-soft);
-  }
-  .menu-popover__item--danger:hover { background: rgba(229, 72, 77, 0.12); }
   .menu-popover__item--danger .menu-popover__item-icon { color: currentColor; }
+  .menu-popover__item--danger:hover { background: transparent; color: #ffb0b2; }
+  .menu-popover__item--danger:hover .menu-popover__item-icon { color: currentColor; }
+  .menu-popover__item:disabled { opacity: 0.45; cursor: default; }
+  .menu-popover__item:disabled:hover { color: var(--color-text); }
+  .menu-popover__item:disabled:hover .menu-popover__item-icon { color: var(--color-text-faint); }
+  /* Group break in the account menu: space, never a hairline. */
+  .menu-popover__divider { height: 5px; margin: 0; background: transparent; }
   .history__empty {
     color: var(--color-text-faint);
     font-size: var(--fs-sm);
@@ -608,40 +608,47 @@
 
   .sidebar__footer {
     flex-shrink: 0;
-    padding: var(--space-6) 16px max(16px, calc(env(safe-area-inset-bottom, 0px) + 8px));
+    padding: var(--space-5) 16px max(16px, calc(env(safe-area-inset-bottom, 0px) + 8px));
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
+    gap: 10px;
   }
 
 
-  /* auth section (sidebar): sign-in is a card, not a row: a title, the reason, and the way in. */
+  /* The two footer cards are siblings: one anatomy, one width, one inset, one
+     radius. [icon] [title over sub] [trailing chevron], 12px 14px inside,
+     56px tall, surface fill. Hover brightens the trailing chevron and nothing
+     else, so no card ever repaints its fill on hover. */
   .auth-signin-btn {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    display: flex;
     align-items: center;
-    gap: var(--space-1) var(--space-3);
+    gap: 10px;
     width: 100%;
-    padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+    min-height: 56px;
+    padding: 12px 14px;
     border-radius: var(--radius-lg);
     background: var(--color-surface);
     color: var(--color-text);
     text-align: left;
-    transition: background var(--dur-fast) var(--ease);
+    transition: none;
   }
-  .auth-signin-btn__label { grid-column: 1; font-size: 15px; font-weight: 500; line-height: 1.25; }
+  .auth-signin-btn__icon { display: flex; flex: none; color: var(--color-text-muted); }
+  .auth-signin-btn__icon svg { width: 18px; height: 18px; }
+  .auth-signin-btn__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+  .auth-signin-btn__label { font-size: 15px; font-weight: 500; line-height: 1.25; }
   .auth-signin-hint {
-    grid-column: 1;
     margin: 0;
     padding: 0;
     font-size: var(--fs-xs);
     line-height: 1.3;
     color: var(--color-text-muted);
   }
-  .auth-signin-btn__arrow { grid-column: 2; grid-row: 1 / span 2; color: var(--color-text-muted); }
-  .auth-signin-btn:hover { background: var(--color-chip); }
+  .auth-signin-btn__arrow { flex: none; color: var(--color-text-faint); transition: color var(--dur-fast) var(--ease); }
+  .auth-signin-btn:hover { background: var(--color-surface); }
+  .auth-signin-btn:hover .auth-signin-btn__arrow { color: var(--color-text); }
   .auth-signin-btn:active { transform: translateY(1px); }
-  .auth-signin-btn[disabled] { opacity: 0.6; cursor: not-allowed; }
+  .auth-signin-btn[disabled] { opacity: 0.55; cursor: default; }
+  .auth-signin-btn[disabled]:hover .auth-signin-btn__arrow { color: var(--color-text-faint); }
 
 
   .auth-profile {
@@ -759,22 +766,24 @@
   .sidebar__lawyer {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
-    min-height: 48px;
-    padding: var(--space-2);
-    margin: 0 calc(-1 * var(--space-2));
-    border-radius: 14px;
+    gap: 10px;
+    min-height: 56px;
+    padding: 12px 14px;
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
     text-decoration: none;
     color: var(--color-text);
-    transition: background var(--dur-fast) var(--ease);
+    transition: none;
   }
   .sidebar__lawyer:hover { background: var(--color-surface); }
+  .sidebar__lawyer:hover .sidebar__lawyer-chevron { color: var(--color-text); }
   .sidebar__lawyer:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
   .sidebar__lawyer-icon { display: flex; color: var(--color-accent); flex: none; }
-  .sidebar__lawyer-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+  .sidebar__lawyer-icon svg { width: 18px; height: 18px; }
+  .sidebar__lawyer-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
   .sidebar__lawyer-title { font-size: 15px; font-weight: 500; line-height: 1.25; }
   .sidebar__lawyer-sub { font-size: var(--fs-xs); color: var(--color-text-muted); line-height: 1.3; }
-  .sidebar__lawyer-chevron { color: var(--color-text-muted); flex: none; }
+  .sidebar__lawyer-chevron { color: var(--color-text-faint); flex: none; transition: color var(--dur-fast) var(--ease); }
   .sidebar__disclaimer {
     margin: 0;
     font-size: 13px;

@@ -1445,8 +1445,7 @@ import {
       const iconHtml = item.svg
         ? `<span class="menu-popover__item-icon">${item.svg}</span>`
         : `<span class="menu-popover__item-icon"><svg class="icon" aria-hidden="true"><use href="#i-${item.icon}"/></svg></span>`;
-      const trailing = item.trailing ? `<span class="menu-popover__trailing">${escapeHtml(item.trailing)}</span>` : "";
-      btn.innerHTML = `${iconHtml}<span>${escapeHtml(item.label)}</span>${trailing}`;
+      btn.innerHTML = `${iconHtml}<span>${escapeHtml(item.label)}</span>`;
       btn.disabled = !!item.disabled;
       btn.addEventListener("click", () => {
         closePopover();
@@ -1459,11 +1458,14 @@ import {
 
     const rect = anchorEl.getBoundingClientRect();
     const menuRect = menu.getBoundingClientRect();
-    let top = rect.bottom + 6;
+    const GAP = 6;
+    const EDGE = 8;
+    let top = rect.bottom + GAP;
     let left = align === "start" ? rect.left : rect.right - menuRect.width;
-    left = Math.max(8, Math.min(left, window.innerWidth - menuRect.width - 8));
-    if (top + menuRect.height > window.innerHeight - 8) {
-      top = rect.top - menuRect.height - 6;
+    left = Math.max(EDGE, Math.min(left, window.innerWidth - menuRect.width - EDGE));
+    if (top + menuRect.height > window.innerHeight - EDGE) {
+      const above = rect.top - menuRect.height - GAP;
+      top = above >= EDGE ? above : Math.max(EDGE, window.innerHeight - menuRect.height - EDGE);
     }
     menu.style.top = top + "px";
     menu.style.left = left + "px";
@@ -4330,12 +4332,13 @@ import {
 
     if (!window.firebaseAuth) {
       container.innerHTML = `
-        <div class="auth-guest">
-          <button type="button" class="auth-signin-btn" disabled title="Sign-in isn't configured yet">
+        <button type="button" class="auth-signin-btn" disabled title="Sign-in isn't configured yet">
+          <span class="auth-signin-btn__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-log-in"/></svg></span>
+          <span class="auth-signin-btn__text">
             <span class="auth-signin-btn__label">Sign in to save your chats</span>
-            <span class="auth-signin-hint">Pick up where you left off on any device.</span>
-          </button>
-        </div>
+            <span class="auth-signin-hint">Pick up on any device.</span>
+          </span>
+        </button>
       `;
       el.topbarAvatar.style.display = "none";
       return;
@@ -4343,13 +4346,14 @@ import {
 
     if (!user) {
       container.innerHTML = `
-        <div class="auth-guest">
-          <button type="button" class="auth-signin-btn" id="auth-open-btn">
+        <button type="button" class="auth-signin-btn" id="auth-open-btn">
+          <span class="auth-signin-btn__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-log-in"/></svg></span>
+          <span class="auth-signin-btn__text">
             <span class="auth-signin-btn__label">Sign in to save your chats</span>
-            <span class="auth-signin-hint">Pick up where you left off on any device.</span>
-            <svg class="icon auth-signin-btn__arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg>
-          </button>
-        </div>
+            <span class="auth-signin-hint">Pick up on any device.</span>
+          </span>
+          <svg class="icon auth-signin-btn__arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+        </button>
       `;
       container.querySelector("#auth-open-btn").addEventListener("click", goToAuthPage);
       el.topbarAvatar.style.display = "none";
