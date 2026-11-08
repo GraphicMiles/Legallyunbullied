@@ -979,8 +979,15 @@
      when there is not, so short screens scroll instead of clipping. */
   .greeting { margin-top: auto; }
   .empty-state::-webkit-scrollbar { width: 0; height: 0; }
+  /* The greeting sits in the right 80% of the column, so both of its lines
+     start a fifth of the width further right. The block itself moves; nothing
+     inside it is padded or inset. */
   .greeting {
-    font-size: clamp(28px, 8.4vw, 34px);
+    width: 80%;
+    margin-left: 20%;
+    /* The block shrank, so the type is solved to hold "What's the legal" on one
+       line inside it. */
+    font-size: clamp(26px, 7.2vw, 34px);
     line-height: 1.1;
     letter-spacing: -0.02em;
     font-weight: 700;
@@ -995,22 +1002,23 @@
     font-weight: 500;
     color: var(--color-text-muted);
   }
-  /* Four starting points, as four rows. They used to be 140px tiles holding a
-     six-word label and a 32px tile, which is a box four times the size of its
-     content. A row is the honest shape for a one-line prompt. */
   .quick-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
   }
+  /* A card is a prompt with a glyph in its bottom corner. min-height, never a
+     fixed height: at 320 a long prompt wraps further and must not clip. */
   .question {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    min-height: 52px;
-    padding: 10px 12px;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-3);
+    min-height: 140px;
+    padding: var(--space-4);
     border: 0;
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-xl);
     background: var(--color-surface);
     color: var(--color-text);
     text-align: left;
@@ -1022,30 +1030,44 @@
     cursor: pointer;
     transition: background var(--dur-fast) var(--ease);
   }
-  /* Hover brightens the glyph; the row does not repaint. */
-  .question:hover .question__icon { color: var(--color-accent-hover); }
-  .question__icon { display: flex; flex: none; color: var(--color-accent); }
-  .question__icon .icon { width: 17px; height: 17px; }
-  .question__text { flex: 1; min-width: 0; font-size: var(--fs-base); line-height: 1.4; }
+  .question:hover { background: var(--color-elevated); }
+  .question__text { display: block; }
+  .question__disc {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    flex: none;
+    border-radius: var(--radius-lg);
+    background: var(--color-elevated);
+    color: var(--color-accent);
+  }
+  .question__disc .icon { width: 22px; height: 22px; }
   /* Short viewports: the hero gives up height before it gives up content, so
      nothing is left clipped under the composer. */
   @media (max-height: 720px) {
     .empty-state { gap: var(--space-3); padding-top: 0; }
     .composer { padding-top: var(--space-2); }
     .greeting { font-size: 26px; }
-    .question { min-height: 48px; padding: 9px 12px; font-size: 14px; }
+    .question { min-height: 96px; padding: var(--space-3) var(--space-4); font-size: 14px; gap: var(--space-2); }
+    .question__disc { width: 34px; height: 34px; }
+    .question__disc .icon { width: 18px; height: 18px; }
     .quick-area__label { margin-bottom: var(--space-1); }
   }
   @media (max-height: 600px) {
     .empty-state { gap: var(--space-3); }
     .greeting { font-size: 23px; }
+    .question { min-height: 88px; }
+
   }
   @media (max-width: 359px) {
-    .question { padding: 9px 10px; font-size: 14px; }
+    .question { min-height: 128px; padding: var(--space-3); font-size: 14px; }
+    .question__disc { width: 36px; height: 36px; }
   }
   @media (min-width: 901px) {
     .empty-state { justify-content: center; gap: var(--space-7); }
-    .quick-area { width: min(100%, 560px); }
+    .quick-area { width: min(100%, 640px); }
+    .question { min-height: 150px; }
   }
 
   /* --- chat status (loading / not found) --- */
@@ -2202,10 +2224,10 @@
           <div class="quick-area">
             <p class="quick-area__label" id="quick-area-label">Start with a common situation</p>
             <div class="quick-list" role="group" aria-labelledby="quick-area-label">
-              <button type="button" class="question" data-prompt="Police stopped me. What are my rights?"><span class="question__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg></span><span class="question__text">Police stopped me. What are my rights?</span></button>
-              <button type="button" class="question" data-prompt="Landlord wants to evict me without notice. What can I do?"><span class="question__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-house"/></svg></span><span class="question__text">Evicted without notice?</span></button>
-              <button type="button" class="question" data-prompt="My boss won't pay what I'm owed. What can I do?"><span class="question__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-briefcase"/></svg></span><span class="question__text">My boss won't pay what I'm owed</span></button>
-              <button type="button" class="question" data-prompt="I lent someone money and they refuse to pay it back. What can I do?"><span class="question__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-banknote"/></svg></span><span class="question__text">Someone owes me money and won't pay</span></button>
+              <button type="button" class="question" data-prompt="Police stopped me. What are my rights?"><span class="question__text">Police stopped me. What are my rights?</span><span class="question__disc" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg></span></button>
+              <button type="button" class="question" data-prompt="Landlord wants to evict me without notice. What can I do?"><span class="question__text">Evicted without notice?</span><span class="question__disc" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-house"/></svg></span></button>
+              <button type="button" class="question" data-prompt="My boss won't pay what I'm owed. What can I do?"><span class="question__text">My boss won't pay what I'm owed</span><span class="question__disc" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-briefcase"/></svg></span></button>
+              <button type="button" class="question" data-prompt="I lent someone money and they refuse to pay it back. What can I do?"><span class="question__text">Someone owes me money and won't pay</span><span class="question__disc" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-banknote"/></svg></span></button>
             </div>
           </div>
         </div>
