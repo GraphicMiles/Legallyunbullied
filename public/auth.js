@@ -61,8 +61,18 @@ import {
   }
 
   function showError(el, msg) {
-    el.textContent = msg;
-    el.hidden = !msg;
+    // Message line, not an alarm block: the icon carries severity, the text
+    // stays readable, and there is no coloured wash behind it.
+    if (!msg) {
+      el.textContent = "";
+      el.hidden = true;
+      return;
+    }
+    el.innerHTML =
+      '<svg class="icon" aria-hidden="true"><use href="#i-circle-alert"/></svg>' +
+      "<span></span>";
+    el.querySelector("span").textContent = msg;
+    el.hidden = false;
   }
 
   function setLoading(btn, loading, label) {

@@ -42,19 +42,9 @@ class BeUIPromptBar {
     const controls = document.createElement('div');
     controls.className = 'beui-prompt-bar__controls';
 
-    const menuBtn = document.createElement('button');
-    menuBtn.type = 'button';
-    menuBtn.className = 'beui-prompt-bar__tool beui-prompt-bar__tool--menu';
-    menuBtn.setAttribute('aria-label', 'Attach evidence');
-    menuBtn.setAttribute('aria-haspopup', 'menu');
-    menuBtn.setAttribute('aria-expanded', 'false');
-    menuBtn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>';
-    menuBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (this.options.onMenu) this.options.onMenu(menuBtn);
-    });
-
+    // No menu button. Its only item was a disabled "attach evidence" promise,
+    // so it opened a dead menu. Evidence attachments get a real control when
+    // the picker ships.
     const spacer = document.createElement('div');
     spacer.className = 'beui-prompt-bar__spacer';
 
@@ -80,7 +70,6 @@ class BeUIPromptBar {
     submitBtn.setAttribute('aria-label', 'Send question');
     submitBtn.addEventListener('click', (e) => this.handleSubmitClick(e));
 
-    controls.appendChild(menuBtn);
     controls.appendChild(spacer);
     controls.appendChild(micBtn);
     controls.appendChild(submitBtn);
@@ -92,7 +81,6 @@ class BeUIPromptBar {
     this.element = wrapper;
     this.inputElement = textarea;
     this.submitButton = submitBtn;
-    this.menuButton = menuBtn;
     this.micButton = micBtn;
 
     // Auto-resize
