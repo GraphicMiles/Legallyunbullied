@@ -395,12 +395,23 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
 }
 
 .auth-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   margin: -4px 0 12px;
-  padding: 10px 16px;
-  border-radius: 12px;
-  background: rgba(255, 107, 107, 0.12);
-  color: var(--danger);
+  padding: 0;
+  background: none;
+  color: var(--text);
   font-size: 13px;
+  line-height: 1.5;
+}
+
+.auth-error .icon {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  margin-top: 1px;
+  color: var(--danger);
 }
 
 .auth-swap {

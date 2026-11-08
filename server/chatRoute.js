@@ -2475,14 +2475,18 @@ router.post("/api/chat/acknowledge", async (req, res) => {
  */
 router.post("/api/generate-title", async (req, res) => {
   const question = (req.body && req.body.question || "").toString().trim().slice(0, 300);
-  if (!question) {
+  // When the client has three exchanges to draw on it sends a short transcript,
+  // and the title becomes a summary of the conversation rather than a
+  // rephrasing of the opening question.
+  const context = (req.body && req.body.context || "").toString().trim().slice(0, 1800);
+  if (!question && !context) {
     return res.status(400).json({ error: "bad_request" });
   }
 
   const groqClient = getGroqClient();
   const geminiClient = getGeminiClient();
 
-  const TITLE_PROMPT = `Generate a very short title (3-6 words max) for a conversation about a Nigerian legal question. The title should capture the core topic in a natural, concise way.
+  const TITLE_PROMPT = `Summarise what this conversation is about as a very short title (3-6 words max). It is about a Nigerian legal question. If a transcript is given, summarise the whole conversation, not just the first message. The title should capture the core topic in a natural, concise way.
 
 IMPORTANT: If the message is NOT a legal question (e.g., greetings like "hi", "hello", casual chat, or non-legal topics), respond with exactly: NOT_LEGAL
 
@@ -2508,7 +2512,7 @@ Examples:
         model,
         [
           { role: "system", content: TITLE_PROMPT },
-          { role: "user", content: question },
+          { role: "user", content: context ? `${context}\n\nOpening question: ${question}` : question },
         ],
         { task: "title", timeoutMs: 8000, temperature: 0.3, max_tokens: 30, parseJson: false }
       );

@@ -95,7 +95,7 @@
   .chat-status__home:active,
   .followup-chip:active, .history__kebab:active,
   .auth-signin-btn:active, .answer-actions__btn:active, .answer-actions__thumb:active,
-  .question:not([disabled]):active, .pill-button:not([disabled]):active {
+  .question:not([disabled]):active {
     transform: scale(0.965);
     transition-property: transform;
     transition-duration: var(--dur-press);
@@ -483,13 +483,15 @@
     .history__item { min-height: 44px; padding-right: 0; }
     .history__kebab { width: 44px; height: 44px; margin-right: 0; }
     .sidebar .sidebar__close { width: 44px; height: 44px; margin-right: -6px; }
-    .sidebar__legal a {
+    .sidebar__legal a,
+    .sidebar__legal-action {
       display: inline-flex;
       align-items: center;
       min-height: 44px;
       padding: 0 var(--space-1);
     }
-    .sidebar__legal a { padding-left: 0; padding-right: 0; }
+    .sidebar__legal a,
+    .sidebar__legal-action { padding-left: 0; padding-right: 0; }
     .sidebar .auth-profile__logout { width: 44px; height: 44px; }
   }
   .history__kebab:hover { color: var(--color-text); }
@@ -761,15 +763,22 @@
     font-size: 13px;
     line-height: 1.4;
   }
-  .sidebar__legal a {
+  .sidebar__legal a,
+  .sidebar__legal-action {
     color: var(--color-text-faint);
     text-decoration: none;
     padding: 10px 0;
     margin: -10px 0;
+    font: inherit;
+    background: none;
+    border: 0;
+    cursor: pointer;
     transition: color var(--dur-fast) var(--ease);
   }
-  .sidebar__legal a:hover { color: var(--color-accent); text-decoration: underline; text-underline-offset: 2px; }
-  .sidebar__legal a:focus-visible {
+  .sidebar__legal a:hover,
+  .sidebar__legal-action:hover { color: var(--color-accent); text-decoration: underline; text-underline-offset: 2px; }
+  .sidebar__legal a:focus-visible,
+  .sidebar__legal-action:focus-visible {
     color: var(--color-accent);
     text-decoration: underline;
     text-underline-offset: 2px;
@@ -904,7 +913,11 @@
   }
 
   /* Chat tools live in the avatar dropdown — keep the topbar lean. */
-  @media (min-width: 0) { .topbar__tool { display: none; } }
+  /* Clearing belongs to the conversation you are reading, so it sits in the
+     title bar. Copy-all stays off (it is a bulk action with no clear reader),
+     and the eraser only appears when there is something to clear. */
+  #copy-chat-btn { display: none; }
+  #clear-chat-btn[disabled] { display: none; }
 
   .topbar__title {
     font-size: var(--fs-base);
@@ -915,27 +928,6 @@
     max-width: 40%;
   }
 
-  .badges {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    overflow: hidden;
-  }
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 12px;
-    font-weight: 600;
-    white-space: nowrap;
-    padding: 4px 10px;
-    border-radius: var(--radius-full);
-    background: var(--color-surface);
-    color: var(--color-text-muted);
-  }
-  .badge--accent { color: var(--color-accent); background: var(--color-accent-soft); }
-  .badge--urgent { color: #ff8b8e; background: rgba(229,72,77,0.14); }
-  .badge__dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
 
   .new-chat-mobile { display: none; }
 
@@ -970,31 +962,89 @@
   }
 
   /* --- empty state --- */
+  /* One stack, top aligned: brand, greeting, examples. The composer is docked
+     at the bottom of the viewport, so this column never reserves space for it
+     and never competes with it for height. */
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-6);
+    padding: var(--space-1) 0 0;
+    width: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .empty-state::-webkit-scrollbar { width: 0; height: 0; }
+  .hero-head { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); }
+  .hero-brand { display: flex; align-items: center; gap: var(--space-2); }
+  .hero-brand__mark { width: 22px; height: 22px; color: var(--color-accent); flex: none; }
+  .hero-brand__name { font-size: var(--fs-sm); font-weight: 700; letter-spacing: -0.01em; color: var(--color-text); }
+  .greeting {
+    margin: 0;
+    font-size: clamp(26px, 6vw, 34px);
+    line-height: 1.12;
+    letter-spacing: -0.03em;
+    font-weight: 650;
+    color: var(--color-text-faint);
+  }
+  .greeting__line { display: block; }
+  .greeting__strong { display: block; color: var(--color-text); font-weight: 700; }
+  .quick-area { width: 100%; min-width: 0; }
+  .quick-area__label {
+    margin: 0 0 var(--space-2);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-faint);
+  }
+  .quick-list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
+  }
+  /* Two examples side by side only when there is room for the text to breathe. */
+  @media (min-width: 640px) {
+    .quick-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  .question {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    min-height: 88px;
+    padding: var(--space-4);
+    border: 0;
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    color: var(--color-text);
+    text-align: left;
+    font: inherit;
+    font-size: var(--fs-sm);
+    line-height: 1.45;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background var(--dur-fast) var(--ease);
+  }
+  .question:hover { background: var(--color-surface-alt); }
+  .question__text { display: block; color: var(--color-text-muted); }
+  .question__icon { display: flex; flex: none; margin-top: 1px; color: var(--color-text-faint); }
+  @media (min-width: 1024px) {
+    /* On a wide canvas the hero centres in the space it has, rather than
+       hugging the topbar and leaving a void under it. */
+    .empty-state { align-items: center; justify-content: center; gap: var(--space-7); }
+    .hero-head { align-items: center; }
+    .greeting { text-align: center; }
+    .quick-area { width: min(100%, 720px); }
+    .quick-area__label { text-align: center; }
+  }
+
   /* Hero bands — greeting pinned to the top, the quick cluster anchors to
      the bottom of the middle band (scrolling internally on very short
      screens), the composer pinned to the bottom. The two side bands never
      overlap; the composer owns the top of the layer stack. */
-  .empty-state {
-    flex: 1;
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto;
-    text-align: left;
-    gap: 0;
-    padding: clamp(14px, 4vh, 26px) 0 0;
-    max-width: none;
-    margin: 0;
-    width: 100%;
-    min-height: 0;
-  }
-  .quick-area {
-    margin: 0;
-    min-height: 0;
-    overflow-y: auto;
-    justify-content: flex-end;
-    overscroll-behavior: contain;
-    scrollbar-width: none;
-  }
-  .quick-area::-webkit-scrollbar { width: 0; height: 0; display: none; }
   .empty-state__mark {
     width: 40px;
     height: 40px;
@@ -1008,113 +1058,15 @@
   /* Greeting — two-tone, weight carries the hierarchy. First line is
      time-aware ("Good morning/afternoon/evening{, Firstname}.") via JS;
      the strong second line is the fixed headline. */
-  .greeting {
-    margin: 0;
-    font-size: clamp(30px, 8.5vw, 34px);
-    line-height: 1.11;
-    letter-spacing: -0.032em;
-    font-weight: 650;
-    color: var(--color-text-faint);
-    text-align: left;
-    width: 100%;
-    max-width: 360px;
-    text-wrap: balance;
-  }
-  .greeting__line { display: block; }
-  .greeting__strong { display: block; color: var(--color-text); font-weight: 700; }
 
-  /* The composer moves between this hero slot (empty state) and the
-     bottom dock (active conversation). Same node, two homes. */
-  .empty-state__composer {
-    position: relative;
-    z-index: 20;
-    width: 100%;
-    margin-top: var(--space-4);
-  }
+  /* The composer is always docked here. It no longer travels into the
+     empty state, so the hero and the input never trade height. */
   .composer-dock { position: relative; z-index: 20; }
 
-  /* Quick area — brand row + bento, pinned just above the composer.
-     Gold stays reserved for the brand mark and send; everything else is
-     two neutral tones and one clear action. */
-  .quick-area {
-    padding-top: 28px;
-    display: flex;
-    flex-direction: column;
-  }
-  .brand { height: 32px; display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-  .brand svg { width: 24px; height: 24px; color: var(--color-accent); flex: none; }
-  .brand-name { font-size: 16px; line-height: 1; font-weight: 700; letter-spacing: -0.02em; color: var(--color-text); }
 
-  .bento {
-    height: 178px;
-    display: grid;
-    grid-template-columns: minmax(0, 1.18fr) minmax(0, 0.92fr);
-    gap: 10px;
-  }
-  .bento-side { min-width: 0; display: grid; grid-template-rows: minmax(0, 1fr) 58px; gap: 10px; }
 
-  .question {
-    position: relative;
-    display: flex;
-    align-items: center;
-    border: 0;
-    border-radius: 18px;
-    background: var(--color-surface);
-    color: var(--color-text);
-    padding: 17px 16px 58px;
-    height: 100%;
-    text-align: left;
-    font-size: 14px;
-    line-height: 1.42;
-    font-weight: 500;
-    cursor: pointer;
-    overflow: hidden;
-    transition: background var(--dur-fast) var(--ease);
-  }
-  .question--small { padding: 14px 14px 48px; font-size: 13.5px; }
 
-  .topic-icon {
-    position: absolute;
-    left: 14px;
-    bottom: 13px;
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    background: var(--color-surface-alt);
-    color: var(--color-text-muted);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-  }
-  .topic-icon svg { width: 15px; height: 15px; }
-  .topic-icon--center { left: 50%; transform: translateX(-50%); }
 
-  .action-pill {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    align-items: center;
-    gap: 2px;
-    padding: 4px 6px;
-    background: var(--color-surface);
-    border-radius: 18px;
-  }
-  .pill-button {
-    width: 100%;
-    height: 46px;
-    border: 0;
-    border-radius: 14px;
-    background: transparent;
-    color: var(--color-text-muted);
-    cursor: pointer;
-    display: grid;
-    place-items: center;
-    transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
-  }
-  .pill-button:hover { color: var(--color-text); }
-  .pill-button:disabled { opacity: 0.35; cursor: not-allowed; }
-  .pill-button:disabled:hover { color: var(--color-text-muted); }
-  .pill-button svg { width: 15px; height: 15px; }
 
   /* Hero topbar — the empty state gets a minimal bar: sidebar glyph left,
      avatar-only chip right (title, badges and new-chat stay hidden). */
@@ -1153,6 +1105,7 @@
 
   /* Composer footnote — surfaceless line inside the composer card.
      No dismissal; the NBA directory link matches the verdict escalation. */
+  body.answer-has-verdict .composer-note { display: none; }
   .composer-note {
     margin: 0;
     padding: var(--space-1) var(--space-3) var(--space-3);
@@ -1180,69 +1133,19 @@
   /* Compact hero on short screens */
   @media (max-height: 710px) {
     .empty-state { padding-top: clamp(6px, 2vh, 10px); }
-    .empty-state__composer { margin-top: var(--space-2); }
-    .greeting { font-size: 26px; }
-    .quick-area { padding-top: 8px; }
-    .brand { margin-bottom: 8px; }
-    .bento { height: 150px; }
-    .question { padding: 13px 14px 48px; }
-    .question--small { padding: 10px 12px 42px; }
-    .topic-icon { width: 34px; height: 34px; bottom: 9px; left: 10px; }
-    .topic-icon svg { width: 14px; height: 14px; }
-    .topic-icon--center { left: 50%; }
-    .bento-side { grid-template-rows: minmax(0, 1fr) 52px; }
-    .pill-button { height: 42px; }
     .composer-note { padding-bottom: var(--space-2); }
   }
   @media (max-width: 350px) {
-    .greeting { font-size: 28px; }
-    .quick-area { padding-top: 18px; }
-    .bento { height: 168px; grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr); gap: 8px; }
-    .bento-side { gap: 8px; grid-template-rows: minmax(0, 1fr) 54px; }
-    .question { padding: 14px 12px 52px; font-size: 12.5px; }
-    .question--small { padding: 12px 10px 44px; font-size: 12px; }
-    .topic-icon { width: 34px; height: 34px; bottom: 10px; left: 10px; }
-    .topic-icon--center { left: 50%; }
-    .action-pill { padding: 3px; }
-    .pill-button { height: 44px; }
-    .pill-button svg { width: 13px; height: 13px; }
     .composer-note { padding-left: var(--space-3); padding-right: var(--space-3); }
   }
 
   @media (max-height: 620px) {
-    .greeting { font-size: 24px; }
-    /* Intrinsic height: the cards' min-content drives the track, so the
-       pill row can never be pushed past the bento onto the composer. */
-    .bento { height: auto; }
-    .quick-area { padding-top: 4px; }
-    .empty-state__composer { margin-top: var(--space-1); }
   }
   @media (max-height: 520px) {
-    .greeting { font-size: 22px; line-height: 1.06; }
-    .empty-state { padding-top: 8px; }
-    .quick-area { padding-top: 2px; gap: 0; }
-    .brand { margin-bottom: 6px; height: 28px; }
-    .brand svg { width: 20px; height: 20px; }
-    .brand-name { font-size: 13px; }
-    .bento { height: auto; gap: 8px; }
-    .bento-side { grid-template-rows: minmax(0, auto) auto; gap: 8px; }
-    .question { padding: 10px 12px 36px; }
-    .question--small { padding: 8px 10px 34px; }
-    .question--hero .question__text { font-size: 13px; }
-    .topic-icon { width: 30px; height: 30px; bottom: 7px; left: 10px; }
-    .topic-icon svg { width: 13px; height: 13px; }
-    .pill-button { height: 38px; }
-    .empty-state__composer { margin-top: var(--space-1); }
   }
   @media (max-height: 430px) {
-    .greeting { font-size: 19px; line-height: 1.05; }
-    .empty-state { padding-top: 4px; }
     /* Extreme-short fallback: the drawer already carries the brand; drop the
        in-hero copy so greeting + quick questions + composer all fit. */
-    .brand { display: none; }
-    .bento { gap: 6px; }
-    .question { padding: 8px 12px 32px; }
-    .question--small { padding: 7px 10px 30px; }
     .composer { padding-top: var(--space-2); }
     .composer-note { line-height: 1.4; padding-bottom: var(--space-1); }
   }
@@ -1259,13 +1162,6 @@
       gap: var(--space-7);
       padding-top: 0;
     }
-    .greeting {
-      text-align: center;
-      margin-inline: auto;
-    }
-    .quick-area { margin-top: 0; padding-top: 0; }
-    .brand { justify-content: center; margin-bottom: 0; }
-    .empty-state__composer { margin-top: 0; }
   }
 
   /* --- chat status (loading / not found) --- */
@@ -1314,7 +1210,7 @@
   .followup-chip:focus-visible, .history__item:focus-visible, .history__kebab:focus-visible,
   .link-btn:focus-visible, .auth-signin-btn:focus-visible,
   .chat-status__home:focus-visible, .msg-action-btn:focus-visible, .context-card__head:focus-visible,
-  .answer-actions__btn:focus-visible, .answer-actions__thumb:focus-visible, .question:focus-visible, .pill-button:focus-visible, .account-chip:focus-visible {
+  .answer-actions__btn:focus-visible, .answer-actions__thumb:focus-visible, .question:focus-visible, .account-chip:focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
     color: var(--color-text);
@@ -1426,8 +1322,6 @@
     font-weight: 600;
     color: var(--color-text);
   }
-  /* Safety banner keeps tonal (non-alarm) styling, aligned with notice-card */
-  .safety-flag-banner { box-shadow: none !important; }
 
   /* Plain casual reply */
   .casual-reply-plain {
@@ -1808,57 +1702,43 @@
     animation: sectionIn var(--dur-med) var(--ease-out) both;
   }
   .verdict--self {
-    background: rgba(76, 174, 107, 0.10);
+    background: var(--color-surface-alt);
   }
-  /* Tonal, not a yellow alarm block: same surface as notice-card, with the
-     accent confined to the small icon and the title. */
+  /* Escalation is the one verdict that carries accent colour: the icon, the
+     title and the lawyer CTA. The self verdict stays on the neutral surface. */
   .verdict--escalate {
     background: var(--color-surface-alt);
     box-shadow: none;
   }
-  /* Error / auth-gate card: tonal, not a red alarm. One calm surface, a small
-     muted icon, sentence-case title, and a concrete next step. */
-  .notice-card {
-    background: var(--color-surface-alt);
-    border-radius: var(--radius-md);
-    padding: 12px 14px;
+  /* One banner primitive for everything the product interrupts with: risk
+     notice, error, auth gate, provider state. Separation comes from a single
+     surface fill and spacing, never from borders, coloured bars or tinted
+     washes. Severity is carried by the icon and the wording. */
+  .banner {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    background: var(--color-surface-alt);
     animation: sectionIn var(--dur-med) var(--ease-out) both;
   }
-  .notice-card__head { display: flex; align-items: flex-start; gap: var(--space-2); }
-  .notice-card__icon {
-    width: 20px; height: 20px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; margin-top: 1px;
-    background: var(--color-surface);
-    color: var(--color-accent);
-  }
-  .notice-card__icon svg { width: 12px; height: 12px; }
-  .notice-card__title {
-    font-size: var(--fs-sm);
-    font-weight: 700;
-    line-height: 20px;
-    color: var(--color-text);
-  }
-  .notice-card__text {
-    font-size: var(--fs-base);
-    color: var(--color-text-muted);
-    line-height: 1.6;
-    margin: 0;
-  }
-  .notice-card__actions { display: flex; gap: var(--space-3); flex-wrap: wrap; margin-top: 2px; }
-  .notice-card__actions .link-btn { font-family: inherit; }
+  .banner__icon { width: 16px; height: 16px; flex: none; margin-top: 2px; color: var(--color-text-muted); }
+  .banner--attention .banner__icon { color: var(--color-accent); }
+  .banner__body { min-width: 0; flex: 1; }
+  .banner__title { font-size: var(--fs-sm); font-weight: 600; line-height: 1.4; color: var(--color-text); }
+  .banner__text { margin: 3px 0 0; font-size: var(--fs-sm); line-height: 1.55; color: var(--color-text-muted); }
+  .banner__actions { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; margin-top: var(--space-2); }
+  .banner__actions .link-btn { font-family: inherit; }
   .verdict__head { display: flex; align-items: flex-start; gap: var(--space-2); }
   .verdict__icon {
-    width: 20px; height: 20px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
+    display: flex;
+    align-items: center;
     flex-shrink: 0;
     margin-top: 1px;
+    color: var(--color-text-muted);
   }
-  .verdict--self .verdict__icon { background: rgba(76,174,107,0.18); color: var(--color-success); }
-  .verdict--escalate .verdict__icon { background: rgba(242,183,5,0.2); color: var(--color-accent); }
+  .verdict--escalate .verdict__icon { color: var(--color-accent); }
 
   /* Casual reply — plain inline text, NO bubble/card styling.
      Rendered differently from legal responses (which use .answer-block-plain).
@@ -1877,15 +1757,25 @@
     background: transparent !important;
   }
 
-  .verdict__icon svg { width: 11px; height: 11px; }
+  .verdict__icon svg { width: 16px; height: 16px; }
   .verdict__title {
     font-size: var(--fs-sm);
     font-weight: 700;
     line-height: 20px;
   }
-  .verdict--self .verdict__title { color: var(--color-success); }
+  .verdict--self .verdict__title { color: var(--color-text); }
   .verdict--escalate .verdict__title { color: var(--color-accent); }
   .verdict__text { font-size: var(--fs-base); color: var(--color-text); line-height: 1.6; }
+  .verdict__flag {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    margin: 0;
+    font-size: var(--fs-sm);
+    line-height: 1.5;
+    color: var(--color-text-muted);
+  }
+  .verdict__flag svg { width: 14px; height: 14px; flex: none; margin-top: 2px; color: var(--color-accent); }
   /* Confidence chip inside the verdict card: right-aligned, hairline-mute,
      tells the user how validated the answer is. */
   .verdict__confidence {
@@ -1898,19 +1788,42 @@
   }
   .verdict__actions { display: flex; gap: var(--space-3); flex-wrap: wrap; }
 
+  /* A link button is a text action. It used to be a filled gold pill, which
+     made every banner on the screen shout as loudly as the one action that
+     actually matters. One filled button per screen, opted into with
+     .link-btn--primary. */
   .link-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    font: inherit;
     font-size: var(--fs-sm);
+    font-weight: 600;
+    color: var(--color-accent);
+    background: none;
+    border: 0;
+    border-radius: var(--radius-sm);
+    padding: 2px 0;
+    cursor: pointer;
+    text-decoration: none;
+    transition: color var(--dur-fast) var(--ease);
+  }
+  .link-btn:hover {
+    color: var(--color-accent-hover);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .link-btn--primary {
+    padding: var(--space-2) var(--space-4);
     font-weight: 700;
     color: var(--color-accent-text);
     background: var(--color-accent);
-    border-radius: var(--radius-sm);
-    padding: var(--space-2) var(--space-4);
-    transition: background var(--dur-fast) var(--ease);
   }
-  .link-btn:hover { background: var(--color-accent-hover); }
+  .link-btn--primary:hover {
+    background: var(--color-accent-hover);
+    color: var(--color-accent-text);
+    text-decoration: none;
+  }
   .link-btn svg { width: 13px; height: 13px; }
 
 
@@ -1974,10 +1887,6 @@
   .composer {
     flex-shrink: 0;
     padding: var(--space-3) var(--space-4) max(var(--space-5), calc(env(safe-area-inset-bottom, 0px) + var(--space-3)));
-  }
-  /* Hero variant: composer sits inside the empty state, not at the screen edge. */
-  .composer--hero {
-    padding: 0;
   }
   .composer__inner {
     max-width: var(--composer-max-width);
@@ -2052,12 +1961,10 @@
     .new-chat-mobile { display: inline-flex; }
 
     .topbar__title { max-width: 46vw; }
-    .badges .badge:nth-child(n+3) { display: none; }
     .topbar { gap: var(--space-2); padding: 0 var(--space-4); }
     .msg__body, .msg--agent .msg__body { max-width: 100%; }
     .chat__inner { padding: var(--space-2) var(--space-3) var(--space-4); gap: var(--space-4); }
     .composer { padding: var(--space-2) var(--space-3) max(var(--space-5), calc(env(safe-area-inset-bottom, 0px) + var(--space-2))); }
-    .composer--hero { padding: 0; }
   }
 
   @media (max-width: 480px) {
@@ -2260,9 +2167,10 @@
     <div class="sidebar__footer">
       <div id="auth-section"></div>
       <p class="sidebar__disclaimer">Legal information, not legal representation. Need a lawyer? We point you to the NBA's public directory.</p>
-      <nav class="sidebar__legal" aria-label="Legal">
+      <nav class="sidebar__legal" aria-label="Privacy, terms and sharing">
         <a href="/privacy">Privacy</a>
         <a href="/terms">Terms</a>
+        <button type="button" class="sidebar__legal-action" id="quick-share">Share</button>
       </nav>
     </div>
   </aside>
@@ -2293,7 +2201,6 @@
       </button>
       <div class="topbar__meta">
         <span class="topbar__title" id="conversation-title">New question</span>
-        <div class="badges" id="classification-badges"></div>
       </div>
       <button class="icon-btn topbar__tool" id="clear-chat-btn" aria-label="Clear this chat" title="Clear this chat" disabled>
         <svg class="icon" aria-hidden="true"><use href="#i-eraser"/></svg>
@@ -2315,27 +2222,21 @@
       <div class="chat__inner" id="chat-inner">
 
         <div class="empty-state" id="empty-state">
-          <h1 class="greeting"><span class="greeting__line" id="greeting-line">Good morning.</span><strong class="greeting__strong" id="greeting-strong">What's the legal situation?</strong></h1>
-
-          <div class="quick-area">
-            <div class="brand">
-              <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M11 15.5L14.2 18.7L21 11.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span class="brand-name">Legally Unbullied</span>
+          <div class="hero-head">
+            <div class="hero-brand">
+              <svg class="hero-brand__mark" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M11 15.5L14.2 18.7L21 11.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span class="hero-brand__name">Legally Unbullied</span>
             </div>
-            <div class="bento" role="group" aria-label="Quick questions">
-              <button type="button" class="question question--hero" data-prompt="Police stopped me and won't say why. What are my rights?"><span class="question__text">Police stopped me and won't say why. What are my rights?</span><span class="topic-icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-scale"/></svg></span></button>
-              <div class="bento-side">
-                <button type="button" class="question question--small" data-prompt="My landlord wants to evict me without notice. What can I do?"><span class="question__text">Evicted without notice?</span><span class="topic-icon topic-icon--center" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-house"/></svg></span></button>
-                <div class="action-pill" role="group" aria-label="Quick actions">
-                  <button type="button" class="pill-button" id="quick-share" aria-label="Share Legally Unbullied"><svg class="icon" aria-hidden="true"><use href="#i-share"/></svg></button>
-                  <button type="button" class="pill-button" id="quick-attach" disabled aria-label="Attach evidence, coming soon"><svg class="icon" aria-hidden="true"><use href="#i-paperclip"/></svg></button>
-                  <button type="button" class="pill-button" id="quick-mic" aria-label="Dictate your situation"><svg class="icon" aria-hidden="true"><use href="#i-mic"/></svg></button>
-                </div>
-              </div>
-            </div>
+            <h1 class="greeting"><span class="greeting__line" id="greeting-line">Good morning.</span><strong class="greeting__strong" id="greeting-strong">What's the legal situation?</strong></h1>
           </div>
 
-          <div class="empty-state__composer" id="empty-composer-slot"></div>
+          <div class="quick-area">
+            <p class="quick-area__label" id="quick-area-label">Try an example</p>
+            <div class="quick-list" role="group" aria-labelledby="quick-area-label">
+              <button type="button" class="question" data-prompt="Police stopped me and won't say why. What are my rights?"><span class="question__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-scale"/></svg></span><span class="question__text">Police stopped me and won't say why. What are my rights?</span></button>
+              <button type="button" class="question" data-prompt="My landlord wants to evict me without notice. What can I do?"><span class="question__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-house"/></svg></span><span class="question__text">My landlord wants to evict me without notice. What can I do?</span></button>
+            </div>
+          </div>
         </div>
 
         <div class="chat-status" id="chat-status" hidden>
@@ -2377,7 +2278,6 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="/firebase-config.js"></script>
-<script src="debug-panel.js?v=5.1.0"></script>
 <script type="module" src="firebase-init.js"></script>
 <script src="components/BeUILoadingState.js"></script>
 <script src="components/BeUIThinkingState.js?v=4.3.0"></script>

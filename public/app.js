@@ -52,7 +52,6 @@ import {
     chatStatusSignin: document.getElementById("chat-status-signin"),
     chatStatusRetry: document.getElementById("chat-status-retry"),
     conversationTitle: document.getElementById("conversation-title"),
-    classificationBadges: document.getElementById("classification-badges"),
     composerForm: document.getElementById("composer-form") || document.getElementById("prompt-bar-container"),
     composerInput: document.getElementById("composer-input"),
     sendBtn: document.getElementById("send-btn"),
@@ -1382,8 +1381,7 @@ import {
       showPopover(
         kebab,
         [
-          { label: "Clear chat", svg: '<svg class="icon" aria-hidden="true"><use href="#i-eraser"/></svg>', onClick: () => confirmClearConversation(c.id) },
-          { label: "Delete chat", svg: '<svg class="icon" aria-hidden="true"><use href="#i-trash-2"/></svg>', danger: true, onClick: () => confirmDeleteConversation(c.id) },
+          { label: "Delete conversation", svg: '<svg class="icon" aria-hidden="true"><use href="#i-trash-2"/></svg>', danger: true, onClick: () => confirmDeleteConversation(c.id) },
         ],
         { onClose: () => kebab.classList.remove("is-open") }
       );
@@ -1502,9 +1500,9 @@ import {
       _searchResults.find((c) => c.id === id);
     if (!convo) return;
     showConfirm({
-      text: `Clear all messages in "${truncate(convo.title, 44)}"? This can't be undone.`,
-      confirmLabel: "Clear chat",
-      title: "Clear this chat?",
+      text: `Clearing empties this conversation but keeps it in your history. This can't be undone.`,
+      confirmLabel: "Clear messages",
+      title: "Clear this conversation?",
       onConfirm: () => clearConversationMessages(id),
     });
   }
@@ -1612,9 +1610,9 @@ import {
     const convo = state.conversations.find((c) => c.id === id);
     if (!convo) return;
     showConfirm({
-      text: `Delete "${truncate(convo.title, 44)}"? This can't be undone.`,
-      confirmLabel: "Delete chat",
-      title: "Delete this chat?",
+      text: `Deleting removes "${truncate(convo.title, 44)}" and every message in it. This can't be undone.`,
+      confirmLabel: "Delete conversation",
+      title: "Delete this conversation?",
       onConfirm: () => deleteConversationById(id),
     });
   }
@@ -1673,26 +1671,9 @@ import {
     const convo = getActiveConversation();
     el.conversationTitle.textContent = convo ? convo.title : "New question";
 
-    el.classificationBadges.innerHTML = "";
-    if (!convo) return;
-
-    const lastAgentMsg = [...convo.messages].reverse().find((m) => m.role === "agent" && m.classification);
-    if (!lastAgentMsg) return;
-
-    const c = lastAgentMsg.classification;
-    el.classificationBadges.appendChild(makeBadge(c.practiceArea, false));
-    el.classificationBadges.appendChild(makeBadge(c.jurisdictionGuess, false));
-    el.classificationBadges.appendChild(makeBadge(c.urgency + " urgency", c.urgency === "Critical" || c.urgency === "High"));
-  }
-
-  function makeBadge(text, urgent) {
-    const span = document.createElement("span");
-    span.className = "badge" + (urgent ? " badge--urgent" : "");
-    const dot = document.createElement("span");
-    dot.className = "badge__dot";
-    span.appendChild(dot);
-    span.appendChild(document.createTextNode(text));
-    return span;
+    // The title bar carries the conversation title and nothing else. Practice
+    // area, jurisdiction and urgency are pipeline vocabulary, not things the
+    // person reading the answer can act on.
   }
 
   /* ------------------------------------------------------------------ */
@@ -1704,20 +1685,6 @@ import {
   let voiceRecognition = null;
   let voiceListening = false;
 
-  function openComposerMenu(menuBtn) {
-    if (!window.promptBar) return;
-    // The /-command topic system was removed (it sent bare "/tenancy"
-    // strings to the model). The plus menu is the future home of evidence
-    // attachments; the item stays disabled until that ships.
-    const items = [
-      { label: "Attach evidence", icon: "paperclip", trailing: "Coming soon", disabled: true, onClick: () => {} },
-    ];
-    menuBtn.setAttribute("aria-expanded", "true");
-    showPopover(menuBtn, items, {
-      align: "start",
-      onClose: () => menuBtn.setAttribute("aria-expanded", "false"),
-    });
-  }
 
   function setVoiceListeningUI(on) {
     const bar = window.promptBar;
@@ -1803,8 +1770,7 @@ import {
   function initVoiceDictation() {
     const bar = window.promptBar;
     if (bar && bar.micButton) bar.micButton.hidden = !SpeechRecognitionImpl;
-    const quickMic = document.getElementById("quick-mic");
-    if (quickMic) quickMic.hidden = !SpeechRecognitionImpl;
+    // No hero mic. Dictation has one entry point, the composer.
   }
 
   /* ------------------------------------------------------------------ */
@@ -1814,21 +1780,15 @@ import {
   /* ------------------------------------------------------------------ */
   const composerEl = document.querySelector(".composer");
   const composerDock = document.getElementById("composer-dock");
-  const emptyComposerSlot = document.getElementById("empty-composer-slot");
 
-  function dockComposer(hero) {
-    if (!composerEl || !composerDock || !emptyComposerSlot) return;
-    const target = hero ? emptyComposerSlot : composerDock;
-    const move = composerEl.parentElement !== target;
-    if (!move) {
-      composerEl.classList.toggle("composer--hero", hero);
-      return;
-    }
-    // Moving a node drops focus; if the user was typing, hand focus back
-    // to the input so the flow is uninterrupted.
+  // The composer has one home: the bottom dock. It used to travel into the
+  // empty state, which made the hero and the input fight for the same height
+  // on short screens for no gain to the user.
+  function dockComposer() {
+    if (!composerEl || !composerDock) return;
+    if (composerEl.parentElement === composerDock) return;
     const wasFocused = composerEl.contains(document.activeElement);
-    target.appendChild(composerEl);
-    composerEl.classList.toggle("composer--hero", hero);
+    composerDock.appendChild(composerEl);
     if (wasFocused && window.promptBar && window.promptBar.inputElement) {
       try { window.promptBar.inputElement.focus({ preventScroll: true }); } catch (_) { window.promptBar.inputElement.focus(); }
     }
@@ -1836,10 +1796,10 @@ import {
 
   function setEmptyStateVisible(show) {
     if (!el.emptyState) return;
-    el.emptyState.style.display = show ? "grid" : "none";
+    el.emptyState.style.display = show ? "flex" : "none";
     const mainEl = document.querySelector(".main");
     if (mainEl) mainEl.classList.toggle("is-hero", show);
-    dockComposer(show);
+    dockComposer();
   }
 
   /* ------------------------------------------------------------------ */
@@ -1893,7 +1853,16 @@ import {
     });
 
     renderTopbar();
+    syncDisclaimer();
     scrollChatToBottom(true);
+  }
+
+  // The composer keeps a standing "not legal advice" line. When an answer
+  // carries a verdict card, that card already makes the same point, so the
+  // line steps aside rather than being repeated on one screen.
+  function syncDisclaimer() {
+    const hasVerdict = !!document.querySelector("#chat .verdict");
+    document.body.classList.toggle("answer-has-verdict", hasVerdict);
   }
 
   function renderUserMessage(msg) {
@@ -2118,26 +2087,8 @@ import {
     wrap.className = "answer-block-plain";
     const r = msg.result;
 
-    // Safety flag — tonal warning (not alarm styling): the verdict card below
-    // already carries the escalation CTA, so this banner just names the issue.
-    if (r._safetyFlag) {
-      const banner = document.createElement("div");
-      banner.className = "safety-flag-banner";
-      banner.innerHTML = `
-        <div class="safety-flag-banner__icon">
-          <svg class="icon" aria-hidden="true"><use href="#i-circle-alert"/></svg>
-        </div>
-        <div>
-          <div class="safety-flag-banner__title">
-            High-risk area. Treat this carefully.
-          </div>
-          <div class="safety-flag-banner__body">
-            ${escapeHtml(r._safetyFlag.message || "This response covers a sensitive legal area and could not be fully verified.")}
-          </div>
-        </div>
-      `;
-      wrap.appendChild(banner);
-    }
+    // Risk is stated once, inside the verdict card (see buildVerdictEl), so a
+    // high-risk answer does not carry two warning blocks saying the same thing.
 
     // "What the law says" section - plain text
     const lawWrapper = document.createElement("div");
@@ -2169,21 +2120,21 @@ import {
     actionsWrapper.appendChild(actionsTextEl);
     wrap.appendChild(actionsWrapper);
 
-    // Utility actions: copy the answer as text, rate whether it helped.
-    const answerActions = buildAnswerActions(msg, r);
-    wrap.appendChild(answerActions);
-    if (stream) answerActions.style.display = "none";
-
     if (stream) {
       actionsWrapper.style.display = "none";
     } else {
       actionsTextEl.innerHTML = renderMarkdown(r.actionsMd);
     }
 
-    // Verdict (uses BeUIRecommendationCard)
+    // The verdict closes the answer. Copy and rate sit after it, because they
+    // are housekeeping on a finished answer, not part of reading it.
     const verdict = buildVerdictEl(r);
     wrap.appendChild(verdict);
     if (stream) verdict.style.display = "none";
+
+    const answerActions = buildAnswerActions(msg, r);
+    wrap.appendChild(answerActions);
+    if (stream) answerActions.style.display = "none";
 
     // Follow-up suggestions
     const followUps = document.createElement("div");
@@ -2526,9 +2477,15 @@ import {
         <span class="verdict__confidence">${confidence.label}</span>
       </div>
       <p class="verdict__text">${escapeHtml(reason)}</p>
+      ${r._safetyFlag ? `
+        <p class="verdict__flag">
+          <svg class="icon" aria-hidden="true"><use href="#i-circle-alert"/></svg>
+          <span>${escapeHtml(r._safetyFlag.message || "This response covers a sensitive legal area and could not be fully verified.")}</span>
+        </p>
+      ` : ""}
       ${escalate ? `
         <div class="verdict__actions">
-          <a class="link-btn" href="${NBA_DIRECTORY_URL}" target="_blank" rel="noopener noreferrer">
+          <a class="link-btn link-btn--primary" href="${NBA_DIRECTORY_URL}" target="_blank" rel="noopener noreferrer">
             ${ICONS.external}
             Find a verified lawyer on the NBA directory
           </a>
@@ -2664,13 +2621,32 @@ import {
     return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trimEnd() + "…";
   }
 
-  async function generateContextualTitle(convo, userText) {
+  // A compact transcript for the summary call: recent turns, trimmed, labelled
+  // so the model knows who said what.
+  function conversationSummaryInput(convo) {
+    const turns = (convo.messages || [])
+      .filter((m) => m.role === "user" || m.role === "agent")
+      .slice(-6)
+      .map((m) => {
+        if (m.role === "user") return "User: " + String(m.content || "").replace(/\s+/g, " ").trim().slice(0, 220);
+        const body =
+          (m.result && (m.result.lawMd || m.result.actionsMd || m.casualReply)) ||
+          m.content ||
+          m.needsInputQuestion ||
+          "";
+        return "Answer: " + String(body).replace(/\s+/g, " ").trim().slice(0, 220);
+      })
+      .filter((line) => line.length > 8);
+    return turns.join("\n").slice(0, 1800);
+  }
+
+  async function generateContextualTitle(convo, userText, context) {
     try {
       const headers = await getAuthHeaders();
       const response = await fetch("/api/generate-title", {
         method: "POST",
         headers,
-        body: JSON.stringify({ question: userText })
+        body: JSON.stringify(context ? { question: userText, context } : { question: userText })
       });
       
       if (!response.ok) {
@@ -2709,10 +2685,17 @@ import {
     convo.messages.push(userMsg);
     convo.updatedAt = Date.now(); // keep the sidebar ordering stable for local chats
 
-    if (convo.messages.filter((m) => m.role === "user").length === 1) {
-      // Set an initial title from context, then try to generate a smarter one
+    const userTurns = convo.messages.filter((m) => m.role === "user").length;
+    if (userTurns === 1) {
+      // A usable label from the opening message, so history is never untitled.
       convo.title = deriveTopicFromText(text);
-      generateContextualTitle(convo, text);
+      renderTopbar();
+    }
+    if (userTurns === 3) {
+      // Once there are three exchanges the chat has a topic of its own, so the
+      // title becomes a summary of the conversation instead of a rephrasing of
+      // the first question.
+      generateContextualTitle(convo, text, conversationSummaryInput(convo));
     }
 
     const agentMsg = {
@@ -3795,22 +3778,23 @@ import {
 
   function buildErrorEl(message, opts = {}) {
     const wrap = document.createElement("div");
-    wrap.className = "notice-card";
+    wrap.className = "banner banner--attention";
     const isGuestQuota = /FREE_QSTACK|free questions today/i.test(message || "");
     const isAuthError = /sign in|session may have expired|401/i.test(message || "");
     const safeMessage = (message || "").replace(/FREE_QSTACK\s*/, "");
     const title = isGuestQuota ? "Free questions used up" : (isAuthError ? "You're signed out" : "Something went wrong");
 
     wrap.innerHTML = `
-      <div class="notice-card__head">
-        <div class="notice-card__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg></div>
-        <span class="notice-card__title">${escapeHtml(title)}</span>
+      <svg class="icon banner__icon" aria-hidden="true"><use href="#i-info"/></svg>
+      <div class="banner__body">
+        <div class="banner__title">${escapeHtml(title)}</div>
+        <p class="banner__text">${escapeHtml(safeMessage)}</p>
       </div>
-      <p class="notice-card__text">${escapeHtml(safeMessage)}</p>
     `;
 
+    const bodyEl = wrap.querySelector(".banner__body");
     const actions = document.createElement("div");
-    actions.className = "notice-card__actions";
+    actions.className = "banner__actions";
 
     if (isGuestQuota && opts.retryText) {
       // The guest used their 3 free questions for today — the CTA that
@@ -3846,7 +3830,7 @@ import {
       actions.appendChild(btn);
     }
 
-    if (actions.children.length) wrap.appendChild(actions);
+    if (actions.children.length && bodyEl) bodyEl.appendChild(actions);
     return wrap;
   }
 
@@ -3968,6 +3952,7 @@ import {
                 if (token !== pipelineToken) return;
                 const stickBeforeVerdict = isNearBottom();
                 refs.verdict.style.display = "";
+            syncDisclaimer();
                 scrollChatToBottom(stickBeforeVerdict);
 
                 setTimeout(() => {
@@ -4275,8 +4260,6 @@ import {
       } catch (_e) { /* clipboard unavailable — stay silent */ }
     }
   });
-  const quickMic = document.getElementById("quick-mic");
-  if (quickMic) quickMic.addEventListener("click", () => { toggleVoiceDictation(); });
   el.newChatBtn.addEventListener("click", createConversation);
   el.newChatMobile.addEventListener("click", createConversation);
   if (el.chatStatusHome) el.chatStatusHome.addEventListener("click", goHome);
@@ -4954,7 +4937,6 @@ import {
             stopGeneration();
           }
         },
-        onMenu: (menuBtn) => openComposerMenu(menuBtn),
         onMic: () => toggleVoiceDictation(),
       });
 
