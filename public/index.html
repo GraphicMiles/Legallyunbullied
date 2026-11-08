@@ -1011,7 +1011,10 @@
   .chat::-webkit-scrollbar { width: 0; height: 0; display: none; }
 
   .chat__inner {
-    max-width: var(--composer-max-width);
+    /* The composer's card is --composer-max-width inside the shell padding;
+       this column pads its own gutter, so it widens by the same amount to
+       keep one left edge down the page. */
+    max-width: calc(var(--composer-max-width) + 2 * var(--space-4));
     width: 100%;
     margin: 0 auto;
     padding: var(--space-3) var(--space-4) var(--space-4);
@@ -1194,7 +1197,13 @@
   }
   .msg--user { justify-content: flex-end; }
 
+  /* An answer shares its left edge with the composer, so the avatar sits in
+     the gutter above the answer rather than indenting every line of it. */
+  .msg--agent { position: relative; }
   .msg__avatar {
+    position: absolute;
+    top: 0;
+    right: calc(100% + var(--space-3));
     width: 30px;
     height: 30px;
     border-radius: var(--radius-sm);
@@ -1205,6 +1214,10 @@
     background: var(--color-surface);
   }
   .msg__avatar svg { width: 16px; height: 16px; color: var(--color-accent); }
+  /* Below 1024 there is no gutter to put it in, so it steps out of the way. */
+  @media (max-width: 1023px) {
+    .msg__avatar { display: none; }
+  }
 
   .msg__body {
     min-width: 0;
@@ -1217,7 +1230,7 @@
   .msg--user .msg__body { align-items: flex-end; }
 
   .msg__bubble {
-    font-size: var(--fs-base);
+    font-size: 15px;
     line-height: 1.6;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
@@ -1232,7 +1245,9 @@
     transition: transform var(--dur-fast) var(--ease-out);
   }
 
-  .msg--agent .msg__body { max-width: min(620px, 88%); }
+  /* The answer spans the content column, the same width as the composer, so
+     the page has one left edge. Only a question bubble is narrow. */
+  .msg--agent .msg__body { max-width: 100%; flex: 1 1 auto; }
 
   /* Plain agent message body - no background/border */
   .msg__body--agent-plain {
@@ -1252,8 +1267,8 @@
   }
 
   .answer-text-block {
-    font-size: var(--fs-base);
-    line-height: 1.6;
+    font-size: 15px;
+    line-height: 1.62;
     color: var(--color-text);
     background: transparent !important;
     border: none !important;
@@ -1273,13 +1288,18 @@
   /* Rendered answer body: calm typographic hierarchy */
   .answer-text-block p { margin: 0 0 10px; }
   .answer-text-block p:last-child { margin-bottom: 0; }
-  .answer-text-block ul {
+  .answer-text-block ul,
+  .answer-text-block ol {
     margin: 4px 0 12px;
-    padding-left: 18px;
+    padding-left: 20px;
   }
-  .answer-text-block ul:last-child { margin-bottom: 0; }
+  /* The global list reset removes markers; answers need them back. */
+  .answer-text-block ul { list-style: disc; }
+  .answer-text-block ol { list-style: decimal; }
+  .answer-text-block ul:last-child,
+  .answer-text-block ol:last-child { margin-bottom: 0; }
   .answer-text-block li { margin-bottom: 5px; line-height: 1.55; }
-  .answer-text-block li::marker { color: var(--color-text-faint); }
+  .answer-text-block li::marker { color: var(--color-text-muted); }
   /* Inline statute citations: visually quiet so they read as legal
      references, not shouting. Keep colour neutral — accent is reserved
      for actions. */

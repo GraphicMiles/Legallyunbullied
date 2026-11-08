@@ -933,6 +933,7 @@ import {
       const lines = block.split("\n").map((l) => l.trim()).filter((l) => l.length);
       const out = [];
       let pendingBullets = [];
+      let pendingOrdered = [];
       let pendingProse = [];
       const flushBullets = () => {
         if (pendingBullets.length) {
@@ -940,6 +941,15 @@ import {
           pendingBullets = [];
         }
       };
+      // Numbered steps are the shape of "What you can do". Without their own
+      // list they were joined into a single run-on paragraph.
+      const flushOrdered = () => {
+        if (pendingOrdered.length) {
+          out.push(`<ol>${pendingOrdered.map((it) => `<li>${inlineMd(it)}</li>`).join("")}</ol>`);
+          pendingOrdered = [];
+        }
+      };
+      const flushLists = () => { flushOrdered(); flushBullets(); };
       const flushProse = () => {
         if (pendingProse.length) {
           out.push(`<p>${inlineMd(pendingProse.join(" "))}</p>`);
@@ -948,21 +958,27 @@ import {
       };
       for (const line of lines) {
         const bullet = line.match(/^[-*•]\s+(.+)$/);
-        const subhead = !bullet && line.match(/^\*\*[^*\n]{1,120}\*\*[:\s]*$/);
+        const ordered = !bullet && line.match(/^\d{1,2}[.)]\s+(.+)$/);
+        const subhead = !bullet && !ordered && line.match(/^\*\*[^*\n]{1,120}\*\*[:\s]*$/);
         if (bullet) {
           flushProse();
+          flushOrdered();
           pendingBullets.push(bullet[1]);
-        } else if (subhead) {
+        } else if (ordered) {
+          flushProse();
           flushBullets();
+          pendingOrdered.push(ordered[1]);
+        } else if (subhead) {
+          flushLists();
           pendingProse.push(line);
           flushProse();
         } else {
-          flushBullets();
+          flushLists();
           pendingProse.push(line);
         }
       }
       flushProse();
-      flushBullets();
+      flushLists();
       return out.join("");
     }).filter((html) => html.length).join("");
   }
