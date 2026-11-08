@@ -4473,7 +4473,6 @@ import {
           <button type="button" class="auth-signin-btn" id="auth-open-btn">
             <span class="auth-signin-btn__leading"><svg class="icon" aria-hidden="true"><use href="#i-log-in"/></svg></span>
             <span class="auth-signin-btn__label">Sign in to save your chats</span>
-            <svg class="icon auth-signin-btn__trailing" aria-hidden="true"><use href="#i-arrow-right"/></svg>
           </button>
           <p class="auth-signin-hint">Pick up where you left off on any device.</p>
         </div>
