@@ -67,6 +67,8 @@
   --color-border:        var(--color-elevated);
   --color-border-soft:   var(--color-elevated);
   --color-accent-text:   var(--color-on-accent);
+  --color-accent-soft:   rgba(240, 182, 10, 0.12);
+  --color-accent-border: var(--color-accent);
   --color-text-faint:    var(--color-text-muted);
   --color-focus:         var(--color-accent);
   --color-translucent-topbar: var(--color-topbar);
