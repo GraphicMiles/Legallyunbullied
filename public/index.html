@@ -1678,43 +1678,34 @@
     font-family: var(--font-mono);
   }
 
+  /* No panel. The verdict sits in the answer column like the answer body: the
+     hierarchy is carried by the title, the confidence label and spacing, not
+     by a filled block, a radius or a stroke. */
   .verdict {
-    border-radius: var(--radius-md);
-    padding: 12px 14px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    animation: sectionIn var(--dur-med) var(--ease-out) both;
-  }
-  .verdict--self {
-    background: var(--color-surface-alt);
-  }
-  /* Escalation is the one verdict that carries accent colour: the icon, the
-     title and the lawyer CTA. The self verdict stays on the neutral surface. */
-  .verdict--escalate {
-    background: var(--color-surface-alt);
+    gap: 10px;
+    margin-top: 20px;
+    background: transparent;
+    padding: 0;
+    border: 0;
     box-shadow: none;
-  }
-  /* One banner primitive for everything the product interrupts with: risk
-     notice, error, auth gate, provider state. Separation comes from a single
-     surface fill and spacing, never from borders, coloured bars or tinted
-     washes. Severity is carried by the icon and the wording. */
-  .banner {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--space-3);
-    padding: 12px 14px;
-    border-radius: var(--radius-md);
-    background: var(--color-surface-alt);
     animation: sectionIn var(--dur-med) var(--ease-out) both;
   }
-  .banner__icon { width: 16px; height: 16px; flex: none; margin-top: 2px; color: var(--color-text-muted); }
-  .banner--attention .banner__icon { color: var(--color-accent); }
-  .banner__body { min-width: 0; flex: 1; }
-  .banner__title { font-size: var(--fs-sm); font-weight: 600; line-height: 1.4; color: var(--color-text); }
-  .banner__text { margin: 3px 0 0; font-size: var(--fs-sm); line-height: 1.55; color: var(--color-text-muted); }
-  .banner__actions { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; margin-top: var(--space-2); }
-  .banner__actions .link-btn { font-family: inherit; }
+  /* A failure is a sentence on the page, not a panel. No fill, no stroke, no
+     icon tile: the answer block and the failure block share the same column,
+     type scale and left edge, so a missing answer reads as the answer simply
+     not arriving rather than as a system interrupting with an alert. */
+  .fault {
+    padding: 4px 0;
+    animation: sectionIn var(--dur-med) var(--ease-out) both;
+  }
+  .fault__body { display: flex; flex-direction: column; gap: var(--space-2); }
+  .fault__title { font-size: 15px; font-weight: 600; line-height: 1.45; color: var(--color-text); }
+  .fault__text { margin: 0; font-size: 15px; line-height: 1.62; color: var(--color-text-muted); }
+  .fault__actions { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }
+  /* The retry is a text action, but its hit area is a thumb, not a line. */
+  .fault__actions .link-btn { font-family: inherit; min-height: 44px; }
   .verdict__head { display: flex; align-items: flex-start; gap: var(--space-2); }
   .verdict__icon {
     display: flex;

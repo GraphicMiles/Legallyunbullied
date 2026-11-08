@@ -15,7 +15,7 @@
  */
 
 const express = require("express");
-const { createHash, randomBytes } = require("node:crypto");
+const { createHash } = require("node:crypto");
 const router = express.Router();
 const { getClient: getGroqClient, CLASSIFY_MODEL, REVIEW_MODEL, DRAFT_MODEL, DRAFT_MODEL_FALLBACK } = require("./groq");
 const GROQ_REVIEW_MODEL = REVIEW_MODEL || DRAFT_MODEL || CLASSIFY_MODEL;
@@ -524,73 +524,9 @@ const questionCache = new Map();
 const QUESTION_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 const QUESTION_CACHE_MAX = 200;
 
-// ── Pending user safety acknowledgments ─────────────────────────────────
-// When a high-risk answer fails critique after all retries, the response is
-// held until the user explicitly acknowledges the safety warning.
-//
-// The pending record is persisted to Firestore (safety_acks/{token}) so it
-// SURVIVES a server restart — previously an in-memory Map, so a redeploy
-// between the warning and the user clicking "I understand, show me" wiped the
-// token and the button failed. The in-memory Map is now only a read-through
-// cache so same-instance reads stay instant. safety_acks is top-level and
-// accessed only via the Admin SDK (denied by the catch-all client rule).
-const pendingSafetyAck = new Map();  // token → { data, timestamp } (cache)
-const SAFETY_ACK_TTL = 10 * 60 * 1000; // 10 minutes
-
-function generateAckToken() {
-  return "safety_" + randomBytes(24).toString("base64url");
-}
-
-async function setPendingAck(token, data) {
-  const d = getFirestore();
-  if (d) {
-    try {
-      await d.collection("safety_acks").doc(token).set({ data, createdAt: Date.now() });
-    } catch (err) {
-      console.warn("[ack] persist failed:", err.message);
-    }
-  }
-  pendingSafetyAck.set(token, { data, timestamp: Date.now() });
-}
-
-async function getPendingAck(token) {
-  const mem = pendingSafetyAck.get(token);
-  if (mem && Date.now() - mem.timestamp <= SAFETY_ACK_TTL) return mem.data;
-  const d = getFirestore();
-  if (d) {
-    try {
-      const snap = await d.collection("safety_acks").doc(token).get();
-      if (snap.exists) {
-        const doc = snap.data();
-        if (Date.now() - (doc.createdAt || 0) <= SAFETY_ACK_TTL) {
-          pendingSafetyAck.set(token, { data: doc.data, timestamp: doc.createdAt });
-          return doc.data;
-        }
-        await snap.ref.delete().catch(() => {});
-      }
-    } catch (err) {
-      console.warn("[ack] lookup failed:", err.message);
-    }
-  }
-  return null;
-}
-
-async function deletePendingAck(token) {
-  pendingSafetyAck.delete(token);
-  const d = getFirestore();
-  if (d) {
-    try {
-      await d.collection("safety_acks").doc(token).delete();
-    } catch (err) {
-      console.warn("[ack] delete failed:", err.message);
-    }
-  }
-}
-
 /**
- * Single serializer for critique results — the response payload, the
- * persisted message, and the safety-ack response were all built by three
- * hand-copied object literals that could drift out of sync.
+ * Single serializer for critique results. The response payload and the
+ * persisted message are built from this one shape so they cannot drift.
  */
 function serializeCritique(critiqueResult) {
   if (!critiqueResult) return null;
@@ -2146,50 +2082,31 @@ async function runChatPipeline(req) {
           }
         }
 
-        // If a high-risk category still fails after the bounded correction,
-        // cache the response and require explicit user acknowledgment before delivering.
+        // A high-risk answer that failed review is still an answer, and it is
+        // delivered. Nothing is withheld behind an acknowledgment step: the
+        // flag rides along with the response and the client renders it as one
+        // passive line beside the verdict. Review scores are logged, never used
+        // to make the user click through a warning to reach their own answer.
         if (isHighRisk && critiqueResult && !critiqueResult.passed) {
-          console.warn(`[/api/chat] HIGH-RISK category "${practiceArea}" failed critique after ${MAX_CRITIQUE_RETRIES + 1} attempts — requiring user safety acknowledgment`);
+          console.warn(`[/api/chat] HIGH-RISK "${practiceArea}" failed review after ${MAX_CRITIQUE_RETRIES + 1} attempts: delivering with an unverified flag`);
+          try { require("./telemetry").increment("unverified_delivered"); } catch (_) { /* telemetry must never break the path */ }
 
-          const ackToken = generateAckToken();
-          await setPendingAck(ackToken, {
-            uid: req.uid,
-            conversationId: req.body?.conversationId || null,
-            messageId: req.body?.messageId || null,
-            question,
-            classification,
-            draftResult,
-            critiqueResult,
-            evidence,
-            route,
-            planResult,
-            cacheKey,
-            cacheAllowed,
-          });
-
-          // Return HITL response — client shows ApprovalCard for safety acknowledgment
-          const ackQuestion = `This question involves ${practiceArea.replace(/_/g, " ")} — a high-risk legal area. Our quality review could not fully verify the response accuracy.`;
-          const ackContext = {
-            practiceArea,
-            quality: critiqueResult.quality,
-            legal_safety: critiqueResult.legal_safety,
-            issues: critiqueResult.issues,
-            message: "This response covers a high-risk legal area and could not be verified to our standard. Do you still want to see the response? We strongly recommend consulting a qualified lawyer.",
-          };
-          // Persist the card state AND the token (now Firestore-durable) so a
-          // reopened chat re-renders a WORKING "I understand, show me" button —
-          // even across a server restart.
-          await serverPersistMessage(req, { status: "safetyAck", safetyAckQuestion: ackQuestion, safetyAckContext: ackContext, safetyAckToken: ackToken, pipelineStatus: "awaiting_input", unread: true });
-          res.json({
-            needsInput: true,
-            safetyAck: true,
-            ackToken,
-            question: ackQuestion,
-            field: "safety_acknowledgment",
-            context: ackContext,
-            provider: draftResult.provider,
-          });
-          return;
+          if (draftResult.result) {
+            draftResult.result._safetyFlag = {
+              practiceArea: classification.practice_area || "unknown",
+              quality: critiqueResult.quality,
+              legal_safety: critiqueResult.legal_safety,
+              issues: critiqueResult.issues,
+              message: "This answer covers a high-risk legal area and could not be fully checked against its sources. Treat it as a starting point and have a lawyer review it.",
+            };
+            // A high-risk answer that failed review must never tell the user
+            // they can handle it themselves; the drafter's escalate=false is
+            // ignored here.
+            draftResult.result.escalate = true;
+            if (!draftResult.result.escalateReason || /handle.*yourself|no lawyer/i.test(draftResult.result.escalateReason)) {
+              draftResult.result.escalateReason = "This is a high-risk legal area and should be reviewed by a qualified lawyer.";
+            }
+          }
         }
       }
 
@@ -2323,16 +2240,41 @@ async function loadPersistedTerminal(req) {
   }
 }
 
+// A fault the pipeline did not plan for. The reference is logged with the
+// stack AND returned to the client, so a report of "it stopped" can be tied to
+// one line in the server log instead of a sentence that names nothing.
+function pipelineFaultRef() {
+  return "pf_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
 async function executeChatRequest(req) {
-  await recordJobStart(req);
+  // Job bookkeeping is not part of the answer. A Firestore hiccup while
+  // recording a job must never decide whether the user gets a response.
+  try {
+    await recordJobStart(req);
+  } catch (err) {
+    console.warn("[chat] job start not recorded:", err.message);
+  }
   let result;
   try {
     result = await runChatPipeline(req);
   } catch (err) {
-    console.error("[/api/chat] unhandled pipeline error:", err && err.stack ? err.stack : err);
-    result = { status: 500, body: { error: "internal_error", message: "Something went wrong while processing your question." } };
+    const ref = pipelineFaultRef();
+    console.error(`[/api/chat] pipeline fault ${ref}:`, err && err.stack ? err.stack : err);
+    result = {
+      status: 500,
+      body: {
+        error: "pipeline_fault",
+        ref,
+        message: "The agent stopped before it finished this answer.",
+      },
+    };
   }
-  await recordJobEnd(req, result);
+  try {
+    await recordJobEnd(req, result);
+  } catch (err) {
+    console.warn("[chat] job end not recorded:", err.message);
+  }
   return result;
 }
 
@@ -2364,107 +2306,6 @@ router.post("/api/chat", async (req, res) => {
   } catch (e) {
     // Client disconnected; terminal state is persisted server-side.
   }
-});
-
-
-/**
- * POST /api/chat/acknowledge — User acknowledges a safety-flagged response.
- *
- * When a high-risk answer fails critique, the server caches it and returns
- * a needsInput with an ackToken. The client shows an ApprovalCard; when the
- * user clicks "I understand, show me the response", this endpoint is called
- * with the token, and the cached response is returned.
- */
-router.post("/api/chat/acknowledge", async (req, res) => {
-  const { ackToken, acknowledged } = req.body || {};
-
-  if (!ackToken) {
-    return res.status(400).json({ error: "bad_request", message: "ackToken is required" });
-  }
-
-  const pending = await getPendingAck(ackToken);
-  if (!pending || !pending.uid || pending.uid !== req.uid) {
-    // Ownership mismatches deliberately look identical to missing tokens.
-    return res.status(404).json({ error: "not_found", message: "Acknowledgment token expired or not found. Please re-ask your question." });
-  }
-
-  // Telemetry: count only real, owned acknowledge/decline decisions (never bad tokens).
-  try { require("./telemetry").increment(acknowledged === false ? "safety_ack_declined" : "safety_ack"); } catch (_) { /* telemetry must never break the path */ }
-
-  // User rejected — don't return the response
-  if (acknowledged === false) {
-    await deletePendingAck(ackToken);
-    return res.json({
-      acknowledged: false,
-      message: "Response withheld. Please consult a qualified lawyer for this matter.",
-    });
-  }
-
-  // User acknowledged — persist first, then drop the token so a persist
-  // failure does not leave the user with a dead button and no answer.
-  const { classification, draftResult, critiqueResult, evidence, route, planResult } = pending;
-
-  // Attach safety flag so the client can render the warning banner.
-  // High-risk answers that failed critique must NEVER tell the user they
-  // can handle it themselves — the drafter's escalate=false is ignored.
-  if (draftResult.result) {
-    draftResult.result._safetyFlag = {
-      practiceArea: critiqueResult.isHighRisk ? (classification.practice_area || "unknown") : "unknown",
-      quality: critiqueResult.quality,
-      legal_safety: critiqueResult.legal_safety,
-      issues: critiqueResult.issues,
-      message: "This response covers a high-risk legal area and could not be verified to our standard. Please consult a qualified lawyer for this matter.",
-      acknowledged: true,
-    };
-    draftResult.result.escalate = true;
-    if (!draftResult.result.escalateReason || /handle.*yourself|no lawyer/i.test(draftResult.result.escalateReason)) {
-      draftResult.result.escalateReason = "This is a high-risk legal area and should be reviewed by a qualified lawyer.";
-    }
-  }
-
-  // Persist the acknowledged terminal result server-side. The client is not
-  // the authority for this transition and may disconnect immediately after
-  // clicking the button.
-  if (pending.conversationId && pending.messageId) {
-    const d = getFirestore();
-    if (d) {
-      await d.collection("users").doc(req.uid)
-        .collection("conversations").doc(pending.conversationId)
-        .collection("messages").doc(pending.messageId)
-        .set({
-          userId: req.uid,
-          role: "agent",
-          status: "done",
-          result: draftResult.result,
-          classification,
-          critique: critiqueResult,
-          evidence: evidence || null,
-          pipelineStatus: "done",
-          unread: false,
-          safetyAcknowledgedAt: Date.now(),
-        }, { merge: true })
-        .catch((err) => console.warn("[ack] terminal persistence failed:", err.message));
-    }
-  }
-  await deletePendingAck(ackToken);
-
-  // Safety-flagged responses are never globally cached, even after one user
-  // acknowledges the warning.
-
-  res.json({
-    acknowledged: true,
-    classification,
-    route,
-    plan: planResult?.plan || null,
-    result: draftResult.result,
-    draftModel: draftResult.model,
-    draftProvider: draftResult.provider,
-    evidence: evidence || draftResult.result?.evidence || null,
-    critique: serializeCritique(critiqueResult),
-    safetyFlag: draftResult.result?._safetyFlag || null,
-    providersBusy: false,
-    retryAfter: null,
-  });
 });
 
 
@@ -2532,7 +2373,6 @@ router.runChatPipeline = runChatPipeline;
 
 // Test hooks (simulate a server restart by dropping the in-memory caches).
 router.__testing = {
-  clearAckCache: () => pendingSafetyAck.clear(),
   clearQuestionCache: () => questionCache.clear(),
   clearProviderCooldowns: () => providerCooldowns.clear(),
 };
