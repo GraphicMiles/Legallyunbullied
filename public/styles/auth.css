@@ -34,10 +34,10 @@
   --surface-alt: #2c2d31;
   --border: #37383c;
   --border-soft: #2a2b2f;
-  --text: #ececee;
-  --muted: #b4b5ba;
-  --faint: #8f9096;
-  --accent: #f2b705;
+  --text: #f2f2f3;
+  --muted: #a8a9ad;
+  --faint: #a8a9ad;
+  --accent: #f0b60a;
   --accent-ink: #171300;
   --accent-soft: rgba(242, 183, 5, 0.14);
   --danger: #ff6b6b;

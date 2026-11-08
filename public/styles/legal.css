@@ -22,10 +22,10 @@
   --color-surface-alt:   #2c2d31;
   --color-border:        #37383c;
   --color-border-soft:   #2a2b2f;
-  --color-text:          #ececee;
-  --color-text-muted:    #b4b5ba;
-  --color-text-faint:    #8f9096;
-  --color-accent:        #f2b705;
+  --color-text:          #f2f2f3;
+  --color-text-muted:    #a8a9ad;
+  --color-text-faint:    #a8a9ad;
+  --color-accent:        #f0b60a;
   --color-accent-hover:  #ffc61a;
   --color-accent-text:   #14120a;
   --color-accent-soft:   rgba(242, 183, 5, 0.12);

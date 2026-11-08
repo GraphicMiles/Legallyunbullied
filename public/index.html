@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0" />
 <title>Legally Unbullied: Ask a legal question</title>
 <meta name="theme-color" content="#1e1f22" />
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none'%3E%3Cpath d='M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z' stroke='%23f2b705' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='M11 15.5L14.2 18.7L21 11.5' stroke='%23f2b705' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none'%3E%3Cpath d='M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z' stroke='%23f0b60a' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='M11 15.5L14.2 18.7L21 11.5' stroke='%23f0b60a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
 <link rel="stylesheet" href="styles/beui-inspired.css" />
 <link rel="stylesheet" href="styles/beui-components.css" />
 <style>
@@ -18,21 +18,23 @@
   :root{
     /* --- color: two-tone warm-neutral dark (sidebar a step below the canvas),
          single gold accent used sparingly (brand, send, focus, active). --- */
-    --color-bg:            #1e1f22;   /* main canvas */
+    --color-bg:            #1e1f23;   /* main canvas */
     --color-bg-raised:     #17181a;   /* sidebar / recessed */
-    --color-surface:       #26272b;
-    --color-surface-alt:   #2c2d31;
+    --color-surface:       #26272b;   /* cards, composer */
+    --color-surface-alt:   #2c2d31;   /* quiet panels inside answers */
+    --color-chip:          #34353a;   /* icon discs, menus, idle controls */
     --color-border:        #37383c;
     --color-border-soft:   #2a2b2f;
 
-    --color-text:          #ececee;
-    --color-text-muted:    #b4b5ba;
-    /* 5:1 on --color-bg; fine print stays AA. */
-    --color-text-faint:    #8f9096;
+    --color-text:          #f2f2f3;
+    --color-text-muted:    #a8a9ad;   /* 7.0:1 on canvas, 6.4:1 on a card */
+    /* Faint and muted are the same tone now: the old 5.2:1 faint read as
+       disabled on a dark canvas. Kept as a token so nothing dangles. */
+    --color-text-faint:    #a8a9ad;
 
-    --color-accent:        #f2b705;
+    --color-accent:        #f0b60a;
     --color-accent-hover:  #ffc61a;
-    --color-accent-text:   #14120a;   /* text on top of accent fill */
+    --color-accent-text:   #1a1400;   /* text on top of accent fill */
     --color-accent-soft:   rgba(242, 183, 5, 0.12);
     --color-accent-border: rgba(242, 183, 5, 0.35);
 
@@ -67,7 +69,7 @@
     --fs-xl:   24px;
 
     /* --- layout --- */
-    --sidebar-width: 300px;
+    --sidebar-width: 316px;
     --topbar-height: 56px;
     --composer-max-width: 780px;
     --border-width: 1px;
@@ -334,24 +336,30 @@
     flex-shrink: 0;
   }
 
+  /* New question is the panel's primary action: it gets the surface, the
+     accent glyph and the room. Search sits under it as a quiet row. */
   .sidebar__action {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--space-3);
     width: 100%;
     min-height: 48px;
-    color: var(--color-text-muted);
+    margin-top: var(--space-2);
+    padding: 0 var(--space-4);
+    border-radius: 14px;
+    background: var(--color-surface);
+    color: var(--color-text);
     font-size: 15px;
     font-weight: 500;
     text-align: left;
-    transition: color var(--dur-fast) var(--ease), transform var(--dur-press) var(--ease-press);
+    transition: background var(--dur-fast) var(--ease), transform var(--dur-press) var(--ease-press);
   }
   .sidebar__action .icon,
   .sidebar__search .icon { width: 20px; height: 20px; }
 
-  .sidebar__action .icon { color: var(--color-text-faint); transition: color var(--dur-fast) var(--ease); }
-  .sidebar__action:hover { color: var(--color-text); }
-  .sidebar__action:hover .icon { color: var(--color-text-muted); }
+  .sidebar__action .icon { color: var(--color-accent); transition: color var(--dur-fast) var(--ease); }
+  .sidebar__action:hover { background: var(--color-chip); }
+  .sidebar__action:hover .icon { color: var(--color-accent-hover); }
   .sidebar__action:active { transform: translateY(1px); }
   .sidebar__action:focus-visible {
     outline: 2px solid var(--color-accent);
@@ -361,8 +369,9 @@
   .sidebar__search {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--space-3);
     min-height: 48px;
+    padding: 0 var(--space-4);
     color: var(--color-text-muted);
   }
   .sidebar__search .icon { color: var(--color-text-faint); transition: color var(--dur-fast) var(--ease); }
@@ -384,11 +393,11 @@
      repeated per-group heading. */
   .sidebar__section-label {
     flex-shrink: 0;
-    margin: var(--space-6) 0 0;
-    padding-bottom: var(--space-2);
-    font-size: 13px;
+    margin: var(--space-4) 0 var(--space-2);
+    padding: 0 var(--space-3);
+    font-size: var(--fs-sm);
     font-weight: 500;
-    color: var(--color-text-faint);
+    color: var(--color-text-muted);
   }
   .sidebar__section-label[hidden] { display: none; }
 
@@ -402,13 +411,24 @@
 
   /* history row: flat line, no surface and no radius. The active chat is
      marked in colour, not in a box. */
+  /* A row is a surface, not a line of text: the open conversation reads as a
+     filled row, everything else sits on the panel. */
   .history__row {
     display: flex;
     align-items: center;
+    min-height: 52px;
+    margin: 0 -8px;
+    padding: 0 4px 0 8px;
+    border-radius: 14px;
+    transition: background var(--dur-fast) var(--ease);
   }
+  .history__row:hover { background: var(--color-surface); }
+  .history__row.is-active { background: var(--color-surface); }
+  .history__row.is-active .history__item { font-weight: 500; }
 
   .history__item {
     display: flex;
+    font-size: 15px;
     align-items: center;
     gap: var(--space-2);
     flex: 1;
@@ -502,9 +522,9 @@
   /* small popover menu (history kebab) */
   .menu-popover {
     position: fixed;
-    min-width: 172px;
-    background: var(--color-bg-raised);
-    border-radius: var(--radius-md);
+    min-width: 200px;
+    background: var(--color-chip);
+    border-radius: var(--radius-lg);
     padding: 6px;
     display: flex;
     flex-direction: column;
@@ -522,10 +542,11 @@
   .menu-popover__item {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-3);
     width: 100%;
     text-align: left;
-    padding: 7px 10px;
+    min-height: 48px;
+    padding: 0 var(--space-3);
     border-radius: 0.5rem;
     font-size: var(--fs-sm);
     font-weight: 500;
@@ -542,7 +563,7 @@
   }
 
   .menu-popover__item-icon svg { width: 14px; height: 14px; }
-  .menu-popover__item--danger { color: #ff8b8e; }
+  .menu-popover__item--danger { color: #fa8d90; }
   .menu-popover__item:disabled { opacity: 0.55; cursor: not-allowed; }
   .menu-popover__trailing {
     margin-left: auto;
@@ -594,44 +615,34 @@
   }
 
 
-  /* auth section (sidebar) */
-  .auth-guest {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
+  /* auth section (sidebar): sign-in is a card, not a row: a title, the reason, and the way in. */
   .auth-signin-btn {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    gap: 10px;
+    gap: var(--space-1) var(--space-3);
     width: 100%;
-    min-height: 44px;
-    color: var(--color-text-muted);
-    font-size: var(--fs-base);
-    font-weight: 500;
+    padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    color: var(--color-text);
     text-align: left;
-    transition: color var(--dur-fast) var(--ease);
+    transition: background var(--dur-fast) var(--ease);
   }
-  .auth-signin-btn__leading {
-    flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--color-text-faint);
-  }
-  .auth-signin-btn__leading .icon { width: 16px; height: 16px; }
-  .auth-signin-btn__label { flex: 1; min-width: 0; }
-  .auth-signin-btn:hover { color: var(--color-text); }
-  .auth-signin-btn:hover .auth-signin-btn__leading { color: var(--color-text-muted); }
-  .auth-signin-btn:active { transform: translateY(1px); }
-  .auth-signin-btn[disabled] { opacity: 0.45; }
+  .auth-signin-btn__label { grid-column: 1; font-size: 15px; font-weight: 500; line-height: 1.25; }
   .auth-signin-hint {
+    grid-column: 1;
     margin: 0;
-    padding: 0 16px;
-    font-size: 12px;
-    line-height: 1.45;
-    color: var(--color-text-faint);
+    padding: 0;
+    font-size: var(--fs-xs);
+    line-height: 1.3;
+    color: var(--color-text-muted);
   }
+  .auth-signin-btn__arrow { grid-column: 2; grid-row: 1 / span 2; color: var(--color-text-muted); }
+  .auth-signin-btn:hover { background: var(--color-chip); }
+  .auth-signin-btn:active { transform: translateY(1px); }
+  .auth-signin-btn[disabled] { opacity: 0.6; cursor: not-allowed; }
+
 
   .auth-profile {
     display: flex;
@@ -733,6 +744,7 @@
   }
   .account-chip__caret { width: 12px; height: 12px; color: var(--color-text-faint); }
   @media (max-width: 900px) {
+    .sidebar__legal-action { min-height: 44px; padding: 0 var(--space-1); }
     .account-chip {
       width: 44px;
       padding: 0;
@@ -742,6 +754,27 @@
     .account-chip__name, .account-chip__caret { display: none; }
   }
 
+  /* A way out of the app is the last thing anyone looks for, so it sits at the
+     foot of the panel, above the account block. */
+  .sidebar__lawyer {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: 48px;
+    padding: var(--space-2);
+    margin: 0 calc(-1 * var(--space-2));
+    border-radius: 14px;
+    text-decoration: none;
+    color: var(--color-text);
+    transition: background var(--dur-fast) var(--ease);
+  }
+  .sidebar__lawyer:hover { background: var(--color-surface); }
+  .sidebar__lawyer:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+  .sidebar__lawyer-icon { display: flex; color: var(--color-accent); flex: none; }
+  .sidebar__lawyer-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+  .sidebar__lawyer-title { font-size: 15px; font-weight: 500; line-height: 1.25; }
+  .sidebar__lawyer-sub { font-size: var(--fs-xs); color: var(--color-text-muted); line-height: 1.3; }
+  .sidebar__lawyer-chevron { color: var(--color-text-muted); flex: none; }
   .sidebar__disclaimer {
     margin: 0;
     font-size: 13px;
@@ -884,12 +917,18 @@
     justify-content: center;
     width: 34px;
     height: 34px;
+    /* 44px is the touch minimum; a pointer gets the tighter 34px box. */
+    --icon-btn-touch: 44px;
     border-radius: var(--radius-md);
     color: var(--color-text-muted);
     transition: background var(--dur-fast) var(--ease-out),
                 color var(--dur-fast) var(--ease-out),
                 transform var(--dur-press) var(--ease-press);
     flex-shrink: 0;
+  }
+  @media (max-width: 900px) {
+    /* Icon controls reach the touch minimum on phones and tablets. */
+    .icon-btn { width: 44px; height: 44px; }
   }
   .icon-btn:hover { color: var(--color-text); }
   .icon-btn svg { width: 19px; height: 19px; }
@@ -903,6 +942,29 @@
     gap: var(--space-3);
     min-width: 0;
     flex: 1;
+  }
+  /* Brand in the bar, title in the bar: never both. */
+  .topbar__brand {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  .topbar__brand-mark { width: 26px; height: 26px; color: var(--color-accent); flex: none; }
+  .topbar__brand-name {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    color: var(--color-text);
+  }
+  .topbar__brand-name em { font-style: normal; color: var(--color-accent); }
+  .main.is-hero .topbar__brand { display: inline-flex; }
+  .main.is-hero .topbar__title { display: none; }
+  /* Where the sidebar is on screen it already carries the brand, so the bar
+     does not repeat it. */
+  @media (min-width: 901px) {
+    .app:not(.sidebar-collapsed) .topbar__brand { display: none; }
   }
 
   /* Chat tools live in the avatar dropdown — keep the topbar lean. */
@@ -923,6 +985,17 @@
 
 
   .new-chat-mobile { display: none; }
+  /* Home has no conversation, so it offers no "new" one: the drawer's New
+     question is the only entry point there. */
+  .main.is-hero .new-chat-mobile { display: none !important; }
+  .main.is-hero .account-chip {
+    width: 44px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+  }
+  .main.is-hero .account-chip__name,
+  .main.is-hero .account-chip__caret { display: none; }
 
   /* ------------------------------------------------------------
      CHAT AREA
@@ -955,216 +1028,105 @@
   }
 
   /* --- empty state --- */
-  /* One stack, top aligned: brand, greeting, examples. The composer is docked
-     at the bottom of the viewport, so this column never reserves space for it
-     and never competes with it for height. */
+  /* Phone composition: greeting at the top, cards stacked above the composer,
+     the gap in the middle shared between them. Desktop centres the pair. */
   .empty-state {
     flex: 1;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
     gap: var(--space-6);
-    padding: var(--space-4) 0;
+    padding: var(--space-4) 0 0;
     width: 100%;
     min-height: 0;
     overflow-y: auto;
     scrollbar-width: none;
   }
+  /* Pushes the group down when there is spare height, collapses to nothing
+     when there is not, so short screens scroll instead of clipping. */
+  .greeting { margin-top: auto; }
   .empty-state::-webkit-scrollbar { width: 0; height: 0; }
-  /* Brand, greeting and examples sit directly above the composer, the way a
-     chat starter does: the empty space becomes one gap at the top instead of a
-     void under the content. The top padding is the minimum when there is no
-     free space to push into. */
-  .hero-head {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-3);
-  }
-  .hero-brand { display: flex; align-items: center; gap: var(--space-2); }
-  .hero-brand__mark { width: 22px; height: 22px; color: var(--color-accent); flex: none; }
-  .hero-brand__name { font-size: var(--fs-sm); font-weight: 700; letter-spacing: -0.01em; color: var(--color-text); }
   .greeting {
-    margin: 0;
-    font-size: clamp(26px, 6vw, 34px);
-    line-height: 1.12;
-    letter-spacing: -0.03em;
-    font-weight: 650;
-    color: var(--color-text-faint);
+    font-size: clamp(28px, 8.4vw, 34px);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    color: var(--color-text-muted);
   }
   .greeting__line { display: block; }
-  .greeting__strong { display: block; color: var(--color-text); font-weight: 700; }
+  .greeting__strong { display: block; color: var(--color-text); }
   .quick-area { width: 100%; min-width: 0; }
   .quick-area__label {
     margin: 0 0 var(--space-2);
-    font-size: var(--fs-xs);
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--color-text-faint);
+    font-size: var(--fs-sm);
+    font-weight: 500;
+    color: var(--color-text-muted);
   }
   .quick-list {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-2);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
   }
-  .quick-area__label { margin-bottom: var(--space-2); }
-  /* Two examples side by side only when there is room for the text to breathe. */
-  @media (min-width: 640px) {
-    .quick-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  }
+  /* A card is a prompt with a glyph in its bottom corner. min-height, never a
+     fixed height: at 320 a long prompt wraps further and must not clip. */
   .question {
     display: flex;
+    flex-direction: column;
+    justify-content: space-between;
     align-items: flex-start;
     gap: var(--space-3);
-    padding: 12px 14px;
+    min-height: 140px;
+    padding: var(--space-4);
     border: 0;
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-xl);
     background: var(--color-surface);
     color: var(--color-text);
     text-align: left;
+    text-decoration: none;
     font: inherit;
-    font-size: var(--fs-sm);
-    line-height: 1.45;
+    font-size: 15px;
+    line-height: 1.3;
     font-weight: 500;
     cursor: pointer;
     transition: background var(--dur-fast) var(--ease);
   }
-  .question:hover { background: var(--color-surface-alt); }
-  .question__text { display: block; color: var(--color-text-muted); }
-  .question__icon { display: flex; flex: none; margin-top: 1px; color: var(--color-text-faint); }
-  @media (min-width: 1024px) {
-    /* On a wide canvas the hero centres in the space it has, rather than
-       hugging the topbar and leaving a void under it. */
-    .empty-state { align-items: center; gap: var(--space-7); }
-    .hero-head { align-items: center; }
-    .greeting { text-align: center; }
-    .quick-area { width: min(100%, 720px); }
-    .quick-area__label { text-align: center; }
-  }
-
-  /* Hero bands — greeting pinned to the top, the quick cluster anchors to
-     the bottom of the middle band (scrolling internally on very short
-     screens), the composer pinned to the bottom. The two side bands never
-     overlap; the composer owns the top of the layer stack. */
-  .empty-state__mark {
+  .question:hover { background: var(--color-chip); }
+  .question__text { display: block; }
+  .question__disc {
+    display: grid;
+    place-items: center;
     width: 40px;
     height: 40px;
-    border-radius: var(--radius-md);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--color-surface);
+    flex: none;
+    border-radius: var(--radius-xl);
+    background: var(--color-chip);
+    color: var(--color-text);
   }
-  .empty-state__mark svg { width: 20px; height: 20px; color: var(--color-accent); }
-  /* Greeting — two-tone, weight carries the hierarchy. First line is
-     time-aware ("Good morning/afternoon/evening{, Firstname}.") via JS;
-     the strong second line is the fixed headline. */
-
-  /* The composer is always docked here. It no longer travels into the
-     empty state, so the hero and the input never trade height. */
-  .composer-dock { position: relative; z-index: 20; }
-
-
-
-
-
-
-  /* Hero topbar — the empty state gets a minimal bar: sidebar glyph left,
-     avatar-only chip right (title, badges and new-chat stay hidden). */
-  .main.is-hero .topbar__meta,
-  .main.is-hero .new-chat-mobile { display: none; }
-  .main.is-hero .account-chip {
-    width: 44px;
-    padding: 0;
-    justify-content: center;
-    border-radius: 50%;
-  }
-  .main.is-hero .account-chip__name,
-  .main.is-hero .account-chip__caret { display: none; }
-
-  /* Toast — transient confirmation for share/copy feedback */
-  .toast {
-    position: fixed;
-    left: 50%;
-    bottom: 26px;
-    transform: translate(-50%, 16px);
-    z-index: 1200;
-    max-width: min(90vw, 340px);
-    background: var(--color-text);
-    color: var(--color-surface);
-    border-radius: var(--radius-full);
-    padding: 9px 16px;
-    font-size: 12px;
-    font-weight: 650;
-    line-height: 1.35;
-    text-align: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity var(--dur-base) var(--ease), transform var(--dur-base) var(--ease);
-  }
-  .toast.show { opacity: 1; transform: translate(-50%, 0); }
-
-  /* Composer footnote — surfaceless line inside the composer card.
-     No dismissal; the NBA directory link matches the verdict escalation. */
-  body.answer-has-verdict .composer-note { display: none; }
-  .composer-note {
-    margin: 0;
-    padding: var(--space-1) var(--space-3) var(--space-3);
-    font-size: 12px;
-    line-height: 1.42;
-    color: var(--color-text-faint);
-    text-align: left;
-    text-wrap: pretty;
-  }
-  .composer-note__link {
-    color: var(--color-text-muted);
-    font-weight: 650;
-    text-decoration: underline;
-    text-underline-offset: 2px;
-    text-decoration-color: var(--color-border);
-    white-space: nowrap;
-  }
-  .composer-note__link:hover { color: var(--color-accent-hover); text-decoration-color: currentColor; }
-  .composer-note__link:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 2px;
-    border-radius: 2px;
-  }
-
-  /* Compact hero on short screens */
-  @media (max-height: 710px) {
-    .empty-state { padding-top: clamp(6px, 2vh, 10px); }
-    .composer-note { padding-bottom: var(--space-2); }
-  }
-  @media (max-width: 350px) {
-    .composer-note { padding-left: var(--space-3); padding-right: var(--space-3); }
-  }
-
-  @media (max-height: 620px) {
-  }
-  @media (max-height: 520px) {
-  }
-  @media (max-height: 430px) {
-    /* Extreme-short fallback: the drawer already carries the brand; drop the
-       in-hero copy so greeting + quick questions + composer all fit. */
+  .question__disc .icon { width: 22px; height: 22px; }
+  /* Short viewports: the hero gives up height before it gives up content, so
+     nothing is left clipped under the composer. */
+  @media (max-height: 720px) {
+    .empty-state { gap: var(--space-3); padding-top: 0; }
     .composer { padding-top: var(--space-2); }
-    .composer-note { line-height: 1.4; padding-bottom: var(--space-1); }
+    .greeting { font-size: 26px; }
+    .question { min-height: 96px; padding: var(--space-3) var(--space-4); font-size: 14px; gap: var(--space-2); }
+    .question__disc { width: 34px; height: 34px; }
+    .question__disc .icon { width: 18px; height: 18px; }
+    .quick-area__label { margin-bottom: var(--space-1); }
   }
+  @media (max-height: 600px) {
+    .empty-state { gap: var(--space-3); }
+    .greeting { font-size: 23px; }
+    .question { min-height: 88px; }
 
-  /* Desktop composition: the phone rhythm (greeting top, cluster docked
-     bottom) reads as a void on a wide, tall canvas. On >=1024px the hero
-     is one vertically centred composition; the content column is the same
-     780px used everywhere, brand row centres with the greeting. */
-  @media (min-width: 1024px) {
-    .empty-state {
-      grid-template-rows: auto auto auto;
-      align-content: center;
-      text-align: center;
-      gap: var(--space-7);
-      padding-top: 0;
-    }
+  }
+  @media (max-width: 359px) {
+    .question { min-height: 128px; padding: var(--space-3); font-size: 14px; }
+    .question__disc { width: 36px; height: 36px; }
+  }
+  @media (min-width: 901px) {
+    .empty-state { justify-content: center; gap: var(--space-7); }
+    .quick-area { width: min(100%, 640px); }
+    .question { min-height: 150px; }
   }
 
   /* --- chat status (loading / not found) --- */
@@ -1891,6 +1853,71 @@
     flex-shrink: 0;
     padding: var(--space-3) var(--space-4) max(var(--space-5), calc(env(safe-area-inset-bottom, 0px) + var(--space-3)));
   }
+  /* Standing "not legal advice" line. It sits under the composer card, so it
+     steps outside the surface and centres. */
+  .composer-note {
+    margin: 0;
+    padding: var(--space-2) var(--space-4) var(--space-1);
+    font-size: var(--fs-xs);
+    line-height: 1.42;
+    color: var(--color-text-muted);
+    text-align: center;
+    text-wrap: pretty;
+  }
+  .composer-note__link {
+    color: var(--color-text);
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+  .composer-note__link:hover { color: var(--color-accent-hover); text-decoration-color: currentColor; }
+  .composer-note__link:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+  /* One warning per screen: when an answer carries a verdict card, that card
+     already says this, so the standing line steps aside. */
+  body.answer-has-verdict .composer-note { display: none; }
+
+  /* Toast: transient confirmation for share and copy feedback. */
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 26px;
+    transform: translate(-50%, 16px);
+    z-index: 1200;
+    max-width: min(90vw, 340px);
+    background: var(--color-text);
+    color: var(--color-surface);
+    border-radius: var(--radius-full);
+    padding: 9px 16px;
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    line-height: 1.35;
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--dur-base) var(--ease), transform var(--dur-base) var(--ease);
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  /* Loading mark used by the chat status state (search, not found). */
+  .empty-state__mark {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-surface);
+  }
+  .empty-state__mark svg { width: 20px; height: 20px; color: var(--color-accent); }
+
+  .composer-dock { position: relative; z-index: 20; }
+
   .composer__inner {
     max-width: var(--composer-max-width);
     margin: 0 auto;
@@ -1929,7 +1956,11 @@
   .composer-card {
     background: var(--color-surface);
     border: 0;
-    border-radius: var(--radius-xl);
+    border-radius: 26px;
+    padding: 16px 12px 12px 20px;
+  }
+  @media (max-width: 380px) {
+    .composer-card { padding: 14px 10px 10px 16px; border-radius: 22px; }
   }
 
 
@@ -1945,7 +1976,7 @@
       top: 0;
       left: 0;
       bottom: 0;
-      width: min(300px, 84vw);
+      width: min(316px, 86vw);
       z-index: 40;
       /* Reversible path (apple-design §7): in == out, mirrored easing curve. */
       transform: translateX(-100%);
@@ -2123,7 +2154,7 @@
       <symbol id="i-reply" viewBox="0 0 24 24"><polyline points="9 17 4 12 9 7"/> <path d="M20 18v-2a4 4 0 0 0-4-4H4"/></symbol>
       <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/> <path d="m12 5 7 7-7 7"/></symbol>
     <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/> <path d="M12 19V5"/></symbol>
-  </svg>
+  <symbol id="i-briefcase" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V4h6v3M3 13h18"/></symbol><symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /></symbol><symbol id="i-banknote" viewBox="0 0 24 24"><rect width="20" height="12" x="2" y="6" rx="2" /> <circle cx="12" cy="12" r="2" /> <path d="M6 12h.01M18 12h.01" /></symbol></svg>
 
 
   
@@ -2137,8 +2168,8 @@
     <div class="sidebar__header">
       <div class="brand">
         <svg class="brand__mark" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z" stroke="#f2b705" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M11 15.5L14.2 18.7L21 11.5" stroke="#f2b705" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z" stroke="#f0b60a" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M11 15.5L14.2 18.7L21 11.5" stroke="#f0b60a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         <span class="brand__name">Legally <em>Unbullied</em></span>
       </div>
@@ -2166,8 +2197,16 @@
     </div>
 
     <div class="sidebar__footer">
+      <a class="sidebar__lawyer" href="https://www.nigerianbar.org.ng/find-a-lawyer" target="_blank" rel="noopener noreferrer">
+        <span class="sidebar__lawyer-icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-scale"/></svg></span>
+        <span class="sidebar__lawyer-text">
+          <span class="sidebar__lawyer-title">Find a lawyer</span>
+          <span class="sidebar__lawyer-sub">Nigerian Bar directory</span>
+        </span>
+        <svg class="icon sidebar__lawyer-chevron" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+      </a>
       <div id="auth-section"></div>
-      <p class="sidebar__disclaimer">Legal information, not legal representation. Need a lawyer? We point you to the NBA's public directory.</p>
+      <p class="sidebar__disclaimer">Legal information, not legal representation.</p>
       <nav class="sidebar__legal" aria-label="Privacy, terms and sharing">
         <a href="/privacy">Privacy</a>
         <a href="/terms">Terms</a>
@@ -2201,6 +2240,11 @@
         <svg class="icon" aria-hidden="true"><use href="#i-panel-left"/></svg>
       </button>
       <div class="topbar__meta">
+        <!-- Home shows who this is. A conversation shows what it is about. -->
+        <span class="topbar__brand" id="topbar-brand">
+          <svg class="topbar__brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M11 15.5L14.2 18.7L21 11.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="topbar__brand-name">Legally <em>Unbullied</em></span>
+        </span>
         <span class="topbar__title" id="conversation-title">New question</span>
       </div>
       <button class="icon-btn topbar__tool" id="clear-chat-btn" aria-label="Clear this chat" title="Clear this chat" disabled>
@@ -2223,19 +2267,15 @@
       <div class="chat__inner" id="chat-inner">
 
         <div class="empty-state" id="empty-state">
-          <div class="hero-head">
-            <div class="hero-brand">
-              <svg class="hero-brand__mark" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M11 15.5L14.2 18.7L21 11.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span class="hero-brand__name">Legally Unbullied</span>
-            </div>
-            <h1 class="greeting"><span class="greeting__line" id="greeting-line">Good morning.</span><strong class="greeting__strong" id="greeting-strong">What's the legal situation?</strong></h1>
-          </div>
+          <h1 class="greeting"><span class="greeting__line" id="greeting-line">Good morning.</span><strong class="greeting__strong" id="greeting-strong">What's the legal situation?</strong></h1>
 
           <div class="quick-area">
-            <p class="quick-area__label" id="quick-area-label">Try an example</p>
+            <p class="quick-area__label" id="quick-area-label">Start with a common situation</p>
             <div class="quick-list" role="group" aria-labelledby="quick-area-label">
-              <button type="button" class="question" data-prompt="Police stopped me and won't say why. What are my rights?"><span class="question__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-scale"/></svg></span><span class="question__text">Police stopped me and won't say why. What are my rights?</span></button>
-              <button type="button" class="question" data-prompt="My landlord wants to evict me without notice. What can I do?"><span class="question__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-house"/></svg></span><span class="question__text">My landlord wants to evict me without notice. What can I do?</span></button>
+              <button type="button" class="question" data-prompt="Police stopped me. What are my rights?"><span class="question__text">Police stopped me. What are my rights?</span><span class="question__disc" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg></span></button>
+              <button type="button" class="question" data-prompt="Landlord wants to evict me without notice. What can I do?"><span class="question__text">Evicted without notice?</span><span class="question__disc" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-house"/></svg></span></button>
+              <button type="button" class="question" data-prompt="My boss won't pay what I'm owed. What can I do?"><span class="question__text">My boss won't pay what I'm owed</span><span class="question__disc" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-briefcase"/></svg></span></button>
+              <button type="button" class="question" data-prompt="I lent someone money and they refuse to pay it back. What can I do?"><span class="question__text">Someone owes me money and won't pay</span><span class="question__disc" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-banknote"/></svg></span></button>
             </div>
           </div>
         </div>
@@ -2267,8 +2307,8 @@
       <div class="composer__inner">
         <div class="composer-card">
           <div id="prompt-bar-container"></div>
-          <p class="composer-note" role="note">Not legal advice. For real decisions, <a class="composer-note__link" id="composer-lawyer-link" href="https://www.nigerianbar.org.ng/find-a-lawyer" target="_blank" rel="noopener noreferrer">talk to a lawyer</a>.</p>
         </div>
+        <p class="composer-note" role="note">Not legal advice. For real decisions, <a class="composer-note__link" id="composer-lawyer-link" href="https://www.nigerianbar.org.ng/find-a-lawyer" target="_blank" rel="noopener noreferrer">talk to a lawyer</a>.</p>
       </div>
     </footer>
     </div>
