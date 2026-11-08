@@ -1164,6 +1164,9 @@ import {
           }
           throw new Error("You're sending messages too quickly. Please wait a moment and try again.");
         }
+        // A pipeline fault carries a server-side reference; log it so a report
+        // of "it stopped" can be tied to one line in the server log.
+        if (data && data.ref) dbgChatError("chat.pipeline_fault", { ref: data.ref, status: res.status });
         throw new Error((data && data.message) || `Request failed with status ${res.status}.`);
       }
       if (!data) {
@@ -1178,7 +1181,6 @@ import {
         corpusEmpty: !!data.corpusEmpty,
         providersBusy: !!data.providersBusy,
         retryAfter: data.retryAfter || null,
-        safetyAck: !!data.safetyAck,
         route: data.route || null,
         practiceArea: data.classification && data.classification.practice_area ? data.classification.practice_area : null,
         urgency: data.classification && data.classification.urgency ? data.classification.urgency : null,
@@ -1947,7 +1949,7 @@ import {
     // fallbacks never showed a trace, so don't invent one on reload.
     // Safety-ack reveals also skip it — they never ran the 5-step UI, which
     // otherwise renders as a bogus "Thought for 0.0s".
-    const fromSafetyAck = !!(msg.safetyAcknowledgedAt || (msg.result && msg.result._safetyFlag));
+    const fromSafetyAck = !!(msg.safetyAcknowledgedAt || msg.status === "safetyAck");
     const SHOW_TRACE = !fromSafetyAck && ["done", "corpusEmpty", "error", "stopped", "incomplete"].includes(msg.status);
     if (SHOW_TRACE) {
       // Render the SAME thinking component the live pipeline uses, in static
@@ -1976,8 +1978,9 @@ import {
     } else if (msg.status === "corpusEmpty") {
       body.appendChild(buildCorpusEmptyEl(msg.corpusEmptyMessage || "No ingested legal sources match this yet.", msg.createdAt));
     } else if (msg.status === "error") {
-      body.appendChild(buildErrorEl(msg.errorMessage || "Something went wrong.", {
+      body.appendChild(buildErrorEl(msg.errorMessage || "The answer didn't come through.", {
         retryText: findRetryQuestion(getActiveConversation(), msg),
+        onRetry: () => retryAgentMessage(msg.id),
       }));
     } else if (msg.status === "needsInput") {
       // Completed clarifying question — re-render the (still answerable) card.
@@ -1987,7 +1990,12 @@ import {
         (answer) => submitQuestion(answer)
       ));
     } else if (msg.status === "safetyAck") {
-      body.appendChild(buildSafetyApprovalStatic(msg));
+      // Answer withheld by the old pre-response gate (removed). It never
+      // reached the user, so it is a missing answer, not a warning.
+      body.appendChild(buildErrorEl("This answer was held back by an older safety check.", {
+        retryText: findRetryQuestion(getActiveConversation(), msg),
+        onRetry: () => retryAgentMessage(msg.id),
+      }));
     } else if (msg.status === "providersBusy") {
       body.appendChild(buildProvidersBusyStatic(msg));
     } else {
@@ -2451,7 +2459,7 @@ import {
     if (ev.noSourcing) {
       return { label: "Practical guidance", signal: 2 };
     }
-    // Unverified high-risk answers (safety-ack path) are never "Good option".
+    // Unverified high-risk answers are never labelled "Good option".
     if (r._safetyFlag) {
       return { label: "Limited evidence", signal: 1 };
     }
@@ -2947,31 +2955,8 @@ import {
       return;
     }
 
-    // HITL — agent needs clarification or safety acknowledgment
+    // HITL — the agent needs one more fact before it can answer
     if (response.needsInput) {
-      // Safety acknowledgment — show ApprovalCard instead of text input
-      if (response.safetyAck) {
-        console.log('[runPipeline] Safety acknowledgment required:', response.question);
-
-        if (live.loadingState) {
-          live.loadingState.destroy();
-          live.loadingState = null;
-        }
-
-        // Persist a terminal status + the data needed to re-render this card
-        // on reload. Previously the status stayed "thinking", so the static
-        // renderer misread a COMPLETED exchange as "incomplete".
-        agentMsg.status = "safetyAck";
-        agentMsg.safetyAckQuestion = response.question || "";
-        agentMsg.safetyAckContext = response.context || null;
-        agentMsg.safetyAckToken = response.ackToken || null;
-        agentMsg.thinkingElapsedMs = Date.now() - (agentMsg.startedAt || Date.now());
-
-        renderSafetyApproval(agentMsg, response, token);
-        finalizeAnswer(agentMsg, token);
-        return;
-      }
-
       console.log('[runPipeline] Agent needs input:', response.question);
       
       // Stop loading state
@@ -3380,127 +3365,6 @@ import {
     return wrap;
   }
 
-  function applySafetyAckReveal(msg, data) {
-    msg.result = data.result;
-    if (msg.result) {
-      msg.result.escalate = true;
-      if (!msg.result._safetyFlag) {
-        msg.result._safetyFlag = data.safetyFlag || {
-          message: "This response covers a high-risk legal area and could not be verified to our standard. Please consult a qualified lawyer for this matter.",
-          acknowledged: true,
-        };
-      }
-    }
-    msg.classificationRaw = data.classification || null;
-    msg.classification = normalizeClassification(data.classification);
-    msg.evidence = data.evidence || null;
-    msg.status = "done";
-    msg.safetyAcknowledgedAt = Date.now();
-    if (data.critique) msg.critique = data.critique;
-  }
-
-
-  // One builder for the high-risk gate card, used by BOTH the live card and
-  // the reload-time static re-render. They used to be two near-identical
-  // inline-styled blocks that drifted apart. Styling lives in
-  // beui-components.css (.safety-approval*) — no duplicated inline cssText.
-  function buildSafetyApprovalCard({ message, cancelLabel }) {
-    const wrap = document.createElement("div");
-    wrap.className = "safety-approval";
-    wrap.innerHTML = `
-      <div class="safety-approval__row">
-        <div class="safety-approval__icon" aria-hidden="true">
-          <svg class="icon" aria-hidden="true"><use href="#i-triangle-alert"/></svg>
-        </div>
-        <div>
-          <div class="safety-approval__title">
-            High-risk legal area. Review required.
-          </div>
-          <div class="safety-approval__body">
-            ${escapeHtml(message || "This response could not be fully verified.")}
-          </div>
-        </div>
-      </div>
-      <div class="safety-approval__actions">
-        <button class="safety-approval__btn safety-approval__btn--cancel safety-ack-cancel">${escapeHtml(cancelLabel)}</button>
-        <button class="safety-approval__btn safety-approval__btn--confirm safety-ack-confirm">I understand, show me</button>
-      </div>
-    `;
-    return wrap;
-  }
-
-  // Safety acknowledgment UI — wired to HITL when high-risk answer fails critique
-  function renderSafetyApproval(agentMsg, response, token) {
-    if (!live.refs || !live.refs.body) return;
-    const wrap = buildSafetyApprovalCard({
-      message: response.context?.message || response.question,
-      cancelLabel: "Cancel",
-    });
-
-    // Cancel — dismiss the card
-    wrap.querySelector(".safety-ack-cancel").addEventListener("click", () => {
-      wrap.style.opacity = "0.5";
-      wrap.querySelector(".safety-ack-confirm").disabled = true;
-      wrap.querySelector(".safety-ack-cancel").textContent = "Dismissed";
-      wrap.querySelector(".safety-ack-cancel").disabled = true;
-      // Send rejection to server
-      getAuthHeaders().then(headers => {
-        fetch("/api/chat/acknowledge", {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ ackToken: response.ackToken, acknowledged: false }),
-        }).catch(() => {});
-      });
-    });
-
-    // Confirm — fetch the cached response and render it
-    wrap.querySelector(".safety-ack-confirm").addEventListener("click", async () => {
-      const confirmBtn = wrap.querySelector(".safety-ack-confirm");
-      confirmBtn.disabled = true;
-      confirmBtn.textContent = "Loading...";
-
-      try {
-        const headers = await getAuthHeaders();
-        const res = await fetch("/api/chat/acknowledge", {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ ackToken: response.ackToken, acknowledged: true }),
-        });
-        const data = await res.json();
-
-        if (data.acknowledged && data.result) {
-          // finalizeAnswer already cleared live.refs after showing this card,
-          // so never append through it — rebuild from persisted message state
-          // the same way the reload/static path does.
-          applySafetyAckReveal(agentMsg, data);
-          saveState();
-          const convo = getActiveConversation();
-          if (convo) syncMessageToServer(convo.id, agentMsg);
-          renderHistory();
-          renderChat();
-        } else {
-          confirmBtn.textContent = "Response unavailable";
-          confirmBtn.style.opacity = "0.5";
-        }
-      } catch (err) {
-        console.error("[safetyAck] Failed:", err);
-        confirmBtn.textContent = "Error. Try again.";
-        confirmBtn.disabled = false;
-      }
-    });
-
-    live.refs.body.appendChild(wrap);
-    scrollChatToBottom();
-  }
-
-  // Max total pipeline attempts for one message when every provider is busy.
-  // Without a cap the auto-retry rescheduled itself forever while quota was
-  // exhausted for the day — burning the (shared) API rate limit and stacking
-  // busy cards. After the cap the card is terminal; the user can resend.
-  const MAX_BUSY_RETRIES = 3;
-
-  // Render "- Step" lines safely: textContent only. Never innerHTML with
-  // strings that originate outside this file, even if today's are static.
   function appendPlainSteps(container, md) {
     String(md || "").split(/\n/).forEach((rawLine) => {
       const text = rawLine.trim();
@@ -3621,49 +3485,6 @@ import {
   // ── Static re-render builders for HITL/busy states (reload path) ────────
   // These mirror the live cards so a completed exchange re-renders identically
   // on reload instead of being misread as "incomplete".
-
-  function buildSafetyApprovalStatic(msg) {
-    const wrap = buildSafetyApprovalCard({
-      message: (msg.safetyAckContext && msg.safetyAckContext.message) || msg.safetyAckQuestion,
-      cancelLabel: "Dismiss",
-    });
-
-    wrap.querySelector(".safety-ack-cancel").addEventListener("click", () => {
-      wrap.style.opacity = "0.5";
-      wrap.querySelector(".safety-ack-confirm").disabled = true;
-      wrap.querySelector(".safety-ack-cancel").disabled = true;
-    });
-
-    wrap.querySelector(".safety-ack-confirm").addEventListener("click", async () => {
-      const confirmBtn = wrap.querySelector(".safety-ack-confirm");
-      confirmBtn.disabled = true;
-      confirmBtn.textContent = "Loading...";
-      try {
-        const headers = await getAuthHeaders();
-        const res = await fetch("/api/chat/acknowledge", {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ ackToken: msg.safetyAckToken, acknowledged: true }),
-        });
-        const data = await res.json();
-        if (data.acknowledged && data.result) {
-          applySafetyAckReveal(msg, data);
-          saveState();
-          renderChat();
-        } else {
-          // Token expired after reload — honest fallback.
-          confirmBtn.textContent = "Expired. Ask again.";
-          confirmBtn.style.opacity = "0.5";
-        }
-      } catch (err) {
-        console.error("[safetyAck] Static confirm failed:", err);
-        confirmBtn.textContent = "Error. Try again.";
-        confirmBtn.disabled = false;
-      }
-    });
-
-    return wrap;
-  }
 
   function buildProvidersBusyStatic(msg) {
     const wrap = document.createElement("div");
@@ -3794,23 +3615,24 @@ import {
 
   function buildErrorEl(message, opts = {}) {
     const wrap = document.createElement("div");
-    wrap.className = "banner banner--attention";
+    wrap.className = "fault";
     const isGuestQuota = /FREE_QSTACK|free questions today/i.test(message || "");
     const isAuthError = /sign in|session may have expired|401/i.test(message || "");
     const safeMessage = (message || "").replace(/FREE_QSTACK\s*/, "");
-    const title = isGuestQuota ? "Free questions used up" : (isAuthError ? "You're signed out" : "Something went wrong");
+    const title = isGuestQuota ? "Free questions used up" : (isAuthError ? "You're signed out" : "The answer didn't come through");
 
+    // No panel, no tile, no stroke: the failure is a sentence on the page, in
+    // the same voice as the answer that did not arrive.
     wrap.innerHTML = `
-      <svg class="icon banner__icon" aria-hidden="true"><use href="#i-info"/></svg>
-      <div class="banner__body">
-        <div class="banner__title">${escapeHtml(title)}</div>
-        <p class="banner__text">${escapeHtml(safeMessage)}</p>
+      <div class="fault__body">
+        <div class="fault__title">${escapeHtml(title)}</div>
+        <p class="fault__text">${escapeHtml(safeMessage)}</p>
       </div>
     `;
 
-    const bodyEl = wrap.querySelector(".banner__body");
+    const bodyEl = wrap.querySelector(".fault__body");
     const actions = document.createElement("div");
-    actions.className = "banner__actions";
+    actions.className = "fault__actions";
 
     if (isGuestQuota && opts.retryText) {
       // The guest used their 3 free questions for today — the CTA that
@@ -3835,6 +3657,13 @@ import {
         goToAuthPage();
       });
       actions.appendChild(btn);
+    } else if (opts.onRetry) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "link-btn";
+      btn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-rotate-ccw"/></svg> Try again';
+      btn.addEventListener("click", () => opts.onRetry());
+      actions.appendChild(btn);
     } else if (opts.retryText) {
       const btn = document.createElement("button");
       btn.type = "button";
@@ -3848,6 +3677,35 @@ import {
 
     if (actions.children.length && bodyEl) bodyEl.appendChild(actions);
     return wrap;
+  }
+
+  // Retry a failed answer IN PLACE. The old flow re-submitted the question,
+  // which appended a second identical user bubble under the failure. The
+  // message, its id and its place in the thread are already correct; only the
+  // answer is missing, so re-run the same message.
+  function retryAgentMessage(msgId) {
+    const convo = getActiveConversation();
+    if (!convo || !Array.isArray(convo.messages)) return;
+    const msg = convo.messages.find((m) => m.id === msgId);
+    if (!msg) return;
+    if (state.isAgentBusy) return; // an answer is already in flight
+    if (msg !== convo.messages[convo.messages.length - 1]) return; // moved on
+
+    const oldEl = el.chatMessages.querySelector(`[data-msg-id="${msgId}"]`);
+    if (oldEl) oldEl.remove();
+
+    msg.status = "thinking";
+    msg.traceOpen = true;
+    msg.steps = STEP_DEFS.map((s, i) => ({ ...s, state: i === 0 ? "active" : "pending", elapsedMs: 0 }));
+    msg.errorMessage = null;
+    msg.result = null;
+    msg.thinkingElapsedMs = 0;
+    msg.startedAt = Date.now();
+
+    state.isAgentBusy = true;
+    updateComposerState();
+    pipelineToken += 1;
+    mountLivePipeline(convo, msg, pipelineToken);
   }
 
   function finishWithError(convo, agentMsg, token, message) {
@@ -3896,6 +3754,7 @@ import {
 
     live.refs.body.appendChild(buildErrorEl(message, {
       retryText: findRetryQuestion(convo, agentMsg),
+      onRetry: () => retryAgentMessage(agentMsg.id),
     }));
     scrollChatToBottom();
 

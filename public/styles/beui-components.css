@@ -904,114 +904,6 @@
 }
 
 /* ==========================================================================
-   SAFETY APPROVAL (high-risk gate card)
-   One stylesheet implementation shared by the live card and the reload-time
-   static re-render. Was previously two copies of the same inline styles in
-   app.js; kept in one place so live and reload paths cannot diverge.
-   ========================================================================== */
-
-.safety-approval {
-  background: rgba(229, 72, 77, 0.08);
-  border: 1px solid rgba(229, 72, 77, 0.35);
-  border-radius: 12px;
-  padding: 16px;
-  margin: 12px 0;
-  animation: spring-in 320ms cubic-bezier(0.34, 1.4, 0.64, 1);
-}
-
-.safety-approval__row {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  margin-bottom: 12px;
-}
-
-.safety-approval__icon {
-  flex-shrink: 0;
-  color: var(--color-danger, #e5484d);
-  font-size: 20px;
-  margin-top: 2px;
-}
-
-.safety-approval__title {
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--color-danger, #e5484d);
-  margin-bottom: 6px;
-  letter-spacing: 0.01em;
-}
-
-.safety-approval__body {
-  font-size: 13px;
-  color: var(--color-text-muted, #9a9a94);
-  line-height: 1.55;
-}
-
-.safety-approval__actions {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-}
-
-.safety-approval__btn {
-  padding: 10px 16px;
-  min-height: 44px;
-  border-radius: 8px;
-  font-size: 13px;
-  cursor: pointer;
-  touch-action: manipulation;
-  transition: transform 120ms ease, opacity 120ms ease, background 120ms ease;
-}
-
-.safety-approval__btn--cancel {
-  background: transparent;
-  border: 1px solid var(--color-border, #2a2a2a);
-  color: var(--color-text-muted, #9a9a94);
-}
-
-.safety-approval__btn--cancel:hover {
-  color: var(--color-text);
-}
-
-.safety-approval__btn--confirm {
-  background: var(--color-danger, #e5484d);
-  border: none;
-  color: white;
-  font-weight: 600;
-}
-
-.safety-approval__btn--confirm:hover {
-  filter: brightness(1.08);
-}
-
-.safety-approval__btn:active {
-  transform: scale(0.97);
-  opacity: 0.88;
-}
-
-.safety-approval__btn:focus-visible {
-  outline: 2px solid var(--color-focus, #7fb4ff);
-  outline-offset: 2px;
-}
-
-.safety-approval__btn:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .safety-approval {
-    animation: none;
-  }
-  .safety-approval__btn {
-    transition: none;
-  }
-  .safety-approval__btn:active {
-    transform: none;
-  }
-}
-
-/* ==========================================================================
    ANSWER-AREA COMPONENTS (moved out of app.js inline styles)
    One rule set per user-visible element so live and reload paths can't
    drift apart, and so motion/touch/a11y polish lives in one place.
@@ -1191,9 +1083,8 @@
 /* --- Sources list --- */
 
 .answer-sources {
-  margin-top: 12px;
-  padding: 8px 0;
-  border-top: 1px solid var(--color-border-soft, #1f1f1f);
+  margin-top: 14px;
+  padding: 0;
 }
 
 .answer-sources__label {
@@ -1220,7 +1111,6 @@
   padding: 6px 10px;
   background: transparent;
   border: 0;
-  border-left: 2px solid var(--color-accent-border, rgba(242, 183, 5, 0.35));
   border-radius: var(--radius-sm, 6px);
   font-family: inherit;
   font-size: 12px;
@@ -1239,15 +1129,12 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  padding: 2px 8px;
-  border-radius: 999px;
-  border: 1px solid var(--color-border, #37383c);
+  padding: 0;
   color: var(--color-text-faint, #8f9096);
 }
 
 .answer-sources__badge.is-reviewed {
   color: var(--color-success, #4cae6b);
-  border-color: rgba(76, 174, 107, 0.4);
 }
 
 .answer-sources__chevron {
@@ -1261,8 +1148,7 @@
 .answer-sources__toggle.is-open .answer-sources__chevron { transform: rotate(90deg); }
 
 .answer-sources__detail {
-  padding: 4px 8px 10px 12px;
-  border-left: 2px solid var(--color-accent-border, rgba(242, 183, 5, 0.35));
+  padding: 4px 0 10px 10px;
 }
 
 .answer-sources__detail[hidden] { display: none; }

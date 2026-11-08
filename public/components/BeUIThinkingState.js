@@ -6,15 +6,16 @@
 const STAGES = [800, 600, 1800, 2600, 1600];
 
 const VARIANTS = {
+  // ONE honest row. The server answers a question with a single request, so
+  // there is no per-stage progress to report: the fabricated "Classifying /
+  // Searching / Analyzing 14 sections / Drafting" list advanced on a timer and
+  // told the user things about their own answer that were not true. A finished
+  // run reports its real elapsed time; a run in flight reports nothing but the
+  // fact that it is running.
   Steps: {
-    active: "Thinking",
-    done: "Thought for 4 seconds",
-    rows: [
-      { primary: "Classifying the question" },
-      { primary: "Searching legal sources" },
-      { primary: "Analyzing provisions", secondary: "14 sections" },
-      { primary: "Drafting response" },
-    ],
+    active: "Working on your answer",
+    done: "Answered",
+    rows: [{ primary: "Checking your question against Nigerian law" }],
   },
   Reasoning: {
     active: "Thinking",
@@ -56,7 +57,6 @@ class BeUIThinkingState {
     this.stage = this.static ? STAGES.length - 1 : 0;
     this.manualExpanded = null;
     this.selectedTool = null;
-    this.lineHeight = 0;
     this.element = null;
     // Real elapsed-time source. Two forms:
     //  - startedAt (epoch ms): live "Thought for X.Xs" ticking during a run
@@ -73,11 +73,11 @@ class BeUIThinkingState {
 
   doneLabel(v) {
     if (this.elapsedMs != null) {
-      return `Thought for ${(this.elapsedMs / 1000).toFixed(1)}s`;
+      return `Took ${(this.elapsedMs / 1000).toFixed(1)}s`;
     }
     if (this.startedAt == null) return v.done;
     const secs = ((Date.now() - this.startedAt) / 1000).toFixed(1);
-    return `Thought for ${secs}s`;
+    return `Took ${secs}s`;
   }
 
   startElapsedTick(label) {
@@ -104,7 +104,7 @@ class BeUIThinkingState {
     const autoExpanded = this.stage >= 1 && this.stage < 4;
     const expanded = this.manualExpanded !== null ? this.manualExpanded : autoExpanded;
     const working = this.stage < 3;
-    const visible = this.stage < 2 ? 0 : this.stage === 2 ? Math.min(2, v.rows.length) : v.rows.length;
+    const visible = this.stage < 1 ? 0 : v.rows.length;
     
     this.element = document.createElement("div");
     this.element.className = "beui-thinking-state";
@@ -210,19 +210,6 @@ class BeUIThinkingState {
     const traceContent = document.createElement("div");
     traceContent.style.cssText = "position: relative; margin-top: 4px; margin-left: 5px; padding-left: 16px;";
     
-    // Vertical line
-    const verticalLine = document.createElement("span");
-    verticalLine.setAttribute("aria-hidden", "true");
-    verticalLine.style.cssText = `
-      position: absolute;
-      left: 3px;
-      width: 1px;
-      background: var(--color-border);
-      top: -8px;
-      height: ${this.lineHeight ? this.lineHeight - 2 : 0}px;
-      transition: height 500ms cubic-bezier(0.23, 1, 0.32, 1);
-    `;
-    
     // Trace rows container
     const traceRef = document.createElement("div");
     traceRef.style.cssText = "display: flex; flex-direction: column; gap: 4px; padding: 4px 0;";
@@ -276,7 +263,9 @@ class BeUIThinkingState {
         dot.innerHTML = `<svg class="icon" style="width:9px;height:9px" aria-hidden="true"><use href="#i-circle"/></svg>`;
         rowEl.appendChild(dot);
       } else if (this.variant === "Steps") {
-        if (i < visible - 1 || !working) {
+        // A tick means "this finished". Only a finished (static) render may
+        // claim that; a live row keeps its spinner until the answer replaces it.
+        if (this.static || i < visible - 1) {
           const check = document.createElement("span");
           check.style.cssText = "flex-shrink: 0; color: var(--color-text-faint);";
           check.innerHTML = `<svg class="icon" style="width:14px;height:14px" aria-hidden="true"><use href="#i-check"/></svg>`;
@@ -347,7 +336,6 @@ class BeUIThinkingState {
       traceRef.appendChild(more);
     }
     
-    traceContent.appendChild(verticalLine);
     traceContent.appendChild(traceRef);
     traceInner.appendChild(traceContent);
     traceWrapper.appendChild(traceInner);
@@ -358,13 +346,6 @@ class BeUIThinkingState {
     this.container.innerHTML = "";
     this.container.appendChild(this.element);
     
-    // Measure line height
-    requestAnimationFrame(() => {
-      if (traceRef) {
-        this.lineHeight = traceRef.offsetHeight;
-        verticalLine.style.height = (this.lineHeight - 2) + "px";
-      }
-    });
   }
   
   startSequence() {
