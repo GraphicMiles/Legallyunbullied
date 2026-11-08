@@ -237,7 +237,10 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
 
 .auth-title {
   margin: 0 0 6px;
-  font-size: 26px;
+  /* Scales with the viewport so the title stays on one line at 320 instead of
+     wrapping to two and pushing the card down. */
+  font-size: clamp(20px, 6.6vw, 26px);
+  text-wrap: balance;
   font-weight: 700;
   letter-spacing: -0.02em;
   text-align: center;
@@ -275,21 +278,16 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
 .btn-social:active { transform: scale(0.985); }
 .btn-social svg { width: 17px; height: 17px; }
 
+/* The "or" needed two hairlines to sit between two options. Space does the
+   same job: the word is centred and the buttons above and below already read
+   as separate. */
 .auth-divider {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin: 22px 0;
+  justify-content: center;
+  margin: 16px 0;
   color: var(--faint);
   font-size: 12px;
-}
-
-.auth-divider::before,
-.auth-divider::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--border-soft);
 }
 
 .field { display: block; margin-bottom: 16px; }
@@ -575,8 +573,7 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
 }
 
 @media (max-width: 480px) {
-  .auth-card { padding: 28px 20px 24px; }
-  .auth-title { font-size: 23px; }
+  .auth-card { padding: 26px 16px 22px; }
   .otp-box { width: 44px; height: 52px; font-size: 19px; }
   .auth-top { padding: 16px 18px; }
 }
