@@ -3,33 +3,8 @@
    Adapted from beautifului.dev for Legally Unbullied
    ========================================================================== */
 
-/* -------------------------------------------------------------------------
-   Design Tokens (extending existing)
-   ------------------------------------------------------------------------- */
-:root {
-  /* Additional colors for Beautiful UI components */
-  --beui-info: #3b82f6;
-  --beui-warning: #f59e0b;
-  --beui-success: #10b981;
-  --beui-error: #ef4444;
-  
-  /* Component-specific spacing */
-  --beui-spacing-xs: 4px;
-  --beui-spacing-sm: 8px;
-  --beui-spacing-md: 16px;
-  --beui-spacing-lg: 24px;
-  --beui-spacing-xl: 32px;
-  
-  /* Animation durations */
-  --beui-duration-fast: 150ms;
-  --beui-duration-normal: 300ms;
-  --beui-duration-slow: 500ms;
-  
-  /* Border radius */
-  --beui-radius-sm: 6px;
-  --beui-radius-md: 8px;
-  --beui-radius-lg: 12px;
-}
+/* Colours come from styles/tokens.css. This file declares none. */
+
 
 /* ==========================================================================
    1. LOADING STATE (Drive Variant)
@@ -474,9 +449,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  background: var(--color-chip);
-  color: var(--color-text);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-muted);
   transition: background var(--beui-duration-fast) var(--ease-out, cubic-bezier(0.22,0.61,0.36,1)),
               color var(--beui-duration-fast) var(--ease-out, cubic-bezier(0.22,0.61,0.36,1)),
               transform 90ms cubic-bezier(0.33, 0, 0.67, 0);
@@ -500,14 +475,11 @@
 }
 
 .beui-prompt-bar__tool--menu[aria-expanded="true"] {
-  background: var(--color-border);
-  color: var(--color-text);
-}
-
-.beui-prompt-bar__tool--mic.is-listening {
-  background: var(--color-accent-soft);
+  background: transparent;
   color: var(--color-accent);
 }
+
+.beui-prompt-bar__tool--mic.is-listening { color: var(--color-accent); }
 
 .beui-prompt-bar__tool--mic:disabled {
   opacity: 0.45;
@@ -539,12 +511,18 @@
 }
 
 .beui-prompt-bar__button--submit {
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
   flex: 0 0 auto;
   background: var(--color-accent);
-  color: var(--color-accent-text);
-  border-radius: 50%;
+  color: var(--color-on-accent);
+  border-radius: var(--radius-md);
+  /* The paint is 36px, the target is still 44: the hit area comes from the
+     transparent padding the button carries in its own box. */
+  box-sizing: content-box;
+  padding: 4px;
+  margin: 0 -4px;
 }
 
 .beui-prompt-bar__button--submit svg {
@@ -564,19 +542,19 @@
 .beui-prompt-bar__button--submit:disabled {
   opacity: 1;
   cursor: not-allowed;
-  background: var(--color-chip);
+  background: transparent;
   color: var(--color-text-muted);
 }
 
 /* While generating the send button becomes a stop control. */
 .beui-prompt-bar__button--submit.is-stop {
-  background: var(--color-danger);
-  color: #fff;
+  background: var(--color-text);
+  color: var(--color-canvas);
   opacity: 1;
 }
 
 .beui-prompt-bar__button--submit.is-stop:hover {
-  background: #ff5d61;
+  background: var(--color-danger-hover);
 }
 
 .beui-prompt-bar__button:focus-visible {
@@ -912,7 +890,7 @@
 /* --- Providers-busy card (live retry notice + static reload re-render) --- */
 
 .providers-busy {
-  background: var(--color-surface-alt, #2c2d31);
+  background: var(--color-surface-alt, var(--color-surface));
   border: 0;
   border-radius: var(--radius-md, 10px);
   padding: 14px;
@@ -925,35 +903,35 @@
 }
 
 .providers-busy__icon .icon {
-  color: var(--color-accent, #f2b705);
+  color: var(--color-accent, var(--color-accent));
   width: 18px;
   height: 18px;
 }
 
 .providers-busy__title {
   font-size: 14px;
-  color: var(--color-text, #f5f5f2);
+  color: var(--color-text, var(--color-text));
   margin: 0 0 8px 0;
   font-weight: 600;
 }
 
 .providers-busy__body {
   font-size: 13px;
-  color: var(--color-text-muted, #9a9a94);
+  color: var(--color-text-muted, var(--color-text-muted));
   margin: 0 0 8px 0;
   line-height: 1.55;
 }
 
 .providers-busy__steps {
   font-size: 13px;
-  color: var(--color-text, #f5f5f2);
+  color: var(--color-text, var(--color-text));
   margin: 0;
 }
 
 /* --- Needs-input card (clarifying-question gate) --- */
 
 .needs-input {
-  background: var(--color-surface-alt, #2c2d31);
+  background: var(--color-surface-alt, var(--color-surface));
   border: 0;
   border-radius: var(--radius-md, 10px);
   padding: 14px;
@@ -966,14 +944,14 @@
 }
 
 .needs-input__icon .icon {
-  color: var(--color-accent, #f2b705);
+  color: var(--color-accent, var(--color-accent));
   width: 18px;
   height: 18px;
 }
 
 .needs-input__question {
   font-size: 14px;
-  color: var(--color-text, #f5f5f2);
+  color: var(--color-text, var(--color-text));
   margin: 0 0 12px 0;
   font-weight: 500;
   line-height: 1.5;
@@ -988,32 +966,32 @@
   flex: 1;
   min-height: 44px;
   padding: 10px 12px;
-  background: var(--color-bg, #0a0a0a);
-  border: 1px solid var(--color-border, #2a2a2a);
-  border-radius: 8px;
-  color: var(--color-text, #f5f5f2);
+  background: var(--color-elevated);
+  border: 0;
+  border-radius: var(--radius-md);
+  color: var(--color-text);
   font-size: 16px; /* 16px keeps iOS Safari from zooming on focus */
-  transition: border-color 120ms ease;
+  transition: background 120ms ease;
 }
 
 .needs-input__field:focus {
-  border-color: var(--color-accent-border, rgba(242, 183, 5, 0.5));
+  border-color: var(--color-accent-border, color-mix(in srgb, var(--color-accent) 50%, transparent));
 }
 
 .needs-input__field:focus-visible {
-  outline: 2px solid var(--color-focus, #7fb4ff);
+  outline: 2px solid var(--color-focus, var(--color-accent));
   outline-offset: 1px;
 }
 
 .needs-input__field::placeholder {
-  color: var(--color-text-faint, #6b6b66);
+  color: var(--color-text-faint, var(--color-text-muted));
 }
 
 .needs-input__send {
   min-height: 44px;
   padding: 10px 16px;
-  background: var(--color-accent, #f2b705);
-  color: var(--color-accent-text, #14120a);
+  background: var(--color-accent, var(--color-accent));
+  color: var(--color-accent-text, var(--color-on-accent));
   border: none;
   border-radius: 8px;
   font-weight: 600;
@@ -1032,7 +1010,7 @@
 }
 
 .needs-input__send:focus-visible {
-  outline: 2px solid var(--color-focus, #7fb4ff);
+  outline: 2px solid var(--color-focus, var(--color-accent));
   outline-offset: 2px;
 }
 
@@ -1042,7 +1020,7 @@
 .answer-followups__title {
   font-size: 11px;
   font-weight: 600;
-  color: var(--color-text-faint, #6b6b66);
+  color: var(--color-text-faint, var(--color-text-muted));
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 8px;
@@ -1054,10 +1032,10 @@
   text-align: left;
   padding: 8px 12px;
   margin-bottom: 4px;
-  background: var(--color-surface, #1a1a1a);
-  border: 1px solid var(--color-border, #2a2a2a);
-  border-radius: 8px;
-  color: var(--color-text-muted, #9a9a94);
+  background: var(--color-surface);
+  border: 0;
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
   font-size: 13px;
   line-height: 1.4;
   cursor: pointer;
@@ -1066,11 +1044,11 @@
 }
 
 .followup-chip:hover {
-  color: var(--color-text, #f5f5f2);
+  color: var(--color-text, var(--color-text));
 }
 
 .followup-chip:focus-visible {
-  outline: 2px solid var(--color-focus, #7fb4ff);
+  outline: 2px solid var(--color-focus, var(--color-accent));
   outline-offset: 2px;
 }
 
@@ -1090,7 +1068,7 @@
 .answer-sources__label {
   font-size: 11px;
   font-weight: 600;
-  color: var(--color-text-faint, #6b6b66);
+  color: var(--color-text-faint, var(--color-text-muted));
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 6px;
@@ -1098,7 +1076,7 @@
 
 .answer-sources__item {
   font-size: 12px;
-  color: var(--color-text-muted, #9a9a94);
+  color: var(--color-text-muted, var(--color-text-muted));
   margin-bottom: 2px;
 }
 
@@ -1114,7 +1092,7 @@
   border-radius: var(--radius-sm, 6px);
   font-family: inherit;
   font-size: 12px;
-  color: var(--color-text-muted, #9a9a94);
+  color: var(--color-text-muted, var(--color-text-muted));
   text-align: left;
   cursor: pointer;
   transition: background var(--dur-fast, 120ms) var(--ease, ease);
@@ -1130,18 +1108,18 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   padding: 0;
-  color: var(--color-text-faint, #8f9096);
+  color: var(--color-text-faint, var(--color-text-muted));
 }
 
 .answer-sources__badge.is-reviewed {
-  color: var(--color-success, #4cae6b);
+  color: var(--color-success, var(--color-success));
 }
 
 .answer-sources__chevron {
   flex-shrink: 0;
   display: inline-flex;
   font-size: 10px;
-  color: var(--color-text-faint, #8f9096);
+  color: var(--color-text-faint, var(--color-text-muted));
   transition: transform var(--dur-fast, 120ms) var(--ease, ease);
 }
 
@@ -1160,11 +1138,11 @@
   align-items: center;
   margin-top: 6px;
   font-size: 11px;
-  color: var(--color-text-faint, #8f9096);
+  color: var(--color-text-faint, var(--color-text-muted));
 }
 
 .answer-sources__link {
-  color: var(--color-accent, #f2b705);
+  color: var(--color-accent, var(--color-accent));
   text-decoration: none;
   font-weight: 600;
 }
@@ -1173,14 +1151,14 @@
 
 .answer-sources__name {
   font-weight: 600;
-  color: var(--color-text, #f5f5f2);
+  color: var(--color-text, var(--color-text));
 }
 
 .answer-sources__excerpt {
   display: block;
   font-size: 12px;
   font-style: italic;
-  color: var(--color-text-faint, #6b6b66);
+  color: var(--color-text-faint, var(--color-text-muted));
   line-height: 1.55;
   margin: 0;
 }
@@ -1207,7 +1185,7 @@
   border-radius: var(--radius-sm, 6px);
   border: 0;
   background: transparent;
-  color: var(--color-text-faint, #8f9096);
+  color: var(--color-text-faint, var(--color-text-muted));
   font-family: inherit;
   font-size: 12px;
   font-weight: 500;
@@ -1217,12 +1195,12 @@
 }
 
 .answer-actions__btn:hover {
-  color: var(--color-text, #ececee);
-  background: var(--color-surface-alt, #2c2d31);
+  color: var(--color-text, var(--color-text));
+  background: var(--color-surface-alt, var(--color-surface));
 }
 
 .answer-actions__btn.is-done {
-  color: var(--color-success, #4cae6b);
+  color: var(--color-success, var(--color-success));
 }
 
 .answer-actions__rate {
@@ -1239,7 +1217,7 @@
   border-radius: 999px;
   border: 1px solid transparent;
   background: transparent;
-  color: var(--color-text-faint, #8f9096);
+  color: var(--color-text-faint, var(--color-text-muted));
   font-size: 14px;
   cursor: pointer;
   transition: color var(--dur-fast, 120ms) var(--ease, ease),
@@ -1248,13 +1226,13 @@
 }
 
 .answer-actions__thumb:hover {
-  color: var(--color-text, #ececee);
+  color: var(--color-text, var(--color-text));
 }
 
 .answer-actions__thumb.is-active {
-  color: var(--color-accent, #f2b705);
-  background: var(--color-accent-soft, rgba(242, 183, 5, 0.12));
-  border-color: var(--color-accent-border, rgba(242, 183, 5, 0.35));
+  color: var(--color-accent, var(--color-accent));
+  background: var(--color-accent-soft, color-mix(in srgb, var(--color-accent) 12%, transparent));
+  border-color: var(--color-accent-border, color-mix(in srgb, var(--color-accent) 35%, transparent));
 }
 
 /* --- Trace status (thinking text + elapsed timer) --- */
@@ -1276,7 +1254,7 @@
 .casual-reply-plain__text {
   font-size: 14px;
   line-height: 1.6;
-  color: var(--color-text, #f5f5f2);
+  color: var(--color-text, var(--color-text));
   background: transparent;
 }
 
@@ -1288,8 +1266,8 @@
   left: 50%;
   transform: translateX(-50%);
   z-index: 60;
-  background: var(--color-chip, #34353a);
-  color: var(--color-text, #f2f2f3);
+  background: var(--color-chip, var(--color-elevated));
+  color: var(--color-text, var(--color-text));
   border: 0;
   border-radius: 999px;
   padding: 6px 14px;

@@ -7,90 +7,12 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>Legally Unbullied: Ask a legal question</title>
-<meta name="theme-color" content="#1e1f22" />
+<meta name="theme-color" content="var(--color-canvas)" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none'%3E%3Cpath d='M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z' stroke='%23f0b60a' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='M11 15.5L14.2 18.7L21 11.5' stroke='%23f0b60a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="styles/tokens.css" />
 <link rel="stylesheet" href="styles/beui-inspired.css" />
 <link rel="stylesheet" href="styles/beui-components.css" />
 <style>
-  /* ============================================================
-     DESIGN TOKENS
-     ============================================================ */
-  :root{
-    /* --- color: two-tone warm-neutral dark (sidebar a step below the canvas),
-         single gold accent used sparingly (brand, send, focus, active). --- */
-    --color-bg:            #1e1f23;   /* main canvas */
-    --color-bg-raised:     #17181a;   /* sidebar / recessed */
-    --color-surface:       #26272b;   /* cards, composer */
-    --color-surface-alt:   #2c2d31;   /* quiet panels inside answers */
-    --color-chip:          #34353a;   /* icon discs, menus, idle controls */
-    --color-border:        #37383c;
-    --color-border-soft:   #2a2b2f;
-
-    --color-text:          #f2f2f3;
-    --color-text-muted:    #a8a9ad;   /* 7.0:1 on canvas, 6.4:1 on a card */
-    /* Faint and muted are the same tone now: the old 5.2:1 faint read as
-       disabled on a dark canvas. Kept as a token so nothing dangles. */
-    --color-text-faint:    #a8a9ad;
-
-    --color-accent:        #f0b60a;
-    --color-accent-hover:  #ffc61a;
-    --color-accent-text:   #1a1400;   /* text on top of accent fill */
-    --color-accent-soft:   rgba(242, 183, 5, 0.12);
-    --color-accent-border: rgba(242, 183, 5, 0.35);
-
-    --color-danger:        #e5484d;
-    --color-success:       #4cae6b;
-
-    /* --- spacing scale --- */
-    --space-1: 4px;
-    --space-2: 8px;
-    --space-3: 12px;
-    --space-4: 16px;
-    --space-5: 20px;
-    --space-6: 24px;
-    --space-7: 32px;
-    --space-8: 40px;
-
-    /* --- radius scale --- */
-    --radius-sm: 6px;
-    --radius-md: 10px;
-    --radius-lg: 16px;
-    --radius-xl: 20px;
-    --radius-full: 999px;
-
-    /* --- typography --- */
-    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
-    --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-    --fs-xs:   12px;
-    --fs-sm:   13px;
-    --fs-base: 14.5px;
-    --fs-md:   16px;
-    --fs-lg:   19px;
-    --fs-xl:   24px;
-
-    /* --- layout --- */
-    --sidebar-width: 316px;
-    --topbar-height: 56px;
-    --composer-max-width: 780px;
-    --border-width: 1px;
-
-    /* --- motion ---
-       Spring-derived curves (apple-design): critically damped settle is the
-       default, a hint of overshoot only for pop/pill arrivals, and a mirrored
-       in-out curve for reversible, gesture-like transitions (drawers, sheets).
-       Interaction feedback must land on pointer-down, not after release. --- */
-    --ease:        cubic-bezier(0.4, 0, 0.2, 1);        /* legacy, prefer tokens below */
-    --ease-out:     cubic-bezier(0.22, 0.61, 0.36, 1);  /* fast exit, gentle settle */
-    --ease-spring:  cubic-bezier(0.34, 1.4, 0.64, 1);   /* hair of overshoot — tiny pops only */
-    --ease-inout:   cubic-bezier(0.42, 0, 0.58, 1);     /* mirrored, reversible paths */
-    --ease-press:   cubic-bezier(0.33, 0, 0.67, 0);     /* snap into press, fast */
-    --dur-press: 90ms;
-    --dur-fast:  120ms;
-    --dur-base:  180ms;
-    --dur-med:   240ms;
-    --dur-slow:  320ms;
-  }
-
   /* Global press feedback (apple-design §1: respond on pointer-down, instant).
      Every tappable control compresses ~3% the moment it is touched. */
   .btn:not([disabled]):active, .icon-btn:not([disabled]):active,
@@ -298,10 +220,10 @@
     color: var(--color-text);
   }
   .btn--danger {
-    background: var(--color-danger);
-    color: #fff;
+    background: var(--color-text);
+    color: var(--color-canvas);
   }
-  .btn--danger:hover { background: #ff5d61; }
+  .btn--danger:hover { background: var(--color-danger-hover); }
   .btn[disabled], .icon-btn[disabled] {
     opacity: 0.4;
     cursor: not-allowed;
@@ -570,12 +492,15 @@
   .menu-popover__item-icon svg { width: 15px; height: 15px; }
   /* Hover brightens the label and its icon. No background is painted, here or
      anywhere else in the menu. */
-  .menu-popover__item:hover { background: transparent; color: #ffffff; }
+  .menu-popover__item:hover { background: transparent; color: var(--color-text); }
   .menu-popover__item:hover .menu-popover__item-icon { color: var(--color-text); }
   .menu-popover__item:active { opacity: 0.72; }
-  .menu-popover__item--danger { color: #fa8d90; }
+  /* Destructive is wording plus the trash icon. It is a little quieter than a
+     normal action at rest and reaches full strength on hover, so it reads as
+     deliberate without borrowing a colour the palette does not have. */
+  .menu-popover__item--danger { color: var(--color-danger); }
   .menu-popover__item--danger .menu-popover__item-icon { color: currentColor; }
-  .menu-popover__item--danger:hover { background: transparent; color: #ffb0b2; }
+  .menu-popover__item--danger:hover { background: transparent; color: var(--color-danger-hover); }
   .menu-popover__item--danger:hover .menu-popover__item-icon { color: currentColor; }
   .menu-popover__item:disabled { opacity: 0.45; cursor: default; }
   .menu-popover__item:disabled:hover { color: var(--color-text); }
@@ -608,10 +533,10 @@
 
   .sidebar__footer {
     flex-shrink: 0;
-    padding: var(--space-5) 16px max(16px, calc(env(safe-area-inset-bottom, 0px) + 8px));
+    padding: 14px 14px max(12px, calc(env(safe-area-inset-bottom, 0px) + 6px));
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
   }
 
 
@@ -624,8 +549,8 @@
     align-items: center;
     gap: 10px;
     width: 100%;
-    min-height: 56px;
-    padding: 12px 14px;
+    min-height: 52px;
+    padding: 10px 12px;
     border-radius: var(--radius-lg);
     background: var(--color-surface);
     color: var(--color-text);
@@ -717,10 +642,10 @@
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    height: 44px;
+    height: 40px;
     flex-shrink: 0;
-    padding: 0 var(--space-3) 0 var(--space-2);
-    border-radius: var(--radius-full);
+    padding: 0 10px 0 6px;
+    border-radius: var(--radius-md);
     background: var(--color-surface);
     transition: background var(--dur-fast) var(--ease);
   }
@@ -767,8 +692,8 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    min-height: 56px;
-    padding: 12px 14px;
+    min-height: 52px;
+    padding: 10px 12px;
     border-radius: var(--radius-lg);
     background: var(--color-surface);
     text-decoration: none;
@@ -828,7 +753,7 @@
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.55);
+    background: var(--color-scrim);
     backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);
     z-index: 30;
@@ -843,7 +768,7 @@
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.6);
+    background: var(--color-scrim);
     z-index: 100;
     align-items: center;
     justify-content: center;
@@ -903,7 +828,7 @@
     padding: 0 var(--space-5);
     /* Floating material (apple-design §12): content scrolls under a frosted
        layer, edges fade instead of a hard 1px divider. */
-    background: var(--color-translucent-topbar, rgba(30, 31, 34, 0.78));
+    background: var(--color-translucent-topbar, var(--color-topbar));
     backdrop-filter: blur(18px) saturate(160%);
     -webkit-backdrop-filter: blur(18px) saturate(160%);
     position: relative;
@@ -916,8 +841,8 @@
     bottom: 0;
     height: 1px;
     background: linear-gradient(90deg,
-      transparent, rgba(236, 236, 238, 0.08) 20%,
-      rgba(236, 236, 238, 0.08) 80%, transparent);
+      transparent, color-mix(in srgb, var(--color-text) 8%, transparent) 20%,
+      color-mix(in srgb, var(--color-text) 8%, transparent) 80%, transparent);
   }
 
   .icon-btn {
@@ -1073,23 +998,22 @@
     font-weight: 500;
     color: var(--color-text-muted);
   }
+  /* Four starting points, as four rows. They used to be 140px tiles holding a
+     six-word label and a 32px tile, which is a box four times the size of its
+     content. A row is the honest shape for a one-line prompt. */
   .quick-list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-  /* A card is a prompt with a glyph in its bottom corner. min-height, never a
-     fixed height: at 320 a long prompt wraps further and must not clip. */
-  .question {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: var(--space-3);
-    min-height: 140px;
-    padding: var(--space-4);
+    gap: 8px;
+  }
+  .question {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 52px;
+    padding: 10px 12px;
     border: 0;
-    border-radius: var(--radius-xl);
+    border-radius: var(--radius-lg);
     background: var(--color-surface);
     color: var(--color-text);
     text-align: left;
@@ -1101,44 +1025,30 @@
     cursor: pointer;
     transition: background var(--dur-fast) var(--ease);
   }
-  .question:hover { background: var(--color-chip); }
-  .question__text { display: block; }
-  .question__disc {
-    display: grid;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    flex: none;
-    border-radius: var(--radius-xl);
-    background: var(--color-chip);
-    color: var(--color-text);
-  }
-  .question__disc .icon { width: 22px; height: 22px; }
+  /* Hover brightens the glyph; the row does not repaint. */
+  .question:hover .question__icon { color: var(--color-accent-hover); }
+  .question__icon { display: flex; flex: none; color: var(--color-accent); }
+  .question__icon .icon { width: 17px; height: 17px; }
+  .question__text { flex: 1; min-width: 0; font-size: var(--fs-base); line-height: 1.4; }
   /* Short viewports: the hero gives up height before it gives up content, so
      nothing is left clipped under the composer. */
   @media (max-height: 720px) {
     .empty-state { gap: var(--space-3); padding-top: 0; }
     .composer { padding-top: var(--space-2); }
     .greeting { font-size: 26px; }
-    .question { min-height: 96px; padding: var(--space-3) var(--space-4); font-size: 14px; gap: var(--space-2); }
-    .question__disc { width: 34px; height: 34px; }
-    .question__disc .icon { width: 18px; height: 18px; }
+    .question { min-height: 48px; padding: 9px 12px; font-size: 14px; }
     .quick-area__label { margin-bottom: var(--space-1); }
   }
   @media (max-height: 600px) {
     .empty-state { gap: var(--space-3); }
     .greeting { font-size: 23px; }
-    .question { min-height: 88px; }
-
   }
   @media (max-width: 359px) {
-    .question { min-height: 128px; padding: var(--space-3); font-size: 14px; }
-    .question__disc { width: 36px; height: 36px; }
+    .question { padding: 9px 10px; font-size: 14px; }
   }
   @media (min-width: 901px) {
     .empty-state { justify-content: center; gap: var(--space-7); }
-    .quick-area { width: min(100%, 640px); }
-    .question { min-height: 150px; }
+    .quick-area { width: min(100%, 560px); }
   }
 
   /* --- chat status (loading / not found) --- */
@@ -1213,14 +1123,13 @@
     position: absolute;
     top: 0;
     right: calc(100% + var(--space-3));
-    width: 30px;
-    height: 30px;
-    border-radius: var(--radius-sm);
+    width: 18px;
+    height: 18px;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--color-surface);
+    background: transparent;
   }
   .msg__avatar svg { width: 16px; height: 16px; color: var(--color-accent); }
   /* Below 1024 there is no gutter to put it in, so it steps out of the way. */
@@ -1469,9 +1378,9 @@
     font-size: 12px;
     font-weight: 600;
     color: var(--color-text-muted);
-    background: var(--color-bg-raised);
-    border-radius: var(--radius-full);
-    padding: 3px 9px 3px 7px;
+    background: var(--color-recessed);
+    border-radius: var(--radius-sm);
+    padding: 3px 8px 3px 6px;
     animation: chipIn var(--dur-med) var(--ease-spring) both;
   }
   .trace-chip svg { width: 10px; height: 10px; color: var(--color-accent); }
@@ -1510,11 +1419,14 @@
   }
 
   /* Stop button — replaces send icon while generating */
+  /* Stopping a run: same button, ink fill instead of gold. The label inside
+     switches to a stop glyph, which is what carries the meaning. */
   .composer__send--stop {
-    background: var(--color-danger) !important;
+    background: var(--color-text) !important;
+    color: var(--color-canvas) !important;
   }
   .composer__send--stop:hover {
-    background: #ff5d61 !important;
+    background: var(--color-text) !important;
   }
   .composer__send--stop:disabled {
     opacity: 0.6 !important;
@@ -1799,11 +1711,16 @@
     text-underline-offset: 2px;
   }
   .link-btn--primary {
-    padding: var(--space-2) var(--space-4);
-    font-weight: 700;
-    color: var(--color-accent-text);
+    /* One filled action on the screen, sized to its label, never stretched to
+       the column. */
+    padding: 9px 14px;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    color: var(--color-on-accent);
     background: var(--color-accent);
+    align-self: flex-start;
   }
+  .link-btn--primary:hover { background: var(--color-accent-hover); }
   .link-btn--primary:hover {
     background: var(--color-accent-hover);
     color: var(--color-accent-text);
@@ -1912,8 +1829,8 @@
     max-width: min(90vw, 340px);
     background: var(--color-text);
     color: var(--color-surface);
-    border-radius: var(--radius-full);
-    padding: 9px 16px;
+    border-radius: var(--radius-md);
+    padding: 9px 14px;
     font-size: var(--fs-xs);
     font-weight: 600;
     line-height: 1.35;
@@ -1955,11 +1872,11 @@
   }
   .composer__input::placeholder { color: var(--color-text-faint); }
   .composer__send {
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     border-radius: var(--radius-md);
     background: var(--color-accent);
-    color: var(--color-accent-text);
+    color: var(--color-on-accent);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1976,11 +1893,11 @@
   .composer-card {
     background: var(--color-surface);
     border: 0;
-    border-radius: 26px;
-    padding: 16px 12px 12px 20px;
+    border-radius: var(--radius-xl);
+    padding: 10px 10px 10px 14px;
   }
   @media (max-width: 380px) {
-    .composer-card { padding: 14px 10px 10px 16px; border-radius: 22px; }
+    .composer-card { padding: 8px 8px 8px 12px; }
   }
 
 
@@ -2006,7 +1923,7 @@
     }
     .sidebar.is-open {
       transform: translateX(0);
-      box-shadow: 12px 0 40px rgba(0, 0, 0, 0.45);
+      box-shadow: 12px 0 40px var(--color-scrim-soft);
     }
     .sidebar__close { display: inline-flex; }
     .menu-toggle { display: inline-flex; }
@@ -2020,9 +1937,9 @@
   }
 
   @media (max-width: 480px) {
-    .msg__avatar { width: 26px; height: 26px; }
-    .verdict__actions { flex-direction: column; align-items: stretch; }
-    .link-btn { justify-content: center; }
+
+    .verdict__actions { flex-direction: column; align-items: flex-start; }
+    .link-btn { justify-content: flex-start; }
   }
 
   /* ============================================================
@@ -2188,8 +2105,8 @@
     <div class="sidebar__header">
       <div class="brand">
         <svg class="brand__mark" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z" stroke="#f0b60a" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M11 15.5L14.2 18.7L21 11.5" stroke="#f0b60a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z" stroke="var(--color-accent)" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M11 15.5L14.2 18.7L21 11.5" stroke="var(--color-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         <span class="brand__name">Legally <em>Unbullied</em></span>
       </div>
@@ -2292,10 +2209,10 @@
           <div class="quick-area">
             <p class="quick-area__label" id="quick-area-label">Start with a common situation</p>
             <div class="quick-list" role="group" aria-labelledby="quick-area-label">
-              <button type="button" class="question" data-prompt="Police stopped me. What are my rights?"><span class="question__text">Police stopped me. What are my rights?</span><span class="question__disc" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg></span></button>
-              <button type="button" class="question" data-prompt="Landlord wants to evict me without notice. What can I do?"><span class="question__text">Evicted without notice?</span><span class="question__disc" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-house"/></svg></span></button>
-              <button type="button" class="question" data-prompt="My boss won't pay what I'm owed. What can I do?"><span class="question__text">My boss won't pay what I'm owed</span><span class="question__disc" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-briefcase"/></svg></span></button>
-              <button type="button" class="question" data-prompt="I lent someone money and they refuse to pay it back. What can I do?"><span class="question__text">Someone owes me money and won't pay</span><span class="question__disc" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-banknote"/></svg></span></button>
+              <button type="button" class="question" data-prompt="Police stopped me. What are my rights?"><span class="question__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg></span><span class="question__text">Police stopped me. What are my rights?</span></button>
+              <button type="button" class="question" data-prompt="Landlord wants to evict me without notice. What can I do?"><span class="question__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-house"/></svg></span><span class="question__text">Evicted without notice?</span></button>
+              <button type="button" class="question" data-prompt="My boss won't pay what I'm owed. What can I do?"><span class="question__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-briefcase"/></svg></span><span class="question__text">My boss won't pay what I'm owed</span></button>
+              <button type="button" class="question" data-prompt="I lent someone money and they refuse to pay it back. What can I do?"><span class="question__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-banknote"/></svg></span><span class="question__text">Someone owes me money and won't pay</span></button>
             </div>
           </div>
         </div>

@@ -5,33 +5,6 @@
    app's type scale and color palette. No cards, no boxes, hairlines only.
    ========================================================================== */
 
-:root {
-  /* mirrors public/index.html */
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-  --fs-xs:   12px;
-  --fs-sm:   13px;
-  --fs-base: 14.5px;
-  --fs-md:   16px;
-  --fs-lg:   19px;
-  --fs-xl:   24px;
-
-  --color-bg:            #1e1f22;
-  --color-bg-raised:     #17181a;
-  --color-surface:       #26272b;
-  --color-surface-alt:   #2c2d31;
-  --color-border:        #37383c;
-  --color-border-soft:   #2a2b2f;
-  --color-text:          #f2f2f3;
-  --color-text-muted:    #a8a9ad;
-  --color-text-faint:    #a8a9ad;
-  --color-accent:        #f0b60a;
-  --color-accent-hover:  #ffc61a;
-  --color-accent-text:   #14120a;
-  --color-accent-soft:   rgba(242, 183, 5, 0.12);
-  --color-accent-border: rgba(242, 183, 5, 0.35);
-}
-
 *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 body {
@@ -53,13 +26,13 @@ body {
 
 .doc { max-width: 44rem; margin: 0 auto; padding-left: 1.25rem; padding-right: 1.25rem; }
 
-.topbar { border-bottom: 1px solid var(--color-border-soft); }
+.topbar { }
 .topbar__inner { height: 52px; display: flex; align-items: center; }
 .brand { display: flex; align-items: center; gap: .55rem; text-decoration: none;
   color: var(--color-text); font-size: var(--fs-sm); font-weight: 650; letter-spacing: .01em; line-height: 1; }
 .brand em { color: var(--color-accent); font-style: normal; }
 .brand svg { width: 19px; height: 19px; color: var(--color-accent); flex-shrink: 0; }
-.brand:hover { color: #fff; }
+.brand:hover { color: var(--color-text); }
 
 /* ── Document header ───────────────────────────────────────────────── */
 
@@ -80,16 +53,14 @@ main { padding-top: 1.6rem; padding-bottom: 3.5rem; }
   line-height: 1.6;
   color: var(--color-text-faint);
   margin: .5rem 0 0;
-  padding-bottom: .9rem;
-  border-bottom: 1px solid var(--color-border-soft);
+  padding-bottom: .5rem;
 }
 
 /* ── Contents ──────────────────────────────────────────────────────── */
 
 .contents {
-  border-bottom: 1px solid var(--color-border-soft);
-  padding: .7rem .05rem .85rem;
-  margin-bottom: 1.6rem;
+  padding: .2rem .05rem .85rem;
+  margin-bottom: 1.4rem;
 }
 .contents ol {
   list-style: none;
@@ -134,10 +105,9 @@ a:hover { text-decoration-color: var(--color-accent-hover); }
   line-height: 1.35;
   color: var(--color-text);
   margin: 1.9rem 0 .5rem;
-  padding-top: 1.1rem;
-  border-top: 1px solid var(--color-border-soft);
+  padding-top: .2rem;
 }
-.doc h2:first-of-type { border-top: 0; padding-top: 0; margin-top: 1.4rem; }
+.doc h2:first-of-type { margin-top: 1.4rem; }
 .doc h2:target { scroll-margin-top: 1rem; }
 
 .subhead {
@@ -156,8 +126,7 @@ li { margin: .25rem 0; }
 li::marker { color: var(--color-text-faint); }
 
 .colophon {
-  border-top: 1px solid var(--color-border-soft);
-  padding-top: .9rem;
+  padding-top: .2rem;
   margin-top: 1.6rem;
   font-size: var(--fs-sm);
   color: var(--color-text-faint);
@@ -166,7 +135,7 @@ li::marker { color: var(--color-text-faint); }
 
 /* ── Footer ────────────────────────────────────────────────────────── */
 
-.footer { border-top: 1px solid var(--color-border-soft); }
+.footer { }
 .footer__inner {
   display: flex;
   flex-wrap: wrap;
@@ -204,11 +173,11 @@ a:focus-visible, .skip:focus-visible {
 /* ── Print ─────────────────────────────────────────────────────────── */
 
 @media print {
-  body { background: #fff; color: #111; font-size: 11pt; }
+  body { background: var(--color-text); color: var(--color-on-accent); font-size: 11pt; }
   .topbar, .footer, .skip, .contents { display: none; }
   main { padding: 0; }
-  .doc__title, .doc h2, strong { color: #000; }
-  a { color: #000; text-decoration: underline; }
-  .doc__meta, .colophon, p, li { color: #111; }
-  .lead { color: #000; }
+  .doc__title, .doc h2, strong { color: var(--color-on-accent); }
+  a { color: var(--color-on-accent); text-decoration: underline; }
+  .doc__meta, .colophon, p, li { color: var(--color-on-accent); }
+  .lead { color: var(--color-on-accent); }
 }

@@ -64,7 +64,7 @@ class BeUIStreamingText {
     this.paragraph.style.cssText = `
       font-size: 13px;
       line-height: 1.5;
-      color: var(--color-text, #f5f5f2);
+      color: var(--color-text, var(--color-text));
       margin: 0;
     `;
     
@@ -104,19 +104,19 @@ class BeUIStreamingText {
         border-radius: 6px;
         border: none;
         background: transparent;
-        color: var(--color-text-faint, #6b6b66);
+        color: var(--color-text-faint, var(--color-text-muted));
         cursor: pointer;
         transition: background-color 100ms, color 100ms;
       `;
       btn.innerHTML = `<svg class="icon" style="width:15px;height:15px" aria-hidden="true"><use href="#i-${action.symbol}"/></svg>`;
       
       btn.addEventListener('mouseenter', () => {
-        btn.style.backgroundColor = 'var(--color-surface-alt, #1c1c1c)';
-        btn.style.color = 'var(--color-text-muted, #9a9a94)';
+        btn.style.backgroundColor = 'var(--color-surface-alt, var(--color-surface))';
+        btn.style.color = 'var(--color-text-muted, var(--color-text-muted))';
       });
       btn.addEventListener('mouseleave', () => {
         btn.style.backgroundColor = 'transparent';
-        btn.style.color = 'var(--color-text-faint, #6b6b66)';
+        btn.style.color = 'var(--color-text-faint, var(--color-text-muted))';
       });
       
       this.actionsRow.appendChild(btn);
@@ -150,8 +150,8 @@ class BeUIStreamingText {
           width: 14px;
           height: 14px;
           border-radius: 50%;
-          background: var(--color-accent, #f2b705);
-          border: 1.5px solid var(--color-bg, #0a0a0a);
+          background: var(--color-accent, var(--color-accent));
+          border: 1.5px solid var(--color-bg, var(--color-on-accent));
           margin-left: ${i === 0 ? '0' : '-4px'};
         `;
         avatarStack.appendChild(avatar);
@@ -160,7 +160,7 @@ class BeUIStreamingText {
       const sourcesLabel = document.createElement('span');
       sourcesLabel.style.cssText = `
         font-size: 12px;
-        color: var(--color-text-muted, #9a9a94);
+        color: var(--color-text-muted, var(--color-text-muted));
       `;
       sourcesLabel.textContent = `${this.options.sources.length} sources`;
       
@@ -168,7 +168,7 @@ class BeUIStreamingText {
       sourcesBtn.appendChild(sourcesLabel);
       
       sourcesBtn.addEventListener('mouseenter', () => {
-        sourcesBtn.style.backgroundColor = 'var(--color-surface-alt, #1c1c1c)';
+        sourcesBtn.style.backgroundColor = 'var(--color-surface-alt, var(--color-surface))';
       });
       sourcesBtn.addEventListener('mouseleave', () => {
         sourcesBtn.style.backgroundColor = 'transparent';
@@ -211,7 +211,7 @@ class BeUIStreamingText {
       followUpsLabel.style.cssText = `
         font-size: 12px;
         font-weight: 500;
-        color: var(--color-text-muted, #9a9a94);
+        color: var(--color-text-muted, var(--color-text-muted));
         margin: 0 0 2px 0;
       `;
       followUpsLabel.textContent = 'Follow-ups';
@@ -230,21 +230,21 @@ class BeUIStreamingText {
           padding: 6px;
           margin: 0 -6px;
           border: none;
-          border-bottom: 1px solid var(--color-border, #2a2a2a);
+          border-bottom: 1px solid var(--color-border, var(--color-elevated));
           background: transparent;
           text-align: left;
           font-size: 12.5px;
-          color: var(--color-text, #f5f5f2);
+          color: var(--color-text, var(--color-text));
           cursor: pointer;
           border-radius: 7px;
           transition: background-color 100ms;
         `;
         btn.innerHTML = `
-          <svg class="icon" style="width:11px;height:11px;flex-shrink:0;color:var(--color-text-faint, #6b6b66)" aria-hidden="true"><use href="#i-reply"/></svg>
+          <svg class="icon" style="width:11px;height:11px;flex-shrink:0;color:var(--color-text-faint, var(--color-text-muted))" aria-hidden="true"><use href="#i-reply"/></svg>
           <span>${text}</span>
         `;
         btn.addEventListener('mouseenter', () => {
-          btn.style.backgroundColor = 'var(--color-surface-alt, #1c1c1c)';
+          btn.style.backgroundColor = 'var(--color-surface-alt, var(--color-surface))';
         });
         btn.addEventListener('mouseleave', () => {
           btn.style.backgroundColor = 'transparent';
@@ -271,8 +271,8 @@ class BeUIStreamingText {
         flex-direction: column;
         margin-top: 6px;
         padding: 4px;
-        background: var(--color-surface, #161616);
-        border: 1px solid var(--color-border, #2a2a2a);
+        background: var(--color-surface, var(--color-recessed));
+        border: 1px solid var(--color-border, var(--color-elevated));
         border-radius: 10px;
       `;
       
@@ -288,22 +288,22 @@ class BeUIStreamingText {
           padding: 4px 6px;
           border-radius: 6px;
           font-size: 12px;
-          color: var(--color-text-muted, #9a9a94);
+          color: var(--color-text-muted, var(--color-text-muted));
           text-decoration: none;
           transition: background-color 150ms, color 150ms;
         `;
         link.innerHTML = `
-          <div style="width: 16px; height: 16px; border-radius: 4px; background: var(--color-accent, #f2b705);"></div>
+          <div style="width: 16px; height: 16px; border-radius: 4px; background: var(--color-accent, var(--color-accent));"></div>
           <span>${source.name}</span>
-          <span style="margin-left: auto; font-family: var(--font-mono, monospace); font-size: 10.5px; color: var(--color-text-faint, #6b6b66);">${source.domain}</span>
+          <span style="margin-left: auto; font-family: var(--font-mono, monospace); font-size: 10.5px; color: var(--color-text-faint, var(--color-text-muted));">${source.domain}</span>
         `;
         link.addEventListener('mouseenter', () => {
-          link.style.backgroundColor = 'var(--color-surface-alt, #1c1c1c)';
-          link.style.color = 'var(--color-text, #f5f5f2)';
+          link.style.backgroundColor = 'var(--color-surface-alt, var(--color-surface))';
+          link.style.color = 'var(--color-text, var(--color-text))';
         });
         link.addEventListener('mouseleave', () => {
           link.style.backgroundColor = 'transparent';
-          link.style.color = 'var(--color-text-muted, #9a9a94)';
+          link.style.color = 'var(--color-text-muted, var(--color-text-muted))';
         });
         dropdownContent.appendChild(link);
       });
@@ -361,12 +361,12 @@ class BeUIStreamingText {
               height: 18px;
               padding: 0 6px;
               margin: 0 2px;
-              background: var(--color-surface, #161616);
-              border: 1px solid var(--color-border, #2a2a2a);
+              background: var(--color-surface, var(--color-recessed));
+              border: 1px solid var(--color-border, var(--color-elevated));
               border-radius: 5px;
               font-family: var(--font-mono, monospace);
               font-size: 10.5px;
-              color: var(--color-text-muted, #9a9a94);
+              color: var(--color-text-muted, var(--color-text-muted));
               text-decoration: none;
               vertical-align: middle;
               transform: translateY(-1px);
@@ -375,12 +375,12 @@ class BeUIStreamingText {
             `;
             chip.innerHTML = `<span>${source.domain}</span>`;
             chip.addEventListener('mouseenter', () => {
-              chip.style.backgroundColor = 'var(--color-surface-alt, #1c1c1c)';
-              chip.style.color = 'var(--color-text, #f5f5f2)';
+              chip.style.backgroundColor = 'var(--color-surface-alt, var(--color-surface))';
+              chip.style.color = 'var(--color-text, var(--color-text))';
             });
             chip.addEventListener('mouseleave', () => {
-              chip.style.backgroundColor = 'var(--color-surface, #161616)';
-              chip.style.color = 'var(--color-text-muted, #9a9a94)';
+              chip.style.backgroundColor = 'var(--color-surface, var(--color-recessed))';
+              chip.style.color = 'var(--color-text-muted, var(--color-text-muted))';
             });
             this.paragraph.appendChild(chip);
           }
