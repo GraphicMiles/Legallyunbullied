@@ -28,19 +28,19 @@
    ========================================================================== */
 
 :root {
-  --bg: #1e1f22;
-  --bg-raised: #17181a;
-  --surface: #26272b;
-  --surface-alt: #2c2d31;
-  --border: #37383c;
-  --border-soft: #2a2b2f;
-  --text: #f2f2f3;
-  --muted: #a8a9ad;
-  --faint: #a8a9ad;
-  --accent: #f0b60a;
-  --accent-ink: #171300;
-  --accent-soft: rgba(242, 183, 5, 0.14);
-  --danger: #ff6b6b;
+  --bg: var(--color-canvas);
+  --bg-raised: var(--color-recessed);
+  --surface: var(--color-surface);
+  --surface-alt: var(--color-surface);
+  --border: var(--color-elevated);
+  --border-soft: var(--color-elevated);
+  --text: var(--color-text);
+  --muted: var(--color-text-muted);
+  --faint: var(--color-text-muted);
+  --accent: var(--color-accent);
+  --accent-ink: var(--color-on-accent);
+  --accent-soft: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  --danger: var(--color-danger);
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
   --radius-pill: 999px;
   --radius-card: 24px;
@@ -541,7 +541,7 @@ body[data-view="otp"] .auth-bg { opacity: 1; }
 }
 
 .otp-row.is-error .otp-box {
-  background: rgba(255, 107, 107, 0.14);
+  background: transparent;
   animation: shake 0.4s ease;
 }
 

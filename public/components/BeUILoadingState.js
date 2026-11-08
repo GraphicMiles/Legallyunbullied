@@ -72,7 +72,7 @@ class BeUILoadingState {
       const baseStyles = `
         width: 4px;
         height: 4px;
-        background: var(--color-accent, #f2b705);
+        background: var(--color-accent, var(--color-accent));
         opacity: ${delay === null ? '0.07' : '0.15'};
       `;
       
@@ -93,9 +93,9 @@ class BeUILoadingState {
       font-weight: 500;
       background: linear-gradient(
         90deg,
-        var(--color-text-faint, #6b6b66) 35%,
-        var(--color-text, #f5f5f2) 50%,
-        var(--color-text-faint, #6b6b66) 65%
+        var(--color-text-faint, var(--color-text-muted)) 35%,
+        var(--color-text, var(--color-text)) 50%,
+        var(--color-text-faint, var(--color-text-muted)) 65%
       );
       background-size: 200% 100%;
       -webkit-background-clip: text;
@@ -110,7 +110,7 @@ class BeUILoadingState {
     timer.style.cssText = `
       font-family: var(--font-mono, 'SFMono-Regular', Consolas, monospace);
       font-size: 12px;
-      color: var(--color-text-faint, #6b6b66);
+      color: var(--color-text-faint, var(--color-text-muted));
       font-variant-numeric: tabular-nums;
     `;
     timer.textContent = '0.0s';
