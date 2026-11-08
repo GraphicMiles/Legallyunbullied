@@ -4352,7 +4352,6 @@ import {
             <span class="auth-signin-btn__label">Sign in to save your chats</span>
             <span class="auth-signin-hint">Pick up on any device.</span>
           </span>
-          <svg class="icon auth-signin-btn__arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg>
         </button>
       `;
       container.querySelector("#auth-open-btn").addEventListener("click", goToAuthPage);
