@@ -431,9 +431,9 @@
 .beui-prompt-bar__input {
   display: block;
   width: 100%;
-  min-height: 48px;
+  min-height: 24px;
   max-height: 200px;
-  padding: var(--space-4, 16px) var(--space-4, 16px) var(--space-2, 8px);
+  padding: 0;
   background: transparent;
   border: none;
   /* 16px is the iOS Safari threshold: below it, focusing a field triggers
@@ -460,7 +460,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-2, 8px);
-  padding: var(--space-1, 4px) var(--space-3, 12px) var(--space-3, 12px);
+  padding: 10px 0 0;
 }
 
 .beui-prompt-bar__spacer {
@@ -475,8 +475,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: var(--color-surface-alt);
-  color: var(--color-text-muted);
+  background: var(--color-chip);
+  color: var(--color-text);
   transition: background var(--beui-duration-fast) var(--ease-out, cubic-bezier(0.22,0.61,0.36,1)),
               color var(--beui-duration-fast) var(--ease-out, cubic-bezier(0.22,0.61,0.36,1)),
               transform 90ms cubic-bezier(0.33, 0, 0.67, 0);
@@ -562,10 +562,10 @@
 }
 
 .beui-prompt-bar__button--submit:disabled {
-  opacity: 0.45;
+  opacity: 1;
   cursor: not-allowed;
-  background: var(--color-surface-alt);
-  color: var(--color-text-faint);
+  background: var(--color-chip);
+  color: var(--color-text-muted);
 }
 
 /* While generating the send button becomes a stop control. */
@@ -1402,9 +1402,9 @@
   left: 50%;
   transform: translateX(-50%);
   z-index: 60;
-  background: #2a1a04;
-  color: #f2b705;
-  border: 1px solid rgba(242, 183, 5, 0.35);
+  background: var(--color-chip, #34353a);
+  color: var(--color-text, #f2f2f3);
+  border: 0;
   border-radius: 999px;
   padding: 6px 14px;
   font-size: 12px;

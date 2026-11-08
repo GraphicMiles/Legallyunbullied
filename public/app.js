@@ -4457,10 +4457,9 @@ import {
       container.innerHTML = `
         <div class="auth-guest">
           <button type="button" class="auth-signin-btn" disabled title="Sign-in isn't configured yet">
-            <span class="auth-signin-btn__leading"><svg class="icon" aria-hidden="true"><use href="#i-log-in"/></svg></span>
             <span class="auth-signin-btn__label">Sign in to save your chats</span>
+            <span class="auth-signin-hint">Pick up where you left off on any device.</span>
           </button>
-          <p class="auth-signin-hint">Pick up where you left off on any device.</p>
         </div>
       `;
       el.topbarAvatar.style.display = "none";
@@ -4471,10 +4470,10 @@ import {
       container.innerHTML = `
         <div class="auth-guest">
           <button type="button" class="auth-signin-btn" id="auth-open-btn">
-            <span class="auth-signin-btn__leading"><svg class="icon" aria-hidden="true"><use href="#i-log-in"/></svg></span>
             <span class="auth-signin-btn__label">Sign in to save your chats</span>
+            <span class="auth-signin-hint">Pick up where you left off on any device.</span>
+            <svg class="icon auth-signin-btn__arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg>
           </button>
-          <p class="auth-signin-hint">Pick up where you left off on any device.</p>
         </div>
       `;
       container.querySelector("#auth-open-btn").addEventListener("click", goToAuthPage);
