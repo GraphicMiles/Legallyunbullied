@@ -123,7 +123,12 @@ class BeUIPromptBar {
   }
 
   submit() {
-    if (this.isSubmitting) return; // can't submit while already submitting
+    if (this.isSubmitting) {
+      // Text typed while an answer is still arriving is kept, not dropped.
+      // Say why nothing was sent, and where to go instead.
+      if (this.inputElement.value.trim().length > 0) this.flashBusyHint();
+      return;
+    }
 
     const value = this.inputElement.value.trim();
     if (value.length === 0) return;
@@ -134,6 +139,17 @@ class BeUIPromptBar {
       // Always clear the input, even if onSubmit throws
       this.clear();
     }
+  }
+
+  flashBusyHint() {
+    const input = this.inputElement;
+    if (!this._savedPlaceholder) this._savedPlaceholder = input.placeholder;
+    input.placeholder = 'Answer still coming. Your text is kept. Press stop to ask something new.';
+    clearTimeout(this._hintTimer);
+    this._hintTimer = setTimeout(() => {
+      input.placeholder = this._savedPlaceholder;
+      this._savedPlaceholder = null;
+    }, 3500);
   }
 
   clear() {

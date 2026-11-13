@@ -1991,6 +1991,11 @@
 
     .verdict__actions { flex-direction: column; align-items: stretch; }
     .link-btn { justify-content: center; }
+    /* Phone topbar: the title is the thing to read, so the language pill
+       gives up some padding and the title takes the remaining width. */
+    .topbar { gap: 6px; padding-right: 10px; }
+    .topbar__title { flex: 1 1 0; min-width: 0; max-width: none; }
+    .lang-switch__btn { padding: 0 8px; font-size: 12px; }
   }
 
   /* ============================================================
@@ -2313,7 +2318,7 @@
 <script src="components/BeUILoadingState.js"></script>
 <script src="components/BeUIThinkingState.js?v=4.4.0"></script>
 <script src="components/BeUIStreamingText.js?v=4.3.0"></script>
-<script src="components/BeUIPromptBar.js"></script>
-<script type="module" src="app.js?v=5.2.0"></script>
+<script src="components/BeUIPromptBar.js?v=5.3.0"></script>
+<script type="module" src="app.js?v=5.3.0"></script>
 </body>
 </html>

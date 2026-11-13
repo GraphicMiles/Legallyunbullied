@@ -58,6 +58,47 @@ const LAY_TO_LEGAL = {
   land: ["land", "right of occupancy"],
   stolen: ["stealing", "theft"],
   stole: ["stealing", "theft"],
+  // Employment
+  pregnant: ["pregnancy", "maternity"],
+  pregnancy: ["maternity", "dismissal"],
+  resigned: ["resignation", "termination"],
+  resign: ["resignation", "termination"],
+  severance: ["severance", "gratuity", "termination"],
+  gratuity: ["gratuity", "pension"],
+  owed: ["wages", "remuneration", "arrears"],
+  wages: ["wages", "remuneration"],
+  // Money and banking
+  bank: ["bank", "banking", "electronic funds transfer"],
+  transfer: ["electronic funds transfer", "transfer"],
+  charged: ["charges", "bank charges"],
+  refund: ["refund", "consumer"],
+  refuses: ["refusal", "consumer"],
+  broken: ["defective", "sale of goods"],
+  goods: ["goods", "sale of goods"],
+  // Contracts and building
+  contractor: ["contract", "construction"],
+  builder: ["contract", "construction"],
+  disappeared: ["fraud", "false pretence"],
+  deposit: ["deposit", "advance"],
+  // Motor vehicles
+  driver: ["motor vehicle", "road traffic"],
+  accident: ["accident", "motor vehicle", "compensation"],
+  car: ["motor vehicle"],
+  // Land and property
+  neighbour: ["neighbour", "land", "trespass"],
+  fence: ["boundary", "land"],
+  // Threats and personal safety
+  threatened: ["threat", "intimidation"],
+  threaten: ["threat", "intimidation"],
+  kill: ["murder", "threat"],
+  // Children and education
+  school: ["education", "school"],
+  child: ["child", "children"],
+  // Privacy and online harm
+  pictures: ["cybercrime", "privacy", "data"],
+  photos: ["cybercrime", "privacy", "data"],
+  posting: ["cybercrime", "publication"],
+  online: ["cybercrime", "electronic"],
 };
 
 function expandQuery(query) {

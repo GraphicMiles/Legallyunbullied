@@ -944,8 +944,17 @@ import {
   function readAnswerLanguage() {
     try { return localStorage.getItem(ANSWER_LANG_KEY) === "pidgin" ? "pidgin" : "en"; } catch { return "en"; }
   }
+  // A finished answer keeps the language it was asked in. Builders run
+  // synchronously, so the override is scoped to one message's render.
+  let renderLanguage = null;
   function ui(key) {
-    return (ANSWER_UI[answerLanguage] || ANSWER_UI.en)[key];
+    const lang = renderLanguage || answerLanguage;
+    return (ANSWER_UI[lang] || ANSWER_UI.en)[key];
+  }
+  function inMessageLanguage(msg, fn) {
+    const prev = renderLanguage;
+    renderLanguage = msg && msg.answerLanguage ? msg.answerLanguage : null;
+    try { return fn(); } finally { renderLanguage = prev; }
   }
   function paintLanguageSwitch() {
     document.querySelectorAll("#answer-language-switch [data-lang]").forEach((btn) => {
@@ -1738,6 +1747,8 @@ import {
   function renderTopbar() {
     const convo = getActiveConversation();
     el.conversationTitle.textContent = convo ? convo.title : "New question";
+    // Full title on hover/long-press when the phone topbar truncates it.
+    el.conversationTitle.title = convo ? convo.title : "";
 
     // The title bar carries the conversation title and nothing else. Practice
     // area, jurisdiction and urgency are pipeline vocabulary, not things the
@@ -2018,7 +2029,7 @@ import {
     }
 
     if (msg.status === "done" && msg.result) {
-      body.appendChild(buildAnswerBlock(msg, { stream: false }));
+      body.appendChild(inMessageLanguage(msg, () => buildAnswerBlock(msg, { stream: false })));
     } else if (msg.status === "casual") {
       body.appendChild(buildCasualReplyEl(msg.casualReply || "Hello!"));
     } else if (msg.status === "stopped") {
@@ -2702,6 +2713,7 @@ import {
       id: uid(),
       role: "agent",
       status: "thinking",
+      answerLanguage,
       traceVersion: 2,
       steps: [],
       classification: null,
@@ -3050,7 +3062,7 @@ import {
     // then recovers it via finalizeStaleMessage's "has result" safety net
     // instead of showing "incomplete".
     saveState();
-    const answerBlock = buildAnswerBlock(agentMsg, { stream: true });
+    const answerBlock = inMessageLanguage(agentMsg, () => buildAnswerBlock(agentMsg, { stream: true }));
     live.refs.body.appendChild(answerBlock);
     scrollChatToBottom();
     streamAnswerSequence(agentMsg, answerBlock, token);
@@ -3359,6 +3371,7 @@ import {
       if (oldEl) oldEl.remove();
 
       msg.status = "thinking";
+      msg.answerLanguage = answerLanguage;
       msg.traceOpen = true;
       msg.steps = [];
     msg.traceVersion = 2;
@@ -3599,6 +3612,7 @@ import {
     if (oldEl) oldEl.remove();
 
     msg.status = "thinking";
+    msg.answerLanguage = answerLanguage;
     msg.traceOpen = true;
     msg.steps = [];
     msg.traceVersion = 2;
@@ -3691,7 +3705,7 @@ import {
         // reload path uses, so the completed live message matches the static
         // render (bullets, bold) instead of keeping the unformatted stream.
         refs.lawSection.textEl.innerHTML = renderMarkdown(stripLawDisclaimer(r.lawMd));
-        appendContextCards(refs.lawSection.el, r.sources);
+        inMessageLanguage(agentMsg, () => appendContextCards(refs.lawSection.el, r.sources));
         scrollChatToBottom(stickAfterLaw);
 
         // Small deliberate pause before the next section starts, rather
