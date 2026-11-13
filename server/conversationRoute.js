@@ -63,7 +63,8 @@ const MESSAGE_FIELDS = new Set([
   "corpusEmptyMessage", "errorMessage", "pipelineStatus", "unread", "evidence", "critique",
   "needsInputQuestion", "needsInputField", "safetyAckQuestion", "safetyAckContext",
   "safetyAckToken", "providersBusyRetryAfter", "providersBusyLawMd",
-  "providersBusyActionsMd", "safetyAcknowledgedAt"
+  "providersBusyActionsMd", "safetyAcknowledgedAt",
+  "hitlAnswer", "hitlFor", "needsInputAnswer"
 ]);
 
 function sanitizeMessage(input, uid) {

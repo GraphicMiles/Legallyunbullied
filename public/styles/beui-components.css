@@ -1011,6 +1011,45 @@
   outline-offset: 2px;
 }
 
+/* Answered clarifying question: a compact, read-only record of the exchange. */
+.needs-input--answered {
+  padding: 10px 14px;
+  margin: 8px 0;
+  animation: none;
+}
+
+.needs-input__answered-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.needs-input__answered-head .icon {
+  width: 13px;
+  height: 13px;
+  color: var(--color-accent, var(--color-accent));
+}
+
+.needs-input__answered-q {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+  margin: 0 0 2px 0;
+}
+
+.needs-input__answered-a {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--color-text);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 
 /* --- Related-question chips --- */
 
