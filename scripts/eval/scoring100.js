@@ -322,6 +322,20 @@ function perTurnGrounding(t) {
   return 3;
 }
 
+// Hard gate. Mirrors gates.js rules G2 (law text with zero sources) and G4
+// (no sources and no refusal). Uses only the main turn's response.
+function hardGateIssues(signals) {
+  const r = signals && signals.mainTurn && signals.mainTurn.response;
+  const result = r && r.result;
+  const law = result ? `${result.lawMd || ""}\n${result.actionsMd || ""}`.trim() : "";
+  if (!law) return [];
+  const sources = (r.evidence && r.evidence.sourceCount) || 0;
+  if (r.isCasual || r.needsInput) return [];
+  const refusal = require("./gates.js").NOT_IN_LIBRARY.test(law);
+  if (sources === 0 && !refusal) return ["G2 law content with zero retrieved sources"];
+  return [];
+}
+
 function scoreSourceGrounding(scenario, signals) {
   const exp = scenario.expected || {};
   const subs = signals.substantiveTurns;
@@ -602,7 +616,10 @@ function scoreScenario(scenario, turns) {
     avg_score: Math.round(avg * 100) / 100,
     dimensions: dims,
     critical_failures: critical,
-    pass: critical.length === 0 && avg >= 3.0,
+    // Hard gate (gates.js G2/G4): law content with zero retrieved sources
+    // fails, whatever the average. Only the main turn is checked here.
+    hard_gate: hardGateIssues(signals),
+    pass: critical.length === 0 && avg >= 3.0 && hardGateIssues(signals).length === 0,
     detail: { safety: safetyDetail, followup: fuDetail },
     retrieval: (signals.mainTurn.response || {}).evidence || null,
   };
@@ -668,4 +685,4 @@ function aggregateResults(scored) {
   };
 }
 
-module.exports = { scoreScenario, aggregateResults, collectSignals };
+module.exports = { hardGateIssues, scoreScenario, aggregateResults, collectSignals };

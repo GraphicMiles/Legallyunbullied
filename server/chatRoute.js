@@ -22,7 +22,50 @@ const GROQ_REVIEW_MODEL = REVIEW_MODEL || DRAFT_MODEL || CLASSIFY_MODEL;
 const { getClient: getGeminiClient, GEMINI_CLASSIFY_MODEL, GEMINI_DRAFT_MODEL, GEMINI_CHAT_MODEL } = require("./gemini");
 const { getClient: getOpenRouterClient, OPENROUTER_CLASSIFY_MODEL, OPENROUTER_DRAFT_MODEL, OPENROUTER_CHAT_MODEL } = require("./openrouter");
 const { getClient: getCerebrasClient, CEREBRAS_CLASSIFY_MODEL, CEREBRAS_DRAFT_MODEL, CEREBRAS_CHAT_MODEL } = require("./cerebras");
-const { findProvisions, findProvisionsBroad } = require("./legalCorpus");
+const { findProvisions } = require("./legalCorpus");
+const legalIndex = require("./legalIndex");
+const { rankForPrecedence } = require("./legalPrecedence");
+
+// Keywords for retrieval: the classifier's keywords plus its formal legal terms,
+// de-duplicated and capped. Used by the production (Firestore) path as well as
+// the local corpus path, so the terms reach both.
+function mergeKeywords(keywords, terms) {
+  const out = [];
+  const seen = new Set();
+  for (const k of [...(Array.isArray(keywords) ? keywords : []), ...terms]) {
+    const key = String(k).toLowerCase().trim();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(String(k));
+    if (out.length >= 16) break;
+  }
+  return out;
+}
+
+// OPT-IN fallback (LEGAL_TERMS_LLM_FALLBACK=true, off by default). Runs only when
+// the classifier returned no legal terms AND the synonym map has no entry for
+// the question. It adds one model call for those questions, so it is off by
+// default to keep the per-answer call budget unchanged.
+async function llmLegalTermsFallback(question) {
+  const client = getGroqClient();
+  if (!client) return [];
+  try {
+    const completion = await callCompletion(client, CLASSIFY_MODEL, [
+      { role: "system", content: 'Convert everyday words into the formal words a Nigerian statute would use. Reply with JSON only: {"legal_terms": ["..."]}, at most 6 short phrases. Use [] if the question is not about the law.' },
+      { role: "user", content: question },
+    ], { task: "legal-terms", timeoutMs: 4000, temperature: 0, max_tokens: 300, response_format: { type: "json_object" } });
+    const raw = completion.parsed && Array.isArray(completion.parsed.legal_terms) ? completion.parsed.legal_terms : [];
+    return raw.filter((t) => typeof t === "string" && t.trim() && t.length <= 80).slice(0, 6);
+  } catch {
+    return [];
+  }
+}
+
+// Formal legal terms the classifier proposed (optional field, capped, strings only).
+function legalTermsOf(classification) {
+  const raw = classification && Array.isArray(classification.legal_terms) ? classification.legal_terms : [];
+  return raw.filter((t) => typeof t === "string" && t.trim().length > 0 && t.length <= 80).slice(0, 8);
+}
 const { detectLegalIntent, buildFallbackClassification } = require("./legalIntent");
 const { PRACTICE_AREAS: PRACTICE_AREA_DEFS, PRACTICE_AREA_KEYS } = require("./practiceAreas");
 const { getFirestore } = require("./firebaseAdmin");
@@ -147,6 +190,7 @@ Provide:
 - "urgency": ["Low", "Medium", "High", "Critical"] — based on time sensitivity and potential harm. High/Critical is for physical danger, detention/arrest, violence, child safety, or a matter that becomes unrecoverable within days (deadline about to lapse, eviction happening now). Everyday civil claims — unpaid salary for weeks/months, deposits held, debts owed, contract breaches, tenancy clutter — are Medium at most, even when the user is distressed, UNLESS there is also violence, threats, or an imminent deadline.
 - "summary": 1-2 sentence summary of the legal situation
 - "keywords": 4-8 specific legal/factual terms likely in relevant statutes (procedural terms, timeframes, named concepts)
+- "legal_terms": 3-8 formal words or phrases a statute would use for this situation, when the user used everyday words. Examples: "hacked" -> "unlawful access to a computer system"; "fired" -> "termination of employment"; "separating" -> "dissolution of marriage". Empty array if the user already used legal terms.
 - "key_issues": Array of 3-5 specific legal issues or questions that need to be addressed
 - "needs_sourcing": true/false — the routing decision. Set FALSE ONLY when the correct answer is a sequence of practical steps with NO governing statute in Nigerian law (office addresses, "what should I bring", "how do I find a lawyer", "how do I note down facts"). Set TRUE when the answer depends on what a specific law says (rights, penalties, offences, what is legal, who is liable) — including procedural questions whose process a statute defines, such as company/business-name/NGO registration under CAMA 2020, trademark filing, and licence applications under a licensing statute.
 - "complexity": ["Low", "Medium", "High"] — Low: straightforward single issue, Medium: multiple issues or interpretation needed, High: complex multi-party/constitutional/novel questions
@@ -214,6 +258,22 @@ function wrapUntrustedEvidence(body) {
   return `${EVIDENCE_OPEN}\n${body}\n${EVIDENCE_CLOSE}`;
 }
 
+// Answer language chosen by the user (English or Nigerian Pidgin). The English
+// path keeps the base prompt unchanged. Labels here must match the UI labels in
+// public/app.js (ANSWER_UI).
+const ANSWER_LANGUAGES = new Set(["en", "pidgin"]);
+function normalizeAnswerLanguage(value) {
+  return ANSWER_LANGUAGES.has(value) ? value : "en";
+}
+const LANGUAGE_INSTRUCTIONS = {
+  pidgin: `ANSWER LANGUAGE: Nigerian Pidgin English.
+- Write "lawMd" and "actionsMd" in Nigerian Pidgin, the way an everyday Lagos person talks: short, warm and direct. Example style: "Your landlord no fit throw you out without notice o."
+- Use these exact bold labels in lawMd, in this order, only where they apply: **Short answer**, **Which law dey apply, and why**, **Wetin we no sure of**.
+- Keep Act names, section numbers, numbers, days, months, naira amounts and [[citation]] tokens EXACTLY as in the excerpts. Do not translate law names.
+- Do not change the legal meaning: who must do what, how much notice, what time limit, what happens if they refuse.
+- If a legal term has no clear Pidgin word, use the English term once in brackets.`,
+};
+
 const DRAFT_SYSTEM_PROMPT = `You are Legally Unbullied, an expert Nigerian legal-information assistant who speaks like the user's personal legal adviser. You provide clear, comprehensive, and actionable legal information based ONLY on the statute excerpts provided.
 
 ${UNTRUSTED_EVIDENCE_DIRECTIVE}
@@ -223,7 +283,7 @@ TONE & PERSONALITY:
 - Open with ONE short sentence that acknowledges the user's exact situation (use details they gave you — the state, the relationship, what happened) before you explain the law
 - Address the user directly as "you" throughout; refer to their specific facts, dates, and parties — never answer in the abstract
 - Be warm, direct, and practical — not cold or overly formal
-- Use plain Nigerian English. Avoid heavy legalese unless citing a specific provision
+- Write for someone with no legal training: short sentences, everyday words, plain Nigerian English. Avoid legal jargon and abbreviations; if a legal term is unavoidable, explain it the first time.
 - Where natural, you may use mild Nigerian expressions ("no wahala", "this one is straightforward", "the law is clear on this") — but don't force it
 - Be empathetic when the user's situation sounds stressful or urgent
 - Be honest and direct when something needs a lawyer — don't sugarcoat it
@@ -237,6 +297,12 @@ CORE PRINCIPLES:
 - Be comprehensive but clear — explain legal concepts in plain language
 - Provide actionable next steps the user can take
 - Be honest about limitations in the available information
+- Think like a careful lawyer and judge, using ONLY the excerpts given:
+  - Say which provision governs the user's situation, and why it applies to their facts (state, relationship, dates).
+  - When more than one provision could apply, say which one prevails and why: a higher-level law over a lower one, the law of the user's own state over another state's, a specific rule over a general one, a later law over an earlier one. If the excerpts do not show which prevails, say so; do not decide from memory.
+  - Note exceptions and "provided that" conditions that change the result.
+  - Do not cite court cases or judgments; none are in the excerpts.
+- Structure lawMd with these bold labels, in this order, only where they apply: **The short answer**, **Which rule applies, and why**, **What we do not know**. Do not write a "What the law says" heading; the app already shows that heading above your text.
 
 RESPONSE STRUCTURE:
 
@@ -481,7 +547,7 @@ Review this response.`;
   const expectedClaimIds = new Set((draft.claims || []).map((claim) => String(claim.claimId)));
   const returnedClaimIds = new Set(claimSupport.map((item) => item.claimId));
   if ([...expectedClaimIds].some((id) => !returnedClaimIds.has(id))) {
-    throw new Error("Critique returned an invalid claim_support schema");
+    throw new Error("Critique returned an invalid schema: claim_support is missing claim IDs");
   }
   return {
     quality: typeof parsed.quality === "number" ? parsed.quality : 0.5,
@@ -542,9 +608,9 @@ function serializeCritique(critiqueResult) {
   };
 }
 
-function getCacheKey(uid, question, jurisdiction, practiceArea) {
+function getCacheKey(uid, question, jurisdiction, practiceArea, answerLanguage = "en") {
   const digest = createHash("sha256").update(String(question || "").toLowerCase().trim()).digest("hex");
-  return `${uid || "anonymous"}::${(practiceArea || "general").toLowerCase()}::${(jurisdiction || "any").toLowerCase()}::${digest}`;
+  return `${uid || "anonymous"}::${(practiceArea || "general").toLowerCase()}::${(jurisdiction || "any").toLowerCase()}::${answerLanguage}::${digest}`;
 }
 
 // Cache entries are deep-cloned on write AND on read. The live draftResult is
@@ -729,7 +795,7 @@ async function classifyWithFallback(question, conversationContext, options = {})
   };
 }
 
-async function draftWithModel(client, model, question, contextBlock, plan, classification, conversationHistory) {
+async function draftWithModel(client, model, question, contextBlock, plan, classification, conversationHistory, answerLanguage = "en") {
   // Build comprehensive context from classification and plan
   let enhancedContext = "";
 
@@ -772,7 +838,7 @@ Follow this plan to structure your response. Be comprehensive and address all su
     client,
     model,
     [
-      { role: "system", content: DRAFT_SYSTEM_PROMPT },
+      { role: "system", content: answerLanguage === "en" ? DRAFT_SYSTEM_PROMPT : `${DRAFT_SYSTEM_PROMPT}\n\n${LANGUAGE_INSTRUCTIONS[answerLanguage]}` },
       { role: "user", content: `${historyContext}\n\nQuestion: ${question}\n\nAvailable statute excerpts:\n\n${contextBlock}${enhancedContext}` },
     ],
     { task: "draft", timeoutMs: 20000, response_format: { type: "json_object" }, max_tokens: 3000 }
@@ -782,19 +848,7 @@ Follow this plan to structure your response. Be comprehensive and address all su
   return completion.parsed;
 }
 
-// Per-provider cooldown map — skip providers that recently failed.
-// Cooldown DURATIONS live in markProviderFailure, keyed by failure kind.
-const providerCooldowns = new Map(); // providerKey -> cooldownUntil (timestamp)
-
-function isProviderOnCooldown(key) {
-  const until = providerCooldowns.get(key);
-  if (!until) return false;
-  if (Date.now() >= until) {
-    providerCooldowns.delete(key); // expired
-    return false;
-  }
-  return true;
-}
+const { isProviderOnCooldown, classifyProviderError, markProviderFailure } = require("./providerFailure");
 
 /**
  * The one provider-fallback scaffold used by every stage (classify,
@@ -838,29 +892,6 @@ async function runProviderChain(entries, attempt, { onFailure } = {}) {
   const none = new Error("All providers skipped — none attempted (all on cooldown or none configured)");
   none.allSkipped = true;
   throw none;
-}
-
-function classifyProviderError(err) {
-  const status = Number(err?.status || err?.code || 0);
-  const message = String(err?.message || "").toLowerCase();
-  if (status === 404 || message.includes("does not exist") || message.includes("model_not_found")) return "model_not_found";
-  if (status === 401 || status === 403) return "authentication_failed";
-  if (status === 429 || status === 413 || message.includes("rate limit") || message.includes("rate-limited")) return "rate_limited";
-  if (message.includes("timed out") || message.includes("timeout")) return "timeout";
-  if (message.includes("failed to parse json") || message.includes("invalid schema")) return "malformed_output";
-  return "provider_unavailable";
-}
-
-function markProviderFailure(key, err) {
-  const kind = classifyProviderError(err);
-  const cooldownMs = kind === "model_not_found" || kind === "authentication_failed"
-    ? 30 * 60 * 1000
-    : kind === "rate_limited" ? 60 * 1000
-      : kind === "timeout" ? 30 * 1000
-        : 15 * 1000;
-  providerCooldowns.set(key, Date.now() + cooldownMs);
-  console.warn(`[/api/chat] Provider "${key}" ${kind}; cooldown ${Math.round(cooldownMs / 1000)}s`);
-  return kind;
 }
 
 
@@ -960,7 +991,7 @@ function makeProvidersBusyResult(allSkipped) {
   };
 }
 
-async function draftWithFallback(question, contextBlock, plan, classification, conversationHistory) {
+async function draftWithFallback(question, contextBlock, plan, classification, conversationHistory, answerLanguage = "en") {
   const groqClient = getGroqClient();
   const openRouterClient = getOpenRouterClient();
   const cerebrasClient = getCerebrasClient();
@@ -987,7 +1018,7 @@ async function draftWithFallback(question, contextBlock, plan, classification, c
   let chainErr = null;
   try {
     const { value, name, model } = await runProviderChain(entries, async ({ client, model: m }) => {
-      const result = await draftWithModel(client, m, question, contextBlock, plan, classification, conversationHistory);
+      const result = await draftWithModel(client, m, question, contextBlock, plan, classification, conversationHistory, answerLanguage);
       // Sanitize: strip placeholder URLs (e.g. example.com) that the LLM might hallucinate
       sanitizeDraftResult(result);
       return result;
@@ -1491,6 +1522,7 @@ async function runChatPipeline(req) {
     return res.status(400).json({ error: "bad_request", message: '"question" must be a non-empty string of at most 10,000 characters.' });
   }
   const question = rawQuestion.trim();
+  const answerLanguage = normalizeAnswerLanguage(req.body?.answerLanguage);
 
   const rawHistory = req.body?.history;
   if (rawHistory != null && !Array.isArray(rawHistory)) {
@@ -1717,7 +1749,7 @@ async function runChatPipeline(req) {
   // History-dependent answers may contain case facts and must never cross
   // conversation or user boundaries.
   const cacheAllowed = history.length === 0;
-  const cacheKey = getCacheKey(req.uid, question, classification.jurisdiction, classification.practice_area);
+  const cacheKey = getCacheKey(req.uid, question, classification.jurisdiction, classification.practice_area, answerLanguage);
   const urgentSafety = classification.urgency === "High" || classification.urgency === "Critical";
 
   // ── Relevance/sufficiency gate (between search and draft) ──────────────
@@ -1751,13 +1783,22 @@ async function runChatPipeline(req) {
       minSources: MIN_SOURCES,
     };
 
+    // Lay-term fallback (opt-in). Only when the classifier gave no formal terms
+    // AND the synonym map has no entry for this question.
+    if (process.env.LEGAL_TERMS_LLM_FALLBACK === "true" && legalTermsOf(classification).length === 0 && !legalIndex.mapMatched(question)) {
+      classification.legal_terms = await llmLegalTermsFallback(question);
+      evidence.legalTermsSource = classification.legal_terms.length ? "llm" : "none";
+    } else if (legalTermsOf(classification).length) {
+      evidence.legalTermsSource = "classifier";
+    }
+
     let provisions;
     reportStep(req, "search", { state: "active", title: "Checking the law library" });
     try {
       provisions = await timed("retrievalMs", () => findProvisions({
         practiceArea: classification.practice_area,
         jurisdiction: classification.jurisdiction,
-        keywords: classification.keywords,
+        keywords: mergeKeywords(classification.keywords, legalTermsOf(classification)),
       }));
     reportStep(req, "search", {
       state: "done",
@@ -1784,6 +1825,17 @@ async function runChatPipeline(req) {
       });
     }
 
+    // Local corpus only (explicit flag): add whole-corpus BM25 hits to the
+    // candidates. Same single relevance call, no extra model call and no
+    // Firestore reads. Production never mixes in local files without the flag.
+    if (process.env.LOCAL_LEGAL_CORPUS === "true") {
+      const seen = new Set(provisions.map((p) => p.id || p.provisionId));
+      const termText = legalTermsOf(classification).join(" ");
+      for (const hit of legalIndex.search(`${question} ${termText}`.trim(), { k: 8 })) {
+        if (!seen.has(hit.id)) { seen.add(hit.id); provisions.push(hit); }
+      }
+    }
+
     evidence.mode = provisions.some((p) => p.local_eval === true) ? "local_fallback" : "firestore";
 
     if (!provisions.length) {
@@ -1808,6 +1860,12 @@ async function runChatPipeline(req) {
       });
     }
 
+    // Lawyer-style ordering (deterministic): higher-level law first, another
+    // state's law removed, specific over general. A default, not conflict resolution.
+    const precedence = rankForPrecedence(provisions, classification);
+    provisions = precedence.provisions;
+    evidence.precedence = precedence.summary;
+
     workingProvisions = provisions;
 
     try {
@@ -1828,67 +1886,20 @@ async function runChatPipeline(req) {
         evidence.sufficient = true;
         console.log(`[/api/chat] Relevance gate: ${relevantProvisions.length}/${provisions.length} provisions relevant — sufficient`);
       } else {
-        console.log(`[/api/chat] Relevance gate: insufficient (${relevantProvisions.length} relevant of ${provisions.length}). Broadening search...`);
-        // Broaden into adjacent categories (e.g. the "general" bucket for the
-        // Criminal Code) and re-run the gate.
-        const broad = await findProvisionsBroad({
-          practiceArea: classification.practice_area,
-          jurisdiction: classification.jurisdiction,
-          keywords: classification.keywords || [],
-          minSources: MIN_SOURCES,
-          force: true,
-        });
-        evidence.retrievedFrom = broad.categories || [classification.practice_area];
-        if (broad.provisions.some((p) => p.local_eval === true)) evidence.mode = "local_fallback";
-
-        if (broad.provisions.length) {
-          const gate2 = await timed("relevanceMs", () => assessRelevanceWithFallback(question, classification, broad.provisions, MIN_SOURCES));
-          const relevantIdx2 = new Set(
-            Array.isArray(gate2.relevant) ? gate2.relevant.map((n) => Number(n) - 1).filter((i) => i >= 0 && i < broad.provisions.length) : []
-          );
-          const relevantProvisions2 = broad.provisions.filter((_, i) => relevantIdx2.has(i));
-
-          evidence.relevanceScore = typeof gate2.relevance_score === "number" ? gate2.relevance_score : evidence.relevanceScore;
-          evidence.reason = gate2.reason || evidence.reason;
-          evidence.conflicts = Array.isArray(gate2.conflicts) ? gate2.conflicts.filter(Boolean) : [];
-          evidence.sourceCount = relevantProvisions2.length;
-
-          if (gate2.sufficient === true && relevantProvisions2.length >= MIN_SOURCES && evidence.conflicts.length === 0) {
-            workingProvisions = relevantProvisions2;
-            evidence.sufficient = true;
-            console.log(`[/api/chat] Broadened search: ${relevantProvisions2.length} relevant provisions — sufficient`);
-          } else {
-            // Symmetry with the empty-broad branch below: an administrative
-            // how-to whose provisions the gate rejected should still get the
-            // practical answer, never the "insufficient evidence" dead-end.
-            // The rescue regex is a validation backstop, not the router —
-            // the classifier prompt now routes registration (CAMA ss.17-39)
-            // through the sourced path, so this only fires for genuine
-            // logistic how-tos (office addresses, what-to-bring, find-lawyer).
-            if (shouldTryProceduralRescue()) {
-              console.log("[/api/chat] Gate insufficient for a procedural/admin question — answering procedurally.");
-              evidence.proceduralRescue = true;
-              evidence.gateInsufficiencyRescued = true;
-              await tryProceduralRescue();
-              return;
-            }
-            console.log(`[/api/chat] Broadened search still insufficient (${relevantProvisions2.length} relevant). Returning insufficient-evidence response.`);
-            const term = await insufficientEvidenceResponse(classification, route, evidence, urgentSafety, question, history);
-            await serverPersistMessage(req, { status: "done", result: term.result, pipelineStatus: "done", unread: true });
-            return res.json(term.body);
-          }
-        } else {
-          // Broadened search found nothing either — but if this was a
-          // procedural how-to, the absence of statutes is the expected case; answer it.
-          if (shouldTryProceduralRescue()) {
-            evidence.proceduralRescue = true;
-            await tryProceduralRescue();
-            return;
-          }
-          const term = await insufficientEvidenceResponse(classification, route, evidence, urgentSafety, question, history);
-          await serverPersistMessage(req, { status: "done", result: term.result, pipelineStatus: "done", unread: true });
-          return res.json(term.body);
+        // Budget (4 model calls max): no second relevance call after a broadened
+        // search. Insufficient goes straight to the procedural rescue or the
+        // insufficient-evidence response.
+        console.log(`[/api/chat] Relevance gate: insufficient (${relevantProvisions.length} relevant of ${provisions.length}). No second model call (budget).`);
+        if (shouldTryProceduralRescue()) {
+          console.log("[/api/chat] Gate insufficient for a procedural/admin question — answering procedurally.");
+          evidence.proceduralRescue = true;
+          evidence.gateInsufficiencyRescued = true;
+          await tryProceduralRescue();
+          return;
         }
+        const term = await insufficientEvidenceResponse(classification, route, evidence, urgentSafety, question, history);
+        await serverPersistMessage(req, { status: "done", result: term.result, pipelineStatus: "done", unread: true });
+        return res.json(term.body);
       }
     } catch (err) {
       if (err && err.__chatResponse) throw err;
@@ -1991,7 +2002,7 @@ async function runChatPipeline(req) {
       // Step 5a: Draft with fallback chain (plan is null for simple route)
       reportStep(req, "draft", { state: "active", title: "Writing your answer" });
       try {
-        draftResult = await timed("draftMs", () => draftWithFallback(question, contextBlock, planResult.plan, classification, history));
+        draftResult = await timed("draftMs", () => draftWithFallback(question, contextBlock, planResult.plan, classification, history, answerLanguage));
         reportStep(req, "draft", { state: "done", detail: draftResult && draftResult.result ? "Draft written. Checking it against the law next." : "" });
       } catch (err) {
         console.error("[/api/chat] drafting failed:", err.status || "", err.message);
@@ -2013,7 +2024,9 @@ async function runChatPipeline(req) {
       // Step 6: Critique + bounded correction
       // Skip critique for providersBusy responses (they're fallback errors, not real answers)
       if (!draftResult.providersBusy && draftResult.result) {
-        const MAX_CRITIQUE_RETRIES = 1;
+        // Budget (4 model calls max): no high-risk retry. A failed critique is
+        // delivered with the unverified flag instead.
+        const MAX_CRITIQUE_RETRIES = 0;
 
         // Category-specific thresholds — high-risk categories get a stricter bar.
         // Wrong advice in these areas could lead to arrest, deportation, loss of custody, etc.
@@ -2052,7 +2065,7 @@ async function runChatPipeline(req) {
             const feedbackContext = `\n\nIMPORTANT FEEDBACK FROM PREVIOUS DRAFT REVIEW (attempt ${attempt + 1} failed):\n${critiqueResult.issues.map(i => "- " + i).join("\n")}\n\nFix ALL of these issues. ${isHighRisk ? "This is a HIGH-RISK legal area — accuracy and safety are critical." : ""}`;
 
             draftResult = await timed("draftMs", () => draftWithFallback(
-              question, contextBlock + feedbackContext, planResult.plan, classification, history
+              question, contextBlock + feedbackContext, planResult.plan, classification, history, answerLanguage
             ));
             if (!draftResult.providersBusy && draftResult.result) {
               evidence.citationVerification = verifyAndResolveCitations(draftResult.result, workingProvisions);
@@ -2103,6 +2116,8 @@ async function runChatPipeline(req) {
         // to make the user click through a warning to reach their own answer.
         if (isHighRisk && critiqueResult && !critiqueResult.passed) {
           console.warn(`[/api/chat] HIGH-RISK "${practiceArea}" failed review after ${MAX_CRITIQUE_RETRIES + 1} attempts: delivering with an unverified flag`);
+          evidence.sufficient = false;
+          evidence.unverifiedDelivered = true;
           try { require("./telemetry").increment("unverified_delivered"); } catch (_) { /* telemetry must never break the path */ }
 
           if (draftResult.result) {
@@ -2421,7 +2436,7 @@ router.progressHandler = progressStore.progressHandler;
 // Test hooks (simulate a server restart by dropping the in-memory caches).
 router.__testing = {
   clearQuestionCache: () => questionCache.clear(),
-  clearProviderCooldowns: () => providerCooldowns.clear(),
+  clearProviderCooldowns: () => require("./providerFailure").providerCooldowns.clear(),
 };
 
 module.exports = router;

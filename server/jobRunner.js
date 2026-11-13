@@ -67,6 +67,8 @@ function recordJobStart(req) {
       messageId,
       question: body.question || "",
       history: Array.isArray(body.history) ? body.history : [],
+      // Answer language travels with the job so a background run matches the request.
+      answerLanguage: body.answerLanguage === "pidgin" ? "pidgin" : "en",
       status: "running",
       startedAt: now,
       createdAt: now,
@@ -128,7 +130,7 @@ async function claimJob(d, jobId) {
 }
 
 async function runJob(job) {
-  const { jobId, uid, conversationId, messageId, question, history, checkpoints } = job;
+  const { jobId, uid, conversationId, messageId, question, history, checkpoints, answerLanguage } = job;
   const d = db();
   if (!(await claimJob(d, jobId))) return;
 
@@ -136,7 +138,7 @@ async function runJob(job) {
   const chatRoute = require("./chatRoute");
   const fakeReq = {
     uid,
-    body: { question, history: history || [], conversationId, messageId },
+    body: { question, history: history || [], conversationId, messageId, answerLanguage: answerLanguage === "pidgin" ? "pidgin" : "en" },
     // Checkpoint resume: pass saved step outputs and a callback that persists
     // new ones, so a re-run continues from the last completed step.
     checkpoints: checkpoints || {},
@@ -230,6 +232,7 @@ async function sweepOnce() {
           messageId: data.messageId,
           question: data.question,
           history: data.history || [],
+          answerLanguage: data.answerLanguage === "pidgin" ? "pidgin" : "en",
           checkpoints: data.checkpoints || {},
         });
         added++;
