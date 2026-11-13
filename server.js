@@ -297,6 +297,13 @@ const chatAuthOrGuest = async (req, res, next) => {
     return next();
   }
 };
+// Progress polling is registered before the chat limiter: it runs about once a
+// second while an answer is being written and must not use up the chat budget.
+app.get(
+  "/api/chat/progress/:messageId",
+  (req, res, next) => (/^Bearer\s/i.test(String(req.headers.authorization || "")) ? requireAuth(req, res, next) : next()),
+  chatRoute.progressHandler
+);
 app.use("/api/chat", chatLimiter, chatAuthOrGuest);
 app.use("/api/generate-title", chatLimiter, requireAuth);
 app.use(chatRoute);

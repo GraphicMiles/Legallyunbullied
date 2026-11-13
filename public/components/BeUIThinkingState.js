@@ -1,387 +1,250 @@
 /**
- * Beautiful UI Thinking State - Vanilla JS
- * Expandable agent trace with 4 variants: Steps, Reasoning, Search, Coding
+ * Agent trace for a legal answer.
+ *
+ * Shows only the steps the server reported as they actually ran (see
+ * server/progressStore.js). Collapsed by default. The header carries the
+ * elapsed time and, while the agent works, the name of the current step.
+ * Expanding reveals every step that ran, each with its own timing.
+ *
+ * Updates are applied to existing rows in place, and the panel opens and
+ * closes with a grid-rows transition, so the list is never rebuilt on toggle.
+ *
+ * API:
+ *   new BeUIThinkingState(container, { startedAt, elapsedMs, steps, status })
+ *   .update({ steps })                 apply progress while running
+ *   .finish({ status, elapsedMs, steps })  freeze: "done" | "stopped"
+ *   .destroy()                         remove from the DOM
  */
 
-const STAGES = [800, 600, 1800, 2600, 1600];
+const AGTRACE_CHECK =
+  '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M3.2 8.6l3 3 6.6-6.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-const VARIANTS = {
-  // ONE honest row. The server answers a question with a single request, so
-  // there is no per-stage progress to report: the fabricated "Classifying /
-  // Searching / Analyzing 14 sections / Drafting" list advanced on a timer and
-  // told the user things about their own answer that were not true. A finished
-  // run reports its real elapsed time; a run in flight reports nothing but the
-  // fact that it is running.
-  Steps: {
-    active: "Working on your answer",
-    done: "Answered",
-    rows: [{ primary: "Checking your question against Nigerian law" }],
-  },
-  Reasoning: {
-    active: "Thinking",
-    done: "Thought for 4 seconds",
-    rows: [
-      { primary: "This is a tenancy dispute involving illegal eviction in Lagos State." },
-      { primary: "I need to check the Lagos State Tenancy Law 2011 for notice requirements." },
-    ],
-  },
-  Search: {
-    active: "Searching legal sources",
-    done: "Searched legal database",
-    query: "Lagos State Tenancy Law eviction notice",
-    rows: [
-      { primary: "Lagos State Tenancy Law 2011", secondary: "s.13", href: "#" },
-      { primary: "Lagos State Tenancy Law 2011", secondary: "s.20", href: "#" },
-      { primary: "Recovery of Premises Law", secondary: "Cap R4", href: "#" },
-    ],
-  },
-  Coding: {
-    active: "Running tools",
-    done: "Ran 3 tools",
-    rows: [
-      { primary: "Read", secondary: "legal_provisions", mono: true },
-      { primary: "Search", secondary: "tenancy eviction", mono: true, add: 14, del: 0 },
-      { primary: "Plan", secondary: "response structure", mono: true },
-    ],
-  },
-};
+const AGTRACE_CARET =
+  '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 6.25l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+const AGTRACE_STATES = ["active", "done", "stopped", "pending"];
+
+/**
+ * Elapsed time for display: whole seconds, then minutes, then hours.
+ * 3 -> "3s", 125 -> "2m 5s", 3900 -> "1h 5m".
+ */
+function formatThinkingElapsed(ms) {
+  const total = Math.max(0, Math.round((Number(ms) || 0) / 1000));
+  if (total < 60) return `${total}s`;
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  if (minutes < 60) return seconds ? `${minutes}m ${seconds}s` : `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const restMinutes = minutes % 60;
+  return restMinutes ? `${hours}h ${restMinutes}m` : `${hours}h`;
+}
+
+function normaliseAgtraceStep(step) {
+  const state = AGTRACE_STATES.includes(step && step.state) ? step.state : "done";
+  return {
+    key: String((step && step.key) || ""),
+    title: String((step && step.title) || "Working"),
+    detail: String((step && step.detail) || ""),
+    state,
+    elapsedMs: Number(step && step.elapsedMs) || 0,
+  };
+}
+
+let agtraceSeq = 0;
 
 class BeUIThinkingState {
   constructor(container, options = {}) {
     this.container = container;
-    this.variant = options.variant || "Steps";
-    this.static = options.static === true;
-    // Static mode renders the finished (collapsed) state immediately, with no
-    // animation — used when re-rendering a completed message on reload so it
-    // matches the live pipeline's look exactly.
-    this.stage = this.static ? STAGES.length - 1 : 0;
-    this.manualExpanded = null;
-    this.selectedTool = null;
-    this.element = null;
-    // Real elapsed-time source. Two forms:
-    //  - startedAt (epoch ms): live "Thought for X.Xs" ticking during a run
-    //  - elapsedMs (fixed): final duration for a completed message
     this.startedAt = options.startedAt || null;
-    this.elapsedMs = options.elapsedMs != null ? options.elapsedMs : null;
-    this.elapsedTimer = null;   // the 500ms tick interval (label refresh)
-    this.sequenceTimer = null;  // the stage-advance setTimeout chain
+    this.elapsedMs = options.elapsedMs != null ? Number(options.elapsedMs) : null;
+    this.steps = Array.isArray(options.steps) ? options.steps.map(normaliseAgtraceStep) : [];
+    this.status = options.status || (this.startedAt && this.elapsedMs == null ? "running" : "done");
     this.destroyed = false;
+    this.open = false;
+    this.tickTimer = null;
+    this.rows = new Map();
+    this.markKind = null;
+    this.id = `agtrace-${++agtraceSeq}`;
 
-    this.render();
-    if (!this.static) this.startSequence();
+    this.build();
+    this.renderSteps();
+    this.renderLabel();
+    this.syncTicker();
   }
 
-  doneLabel(v) {
-    if (this.elapsedMs != null) {
-      return `Took ${(this.elapsedMs / 1000).toFixed(1)}s`;
-    }
-    if (this.startedAt == null) return v.done;
-    const secs = ((Date.now() - this.startedAt) / 1000).toFixed(1);
-    return `Took ${secs}s`;
+  build() {
+    const root = document.createElement("div");
+    root.className = "agtrace";
+    root.innerHTML = `
+      <button type="button" class="agtrace__header" aria-expanded="false" aria-controls="${this.id}-panel">
+        <span class="agtrace__mark" aria-hidden="true"></span>
+        <span class="agtrace__label"><span class="agtrace__verb"></span> <span class="agtrace__time"></span></span>
+        <span class="agtrace__now"></span>
+        <span class="agtrace__caret" aria-hidden="true">${AGTRACE_CARET}</span>
+      </button>
+      <div class="agtrace__panel" id="${this.id}-panel">
+        <div class="agtrace__inner">
+          <ol class="agtrace__steps"></ol>
+        </div>
+      </div>`;
+    this.element = root;
+    this.header = root.querySelector(".agtrace__header");
+    this.markEl = root.querySelector(".agtrace__mark");
+    this.verbEl = root.querySelector(".agtrace__verb");
+    this.timeEl = root.querySelector(".agtrace__time");
+    this.nowEl = root.querySelector(".agtrace__now");
+    this.listEl = root.querySelector(".agtrace__steps");
+    this.header.addEventListener("click", () => this.setOpen(!this.open));
+    this.container.appendChild(root);
   }
 
-  startElapsedTick(label) {
-    if (this.destroyed) return; // never tick a destroyed component
-    if (this.elapsedTimer) clearInterval(this.elapsedTimer);
-    const currentVariant = () => VARIANTS[this.variant] || VARIANTS.Steps;
-    this.elapsedTimer = setInterval(() => {
-      if (this.destroyed) {
-        clearInterval(this.elapsedTimer);
-        this.elapsedTimer = null;
-        return;
-      }
-      label.textContent = this.doneLabel(currentVariant());
-    }, 500);
+  setOpen(open) {
+    if (this.destroyed) return;
+    this.open = !!open;
+    this.element.classList.toggle("is-open", this.open);
+    this.header.setAttribute("aria-expanded", String(this.open));
   }
-  
-  render() {
-    if (this.destroyed) return; // never re-render after destroy
-    if (this.elapsedTimer) {
-      clearInterval(this.elapsedTimer);
-      this.elapsedTimer = null;
-    }
-    const v = VARIANTS[this.variant] || VARIANTS.Steps;
-    const autoExpanded = this.stage >= 1 && this.stage < 4;
-    const expanded = this.manualExpanded !== null ? this.manualExpanded : autoExpanded;
-    const working = this.stage < 3;
-    const visible = this.stage < 1 ? 0 : v.rows.length;
-    
-    this.element = document.createElement("div");
-    this.element.className = "beui-thinking-state";
-    this.element.style.cssText = "display: flex; flex-direction: column; width: 100%;";
-    
-    // Header button
-    const header = document.createElement("button");
-    header.type = "button";
-    header.setAttribute("aria-expanded", expanded);
-    header.className = "beui-thinking-header";
-    header.style.cssText = `
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px;
-      margin: 0 -6px;
-      background: transparent;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background-color 100ms;
-      width: fit-content;
-    `;
-    
-    header.addEventListener("mouseenter", () => {
-      header.style.backgroundColor = "var(--color-surface-alt)";
-    });
-    header.addEventListener("mouseleave", () => {
-      header.style.backgroundColor = "transparent";
-    });
-    
-    // Icon
-    const icon = document.createElement("div");
-    icon.style.cssText = `
-      width: 16px;
-      height: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: ${working ? "var(--color-text-muted)" : "var(--color-text-faint)"};
-    `;
-    icon.innerHTML = `<svg class="icon icon--fill" style="width:16px;height:16px" aria-hidden="true"><use href="#i-sparkle"/></svg>`;
-    
-    // Label
-    const label = document.createElement("span");
-    if (working) {
-      label.style.cssText = `
-        font-size: 13px;
-        font-weight: 500;
-        white-space: nowrap;
-        background: linear-gradient(90deg, var(--color-text-faint) 35%, var(--color-text) 50%, var(--color-text-faint) 65%);
-        background-size: 200% 100%;
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
-        animation: shimmer-text 1.4s linear infinite;
-      `;
-      label.textContent = v.active;
+
+  elapsedNow() {
+    if (this.status === "running" && this.startedAt != null) return Date.now() - this.startedAt;
+    if (this.elapsedMs != null) return this.elapsedMs;
+    return this.startedAt != null ? Date.now() - this.startedAt : 0;
+  }
+
+  setMark(kind) {
+    if (this.markKind === kind) return;
+    this.markKind = kind;
+    this.markEl.className = `agtrace__mark is-${kind}`;
+    this.markEl.innerHTML = kind === "done" ? AGTRACE_CHECK : "";
+  }
+
+  renderLabel() {
+    if (this.destroyed) return;
+    const running = this.status === "running";
+    const stopped = this.status === "stopped";
+    this.element.dataset.status = this.status;
+    this.setMark(running ? "running" : stopped ? "stopped" : "done");
+
+    this.verbEl.textContent = running ? "Thinking" : stopped ? "Stopped after" : "Thought for";
+    this.timeEl.textContent = formatThinkingElapsed(this.elapsedNow());
+
+    if (running) {
+      // Name the step that is happening now, so the collapsed bar says what
+      // the agent is doing without needing to expand it.
+      const active = this.steps.find((s) => s.state === "active");
+      this.nowEl.textContent = active ? active.title : "";
     } else {
-      label.style.cssText = `
-        font-size: 13px;
-        font-weight: 500;
-        white-space: nowrap;
-        color: var(--color-text-muted);
-        animation: fade-in 350ms ease-out both;
-      `;
-      label.textContent = this.doneLabel(v);
-      if (this.startedAt != null && this.elapsedMs == null) {
-        this.startElapsedTick(label);
-      }
+      const n = this.steps.length;
+      this.nowEl.textContent = n ? `${n} step${n === 1 ? "" : "s"}` : "";
     }
-    
-    // Chevron
-    const chevron = document.createElement("div");
-    chevron.style.cssText = `
-      transition: transform 300ms;
-      transform: ${expanded ? "rotate(180deg)" : "rotate(0)"};
-      color: var(--color-text-faint);
-    `;
-    chevron.innerHTML = `<svg class="icon" style="width:14px;height:14px" aria-hidden="true"><use href="#i-chevron-down"/></svg>`;
-    
-    header.appendChild(icon);
-    header.appendChild(label);
-    header.appendChild(chevron);
-    
-    header.addEventListener("click", () => {
-      this.manualExpanded = !(this.manualExpanded !== null ? this.manualExpanded : autoExpanded);
-      this.render();
-    });
-    
-    // Expandable trace
-    const traceWrapper = document.createElement("div");
-    traceWrapper.style.cssText = `
-      display: grid;
-      grid-template-rows: ${expanded ? "1fr" : "0fr"};
-      opacity: ${expanded ? "1" : "0"};
-      transition: grid-template-rows 400ms cubic-bezier(0.23, 1, 0.32, 1), opacity 400ms;
-    `;
-    
-    const traceInner = document.createElement("div");
-    traceInner.style.cssText = "overflow: hidden;";
-    
-    const traceContent = document.createElement("div");
-    traceContent.style.cssText = "position: relative; margin-top: 4px; margin-left: 5px; padding-left: 16px;";
-    
-    // Trace rows container
-    const traceRef = document.createElement("div");
-    traceRef.style.cssText = "display: flex; flex-direction: column; gap: 4px; padding: 4px 0;";
-    
-    // Query (for Search variant)
-    if (v.query) {
-      const queryRow = document.createElement("div");
-      queryRow.style.cssText = `
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        height: 24px;
-        padding: 0 6px;
-        animation: ${expanded ? "fade-up 300ms cubic-bezier(0.23, 1, 0.32, 1) both" : "none"};
-      `;
-      queryRow.innerHTML = `
-        <svg class="icon" style="width:14px;height:14px" aria-hidden="true"><use href="#i-search"/></svg>
-        <span style="font-size: 12.5px; color: var(--color-text-muted);">${v.query}</span>
-      `;
-      traceRef.appendChild(queryRow);
-    }
-    
-    // Rows
-    v.rows.slice(0, visible).forEach((row, i) => {
-      const rowEl = document.createElement("div");
-      rowEl.style.cssText = `
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        min-height: 28px;
-        width: 100%;
-        padding: 2px 6px;
-        border-radius: 6px;
-        animation: fade-up 320ms cubic-bezier(0.23, 1, 0.32, 1) ${i * 120}ms both;
-      `;
-      
-      // Icon/indicator
-      if (this.variant === "Search") {
-        const dot = document.createElement("span");
-        const tones = ["var(--color-accent)", "var(--color-warning)", "var(--color-success)"];
-        dot.style.cssText = `
-          display: flex;
-          width: 14px;
-          height: 14px;
-          align-items: center;
-          justify-content: center;
-          border-radius: 50%;
-          background: ${tones[i % 3]};
-          flex-shrink: 0;
-        `;
-        dot.innerHTML = `<svg class="icon" style="width:9px;height:9px" aria-hidden="true"><use href="#i-circle"/></svg>`;
-        rowEl.appendChild(dot);
-      } else if (this.variant === "Steps") {
-        // A tick means "this finished". Only a finished (static) render may
-        // claim that; a live row keeps its spinner until the answer replaces it.
-        if (this.static || i < visible - 1) {
-          const check = document.createElement("span");
-          check.style.cssText = "flex-shrink: 0; color: var(--color-text-faint);";
-          check.innerHTML = `<svg class="icon" style="width:14px;height:14px" aria-hidden="true"><use href="#i-check"/></svg>`;
-          rowEl.appendChild(check);
-        } else {
-          const spinner = document.createElement("span");
-          spinner.style.cssText = `
-            width: 12px;
-            height: 12px;
-            flex-shrink: 0;
-            border-radius: 50%;
-            border: 1.5px solid var(--color-border);
-            border-top-color: var(--color-text-muted);
-            animation: spin 700ms linear infinite;
-          `;
-          rowEl.appendChild(spinner);
-        }
-      }
-      
-      // Primary text
-      const primary = document.createElement("span");
-      primary.style.cssText = `
-        flex: 1;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        font-size: 12.5px;
-        ${this.variant === "Reasoning" ? "white-space: normal; line-height: 1.5; color: var(--color-text-muted);" : "font-weight: 500; color: var(--color-text);"}
-      `;
-      primary.textContent = row.primary;
-      rowEl.appendChild(primary);
-      
-      // Secondary text
-      if (row.secondary) {
-        const secondary = document.createElement("span");
-        secondary.style.cssText = `
-          flex-shrink: 0;
-          font-size: 11.5px;
-          color: var(--color-text-faint);
-          ${row.mono ? "font-family: var(--font-mono);" : ""}
-        `;
-        secondary.textContent = row.secondary;
-        rowEl.appendChild(secondary);
-      }
-      
-      // Add/del counts (for Coding variant)
-      if (row.add !== undefined) {
-        const counts = document.createElement("span");
-        counts.style.cssText = `
-          flex-shrink: 0;
-          font-family: var(--font-mono);
-          font-size: 11px;
-          font-variant-numeric: tabular-nums;
-        `;
-        counts.innerHTML = `<span style="color: var(--color-success);">+${row.add}</span> <span style="color: var(--color-danger);">−${row.del}</span>`;
-        rowEl.appendChild(counts);
-      }
-      
-      traceRef.appendChild(rowEl);
-    });
-    
-    // "+N more" for Search variant
-    if (this.variant === "Search" && this.stage >= 3) {
-      const more = document.createElement("span");
-      more.style.cssText = "font-size: 12px; color: var(--color-text-faint); animation: fade-in 300ms ease-out both;";
-      more.textContent = "+7 more";
-      traceRef.appendChild(more);
-    }
-    
-    traceContent.appendChild(traceRef);
-    traceInner.appendChild(traceContent);
-    traceWrapper.appendChild(traceInner);
-    
-    this.element.appendChild(header);
-    this.element.appendChild(traceWrapper);
-    
-    this.container.innerHTML = "";
-    this.container.appendChild(this.element);
-    
   }
-  
-  startSequence() {
-    const advance = () => {
-      if (this.destroyed) return; // stop the chain once destroyed
-      if (this.stage < STAGES.length - 1) {
-        this.sequenceTimer = setTimeout(() => {
-          if (this.destroyed) return; // a pending tick fired after destroy
-          this.stage++;
-          this.render();
-          advance();
-        }, STAGES[this.stage]);
+
+  renderSteps() {
+    if (this.destroyed) return;
+    const seen = new Set();
+    this.steps.forEach((step) => {
+      const key = step.key || `step-${this.rows.size}`;
+      seen.add(key);
+      let row = this.rows.get(key);
+      if (!row) {
+        row = document.createElement("li");
+        row.className = "agtrace__step";
+        row.innerHTML = `
+          <span class="agtrace__dot" aria-hidden="true"></span>
+          <div class="agtrace__text">
+            <div class="agtrace__title"></div>
+            <div class="agtrace__detail"></div>
+          </div>
+          <span class="agtrace__step-time"></span>`;
+        this.rows.set(key, row);
+        this.listEl.appendChild(row);
       }
-    };
-    advance();
+      row.dataset.state = step.state;
+      row.querySelector(".agtrace__title").textContent = step.title;
+      const detail = row.querySelector(".agtrace__detail");
+      detail.textContent = step.detail;
+      detail.hidden = !step.detail;
+      const time = row.querySelector(".agtrace__step-time");
+      if (step.state === "done" || step.state === "stopped") {
+        time.textContent = step.elapsedMs < 500 ? "<1s" : formatThinkingElapsed(step.elapsedMs);
+      } else {
+        time.textContent = "";
+      }
+      const dot = row.querySelector(".agtrace__dot");
+      dot.className = `agtrace__dot is-${step.state}`;
+      dot.innerHTML = step.state === "done" ? AGTRACE_CHECK : "";
+    });
+
+    // Remove rows for steps that no longer exist (the list only grows in
+    // practice, but keep the DOM and the data in step regardless).
+    for (const [key, row] of this.rows) {
+      if (!seen.has(key)) {
+        row.remove();
+        this.rows.delete(key);
+      }
+    }
+
+    // Explain the empty list honestly instead of showing a placeholder step.
+    let empty = this.listEl.querySelector(".agtrace__empty");
+    if (!this.steps.length) {
+      if (!empty) {
+        empty = document.createElement("li");
+        empty.className = "agtrace__empty";
+        this.listEl.appendChild(empty);
+      }
+      empty.textContent = this.status === "running"
+        ? "Sent your question. Waiting for the first step."
+        : "No step details were recorded for this answer.";
+    } else if (empty) {
+      empty.remove();
+    }
   }
-  
+
+  syncTicker() {
+    if (this.destroyed) return;
+    if (this.status === "running" && !this.tickTimer) {
+      this.tickTimer = setInterval(() => this.renderLabel(), 1000);
+    } else if (this.status !== "running" && this.tickTimer) {
+      clearInterval(this.tickTimer);
+      this.tickTimer = null;
+    }
+  }
+
+  update(patch = {}) {
+    if (this.destroyed || this.status !== "running") return;
+    if (Array.isArray(patch.steps)) this.steps = patch.steps.map(normaliseAgtraceStep);
+    this.renderSteps();
+    this.renderLabel();
+  }
+
+  finish(patch = {}) {
+    if (this.destroyed) return;
+    const status = patch.status === "stopped" ? "stopped" : "done";
+    if (Array.isArray(patch.steps)) this.steps = patch.steps.map(normaliseAgtraceStep);
+    this.elapsedMs = patch.elapsedMs != null
+      ? Number(patch.elapsedMs)
+      : (this.startedAt != null ? Date.now() - this.startedAt : 0);
+    // A step still marked active never completed. Show it as stopped when the
+    // run was stopped, and as done when the run finished normally.
+    this.steps = this.steps.map((s) => (s.state === "active"
+      ? { ...s, state: status === "stopped" ? "stopped" : "done" }
+      : s));
+    this.status = status;
+    this.syncTicker();
+    this.renderSteps();
+    this.renderLabel();
+  }
+
   destroy() {
-    // Fully terminate: cancel the stage-advance setTimeout chain AND the
-    // 500ms label tick, flag as destroyed so any stray callback is a no-op,
-    // then remove the element. Previously the setTimeout chain survived,
-    // re-rendered into the still-mounted container, and started a new tick
-    // interval that never stopped — the "keeps counting forever" regression.
+    if (this.destroyed) return;
     this.destroyed = true;
-    if (this.sequenceTimer) {
-      clearTimeout(this.sequenceTimer);
-      this.sequenceTimer = null;
-    }
-    if (this.elapsedTimer) {
-      clearInterval(this.elapsedTimer);
-      this.elapsedTimer = null;
-    }
-    if (this.element && this.element.parentNode) {
-      this.element.parentNode.removeChild(this.element);
-    }
+    if (this.tickTimer) clearInterval(this.tickTimer);
+    this.tickTimer = null;
+    if (this.element && this.element.parentNode) this.element.parentNode.removeChild(this.element);
   }
 }
 
-window.BeUIThinkingState = BeUIThinkingState;
+if (typeof window !== "undefined") {
+  window.BeUIThinkingState = BeUIThinkingState;
+  window.formatThinkingElapsed = formatThinkingElapsed;
+}

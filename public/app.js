@@ -108,11 +108,7 @@ import {
                   msg.status = "sent";
                 }
                 if (msg && msg.role === "agent" && !msg.steps) {
-                  msg.steps = STEP_DEFS.map((s, i) => ({
-                    ...s,
-                    state: msg.status === "done" ? "done" : "pending",
-                    elapsedMs: msg.thinkingElapsedMs || 0,
-                  }));
+                  msg.steps = [];
                 }
               }
             }
@@ -1234,13 +1230,9 @@ import {
     plus: '<svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>',
   };
 
-  const STEP_DEFS = [
-    { key: "read", title: "Reading your question", detail: "Parsing the situation and extracting key facts.", icon: "read" },
-    { key: "classify", title: "Classifying the issue", detail: "Identifying practice area, jurisdiction, and urgency.", icon: "classify" },
-    { key: "search", title: "Searching legal sources", detail: "Checking relevant statutes.", icon: "search" },
-    { key: "plan", title: "Planning the response", detail: "Analyzing provisions and structuring the answer.", icon: "bolt" },
-    { key: "draft", title: "Drafting the answer", detail: "Structuring the response and the escalation verdict.", icon: "draft" },
-  ];
+  // Agent trace steps are never pre-seeded. They come from the server as the
+  // stages actually run (see /api/chat/progress), so the trace cannot show a
+  // step that did not happen.
 
   /* ------------------------------------------------------------------ */
   /* Sidebar / history                                                   */
@@ -1952,7 +1944,7 @@ import {
     // Safety-ack reveals also skip it — they never ran the 5-step UI, which
     // otherwise renders as a bogus "Thought for 0.0s".
     const fromSafetyAck = !!(msg.safetyAcknowledgedAt || msg.status === "safetyAck");
-    const SHOW_TRACE = !fromSafetyAck && ["done", "corpusEmpty", "error", "stopped", "incomplete"].includes(msg.status);
+    const SHOW_TRACE = !fromSafetyAck && ["done", "corpusEmpty", "error", "stopped", "incomplete", "needsInput", "providersBusy"].includes(msg.status);
     if (SHOW_TRACE) {
       // Render the SAME thinking component the live pipeline uses, in static
       // (finished) mode, so a reloaded/reopened chat looks identical to the
@@ -1960,14 +1952,12 @@ import {
       if (window.BeUIThinkingState) {
         const traceContainer = document.createElement("div");
         new window.BeUIThinkingState(traceContainer, {
-          variant: "Steps",
-          static: true,
           elapsedMs: msg.thinkingElapsedMs || 0,
+          // Only messages recorded with the real trace have trustworthy steps.
+          steps: msg.traceVersion === 2 ? msg.steps : [],
+          status: ["error", "stopped"].includes(msg.status) ? "stopped" : "done",
         });
         body.appendChild(traceContainer);
-      } else {
-        // Fallback if the component failed to load (legacy trace UI).
-        body.appendChild(buildTraceElStatic(msg));
       }
     }
 
@@ -2028,86 +2018,6 @@ import {
     msg.status = "incomplete";
   }
 
-  function buildTraceElStatic(msg) {
-    const trace = document.createElement("div");
-    trace.className = "trace" + (msg.traceOpen ? " is-open" : "");
-
-    const toggle = buildTraceToggle(msg, trace);
-    const body = document.createElement("div");
-    body.className = "trace__body";
-    if (msg.steps) {
-      msg.steps.forEach((step) => body.appendChild(buildStepEl(step)));
-    }
-
-    trace.appendChild(toggle);
-    trace.appendChild(body);
-    return trace;
-  }
-
-  function buildTraceToggle(msg, traceEl) {
-    const toggle = document.createElement("button");
-    toggle.type = "button";
-    toggle.className = "trace__toggle";
-    const isDone = msg.status !== "thinking";
-    const seconds = ((msg.thinkingElapsedMs || 0) / 1000).toFixed(1);
-    const label = isDone ? `Thought for ${seconds}s` : "Thinking";
-    const statusHtml = isDone
-      ? `<span class="trace__status" style="color: var(--color-text-faint);">${(msg.steps || []).length} steps</span>`
-      : `<span class="trace__status"></span>`;
-    toggle.innerHTML = `
-      <svg class="icon trace__toggle-icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
-      <span>${label}</span>
-      ${statusHtml}
-    `;
-    toggle.addEventListener("click", () => {
-      msg.traceOpen = !msg.traceOpen;
-      traceEl.classList.toggle("is-open", msg.traceOpen);
-    });
-    return toggle;
-  }
-
-  function buildStepEl(step) {
-    const item = document.createElement("div");
-    item.className = "trace-step is-" + step.state;
-
-    const rail = document.createElement("div");
-    rail.className = "trace-step__rail";
-    const icon = document.createElement("div");
-    icon.className = "trace-step__icon";
-    icon.innerHTML = step.state === "done" ? ICONS.check
-      : step.state === "active" ? '<span class="spinner" style="width:10px;height:10px;"></span>'
-      : (ICONS[step.icon] || "");
-    const connector = document.createElement("div");
-    connector.className = "trace-step__connector";
-    rail.appendChild(icon);
-    rail.appendChild(connector);
-
-    const content = document.createElement("div");
-    content.className = "trace-step__content";
-    const timeTag = step.elapsedMs ? `<span class="trace-step__title-time">${(step.elapsedMs / 1000).toFixed(1)}s</span>` : "";
-    content.innerHTML = `<div class="trace-step__title"><span>${escapeHtml(step.title)}</span>${timeTag}</div><div class="trace-step__detail">${escapeHtml(step.detail || "")}</div>`;
-
-    if (step.chips && step.chips.length) {
-      const chipsRow = document.createElement("div");
-      chipsRow.className = "trace-step__chips";
-      step.chips.forEach((chip, i) => {
-        const c = document.createElement("span");
-        c.className = "trace-chip";
-        c.style.animationDelay = (i * 70) + "ms";
-        c.innerHTML = `${ICONS.search}<span>${escapeHtml(chip)}</span>`;
-        chipsRow.appendChild(c);
-      });
-      content.appendChild(chipsRow);
-    }
-
-    item.appendChild(rail);
-    item.appendChild(content);
-    return item;
-  }
-
-  /* ------------------------------------------------------------------ */
-  /* Answer block — shared by static + live rendering                    */
-  /* ------------------------------------------------------------------ */
   function buildAnswerBlock(msg, { stream }) {
     const wrap = document.createElement("div");
     wrap.className = "answer-block-plain";
@@ -2736,8 +2646,8 @@ import {
       id: uid(),
       role: "agent",
       status: "thinking",
-      traceOpen: true,
-      steps: STEP_DEFS.map((s, i) => ({ ...s, state: i === 0 ? "active" : "pending", elapsedMs: 0 })),
+      traceVersion: 2,
+      steps: [],
       classification: null,
       result: null,
       startedAt: Date.now(),
@@ -2800,94 +2710,106 @@ import {
     runPipeline(convo, agentMsg, token);
   }
 
-  function startTimer(agentMsg, token) {
-    clearInterval(live.timerId);
-    
-    // Update the trace status with elapsed time
-    if (live.refs && live.refs.toggle) {
-      const statusSpan = live.refs.toggle.querySelector(".trace__status");
-      if (statusSpan) {
-        statusSpan.innerHTML = "";
-        
-        // Simple reasoning text display
-        const reasoningText = document.createElement("span");
-        reasoningText.className = "trace__reasoning";
-        reasoningText.textContent = "Thinking";
-        statusSpan.appendChild(reasoningText);
-        
-        // Progress timer
-        const progressText = document.createElement("span");
-        progressText.className = "trace__progress";
-        progressText.textContent = "0s";
-        statusSpan.appendChild(progressText);
-        
-        live.timerId = setInterval(() => {
-          if (token !== pipelineToken || !live.refs) {
-            clearInterval(live.timerId);
-            return;
-          }
-          const elapsed = Math.floor((Date.now() - agentMsg.startedAt) / 1000);
-          progressText.textContent = `${elapsed}s`;
-        }, 1000);
-      }
+  /* ── Agent trace: live progress ─────────────────────────────────────────── */
+  // The server records each stage as it actually runs (server/progressStore.js).
+  // While the request is open the client polls that record and copies it into
+  // the trace. The answer never depends on polling: the response carries the
+  // outcome, and a failed poll is simply skipped.
+  const PROGRESS_POLL_MS = 800;
+
+  async function fetchAgentProgress(messageId, timeoutMs = 4000) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch(`/api/chat/progress/${encodeURIComponent(messageId)}`, {
+        headers,
+        cache: "no-store",
+        signal: controller.signal,
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (_) {
+      return null;
+    } finally {
+      clearTimeout(timer);
     }
   }
 
-  function sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+  function applyAgentProgress(agentMsg, steps, force = false) {
+    if (!Array.isArray(steps)) return;
+    if (!force && agentMsg.status !== "thinking") return;
+    agentMsg.steps = steps.map((s) => ({
+      key: s.key,
+      title: s.title,
+      detail: s.detail || "",
+      state: s.state,
+      elapsedMs: s.elapsedMs || 0,
+    }));
+    if (live.thinkingComponent) live.thinkingComponent.update({ steps: agentMsg.steps });
   }
 
-  function setStepActive(agentMsg, index) {
-    if (!agentMsg || !agentMsg.steps || !agentMsg.steps[index]) return;
-    if (index > 0) {
-      const prev = agentMsg.steps[index - 1];
-      if (prev && prev.state !== "done") {
-        prev.state = "done";
-        updateStepEl(index - 1, prev);
+  // Returns a stop() function. The loop also stops by itself once the message
+  // leaves "thinking" or the pipeline token changes (stop, retry, new chat).
+  function startAgentProgressPoll(agentMsg, token) {
+    let stopped = false;
+    let busy = false;
+    let timerId = null;
+    const stop = () => {
+      stopped = true;
+      if (timerId) clearInterval(timerId);
+    };
+    const tick = async () => {
+      if (stopped || busy) return;
+      if (token !== pipelineToken || agentMsg.status !== "thinking") {
+        stop();
+        return;
       }
-    }
-    const step = agentMsg.steps[index];
-    step.state = "active";
-    step._start = Date.now();
-    updateStepEl(index, step);
-    
-    // BeUIThinkingState is self-contained - it animates on its own.
-    // No need to call addStep() - the component handles its own sequence.
+      busy = true;
+      try {
+        const snap = await fetchAgentProgress(agentMsg.id, 3000);
+        if (!stopped && snap && token === pipelineToken) applyAgentProgress(agentMsg, snap.steps);
+      } finally {
+        busy = false;
+      }
+    };
+    timerId = setInterval(tick, PROGRESS_POLL_MS);
+    tick();
+    return stop;
   }
 
-  function setStepDone(agentMsg, index) {
-    if (!agentMsg || !agentMsg.steps || !agentMsg.steps[index]) return;
-    const step = agentMsg.steps[index];
-    step.state = "done";
-    step.elapsedMs = Date.now() - (step._start || Date.now());
-    updateStepEl(index, step);
-    
-    // BUG FIX: Persist step completion immediately so a page reload
-    // doesn't restore a frozen half-completed trace.
-    saveState();
-    
-    // BeUIThinkingState is self-contained - no need to call renderSteps().
+  function dropLiveTrace() {
+    if (live.stopProgress) {
+      live.stopProgress();
+      live.stopProgress = null;
+    }
+    if (live.thinkingComponent) {
+      live.thinkingComponent.destroy();
+      live.thinkingComponent = null;
+    }
   }
 
   async function runPipeline(convo, agentMsg, token) {
     console.log('[runPipeline] Starting pipeline');
     const question = lastUserText(convo);
 
-    // Step 0: Reading the question — purely cosmetic pacing, no server call yet.
-    console.log('[runPipeline] Step 0: Reading question');
-    setStepActive(agentMsg, 0);
-    await sleep(380);
-    if (token !== pipelineToken) {
-      console.log('[runPipeline] Cancelled after step 0');
-      return;
-    }
+    if (!Array.isArray(agentMsg.steps)) agentMsg.steps = [];
 
-    // Step 1: Classifying — this is where the real network request happens.
-    // It stays active (with the live elapsed timer ticking) for however
-    // long the server actually takes, since classify+retrieve+draft all
-    // happen server-side in one round trip.
-    console.log('[runPipeline] Step 1: Classifying (calling API)');
-    setStepActive(agentMsg, 1);
+    // Mount the live trace before the request goes out, so the user sees the
+    // real stages as they happen. It replaces the generic loader.
+    if (live.loadingState) {
+      live.loadingState.destroy();
+      live.loadingState = null;
+    }
+    if (window.BeUIThinkingState && live.refs && live.refs.body) {
+      const thinkingContainer = document.createElement("div");
+      live.refs.body.insertBefore(thinkingContainer, live.refs.body.firstChild);
+      live.thinkingComponent = new window.BeUIThinkingState(thinkingContainer, {
+        startedAt: agentMsg.startedAt,
+        steps: [],
+      });
+    }
+    live.stopProgress = startAgentProgressPoll(agentMsg, token);
 
     // If this chat was opened from the summary-only sidebar list, its full
     // thread may still be lazily loading. Restore it first so follow-up
@@ -2933,6 +2855,19 @@ import {
       return;
     }
 
+    // The request is over: stop polling, then read the final record once so
+    // the trace shows the outcome of every stage that ran.
+    if (live.stopProgress) {
+      live.stopProgress();
+      live.stopProgress = null;
+    }
+    // Read the final record on failure too: a failed run still shows the
+    // stages that ran before it stopped.
+    if (token === pipelineToken) {
+      const finalSnap = await fetchAgentProgress(agentMsg.id, 1500);
+      if (finalSnap && token === pipelineToken) applyAgentProgress(agentMsg, finalSnap.steps, true);
+    }
+
     if (requestError) {
       console.log('[runPipeline] Finishing with error');
       finishWithError(convo, agentMsg, token, requestError.message);
@@ -2944,6 +2879,7 @@ import {
       console.log('[runPipeline] Casual chat detected, skipping pipeline');
       agentMsg.casualReply = response.casualReply;
       agentMsg.status = "casual";
+      dropLiveTrace();
       
       // BUG FIX: Mark ALL steps done so the trace doesn't freeze mid-pipeline on reload.
       // Casual messages don't need the 5-step trace at all.
@@ -3031,109 +2967,13 @@ import {
       return;
     }
 
-    // Legal question — create Beautiful UI Thinking State for pipeline execution
-    // Guard against null steps (migration safety) — apply to BOTH paths
-    if (!agentMsg.steps) {
-      console.log('[runPipeline] Initializing missing steps for agentMsg:', agentMsg.id);
-      agentMsg.steps = STEP_DEFS.map((s, i) => ({ ...s, state: "pending", elapsedMs: 0 }));
-    }
-    
-    if (window.BeUIThinkingState) {
-      const thinkingContainer = document.createElement("div");
-      live.refs.body.insertBefore(thinkingContainer, live.refs.body.firstChild);
-      
-      live.thinkingComponent = new window.BeUIThinkingState(thinkingContainer, {
-        variant: "Steps",
-        // Real pipeline start time so "Thought for Xs" shows the actual
-        // elapsed time instead of the component's hardcoded demo value.
-        startedAt: agentMsg.startedAt
-      });
-    } else {
-      // Fallback to old trace UI if BeUIThinkingState not available
-      const traceEl = document.createElement("div");
-      traceEl.className = "trace is-open is-thinking";
-      const toggle = buildTraceToggle(agentMsg, traceEl);
-      const traceBody = document.createElement("div");
-      traceBody.className = "trace__body";
-      const stepEls = agentMsg.steps.map((step) => buildStepEl(step));
-      stepEls.forEach((se) => traceBody.appendChild(se));
-      traceEl.appendChild(toggle);
-      traceEl.appendChild(traceBody);
-      live.refs.body.insertBefore(traceEl, live.refs.body.firstChild);
-      
-      live.refs.traceEl = traceEl;
-      live.refs.toggle = toggle;
-      live.refs.traceBody = traceBody;
-      live.refs.stepEls = stepEls;
-    }
-    
-    startTimer(agentMsg, token);
+    agentMsg.classificationRaw = response.classification || null;
+    agentMsg.classification = normalizeClassification(response.classification);
+    agentMsg.evidence = response.evidence || null;
+    if (response.plan) agentMsg.plan = response.plan;
+    if (token !== pipelineToken) return;
 
-    try {
-      agentMsg.classificationRaw = response.classification || null;
-      agentMsg.classification = normalizeClassification(response.classification);
-      agentMsg.evidence = response.evidence || null;
-      
-      if (agentMsg.steps[1]) {
-        agentMsg.steps[1].detail = `${agentMsg.classification.practiceArea} · ${agentMsg.classification.jurisdictionGuess} · ${agentMsg.classification.urgency} urgency`;
-      }
-      setStepDone(agentMsg, 1);
-    } catch (err) {
-      console.error('[runPipeline] Error updating steps:', err);
-      console.error('[runPipeline] agentMsg:', agentMsg);
-      console.error('[runPipeline] response:', response);
-      throw err;
-    }
-
-    // Step 2: Searching legal sources — the server already did this; show
-    // what it found (or admit nothing's ingested yet) with brief pacing.
-    setStepActive(agentMsg, 2);
     const hasResult = !response.corpusEmpty && response.result;
-    if (hasResult && response.result.sources && response.result.sources.length) {
-      if (agentMsg.steps[2]) {
-        agentMsg.steps[2].detail = `Cross-checking ${response.result.sources.length} source${response.result.sources.length === 1 ? "" : "s"} for relevance.`;
-        agentMsg.steps[2].chips = response.result.sources.map((s) => s.label);
-      }
-    } else {
-      if (agentMsg.steps[2]) {
-        agentMsg.steps[2].detail = "No ingested sources for this practice area yet.";
-      }
-    }
-    if (agentMsg.steps[2]) updateStepEl(2, agentMsg.steps[2]);
-    await sleep(350);
-    if (token !== pipelineToken) return;
-    setStepDone(agentMsg, 2);
-
-    // Step 3: Planning the response — show the reasoning plan
-    setStepActive(agentMsg, 3);
-    if (response.plan) {
-      agentMsg.plan = response.plan;
-      if (agentMsg.steps[3]) {
-        agentMsg.steps[3].detail = response.plan.analysis || "Analyzing provisions and structuring response";
-        if (response.plan.key_provisions && response.plan.key_provisions.length) {
-          agentMsg.steps[3].chips = response.plan.key_provisions.slice(0, 3).map(p => {
-            // Extract just the act/section name from the provision description
-            const match = p.match(/^(Section \d+|[A-Z][^-\n]+)/);
-            return match ? match[1].slice(0, 40) : p.slice(0, 40);
-          });
-        }
-      }
-    } else {
-      if (agentMsg.steps[3]) {
-        agentMsg.steps[3].detail = "Preparing response structure";
-      }
-    }
-    if (agentMsg.steps[3]) updateStepEl(3, agentMsg.steps[3]);
-    await sleep(400);
-    if (token !== pipelineToken) return;
-    setStepDone(agentMsg, 3);
-
-    // Step 4: Drafting — also already done server-side; brief pacing only.
-    setStepActive(agentMsg, 4);
-    await sleep(300);
-    if (token !== pipelineToken) return;
-    setStepDone(agentMsg, 4);
-
     collapseTrace(agentMsg, token);
 
     saveState();
@@ -3170,65 +3010,29 @@ import {
     return msgs.length ? msgs[msgs.length - 1].content : "";
   }
 
-  function updateStepEl(index, step) {
-    if (!live.refs || !live.refs.stepEls) return;
-    const fresh = buildStepEl(step);
-    const old = live.refs.stepEls[index];
-    if (old && old.parentNode) old.parentNode.replaceChild(fresh, old);
-    live.refs.stepEls[index] = fresh;
-  }
-
   function collapseTrace(agentMsg, token) {
     if (token !== pipelineToken || !live.refs) return;
-    clearInterval(live.timerId);
-    
-    // Stop BeUI components
-    // Freeze the thinking time NOW — this is the single source of truth for
-    // "Thought for X.Xs", and it must never include streaming time.
+    if (live.stopProgress) {
+      live.stopProgress();
+      live.stopProgress = null;
+    }
+
+    // Freeze the thinking time NOW. This is the single source of truth for
+    // "Thought for X", and it must never include streaming time.
     agentMsg.thinkingElapsedMs = Date.now() - agentMsg.startedAt;
     agentMsg.traceOpen = false;
     agentMsg.status = "streaming";
 
-    // Replace the live (ticking) thinking component with a FROZEN static one
-    // so the "Thought for X.Xs" header stays visible through streaming and
-    // matches the reload render exactly. It is deliberately NOT tracked in
-    // live.thinkingComponent, so finalizeAnswer won't destroy it.
+    // Freeze the live trace in place: it stays on screen through streaming and
+    // matches the reload render. It is no longer tracked, so finalizeAnswer
+    // will not remove it.
     if (live.thinkingComponent) {
-      const container = live.thinkingComponent.container;
-      live.thinkingComponent.destroy();
+      live.thinkingComponent.finish({ status: "done", elapsedMs: agentMsg.thinkingElapsedMs, steps: agentMsg.steps });
       live.thinkingComponent = null;
-      if (container && window.BeUIThinkingState) {
-        new window.BeUIThinkingState(container, {
-          variant: "Steps",
-          static: true,
-          elapsedMs: agentMsg.thinkingElapsedMs,
-        });
-      }
     }
     if (live.beuiStreaming) {
       live.beuiStreaming.destroy();
       live.beuiStreaming = null;
-    }
-
-    // BUG FIX: Ensure ALL steps are marked "done" when collapsing the trace.
-    // This prevents the frozen-half-complete state if a step's setStepDone
-    // was somehow skipped or the pipeline took an unexpected path.
-    if (agentMsg.steps) {
-      agentMsg.steps.forEach((s) => { if (s.state !== "done") s.state = "done"; });
-    }
-
-    // Only update old trace UI if it exists
-    if (live.refs.traceEl && live.refs.toggle) {
-      const traceEl = live.refs.traceEl;
-      const toggleEl = live.refs.toggle;
-
-      traceEl.classList.remove("is-thinking");
-      traceEl.classList.remove("is-open");
-      toggleEl.innerHTML = `
-        <svg class="icon trace__toggle-icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
-        <span>Thought for ${(agentMsg.thinkingElapsedMs / 1000).toFixed(1)}s</span>
-        <span class="trace__status" style="color: var(--color-text-faint);">${agentMsg.steps.length} steps</span>
-      `;
     }
   }
 
@@ -3500,7 +3304,8 @@ import {
 
       msg.status = "thinking";
       msg.traceOpen = true;
-      msg.steps = STEP_DEFS.map((s, i) => ({ ...s, state: i === 0 ? "active" : "pending", elapsedMs: 0 }));
+      msg.steps = [];
+    msg.traceVersion = 2;
       msg.classification = null;
       msg.result = null;
       msg.thinkingElapsedMs = 0;
@@ -3739,7 +3544,8 @@ import {
 
     msg.status = "thinking";
     msg.traceOpen = true;
-    msg.steps = STEP_DEFS.map((s, i) => ({ ...s, state: i === 0 ? "active" : "pending", elapsedMs: 0 }));
+    msg.steps = [];
+    msg.traceVersion = 2;
     msg.errorMessage = null;
     msg.result = null;
     msg.thinkingElapsedMs = 0;
@@ -3753,7 +3559,6 @@ import {
 
   function finishWithError(convo, agentMsg, token, message) {
     if (token !== pipelineToken || !live.refs) return;
-    clearInterval(live.timerId);
 
     // Stop loading state if still active
     if (live.loadingState) {
@@ -3761,38 +3566,23 @@ import {
       live.loadingState = null;
     }
 
-    // Guard against missing steps
-    if (agentMsg.steps) {
-      agentMsg.steps.forEach((s) => { if (s.state === "active") s.state = "pending"; });
-    } else {
-      console.warn('[finishWithError] agentMsg.steps is missing, skipping step update');
+    if (live.stopProgress) {
+      live.stopProgress();
+      live.stopProgress = null;
     }
-    
     agentMsg.thinkingElapsedMs = Date.now() - agentMsg.startedAt;
     agentMsg.traceOpen = false;
     agentMsg.status = "error";
     agentMsg.errorMessage = message;
 
-    // Handle BeUIThinking component
+    // Freeze the trace as stopped, keeping the steps that actually ran.
     if (live.thinkingComponent) {
-      live.thinkingComponent.destroy();
+      live.thinkingComponent.finish({ status: "stopped", elapsedMs: agentMsg.thinkingElapsedMs, steps: agentMsg.steps });
       live.thinkingComponent = null;
     }
-    // Handle BeUIStreamingText
     if (live.beuiStreaming) {
       live.beuiStreaming.destroy();
       live.beuiStreaming = null;
-    }
-    
-    // Handle old trace UI
-    if (live.refs.traceEl && live.refs.toggle) {
-      const traceEl = live.refs.traceEl;
-      traceEl.classList.remove("is-thinking");
-      traceEl.classList.remove("is-open");
-      live.refs.toggle.innerHTML = `
-        <svg class="icon trace__toggle-icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
-        <span>Stopped after ${(agentMsg.thinkingElapsedMs / 1000).toFixed(1)}s</span>
-      `;
     }
 
     live.refs.body.appendChild(buildErrorEl(message, {
@@ -3920,10 +3710,15 @@ import {
       live.loadingState.destroy();
       live.loadingState = null;
     }
-    clearInterval(live.timerId);
-    live.timerId = null;
+    if (live.stopProgress) {
+      live.stopProgress();
+      live.stopProgress = null;
+    }
     if (live.thinkingComponent) {
-      live.thinkingComponent.destroy();
+      // Paths that answer without streaming (needs input, providers busy,
+      // corpus empty) also end here, so freeze the trace as done.
+      if (!agentMsg.thinkingElapsedMs) agentMsg.thinkingElapsedMs = Date.now() - agentMsg.startedAt;
+      live.thinkingComponent.finish({ status: "done", elapsedMs: agentMsg.thinkingElapsedMs, steps: agentMsg.steps });
       live.thinkingComponent = null;
     }
     // A finished stream's content IS the final answer — do NOT destroy it.
@@ -4017,7 +3812,6 @@ import {
   function stopGeneration() {
     // Increment token to invalidate the current pipeline's async callbacks
     pipelineToken += 1;
-    clearInterval(live.timerId);
     cancelBusyRetry();
     try { if (live.abortController) live.abortController.abort(); } catch (_) {}
     live.abortController = null;
@@ -4028,11 +3822,14 @@ import {
       live.loadingState = null;
     }
     
-    // Stop thinking component if active
-    if (live.thinkingComponent) {
-      live.thinkingComponent.destroy();
-      live.thinkingComponent = null;
+    if (live.stopProgress) {
+      live.stopProgress();
+      live.stopProgress = null;
     }
+    // Freeze the trace as stopped; it keeps the steps that ran.
+    const liveTrace = live.thinkingComponent;
+    live.thinkingComponent = null;
+    if (liveTrace) liveTrace.finish({ status: "stopped" });
     // Stop BeUIStreamingText if active
     if (live.beuiStreaming) {
       live.beuiStreaming.destroy();
@@ -4050,18 +3847,6 @@ import {
         
         // Show what we got so far
         if (live.refs) {
-          // Handle old trace UI
-          if (live.refs.traceEl && live.refs.toggle) {
-            const traceEl = live.refs.traceEl;
-            traceEl.classList.remove("is-thinking");
-            traceEl.classList.remove("is-open");
-            live.refs.toggle.innerHTML = `
-              <svg class="icon trace__toggle-icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
-              <span>Stopped after ${(agentMsg.thinkingElapsedMs / 1000).toFixed(1)}s</span>
-              <span class="trace__status" style="color: var(--color-text-faint);">partial</span>
-            `;
-          }
-          
           // If we have a partial result, show it
           if (agentMsg.result) {
             // Already streaming, just finalize what we have
