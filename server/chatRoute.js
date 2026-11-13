@@ -27,6 +27,7 @@ const { detectLegalIntent, buildFallbackClassification } = require("./legalInten
 const { PRACTICE_AREAS: PRACTICE_AREA_DEFS, PRACTICE_AREA_KEYS } = require("./practiceAreas");
 const { getFirestore } = require("./firebaseAdmin");
 const { recordJobStart, recordJobEnd } = require("./jobRunner");
+const progressStore = require("./progressStore");
 const { HIGH_RISK_AREAS, requiredSourceCount, validateDraftResult, verifyAndResolveCitations } = require("./evidence");
 
 const PRACTICE_AREAS = PRACTICE_AREA_KEYS;
@@ -1539,6 +1540,7 @@ async function runChatPipeline(req) {
   } else {
     if (cp.classification) console.warn("[chat] Discarding invalid classification checkpoint");
     let classifyResult;
+    reportStep(req, "classify", { state: "active", title: "Understanding your situation" });
     try {
       classifyResult = await timed("classificationMs", () => classifyWithFallback(question, conversationContext, {
         forceLegal: forcedLegal || (history.length > 0 && detectLegalIntent(conversationContext).legal),
@@ -1554,6 +1556,7 @@ async function runChatPipeline(req) {
 
     classification = classifyResult.classification;
     classifyProvider = classifyResult.provider;
+    reportStep(req, "classify", { state: "done", detail: `This looks like a ${plainArea(classification.practice_area)} matter.` });
 
     // Backstop: if the deterministic gate fired but the classifier still said
     // "casual", override with a valid legal classification. A described assault
@@ -1749,12 +1752,19 @@ async function runChatPipeline(req) {
     };
 
     let provisions;
+    reportStep(req, "search", { state: "active", title: "Checking the law library" });
     try {
       provisions = await timed("retrievalMs", () => findProvisions({
         practiceArea: classification.practice_area,
         jurisdiction: classification.jurisdiction,
         keywords: classification.keywords,
       }));
+    reportStep(req, "search", {
+      state: "done",
+      detail: provisions.length
+        ? `Found ${provisions.length} provision${provisions.length === 1 ? "" : "s"} that may apply.`
+        : "Nothing matching in our library yet.",
+    });
     } catch (err) {
       console.error("[/api/chat] Firestore lookup failed:", err.message);
       
@@ -1958,6 +1968,7 @@ async function runChatPipeline(req) {
         },
       };
       timings.planningMs = 0;
+      reportStep(req, "plan", { state: "done", title: "Working out the steps", detail: "Mapped the legal issues and next steps from your facts." });
     } else {
       console.log(`[/api/chat] Simple route — skipping planning (route=${route})`);
     }
@@ -1978,8 +1989,10 @@ async function runChatPipeline(req) {
       if (cached.citationVerification) evidence.citationVerification = cached.citationVerification;
     } else {
       // Step 5a: Draft with fallback chain (plan is null for simple route)
+      reportStep(req, "draft", { state: "active", title: "Writing your answer" });
       try {
         draftResult = await timed("draftMs", () => draftWithFallback(question, contextBlock, planResult.plan, classification, history));
+        reportStep(req, "draft", { state: "done", detail: draftResult && draftResult.result ? "Draft written. Checking it against the law next." : "" });
       } catch (err) {
         console.error("[/api/chat] drafting failed:", err.status || "", err.message);
         await serverPersistMessage(req, { status: "error", errorMessage: "The drafting model failed to respond. " + (err.message || ""), pipelineStatus: "failed", unread: true });
@@ -2010,6 +2023,7 @@ async function runChatPipeline(req) {
         const QUALITY_THRESHOLD = 0.6;
         const SAFETY_THRESHOLD = isHighRisk ? 0.7 : 0.6;
 
+        reportStep(req, "check", { state: "active", title: "Checking the answer against the law" });
         for (let attempt = 0; attempt <= MAX_CRITIQUE_RETRIES; attempt++) {
           try {
             critiqueResult = await timed("critiqueMs", () => critiqueWithFallback(
@@ -2116,6 +2130,14 @@ async function runChatPipeline(req) {
       }
     }
 
+    if (critiqueResult) {
+      reportStep(req, "check", {
+        state: "done",
+        detail: critiqueResult.passed === true
+          ? "Every point is backed by the law text."
+          : "Tightened the wording where the law did not fully support it.",
+      });
+    }
     await saveCheckpoint("draftAndCritique", { planResult, draftResult, critiqueResult });
   }
 
@@ -2197,6 +2219,24 @@ async function runChatPipeline(req) {
 
 const inFlightRuns = new Map();
 
+// Live progress for the client's trace. Best-effort: a progress write must
+// never change the answer or fail the request.
+function progressRef(req) {
+  const messageId = req && req.body && req.body.messageId;
+  return messageId ? { uid: (req && req.uid) || null, messageId } : null;
+}
+
+function reportStep(req, key, step) {
+  try {
+    const ref = progressRef(req);
+    if (ref) progressStore.report(ref, { key, ...step });
+  } catch (_) { /* progress is informational only */ }
+}
+
+function plainArea(value) {
+  return String(value || "legal").replace(/_/g, " ");
+}
+
 function validRunId(value) {
   return typeof value === "string" && value.length > 0 && value.length <= 128 && /^[A-Za-z0-9._~-]+$/.test(value);
 }
@@ -2255,6 +2295,8 @@ async function executeChatRequest(req) {
   } catch (err) {
     console.warn("[chat] job start not recorded:", err.message);
   }
+  progressStore.begin(progressRef(req));
+  reportStep(req, "read", { state: "done", title: "Reading your question", detail: "" });
   let result;
   try {
     result = await runChatPipeline(req);
@@ -2270,6 +2312,10 @@ async function executeChatRequest(req) {
       },
     };
   }
+  try {
+    const outcome = result && result.status === 200 ? (result.body && result.body.needsInput ? "needsInput" : "done") : "failed";
+    progressStore.finish(progressRef(req), outcome);
+  } catch (_) { /* progress is informational only */ }
   try {
     await recordJobEnd(req, result);
   } catch (err) {
@@ -2370,6 +2416,7 @@ Examples:
 });
 
 router.runChatPipeline = runChatPipeline;
+router.progressHandler = progressStore.progressHandler;
 
 // Test hooks (simulate a server restart by dropping the in-memory caches).
 router.__testing = {
