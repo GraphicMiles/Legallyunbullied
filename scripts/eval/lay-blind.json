@@ -1,0 +1,22 @@
+{
+  "description": "Blind plain-language set. Written after the map was widened, and measured once. Do not tune the map against these cases: that would make this set a development set too.",
+  "k": 8,
+  "cases": [
+    { "id": "b-01", "q": "My landlord locked me out of the flat while I was at work", "expect": ["Lagos State Tenancy"] },
+    { "id": "b-02", "q": "Police stopped me on the road and asked me for money", "expect": ["Police Act", "Administration of Criminal Justice", "Criminal Code"] },
+    { "id": "b-03", "q": "My company stopped paying my pension contributions", "expect": ["Pension Reform Act"] },
+    { "id": "b-04", "q": "Someone registered a company in my name without my knowledge", "expect": ["Companies and Allied Matters"] },
+    { "id": "b-05", "q": "My husband beats me when he is drunk", "expect": ["Violence Against Persons", "Criminal Code", "Matrimonial Causes"] },
+    { "id": "b-06", "q": "Debt collectors keep calling me at night and threatening me", "expect": ["Consumer Protection Council", "Federal Competition and Consumer Protection", "CBN Consumer Protection"] },
+    { "id": "b-07", "q": "My insurance company refuses to pay my claim after my car was stolen", "expect": ["Insurance Act", "Motor Vehicles (Third Party"] },
+    { "id": "b-08", "q": "The school is holding my daughter's result because of unpaid fees", "expect": ["Education", "Child Rights Act"] },
+    { "id": "b-09", "q": "My neighbour makes loud noise all night and I cannot sleep", "expect": ["Environmental", "Criminal Code"] },
+    { "id": "b-10", "q": "My landlord keeps raising the rent without any notice", "expect": ["Lagos State Tenancy"] },
+    { "id": "b-11", "q": "A customer posted lies about my business online", "expect": ["Cybercrimes", "Criminal Code"] },
+    { "id": "b-12", "q": "My son was arrested and nobody told me where they took him", "expect": ["Administration of Criminal Justice", "Police Act", "Constitution"] },
+    { "id": "b-13", "q": "My tenant has not paid rent for six months and refuses to leave", "expect": ["Lagos State Tenancy"] },
+    { "id": "b-14", "q": "My employer deducted money from my salary without telling me", "expect": ["Labour Act"] },
+    { "id": "b-15", "q": "My wife took our children abroad without my consent", "expect": ["Child Rights Act", "Matrimonial Causes"] },
+    { "id": "b-16", "q": "A landlord wants me to pay a huge sum before he will sign the agreement", "expect": ["Lagos State Tenancy"] }
+  ]
+}

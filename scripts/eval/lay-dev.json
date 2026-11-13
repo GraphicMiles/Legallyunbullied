@@ -1,0 +1,22 @@
+{
+  "description": "Plain-language questions written from everyday experience (not copied from scenarios100). 'expect' lists act-name fragments; a hit is any of the top-k provisions whose act name contains one of them. Development set: used to widen the lay-term map.",
+  "k": 8,
+  "cases": [
+    { "id": "dev-01", "q": "Someone used my debit card to take money from my account and the bank says it is not their problem", "expect": ["Cybercrimes", "CBN Consumer Protection", "CBN Guidelines on Operations of Electronic Payment"] },
+    { "id": "dev-02", "q": "My employer has not paid my salary for three months and says there is no money", "expect": ["Labour Act"] },
+    { "id": "dev-03", "q": "My wife left the house and I want to end our marriage", "expect": ["Matrimonial Causes"] },
+    { "id": "dev-04", "q": "The police kept my phone after my arrest and will not give it back", "expect": ["Police Act", "Administration of Criminal Justice"] },
+    { "id": "dev-05", "q": "Someone is posting my private pictures online to shame me", "expect": ["Cybercrimes"] },
+    { "id": "dev-06", "q": "A driver hit my car and ran away, how do I claim compensation", "expect": ["Motor Vehicles (Third Party"] },
+    { "id": "dev-07", "q": "My neighbour built his fence on my land", "expect": ["Land Use Act"] },
+    { "id": "dev-08", "q": "My boss sacked me while I was pregnant", "expect": ["Labour Act"] },
+    { "id": "dev-09", "q": "A bank charged me for a transfer that never went through", "expect": ["CBN Regulation on Instant Inter-Bank", "CBN Consumer Protection", "CBN Guidelines on Operations"] },
+    { "id": "dev-10", "q": "Someone threatened to kill me in a text message", "expect": ["Cybercrimes", "Criminal Code"] },
+    { "id": "dev-11", "q": "My child's school threw him out without any hearing", "expect": ["Education", "Child Rights Act"] },
+    { "id": "dev-12", "q": "A contractor collected my money to build a house and then disappeared", "expect": ["Advance Fee Fraud", "Criminal Code"] },
+    { "id": "dev-13", "q": "I bought goods that arrived broken and the seller refuses to refund me", "expect": ["Sale of Goods", "Federal Competition and Consumer Protection", "Consumer Protection Council"] },
+    { "id": "dev-14", "q": "My landlord took a year of rent in advance but the house has no water", "expect": ["Lagos State Tenancy"] },
+    { "id": "dev-15", "q": "Police officers beat me while questioning me", "expect": ["Constitution", "Administration of Criminal Justice", "Police Act"] },
+    { "id": "dev-16", "q": "My boss refuses to pay my severance after I resigned", "expect": ["Labour Act"] }
+  ]
+}
