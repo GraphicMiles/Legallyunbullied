@@ -20,7 +20,11 @@ class BeUIStreamingText {
     };
     
     this.citations = this.options.citations !== false;
-    this.tokens = this.tokenize(this.options.text);
+    // html mode: the caller passes already-rendered markdown. Words are then
+    // revealed inside the formatted DOM, so bold, bullets and line breaks are
+    // correct from the first frame instead of only after the stream ends.
+    this.htmlMode = typeof this.options.html === 'string';
+    this.tokens = this.htmlMode ? [] : this.tokenize(this.options.text);
     this.count = 0;
     this.sourcesOpen = false;
     this.element = null;
@@ -53,6 +57,10 @@ class BeUIStreamingText {
   }
   
   render() {
+    if (this.htmlMode) {
+      this.renderHtml();
+      return;
+    }
     // Main wrapper
     this.element = document.createElement('div');
     this.element.style.cssText = `
@@ -260,6 +268,43 @@ class BeUIStreamingText {
     this.container.appendChild(this.element);
   }
   
+  renderHtml() {
+    // display: contents keeps the markdown's own <p>/<ul> children directly
+    // under the caller's container, so the stream and the final render share
+    // one layout.
+    this.element = document.createElement('div');
+    this.element.style.display = 'contents';
+    this.paragraph = document.createElement('div');
+    this.paragraph.style.display = 'contents';
+    this.paragraph.innerHTML = this.options.html;
+
+    const walker = document.createTreeWalker(this.paragraph, NodeFilter.SHOW_TEXT);
+    const textNodes = [];
+    while (walker.nextNode()) textNodes.push(walker.currentNode);
+
+    this.tokens = [];
+    for (const node of textNodes) {
+      const frag = document.createDocumentFragment();
+      for (const part of node.textContent.split(/(\s+)/)) {
+        if (!part) continue;
+        if (/^\s+$/.test(part)) {
+          frag.appendChild(document.createTextNode(part));
+          continue;
+        }
+        const span = document.createElement('span');
+        span.textContent = part;
+        span.style.opacity = '0';          // hidden until its turn; keeps layout stable
+        this.tokens.push(span);
+        frag.appendChild(span);
+      }
+      node.parentNode.replaceChild(frag, node);
+    }
+
+    this.element.appendChild(this.paragraph);
+    this.container.innerHTML = '';
+    this.container.appendChild(this.element);
+  }
+
   updateSourcesDropdown() {
     if (this.sourcesOpen) {
       const dropdownInner = document.createElement('div');
@@ -332,7 +377,13 @@ class BeUIStreamingText {
       if (this.count < this.tokens.length) {
         const token = this.tokens[this.count];
         
-        if (token.type === 'word') {
+        if (this.htmlMode) {
+          // The span already sits in the formatted DOM; just play its reveal.
+          token.style.cssText = `
+            display: inline;
+            animation: stream-in 500ms cubic-bezier(0.22, 0.61, 0.25, 1) forwards;
+          `;
+        } else if (token.type === 'word') {
           // Add word with individual blur animation
           const span = document.createElement('span');
           span.style.cssText = `

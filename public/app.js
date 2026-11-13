@@ -1866,7 +1866,7 @@ import {
 
     orderedMessages.forEach((msg) => {
       if (msg.role === "user") {
-        el.chatMessages.appendChild(renderUserMessage(msg));
+        if (!msg.hitlAnswer) el.chatMessages.appendChild(renderUserMessage(msg));
       } else {
         el.chatMessages.appendChild(renderAgentMessageStatic(msg));
       }
@@ -1985,12 +1985,12 @@ import {
         onRetry: () => retryAgentMessage(msg.id),
       }));
     } else if (msg.status === "needsInput") {
-      // Completed clarifying question — re-render the (still answerable) card.
-      body.appendChild(buildNeedsInputCard(
-        msg.needsInputQuestion || "Can you clarify?",
-        msg.needsInputField,
-        (answer) => submitQuestion(answer)
-      ));
+      // Answered clarifying questions stay as a compact row; open ones keep
+      // the single-answer card.
+      const q = msg.needsInputQuestion || "Can you clarify?";
+      body.appendChild(msg.needsInputAnswer
+        ? buildNeedsInputAnsweredEl(q, msg.needsInputAnswer)
+        : buildHitlCard(msg, q, msg.needsInputField));
     } else if (msg.status === "safetyAck") {
       // Answer withheld by the old pre-response gate (removed). It never
       // reached the user, so it is a missing answer, not a warning.
@@ -2696,7 +2696,7 @@ import {
   /* ------------------------------------------------------------------ */
   /* Agent pipeline — live, incremental DOM updates via `live.refs`      */
   /* ------------------------------------------------------------------ */
-  function submitQuestion(text) {
+  function submitQuestion(text, opts = {}) {
     if (state.isAgentBusy) return;
     // Signed-out visitors are guests: the server allows 3 questions per UTC
     // day (IP + device fingerprint); past that they see the quota notice
@@ -2708,11 +2708,19 @@ import {
     const convo = getActiveConversation();
 
     const userMsg = { id: uid(), role: "user", status: "sent", content: text, createdAt: Date.now() };
+    if (opts.hitlFor) {
+      // Answer to a clarifying card: kept in history for the server, never
+      // rendered as its own bubble (the answered card shows it instead).
+      userMsg.hitlAnswer = true;
+      userMsg.hitlFor = opts.hitlFor;
+    }
     convo.messages.push(userMsg);
     convo.updatedAt = Date.now(); // keep the sidebar ordering stable for local chats
 
-    const userTurns = convo.messages.filter((m) => m.role === "user").length;
-    if (userTurns === 1) {
+    const userTurns = convo.messages.filter((m) => m.role === "user" && !m.hitlAnswer).length;
+    if (userMsg.hitlAnswer) {
+      // no title change for a clarifying answer
+    } else if (userTurns === 1) {
       // A usable label from the opening message, so history is never untitled.
       convo.title = deriveTopicFromText(text);
       renderTopbar();
@@ -2754,7 +2762,7 @@ import {
 
     // Only append the NEW user message (don't re-render everything)
     const lastUserMsg = convo.messages[convo.messages.length - 2]; // second to last is the user message
-    if (lastUserMsg && lastUserMsg.role === "user") {
+    if (lastUserMsg && lastUserMsg.role === "user" && !lastUserMsg.hitlAnswer) {
       // Check if this message is already rendered
       const existingMsg = el.chatMessages.querySelector(`[data-msg-id="${lastUserMsg.id}"]`);
       if (!existingMsg) {
@@ -3158,7 +3166,7 @@ import {
     // "Cannot read properties of undefined (reading 'filter')". Never crash on
     // bad input — return "" and let the caller no-op.
     if (!convo || !Array.isArray(convo.messages)) return "";
-    const msgs = convo.messages.filter((m) => m.role === "user");
+    const msgs = convo.messages.filter((m) => m.role === "user" && !m.hitlAnswer);
     return msgs.length ? msgs[msgs.length - 1].content : "";
   }
 
@@ -3307,17 +3315,50 @@ import {
     console.log('[renderNeedsInput] Rendering input prompt:', response.question);
     console.log('[renderNeedsInput] Original question:', originalQuestion);
 
-    const wrap = buildNeedsInputCard(response.question, response.field, (answer) => {
-      console.log('[renderNeedsInput] User answered:', answer);
-      // With conversation history, server has context — just send the answer.
-      submitQuestion(answer);
-    });
+    const wrap = buildHitlCard(agentMsg, response.question, response.field);
     live.refs.body.appendChild(wrap);
     scrollChatToBottom();
 
     // Focus input
     const input = wrap.querySelector("input");
     setTimeout(() => input && input.focus(), 100);
+  }
+
+  // Clarifying-question card: takes one answer, then collapses into a compact
+  // answered row. The answer is sent as a hidden turn so the server gets it
+  // but the chat never shows it again as a separate user message.
+  function buildHitlCard(agentMsg, question, field) {
+    const card = buildNeedsInputCard(question, field, (answer) => {
+      if (state.isAgentBusy) return;
+      console.log('[hitl] answered:', answer);
+      agentMsg.needsInputAnswer = answer;
+      saveState();
+      card.replaceWith(buildNeedsInputAnsweredEl(question, answer));
+      submitQuestion(answer, { hitlFor: agentMsg.id });
+    });
+    return card;
+  }
+
+  function buildNeedsInputAnsweredEl(question, answer) {
+    const wrap = document.createElement("div");
+    wrap.className = "needs-input needs-input--answered";
+
+    const head = document.createElement("div");
+    head.className = "needs-input__answered-head";
+    head.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><span>Answered</span>';
+
+    const q = document.createElement("p");
+    q.className = "needs-input__answered-q";
+    q.textContent = question || "Can you clarify?";
+
+    const a = document.createElement("p");
+    a.className = "needs-input__answered-a";
+    a.textContent = answer || "";
+
+    wrap.appendChild(head);
+    wrap.appendChild(q);
+    wrap.appendChild(a);
+    return wrap;
   }
 
   // Builds the clarifying-question card. Used both live (renderNeedsInput) and
@@ -3610,7 +3651,7 @@ import {
     const msgs = convo.messages || [];
     const idx = msgs.findIndex((m) => m === agentMsg || m.id === agentMsg.id);
     for (let i = (idx === -1 ? msgs.length : idx) - 1; i >= 0; i -= 1) {
-      if (msgs[i].role === "user" && msgs[i].content) return msgs[i].content;
+      if (msgs[i].role === "user" && !msgs[i].hitlAnswer && msgs[i].content) return msgs[i].content;
     }
     return null;
   }
@@ -3773,6 +3814,7 @@ import {
     if (window.BeUIStreamingText) {
       const instance = new window.BeUIStreamingText(container, {
         text,
+        html: renderMarkdown(text),   // formatted while streaming, not only at the end
         citations: false,    // citations are inline bold text + the Sources list — no injected chips
         sources: [],         // source cards are rendered separately by appendContextCards
         followUps: [],       // follow-ups shown separately in their own stage
