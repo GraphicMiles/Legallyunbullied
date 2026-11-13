@@ -919,6 +919,55 @@ import {
     ).replace(/\n{3,}/g, "\n\n").trim();
   }
 
+  // Section labels the answer prompt asks for (see server/chatRoute.js).
+  // Answer language: English (default) or Nigerian Pidgin. Stored in this
+  // browser only (no Firestore read or write). Applies to the next question.
+  const ANSWER_LANG_KEY = "lu.answerLanguage";
+  const ANSWER_UI = {
+    en: {
+      lawTitle: "What the law says", actionsTitle: "What you can do", sources: "Sources",
+      verdictSelf: "You can do this yourself", verdictEscalate: "See a lawyer",
+      nbaLink: "Find a verified lawyer on the NBA directory",
+      reviewed: "Reviewed", unverified: "Not reviewed yet", limited: "Limited evidence",
+    },
+    pidgin: {
+      lawTitle: "Wetin the law talk", actionsTitle: "Wetin you fit do", sources: "Where we take know am",
+      verdictSelf: "You fit handle am yourself", verdictEscalate: "Make lawyer look am",
+      nbaLink: "Find better lawyer for NBA directory",
+      reviewed: "Don check", unverified: "No check yet", limited: "Few sources",
+    },
+  };
+  // Labels the model writes at the top of lawMd. Must match LANGUAGE_INSTRUCTIONS
+  // and the English labels in server/chatRoute.js.
+  const ANSWER_LABEL_RE = /^(the short answer|which rule applies, and why|what we do not know|short answer|which law dey apply, and why|wetin we no sure of|what the law says|what you can do|wetin the law talk|wetin you fit do)\b/i;
+  let answerLanguage = readAnswerLanguage();
+  function readAnswerLanguage() {
+    try { return localStorage.getItem(ANSWER_LANG_KEY) === "pidgin" ? "pidgin" : "en"; } catch { return "en"; }
+  }
+  function ui(key) {
+    return (ANSWER_UI[answerLanguage] || ANSWER_UI.en)[key];
+  }
+  function paintLanguageSwitch() {
+    document.querySelectorAll("#answer-language-switch [data-lang]").forEach((btn) => {
+      const on = btn.dataset.lang === answerLanguage;
+      btn.classList.toggle("is-active", on);
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+  }
+  function bindLanguageSwitch() {
+    const sw = document.getElementById("answer-language-switch");
+    if (!sw) return;
+    paintLanguageSwitch();
+    sw.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-lang]");
+      if (!btn) return;
+      answerLanguage = btn.dataset.lang === "pidgin" ? "pidgin" : "en";
+      try { localStorage.setItem(ANSWER_LANG_KEY, answerLanguage); } catch { /* private mode: keep in memory */ }
+      paintLanguageSwitch();
+    });
+  }
+  bindLanguageSwitch();
+
   function renderMarkdown(raw) {
     if (!raw) return "";
     // Each *line* chooses its own element so mixed blocks never jam into one
@@ -966,8 +1015,15 @@ import {
           pendingOrdered.push(ordered[1]);
         } else if (subhead) {
           flushLists();
-          pendingProse.push(line);
-          flushProse();
+          // Only the answer's own section labels get the sub-heading style. A bold
+          // citation alone on a line is still just bold text.
+          const labelText = line.replace(/\*\*/g, "").replace(/[:\s]+$/, "");
+          if (ANSWER_LABEL_RE.test(labelText)) {
+            out.push(`<p class="answer-subhead">${inlineMd(line.replace(/[:\s]+$/, ""))}</p>`);
+          } else {
+            pendingProse.push(line);
+            flushProse();
+          }
         } else {
           flushLists();
           pendingProse.push(line);
@@ -1125,7 +1181,7 @@ import {
     
     try {
       const headers = await getAuthHeaders();
-      const body = { question, history: history || [] };
+      const body = { question, history: history || [], answerLanguage };
       // Recoverable requests: tell the server which message to persist the
       // result into, so an answer computed after the tab closed isn't lost.
       if (options.conversationId) body.conversationId = options.conversationId;
@@ -2031,7 +2087,7 @@ import {
     lawWrapper.className = "answer-text-block";
     const lawTitle = document.createElement("div");
     lawTitle.className = "answer-section-title";
-    lawTitle.textContent = "What the law says";
+    lawTitle.textContent = ui("lawTitle");
     lawWrapper.appendChild(lawTitle);
     const lawTextEl = document.createElement("div");
     lawWrapper.appendChild(lawTextEl);
@@ -2050,7 +2106,7 @@ import {
     actionsWrapper.style.marginTop = "16px";
     const actionsTitle = document.createElement("div");
     actionsTitle.className = "answer-section-title";
-    actionsTitle.textContent = "What you can do";
+    actionsTitle.textContent = ui("actionsTitle");
     actionsWrapper.appendChild(actionsTitle);
     const actionsTextEl = document.createElement("div");
     actionsWrapper.appendChild(actionsTextEl);
@@ -2139,7 +2195,7 @@ import {
 
     const label = document.createElement("div");
     label.className = "answer-sources__label";
-    label.textContent = "Sources";
+    label.textContent = ui("sources");
     list.appendChild(label);
 
     sources.forEach((src, i) => {
@@ -2161,7 +2217,7 @@ import {
 
       const badge = document.createElement("span");
       badge.className = "answer-sources__badge " + (src.reviewed ? "is-reviewed" : "is-unverified");
-      badge.textContent = src.reviewed ? "Reviewed" : "Unverified";
+      badge.textContent = src.reviewed ? ui("reviewed") : ui("unverified");
       toggle.appendChild(badge);
 
       const chevron = document.createElement("span");
@@ -2359,11 +2415,11 @@ import {
   }
 
   function confidenceFromEvidence(r) {
-    if (r && r._safetyFlag) return { label: "Limited evidence", signal: 1 };
+    if (r && r._safetyFlag) return { label: ui("limited"), signal: 1 };
     const ev = r && r.evidence;
     if (!ev) {
       // Legacy responses (pre-gate). Still apply the hedge rule uniformly.
-      if (responseHasHedging(r)) return { label: "Limited evidence", signal: 1 };
+      if (responseHasHedging(r)) return { label: ui("limited"), signal: 1 };
       return { label: r.escalate ? "High confidence" : "Good option", signal: r.escalate ? 3 : 2 };
     }
     // Practical/procedural answer — no statute needed, so confidence means
@@ -2373,12 +2429,12 @@ import {
     }
     // Unverified high-risk answers are never labelled "Good option".
     if (r._safetyFlag) {
-      return { label: "Limited evidence", signal: 1 };
+      return { label: ui("limited"), signal: 1 };
     }
     // The server downgrades on hedging; also re-check locally for stored
     // messages that predate the server-side check.
     if (ev.sufficient === false || ev.hedged === true || responseHasHedging(r)) {
-      return { label: "Limited evidence", signal: 1 };
+      return { label: ui("limited"), signal: 1 };
     }
     if ((ev.sourceCount || 0) >= 2) {
       return { label: "High confidence", signal: 3 };
@@ -2409,7 +2465,7 @@ import {
         <div class="verdict__icon">
           ${escalate ? ICONS.lawyer : '<svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>'}
         </div>
-        <span class="verdict__title">${escalate ? "See a lawyer" : "You can do this yourself"}</span>
+        <span class="verdict__title">${escalate ? ui("verdictEscalate") : ui("verdictSelf")}</span>
         <span class="verdict__confidence">${confidence.label}</span>
       </div>
       <p class="verdict__text">${escapeHtml(reason)}</p>
@@ -2423,7 +2479,7 @@ import {
         <div class="verdict__actions">
           <a class="link-btn link-btn--primary" href="${NBA_DIRECTORY_URL}" target="_blank" rel="noopener noreferrer">
             ${ICONS.external}
-            Find a verified lawyer on the NBA directory
+            ${ui("nbaLink")}
           </a>
         </div>
       ` : ""}

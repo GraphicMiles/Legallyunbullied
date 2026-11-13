@@ -86,8 +86,10 @@ function resolveCitationTokens(text, lookup, used, unknown) {
     const id = String(rawId || "").trim();
     const p = lookup.byId.get(id);
     if (!p) {
+      // Drop the marker silently. The sentence stays; the unknown ID is still
+      // recorded in `unknown` (evidence.citationVerification) for review.
       unknown.push(id);
-      return "[unsupported citation removed]";
+      return "";
     }
     used.add(id);
     return `**${officialLabel(p)}**`;
@@ -98,7 +100,9 @@ function resolveCitationTokens(text, lookup, used, unknown) {
   // duplicates idempotently. A different label back-to-back is left alone —
   // that is a deliberate double citation (e.g. "...s.89** and **ACJA 2015,
   // s.112**") of different provisions.
-  return resolved.replace(/\*\*([^*]+)\*\*\s*\*\*\1\*\*/g, "**$1**");
+  // Removing a marker can leave a doubled space or a space before punctuation.
+  const tidied = resolved.replace(/[ \t]{2,}/g, " ").replace(/[ \t]+([.,;:)])/g, "$1");
+  return tidied.replace(/\*\*([^*]+)\*\*\s*\*\*\1\*\*/g, "**$1**");
 }
 
 function findUnverifiedInlineCitations(result, lookup) {

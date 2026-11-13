@@ -1203,14 +1203,60 @@
     border-radius: 0 !important;
   }
 
-  .answer-section-title {
-    font-size: var(--fs-sm);
-    font-weight: 700;
-    color: var(--color-text);
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
+  /* Answer language switch (topbar). Two plain text buttons in one pill; the
+     active one carries the only fill. Tap targets stay 36px high on phones. */
+  .lang-switch {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px;
+    border-radius: 999px;
+    border: 1px solid var(--color-border, rgba(127, 127, 127, 0.3));
+    flex-shrink: 0;
   }
+  .lang-switch__btn {
+    min-height: 36px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-text-muted);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .lang-switch__btn:hover { color: var(--color-text); }
+  .lang-switch__btn.is-active {
+    background: var(--color-elevated, rgba(127, 127, 127, 0.22));
+    color: var(--color-text);
+    font-weight: 600;
+  }
+  .lang-switch__btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+  /* Section headings: clearly above the body text, sentence case, with space
+     above so each section reads as its own block. */
+  .answer-section-title {
+    font-size: 17px;
+    font-weight: 650;
+    line-height: 1.35;
+    color: var(--color-text);
+    margin: 0 0 10px;
+    letter-spacing: 0;
+  }
+  .answer-text-block + .answer-text-block {
+    margin-top: 0 !important;
+    padding-top: 18px;
+    border-top: 1px solid var(--color-border, rgba(127, 127, 127, 0.22));
+  }
+  /* The answer's own labels ("The short answer", "What the law says"...) read as
+     sub-headings inside the body. Tagged in renderMarkdown (app.js). */
+  .answer-text-block .answer-subhead {
+    margin: 14px 0 4px;
+    font-size: 15px;
+    font-weight: 650;
+    color: var(--color-text);
+  }
+  .answer-text-block .answer-subhead:first-child { margin-top: 0; }
 
   /* Rendered answer body: calm typographic hierarchy */
   .answer-text-block p { margin: 0 0 10px; }
@@ -1636,12 +1682,12 @@
   .fault__actions { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }
   /* The retry is a text action, but its hit area is a thumb, not a line. */
   .fault__actions .link-btn { font-family: inherit; min-height: 44px; }
-  .verdict__head { display: flex; align-items: flex-start; gap: var(--space-2); }
+  .verdict__head { display: flex; align-items: center; gap: var(--space-2); }
   .verdict__icon {
     display: flex;
     align-items: center;
     flex-shrink: 0;
-    margin-top: 1px;
+    margin-top: 0;
     color: var(--color-text-muted);
   }
   .verdict--escalate .verdict__icon { color: var(--color-accent); }
@@ -1687,7 +1733,7 @@
   .verdict__confidence {
     margin-left: auto;
     align-self: center;
-    font-size: var(--fs-xxs, 10px);
+    font-size: 12px;
     font-weight: 500;
     color: var(--color-text-faint);
     white-space: nowrap;
@@ -2186,6 +2232,10 @@
           <svg class="topbar__brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M16 2L27 6.5V15C27 22.5 22.2 27.8 16 30C9.8 27.8 5 22.5 5 15V6.5L16 2Z" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M11 15.5L14.2 18.7L21 11.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </span>
         <span class="topbar__title" id="conversation-title">New question</span>
+      </div>
+      <div class="lang-switch" id="answer-language-switch" role="group" aria-label="Answer language">
+        <button type="button" class="lang-switch__btn is-active" data-lang="en" aria-pressed="true">English</button>
+        <button type="button" class="lang-switch__btn" data-lang="pidgin" aria-pressed="false">Pidgin</button>
       </div>
       <button class="icon-btn topbar__tool" id="clear-chat-btn" aria-label="Clear this chat" title="Clear this chat" disabled>
         <svg class="icon" aria-hidden="true"><use href="#i-eraser"/></svg>
