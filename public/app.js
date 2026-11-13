@@ -2624,12 +2624,22 @@ import {
     return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trimEnd() + "…";
   }
 
-  // A compact transcript for the summary call: recent turns, trimmed, labelled
+  // One title, one line: the first non-empty line of a reply, shortened at a
+  // word boundary if it is long. A reply with several options keeps the first.
+  function singleLineTitle(raw) {
+    if (typeof raw !== "string") return "";
+    const line = raw.split(/\r?\n/).map((l) => l.trim()).find((l) => l.length > 0) || "";
+    const first = line.split(/\s+[\/|]\s+/)[0].replace(/^(?:title|summary)\s*:\s*/i, "");
+    const cleaned = first.replace(/^["'`*]+|["'`*.!?:;,]+$/g, "").trim();
+    return cleaned ? titleFromFirstMessage(cleaned) : "";
+  }
+
+  // A compact transcript for the summary call: the first exchanges, trimmed, labelled
   // so the model knows who said what.
   function conversationSummaryInput(convo) {
     const turns = (convo.messages || [])
-      .filter((m) => m.role === "user" || m.role === "agent")
-      .slice(-6)
+      .filter((m) => (m.role === "user" && !m.hitlAnswer) || m.role === "agent")
+      .slice(0, 10)
       .map((m) => {
         if (m.role === "user") return "User: " + String(m.content || "").replace(/\s+/g, " ").trim().slice(0, 220);
         const body =
@@ -2658,8 +2668,9 @@ import {
       }
       
       const data = await response.json();
-      if (data.title && data.title.length > 0 && data.title.length <= 50) {
-        convo.title = data.title;
+      const title = singleLineTitle(data.title);
+      if (title) {
+        convo.title = title;
         saveState();
         renderHistory();
         renderTopbar();
@@ -2702,10 +2713,11 @@ import {
       convo.title = deriveTopicFromText(text);
       renderTopbar();
     }
-    if (userTurns === 3) {
-      // Once there are three exchanges the chat has a topic of its own, so the
-      // title becomes a summary of the conversation instead of a rephrasing of
-      // the first question.
+    if (userTurns === 3 && !convo.titleSummarised) {
+      // One summary title per conversation, taken from the first exchanges
+      // (up to five). It is requested once and never regenerated, so the title
+      // does not keep changing as the chat goes on.
+      convo.titleSummarised = true;
       generateContextualTitle(convo, text, conversationSummaryInput(convo));
     }
 

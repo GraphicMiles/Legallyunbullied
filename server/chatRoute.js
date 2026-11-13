@@ -849,6 +849,7 @@ Follow this plan to structure your response. Be comprehensive and address all su
 }
 
 const { isProviderOnCooldown, classifyProviderError, markProviderFailure } = require("./providerFailure");
+const { cleanTitle } = require("./titleText");
 
 /**
  * The one provider-fallback scaffold used by every stage (classify,
@@ -2392,7 +2393,7 @@ router.post("/api/generate-title", async (req, res) => {
 
 IMPORTANT: If the message is NOT a legal question (e.g., greetings like "hi", "hello", casual chat, or non-legal topics), respond with exactly: NOT_LEGAL
 
-Otherwise, return ONLY the title text, no quotes, no punctuation at the end.
+Otherwise, return ONLY one title on one line: no options, no quotes, no label, no punctuation at the end.
 
 Examples:
 - "My landlord locked me out" → Landlord lockout dispute
@@ -2418,9 +2419,10 @@ Examples:
         ],
         { task: "title", timeoutMs: 8000, temperature: 0.3, max_tokens: 30, parseJson: false }
       );
-      const raw = (completion.choices[0].message.content || "").trim().replace(/^["']|["']$/g, "");
-      if (raw === "NOT_LEGAL" || raw.length === 0) return res.json({ title: null });
-      const title = raw.slice(0, 50);
+      const raw = (completion.choices[0].message.content || "").trim();
+      if (/^NOT_LEGAL\b/.test(raw) || raw.length === 0) return res.json({ title: null });
+      // One title: the first line, decoration stripped, truncated if long.
+      const title = cleanTitle(raw);
       if (title) return res.json({ title });
     } catch (err) {
       console.warn("[/api/generate-title] failed with", model, ":", err.message);
