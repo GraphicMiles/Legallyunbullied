@@ -101,10 +101,19 @@ const LAY_TO_LEGAL = {
   online: ["cybercrime", "electronic"],
 };
 
+// Own keys only: a plain object also answers for "constructor" and
+// "__proto__", which would make the spread below throw on a normal question.
+function layTerms(token) {
+  return Object.prototype.hasOwnProperty.call(LAY_TO_LEGAL, token) ? LAY_TO_LEGAL[token] : null;
+}
+
 function expandQuery(query) {
   const base = tokenize(query);
   const extra = [];
-  for (const t of base) if (LAY_TO_LEGAL[t]) extra.push(...LAY_TO_LEGAL[t]);
+  for (const t of base) {
+    const terms = layTerms(t);
+    if (terms) extra.push(...terms);
+  }
   return extra.length ? `${query} ${extra.join(" ")}` : query;
 }
 
@@ -189,7 +198,7 @@ function stats() {
 
 // True when the synonym map has an entry for at least one word in the query.
 function mapMatched(query) {
-  return tokenize(query).some((t) => Boolean(LAY_TO_LEGAL[t]));
+  return tokenize(query).some((t) => Boolean(layTerms(t)));
 }
 
 module.exports = { search, stats, tokenize, buildIndex, getIndex, expandQuery, mapMatched, LAY_TO_LEGAL };

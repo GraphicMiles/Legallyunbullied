@@ -1747,8 +1747,6 @@ import {
   function renderTopbar() {
     const convo = getActiveConversation();
     el.conversationTitle.textContent = convo ? convo.title : "New question";
-    // Full title on hover/long-press when the phone topbar truncates it.
-    el.conversationTitle.title = convo ? convo.title : "";
 
     // The title bar carries the conversation title and nothing else. Practice
     // area, jurisdiction and urgency are pipeline vocabulary, not things the
@@ -3301,6 +3299,10 @@ import {
       container.appendChild(row);
     });
   }
+
+  // How many times a busy provider pool is retried automatically before the
+  // answer stops with a card the user can act on.
+  const MAX_BUSY_RETRIES = 3;
 
   function renderProvidersBusy(agentMsg, response) {
     if (!live.refs || !live.refs.body) {
