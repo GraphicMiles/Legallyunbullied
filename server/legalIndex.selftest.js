@@ -61,3 +61,12 @@ test("expansion can be switched off", () => {
   assert.ok(on.some((t) => t.act.startsWith("Cybercrimes")));
   assert.ok(Array.isArray(off));
 });
+
+test("object-prototype words do not break the lay-term map", () => {
+  // Regression: a plain-object lookup answered for "constructor" and threw
+  // when spread. These must behave like any other word.
+  assert.doesNotThrow(() => idx.expandQuery("my constructor was broken"));
+  assert.doesNotThrow(() => idx.expandQuery("__proto__ question"));
+  assert.equal(idx.mapMatched("constructor question"), false);
+  assert.equal(idx.mapMatched("my car was stolen"), true);
+});
